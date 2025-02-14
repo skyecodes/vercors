@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 skyecodes
+ * Copyright (c) 2024-2025 skyecodes
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -31,9 +31,9 @@ import org.koin.core.annotation.Single
 import java.util.prefs.Preferences
 
 @Single(createdAtStart = true)
-class StorageImpl : Storage {
+class StorageServiceImpl : StorageService {
     private val preferences = Preferences.userNodeForPackage(DummyClass::class.java)
-    private val _state = MutableStateFlow(StorageState(path = preferences[PREF_KEY, Storage.DEFAULT_PATH]))
+    private val _state = MutableStateFlow(StorageState(path = preferences[PREF_KEY, StorageService.DEFAULT_PATH]))
     override val state: StateFlow<StorageState> = _state.asStateFlow()
 
     override fun updatePath(path: String) {

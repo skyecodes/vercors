@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 skyecodes
+ * Copyright (c) 2024-2025 skyecodes
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -25,8 +25,10 @@ package app.vercors.launcher.instance.domain
 import kotlinx.coroutines.flow.Flow
 
 interface InstanceRepository {
+    fun synchronize()
     fun observeAll(): Flow<List<Instance>>
     fun observeById(id: Int): Flow<Instance>
     suspend fun create(instance: Instance)
+    suspend fun update(instance: Instance)
     suspend fun delete(instance: Instance)
 }

@@ -40,6 +40,9 @@ dependencies {
     implementation(compose.desktop.currentOs)
     // DI
     implementation(libs.koin.logger.slf4j)
+    // Database
+    implementation(libs.sqlite.bundled)
+    implementation(libs.sqlite.jvm)
     // Logging
     implementation(libs.logback.classic)
     // Modules

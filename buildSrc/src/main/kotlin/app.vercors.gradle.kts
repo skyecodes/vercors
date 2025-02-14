@@ -30,6 +30,7 @@ val Project.libs get() = the<LibrariesForLibs>()
 
 repositories {
     mavenCentral()
+    mavenLocal()
 }
 
 dependencies {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 skyecodes
+ * Copyright (c) 2024-2025 skyecodes
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -26,7 +26,7 @@ import app.vercors.launcher.core.domain.APP_AUTHOR
 import app.vercors.launcher.core.domain.APP_CONTACT
 import app.vercors.launcher.core.domain.APP_ID
 import app.vercors.launcher.core.domain.APP_VERSION
-import app.vercors.launcher.core.storage.Storage
+import app.vercors.launcher.core.storage.StorageService
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
 import io.ktor.client.plugins.*
@@ -43,7 +43,7 @@ import org.koin.core.annotation.Single
 import java.io.File
 
 @Single
-fun provideHttpClient(json: Json, storage: Storage) = HttpClient(CIO) {
+fun provideHttpClient(json: Json, storageService: StorageService) = HttpClient(CIO) {
     install(Logging) {
         sanitizeHeader { header -> header in listOf(HttpHeaders.Authorization, "x-api-key") }
     }
@@ -54,7 +54,7 @@ fun provideHttpClient(json: Json, storage: Storage) = HttpClient(CIO) {
         agent = "$APP_AUTHOR/$APP_ID/$APP_VERSION ($APP_CONTACT)"
     }
     install(HttpCache) {
-        val cacheFile = Path(storage.state.value.path, "cache", "network")
+        val cacheFile = Path(storageService.state.value.path, "cache", "network")
         SystemFileSystem.createDirectories(cacheFile)
         publicStorage(FileStorage(File(cacheFile.toString())))
     }

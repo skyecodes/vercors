@@ -30,6 +30,7 @@ typealias InstanceId = Long
 
 data class Instance(
     val id: InstanceId = 0,
+    val slug: String = "",
     val name: String,
     val gameVersion: String,
     val modLoader: InstanceModLoader? = null,

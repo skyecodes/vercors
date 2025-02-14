@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 skyecodes
+ * Copyright (c) 2024-2025 skyecodes
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -29,7 +29,7 @@ import androidx.room.TypeConverters
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import app.vercors.launcher.account.data.AccountDao
 import app.vercors.launcher.account.data.AccountEntity
-import app.vercors.launcher.core.storage.Storage
+import app.vercors.launcher.core.storage.StorageService
 import app.vercors.launcher.instance.data.InstanceDao
 import app.vercors.launcher.instance.data.InstanceEntity
 import app.vercors.launcher.project.data.local.ProjectDao
@@ -49,8 +49,8 @@ abstract class AppDatabase : RoomDatabase() {
 }
 
 @Single
-fun provideAppDatabase(storage: Storage): AppDatabase = Room
-    .databaseBuilder<AppDatabase>(Path(storage.state.value.path, "launcher.db").toString())
+fun provideAppDatabase(storageService: StorageService): AppDatabase = Room
+    .databaseBuilder<AppDatabase>(Path(storageService.state.value.path, "launcher.db").toString())
     .setDriver(BundledSQLiteDriver())
     .build()
 

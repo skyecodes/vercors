@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 skyecodes
+ * Copyright (c) 2024-2025 skyecodes
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -25,12 +25,18 @@ package app.vercors.launcher.instance.data
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import kotlinx.datetime.Instant
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import kotlin.time.Duration
 
 @Entity(tableName = "instance")
+@Serializable
 data class InstanceEntity(
     @PrimaryKey(autoGenerate = true)
+    @Transient
     val id: Long = 0,
+    @Transient
+    val slug: String = "",
     val name: String,
     val gameVersion: String,
     val modLoader: String?,

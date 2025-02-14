@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 skyecodes
+ * Copyright (c) 2024-2025 skyecodes
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,15 +24,46 @@ package app.vercors.launcher.instance.data
 
 import app.vercors.launcher.instance.domain.Instance
 import app.vercors.launcher.instance.domain.InstanceRepository
+import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import org.koin.core.annotation.Single
+
+private val logger = KotlinLogging.logger { }
 
 @Single
 class InstanceRepositoryImpl(
-    private val dao: InstanceDao
+    private val dao: InstanceDao,
+    private val fileDataSource: InstanceFileDataSource,
+    private val externalScope: CoroutineScope,
 ) : InstanceRepository {
+    init {
+        synchronize()
+    }
+
+    override fun synchronize() {
+        externalScope.launch {
+            val (dbInstances, fileInstances) = listOf(
+                async { dao.observeInstances().first() },
+                async { fileDataSource.scanInstances() }
+            ).awaitAll()
+            fileInstances.filter { it.slug !in dbInstances.map { it.slug } }.forEach {
+                logger.info { "${it.slug} instance found - adding to database" }
+                dao.insert(it)
+            }
+            dbInstances.filter { it.slug !in fileInstances.map { it.slug } }.forEach {
+                logger.warn { "${it.slug} instance no longer on disk - removing from database" }
+                dao.delete(it)
+            }
+        }
+    }
+
     override fun observeAll(): Flow<List<Instance>> = dao.observeInstances()
         .map { instances -> instances.map { it.toInstance() } }
         .distinctUntilChanged()
@@ -41,7 +72,21 @@ class InstanceRepositoryImpl(
         .map { it.toInstance() }
         .distinctUntilChanged()
 
-    override suspend fun create(instance: Instance) = dao.insert(instance.toEntity())
+    override suspend fun create(instance: Instance) {
+        val entity = instance.toEntity(fileDataSource.generateSlug(instance.name))
+        dao.insert(entity)
+        fileDataSource.saveInstance(entity)
+    }
 
-    override suspend fun delete(instance: Instance) = dao.delete(instance.toEntity())
+    override suspend fun update(instance: Instance) {
+        val entity = instance.toEntity()
+        dao.update(entity)
+        fileDataSource.saveInstance(entity)
+    }
+
+    override suspend fun delete(instance: Instance) {
+        val entity = instance.toEntity()
+        dao.delete(entity)
+        fileDataSource.deleteInstance(entity)
+    }
 }

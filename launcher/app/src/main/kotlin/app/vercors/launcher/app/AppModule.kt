@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 skyecodes
+ * Copyright (c) 2024-2025 skyecodes
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,8 +24,12 @@ package app.vercors.launcher.app
 
 import app.vercors.launcher.core.CoreModule
 import app.vercors.launcher.feature.FeatureModule
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import org.koin.core.annotation.ComponentScan
 import org.koin.core.annotation.Module
+import org.koin.core.annotation.Single
 
 @Module(
     includes = [
@@ -35,3 +39,6 @@ import org.koin.core.annotation.Module
 )
 @ComponentScan
 class AppModule
+
+@Single
+internal fun provideCoroutineScope(): CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
