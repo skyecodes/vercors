@@ -30,6 +30,7 @@ import app.vercors.launcher.instance.domain.InstanceModLoader
 fun InstanceEntity.toInstance(): Instance {
     return Instance(
         id = id,
+        slug = slug,
         name = name,
         gameVersion = gameVersion,
         modLoader = modLoader?.let {
@@ -44,9 +45,10 @@ fun InstanceEntity.toInstance(): Instance {
     )
 }
 
-fun Instance.toEntity(): InstanceEntity {
+fun Instance.toEntity(newSlug: String? = null): InstanceEntity {
     return InstanceEntity(
         id = id,
+        slug = newSlug ?: slug,
         name = name,
         gameVersion = gameVersion,
         modLoader = modLoader?.type?.toStringData(),

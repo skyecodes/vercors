@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 skyecodes
+ * Copyright (c) 2025 skyecodes
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,14 +22,14 @@
 
 package app.vercors.launcher.core.storage
 
-import kotlinx.coroutines.flow.StateFlow
+import kotlinx.io.files.FileSystem
+import kotlinx.io.files.Path
 
-interface Storage {
-    val state: StateFlow<StorageState>
-    fun updatePath(path: String)
-
-    companion object {
-        val instance by lazy { StorageImpl() }
-        const val DEFAULT_PATH = "."
+fun FileSystem.deleteRecursively(path: Path) {
+    val metadata = metadataOrNull(path)
+    if (metadata?.isDirectory == true) {
+        list(path).forEach { deleteRecursively(it) }
+    } else {
+        delete(path)
     }
 }

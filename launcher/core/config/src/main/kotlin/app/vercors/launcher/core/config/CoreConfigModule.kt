@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 skyecodes
+ * Copyright (c) 2024-2025 skyecodes
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -26,7 +26,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.core.DataStoreFactory
 import app.vercors.launcher.core.config.proto.ConfigProto
 import app.vercors.launcher.core.config.serializer.ConfigSerializer
-import app.vercors.launcher.core.storage.Storage
+import app.vercors.launcher.core.storage.StorageService
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import org.koin.core.annotation.ComponentScan
@@ -41,12 +41,12 @@ class CoreConfigModule
 
 @Single
 fun provideConfigDataStore(
-    storage: Storage,
+    storageService: StorageService,
     serializer: ConfigSerializer,
     externalScope: CoroutineScope,
     @Named("ioDispatcher") ioDispatcher: CoroutineDispatcher,
 ): DataStore<ConfigProto> = DataStoreFactory.create(
     serializer = serializer,
-    produceFile = { File(storage.state.value.path, "config.pb") },
+    produceFile = { File(storageService.state.value.path, "config.pb") },
     scope = CoroutineScope(externalScope.coroutineContext + ioDispatcher)
 )

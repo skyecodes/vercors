@@ -20,23 +20,16 @@
  * SOFTWARE.
  */
 
-package app.vercors.lib.domain
+package app.vercors.launcher.core.storage
 
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.StateFlow
 
-sealed interface Resource<out D, out E : DomainError> {
-    data object Loading : Resource<Nothing, Nothing>
-    sealed interface Completed<out D, out E : DomainError> : Resource<D, E>
-    data class Success<out D>(val value: D) : Completed<D, Nothing>
-    data class Error<out E : DomainError>(val error: E) : Completed<Nothing, E>
-}
+interface StorageService {
+    val state: StateFlow<StorageState>
+    fun updatePath(path: String)
 
-fun <D, E : DomainError> observeResource(result: suspend () -> Result<D, E>): Flow<Resource<D, E>> = flow {
-    emit(Resource.Loading)
-    val res = result()
-    when (res) {
-        is Result.Error -> emit(Resource.Error(res.error))
-        is Result.Success -> emit(Resource.Success(res.value))
+    companion object {
+        val instance by lazy { StorageServiceImpl() }
+        const val DEFAULT_PATH = "."
     }
 }

@@ -33,7 +33,6 @@ val Project.libs get() = the<LibrariesForLibs>()
 dependencies {
     ksp(libs.room.compiler)
     implementation(libs.room.runtime)
-    implementation(libs.sqlite.bundled)
 }
 
 room {

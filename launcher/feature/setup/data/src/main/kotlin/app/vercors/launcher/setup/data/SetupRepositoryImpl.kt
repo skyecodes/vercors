@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 skyecodes
+ * Copyright (c) 2024-2025 skyecodes
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,7 +22,7 @@
 
 package app.vercors.launcher.setup.data
 
-import app.vercors.launcher.core.storage.Storage
+import app.vercors.launcher.core.storage.StorageService
 import app.vercors.launcher.setup.domain.SetupRepository
 import ca.gosyer.appdirs.AppDirs
 import org.koin.core.annotation.Single
@@ -30,8 +30,8 @@ import org.koin.core.annotation.Single
 @Single
 class SetupRepositoryImpl(
     appDirs: AppDirs,
-    private val storage: Storage
+    private val storageService: StorageService
 ) : SetupRepository {
     override val defaultPath: String = appDirs.getUserDataDir()
-    override fun updatePath(path: String) = storage.updatePath(path)
+    override fun updatePath(path: String) = storageService.updatePath(path)
 }

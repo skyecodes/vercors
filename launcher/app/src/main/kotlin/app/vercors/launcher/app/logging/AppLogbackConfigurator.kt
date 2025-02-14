@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 skyecodes
+ * Copyright (c) 2024-2025 skyecodes
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,7 +22,7 @@
 
 package app.vercors.launcher.app.logging
 
-import app.vercors.launcher.core.storage.Storage
+import app.vercors.launcher.core.storage.StorageService
 import ch.qos.logback.classic.Level
 import ch.qos.logback.classic.Logger
 import ch.qos.logback.classic.LoggerContext
@@ -46,7 +46,7 @@ class AppLogbackConfigurator : ContextAwareBase(), Configurator {
 
     override fun configure(context: LoggerContext): ExecutionStatus {
         addInfo("Setting up custom configuration.")
-        val logsPath = Path(Storage.instance.state.value.path, "logs")
+        val logsPath = Path(StorageService.instance.state.value.path, "logs")
 
         val layout = TTLLLayout().apply {
             this.context = context
