@@ -24,7 +24,6 @@ import org.gradle.accessors.dm.LibrariesForLibs
 
 plugins {
     id("app.vercors")
-    kotlin("plugin.serialization")
     id("com.google.devtools.ksp")
     id("de.jensklingenberg.ktorfit")
 }

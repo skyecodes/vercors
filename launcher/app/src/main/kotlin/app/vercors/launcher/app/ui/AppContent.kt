@@ -41,6 +41,7 @@ import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.ComposeNavigator
 import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.toRoute
 import app.vercors.launcher.app.navigation.TopLevelDestination
 import app.vercors.launcher.app.util.screenName
 import app.vercors.launcher.app.util.screenType
@@ -113,7 +114,7 @@ fun WindowScope.AppContent(
                             onClick = {}
                         )
                     }
-                    AppNavButton(
+                    appNavButton(
                         topLevelRoute = topLevelRoute,
                         currentDestination = currentDestination,
                         navItemColors = navItemColors,
@@ -139,7 +140,7 @@ fun WindowScope.AppContent(
     }
 }
 
-private fun NavigationSuiteScope.AppNavButton(
+private fun NavigationSuiteScope.appNavButton(
     topLevelRoute: TopLevelDestination,
     currentDestination: NavDestination?,
     navItemColors: NavigationSuiteItemColors,
@@ -181,8 +182,9 @@ private fun NavigationSuiteScope.AppNavButton(
         onClick = {
             logger.info { "Navigating to $topLevelRoute tab" }
             navController.navigate(route = topLevelRoute.route) {
-                popUpTo(navController.graph.findStartDestination().id) {
+                popUpTo(navController.graph.id) {
                     saveState = true
+                    inclusive = true
                 }
                 launchSingleTop = true
                 restoreState = true

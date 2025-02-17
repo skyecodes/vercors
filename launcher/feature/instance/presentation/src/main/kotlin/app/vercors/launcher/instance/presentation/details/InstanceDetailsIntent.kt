@@ -20,22 +20,6 @@
  * SOFTWARE.
  */
 
-package app.vercors.launcher.home.presentation
+package app.vercors.launcher.instance.presentation.details
 
-import app.vercors.launcher.instance.domain.InstanceId
-import app.vercors.launcher.project.domain.ProjectId
-import app.vercors.launcher.project.domain.ProjectType
-
-sealed interface HomeUiEffect {
-    data object CreateInstance : HomeUiEffect
-    data object NavigateToInstanceList : HomeUiEffect
-
-    @JvmInline
-    value class NavigateToProjectList(val projectType: ProjectType) : HomeUiEffect
-
-    @JvmInline
-    value class NavigateToInstanceDetails(val instanceId: InstanceId) : HomeUiEffect
-
-    @JvmInline
-    value class NavigateToProjectDetails(val projectId: ProjectId) : HomeUiEffect
-}
+sealed interface InstanceDetailsIntent

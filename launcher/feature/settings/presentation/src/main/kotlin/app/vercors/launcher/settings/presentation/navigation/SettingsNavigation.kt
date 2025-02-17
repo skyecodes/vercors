@@ -34,7 +34,7 @@ import kotlinx.serialization.Serializable
 internal data object SettingsRoute
 
 @Serializable
-data object SettingsBaseRoute
+data object SettingsGraph
 
 fun NavController.navigateToSettings(navOptions: NavOptions) = navigate(
     route = SettingsRoute,
@@ -42,7 +42,7 @@ fun NavController.navigateToSettings(navOptions: NavOptions) = navigate(
 )
 
 fun NavGraphBuilder.settingsSection() {
-    navigation<SettingsBaseRoute>(startDestination = SettingsRoute) {
+    navigation<SettingsGraph>(startDestination = SettingsRoute) {
         composable<SettingsRoute> {
             SettingsScreen()
         }

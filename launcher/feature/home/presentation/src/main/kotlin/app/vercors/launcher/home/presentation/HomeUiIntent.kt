@@ -22,10 +22,14 @@
 
 package app.vercors.launcher.home.presentation
 
+import app.vercors.launcher.home.domain.HomeSectionType
 import app.vercors.launcher.instance.domain.InstanceId
 import app.vercors.launcher.project.domain.ProjectId
 
 sealed interface HomeUiIntent {
+    @JvmInline
+    value class ExpandSection(val type: HomeSectionType) : HomeUiIntent
+
     @JvmInline
     value class ShowInstance(val instanceId: InstanceId) : HomeUiIntent
 

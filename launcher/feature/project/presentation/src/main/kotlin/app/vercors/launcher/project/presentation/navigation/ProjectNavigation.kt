@@ -25,26 +25,45 @@ package app.vercors.launcher.project.presentation.navigation
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavOptions
+import androidx.navigation.NavOptionsBuilder
 import androidx.navigation.compose.composable
 import androidx.navigation.navigation
+import androidx.navigation.toRoute
+import app.vercors.launcher.project.domain.ProjectId
+import app.vercors.launcher.project.domain.ProjectProvider
+import app.vercors.launcher.project.domain.toProvider
+import app.vercors.launcher.project.presentation.details.ProjectDetailsScreen
 import app.vercors.launcher.project.presentation.list.ProjectListScreen
+import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 
 @Serializable
-data object ProjectBaseRoute
+data object ProjectGraph
 
 @Serializable
 internal data object ProjectListRoute
 
-fun NavController.navigateToInstanceList(navOptions: NavOptions) = navigate(
+@Serializable
+internal data class ProjectDetailsRoute(val provider: String, val id: String)
+
+fun NavController.navigateToProjectList(builder: NavOptionsBuilder.() -> Unit = {}) = navigate(
     route = ProjectListRoute,
-    navOptions = navOptions
+    builder = builder
+)
+
+fun NavController.navigateToProjectDetails(projectId: ProjectId, builder: NavOptionsBuilder.() -> Unit = {}) = navigate(
+    route = ProjectDetailsRoute(projectId.provider.id, projectId.id),
+    builder = builder
 )
 
 fun NavGraphBuilder.projectSection() {
-    navigation<ProjectBaseRoute>(startDestination = ProjectListRoute) {
+    navigation<ProjectGraph>(startDestination = ProjectListRoute) {
         composable<ProjectListRoute> {
             ProjectListScreen()
+        }
+        composable<ProjectDetailsRoute> {
+            val route: ProjectDetailsRoute = it.toRoute()
+            ProjectDetailsScreen(ProjectId(route.provider.toProvider(), route.id))
         }
     }
 }

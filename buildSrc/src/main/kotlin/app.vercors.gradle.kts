@@ -24,6 +24,7 @@ import org.gradle.accessors.dm.LibrariesForLibs
 
 plugins {
     kotlin("jvm")
+    kotlin("plugin.serialization")
 }
 
 val Project.libs get() = the<LibrariesForLibs>()

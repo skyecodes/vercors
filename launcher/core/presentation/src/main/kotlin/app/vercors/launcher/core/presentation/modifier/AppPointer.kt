@@ -39,6 +39,12 @@ fun Modifier.clickableIcon(
 ) = handPointer(enabled).clickableWithoutRipple(onClick = onClick)
 
 @Composable
+fun Modifier.clickableText(
+    enabled: Boolean = true,
+    onClick: () -> Unit,
+) = handPointer(enabled).clickableWithoutRipple(onClick = onClick)
+
+@Composable
 fun Modifier.clickableButton(
     enabled: Boolean = true,
     onClick: () -> Unit,

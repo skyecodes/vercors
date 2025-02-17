@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 skyecodes
+ * Copyright (c) 2024-2025 skyecodes
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,22 +20,18 @@
  * SOFTWARE.
  */
 
-package app.vercors.launcher.home.presentation
+package app.vercors.launcher.instance.presentation.details
 
+import app.vercors.launcher.core.presentation.mvi.MviViewModel
 import app.vercors.launcher.instance.domain.InstanceId
-import app.vercors.launcher.project.domain.ProjectId
-import app.vercors.launcher.project.domain.ProjectType
+import org.koin.android.annotation.KoinViewModel
+import org.koin.core.annotation.InjectedParam
 
-sealed interface HomeUiEffect {
-    data object CreateInstance : HomeUiEffect
-    data object NavigateToInstanceList : HomeUiEffect
-
-    @JvmInline
-    value class NavigateToProjectList(val projectType: ProjectType) : HomeUiEffect
-
-    @JvmInline
-    value class NavigateToInstanceDetails(val instanceId: InstanceId) : HomeUiEffect
-
-    @JvmInline
-    value class NavigateToProjectDetails(val projectId: ProjectId) : HomeUiEffect
+@KoinViewModel
+class InstanceDetailsViewModel(
+    @InjectedParam private val instanceId: InstanceId
+) : MviViewModel<InstanceDetailsUiState, InstanceDetailsIntent, Nothing>(InstanceDetailsUiState()) {
+    override fun ReductionState.reduce(intent: InstanceDetailsIntent) {
+        // TODO
+    }
 }

@@ -24,7 +24,6 @@ import org.gradle.accessors.dm.LibrariesForLibs
 
 plugins {
     id("app.vercors.launcher.domain")
-    kotlin("plugin.serialization")
 }
 
 val Project.libs get() = the<LibrariesForLibs>()

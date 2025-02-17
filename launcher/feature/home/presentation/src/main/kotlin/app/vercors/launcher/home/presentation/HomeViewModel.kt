@@ -25,6 +25,8 @@ package app.vercors.launcher.home.presentation
 import app.vercors.launcher.core.presentation.mvi.MviViewModel
 import app.vercors.launcher.home.domain.HomeRepository
 import app.vercors.launcher.home.domain.HomeSection
+import app.vercors.launcher.home.domain.HomeSectionType
+import app.vercors.launcher.project.domain.ProjectType
 import kotlinx.coroutines.Job
 import org.koin.android.annotation.KoinViewModel
 
@@ -49,6 +51,13 @@ class HomeViewModel(
 
     override fun ReductionState.reduce(intent: HomeUiIntent) {
         when (intent) {
+            is HomeUiIntent.ExpandSection -> when (intent.type) {
+                HomeSectionType.JumpBackIn -> effect(HomeUiEffect.NavigateToInstanceList)
+                HomeSectionType.PopularMods -> effect(HomeUiEffect.NavigateToProjectList(ProjectType.Mod))
+                HomeSectionType.PopularModpacks -> effect(HomeUiEffect.NavigateToProjectList(ProjectType.Modpack))
+                HomeSectionType.PopularResourcePacks -> effect(HomeUiEffect.NavigateToProjectList(ProjectType.ResourcePack))
+                HomeSectionType.PopularShaderPacks -> effect(HomeUiEffect.NavigateToProjectList(ProjectType.ShaderPack))
+            }
             HomeUiIntent.CreateInstance -> effect(HomeUiEffect.CreateInstance)
             is HomeUiIntent.InstallProject -> { /* TODO */
             }
@@ -56,8 +65,8 @@ class HomeViewModel(
             is HomeUiIntent.LaunchOrStopInstance -> { /* TODO */
             }
 
-            is HomeUiIntent.ShowInstance -> effect(HomeUiEffect.NavigateToInstance(intent.instanceId))
-            is HomeUiIntent.ShowProject -> effect(HomeUiEffect.NavigateToProject(intent.projectId))
+            is HomeUiIntent.ShowInstance -> effect(HomeUiEffect.NavigateToInstanceDetails(intent.instanceId))
+            is HomeUiIntent.ShowProject -> effect(HomeUiEffect.NavigateToProjectDetails(intent.projectId))
             is UpdateSections -> update { HomeUiState(intent.sections.map { it.toUi() }) }
         }
     }

@@ -22,12 +22,18 @@
 
 package app.vercors.launcher.core.presentation.ui
 
+import androidx.compose.foundation.clickable
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import app.vercors.launcher.core.presentation.modifier.clickableIcon
+import app.vercors.launcher.core.presentation.modifier.clickableText
+import app.vercors.launcher.core.presentation.modifier.handPointer
 
 @Composable
-fun AppSectionTitle(text: String) = Text(
+fun AppSectionTitle(text: String, onClick: (() -> Unit)? = null) = Text(
     text = text,
-    style = MaterialTheme.typography.headlineMedium
+    style = MaterialTheme.typography.headlineMedium,
+    modifier = Modifier.thenIf(onClick != null) { clickableText(onClick = onClick!!) }
 )

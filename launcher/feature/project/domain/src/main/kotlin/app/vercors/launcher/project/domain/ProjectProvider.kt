@@ -31,5 +31,7 @@ enum class ProjectProvider(val id: String) {
     Modrinth("modrinth"),
 
     @SerialName("curseforge")
-    CurseForge("curseforge")
+    CurseForge("curseforge");
 }
+
+fun String.toProvider(): ProjectProvider = ProjectProvider.entries.first { it.id == this }

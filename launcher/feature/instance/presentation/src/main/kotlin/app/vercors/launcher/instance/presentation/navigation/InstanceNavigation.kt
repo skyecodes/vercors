@@ -24,27 +24,42 @@ package app.vercors.launcher.instance.presentation.navigation
 
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
-import androidx.navigation.NavOptions
+import androidx.navigation.NavOptionsBuilder
 import androidx.navigation.compose.composable
 import androidx.navigation.navigation
+import androidx.navigation.toRoute
+import app.vercors.launcher.instance.domain.InstanceId
+import app.vercors.launcher.instance.presentation.details.InstanceDetailsScreen
 import app.vercors.launcher.instance.presentation.list.InstanceListScreen
 import kotlinx.serialization.Serializable
 
 @Serializable
-data object InstanceBaseRoute
+data object InstanceGraph
 
 @Serializable
 internal data object InstanceListRoute
 
-fun NavController.navigateToInstanceList(navOptions: NavOptions) = navigate(
+@Serializable
+internal data class InstanceDetailsRoute(val instanceId: InstanceId)
+
+fun NavController.navigateToInstanceList(builder: NavOptionsBuilder.() -> Unit = {}) = navigate(
     route = InstanceListRoute,
-    navOptions = navOptions
+    builder = builder
+)
+
+fun NavController.navigateToInstanceDetails(instanceId: InstanceId, builder: NavOptionsBuilder.() -> Unit = {}) = navigate(
+    route = InstanceDetailsRoute(instanceId),
+    builder = builder
 )
 
 fun NavGraphBuilder.instanceSection() {
-    navigation<InstanceBaseRoute>(startDestination = InstanceListRoute) {
+    navigation<InstanceGraph>(startDestination = InstanceListRoute) {
         composable<InstanceListRoute> {
             InstanceListScreen()
+        }
+        composable<InstanceDetailsRoute> {
+            val route: InstanceDetailsRoute = it.toRoute()
+            InstanceDetailsScreen(route.instanceId)
         }
     }
 }

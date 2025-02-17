@@ -20,22 +20,11 @@
  * SOFTWARE.
  */
 
-package app.vercors.launcher.home.presentation
+package app.vercors.launcher.instance.presentation.details
 
-import app.vercors.launcher.instance.domain.InstanceId
-import app.vercors.launcher.project.domain.ProjectId
-import app.vercors.launcher.project.domain.ProjectType
+import androidx.compose.runtime.Immutable
 
-sealed interface HomeUiEffect {
-    data object CreateInstance : HomeUiEffect
-    data object NavigateToInstanceList : HomeUiEffect
-
-    @JvmInline
-    value class NavigateToProjectList(val projectType: ProjectType) : HomeUiEffect
-
-    @JvmInline
-    value class NavigateToInstanceDetails(val instanceId: InstanceId) : HomeUiEffect
-
-    @JvmInline
-    value class NavigateToProjectDetails(val projectId: ProjectId) : HomeUiEffect
-}
+@Immutable
+data class InstanceDetailsUiState(
+    val isLoading: Boolean = false,
+)

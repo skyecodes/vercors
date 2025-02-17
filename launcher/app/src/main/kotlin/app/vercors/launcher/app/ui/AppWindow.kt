@@ -32,6 +32,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.window.ApplicationScope
@@ -46,6 +47,7 @@ import app.vercors.launcher.core.presentation.theme.VercorsTheme
 import app.vercors.launcher.core.presentation.ui.*
 import app.vercors.launcher.core.resources.appStringResource
 import app.vercors.launcher.core.resources.app_title
+import io.github.oshai.kotlinlogging.KotlinLogging
 import org.koin.compose.koinInject
 import java.awt.Dimension
 

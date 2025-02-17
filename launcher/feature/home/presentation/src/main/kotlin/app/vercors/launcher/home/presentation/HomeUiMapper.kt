@@ -35,14 +35,14 @@ import org.jetbrains.compose.resources.StringResource
 fun HomeSection.toUi(): HomeSectionUi {
     val title = type.toUi()
     return when (this) {
-        is HomeSection.Instances -> HomeSectionUi.Instances(title, HomeSectionDataUi.Loaded(data.map { it.toUi() }))
+        is HomeSection.Instances -> HomeSectionUi.Instances(type, title, HomeSectionDataUi.Loaded(data.map { it.toUi() }))
         is HomeSection.Projects -> {
             val uiData = when (val finalData = data) {
                 Resource.Loading -> HomeSectionDataUi.Loading()
                 is Resource.Success -> HomeSectionDataUi.Loaded(finalData.value.map { it.toUi() })
                 is Resource.Error -> HomeSectionDataUi.Loading() // TODO error handling
             }
-            HomeSectionUi.Projects(title, uiData)
+            HomeSectionUi.Projects(type, title, uiData)
         }
     }
 }

@@ -31,13 +31,14 @@ import app.vercors.launcher.home.presentation.HomeScreen
 import app.vercors.launcher.home.presentation.HomeUiEffect
 import app.vercors.launcher.instance.domain.InstanceId
 import app.vercors.launcher.project.domain.ProjectId
+import app.vercors.launcher.project.domain.ProjectType
 import kotlinx.serialization.Serializable
 
 @Serializable
-internal data object HomeRoute
+data object HomeGraph
 
 @Serializable
-data object HomeBaseRoute
+internal data object HomeRoute
 
 fun NavController.navigateToHome(navOptions: NavOptions) = navigate(
     route = HomeRoute,
@@ -45,19 +46,21 @@ fun NavController.navigateToHome(navOptions: NavOptions) = navigate(
 )
 
 fun NavGraphBuilder.homeSection(
-    onProjectClick: (ProjectId) -> Unit,
-    onProjectAction: (ProjectId) -> Unit,
-    onInstanceClick: (InstanceId) -> Unit,
-    onInstanceAction: (InstanceId) -> Unit,
-    onCreateInstanceClick: () -> Unit,
+    onNavigateToInstanceDetails: (InstanceId) -> Unit,
+    onNavigateToProjectDetails: (ProjectId) -> Unit,
+    onCreateInstance: () -> Unit,
+    onNavigateToInstanceList: () -> Unit,
+    onNavigateToProjectList: (ProjectType) -> Unit,
 ) {
-    navigation<HomeBaseRoute>(startDestination = HomeRoute) {
+    navigation<HomeGraph>(startDestination = HomeRoute) {
         composable<HomeRoute> {
             HomeScreen {
                 when (it) {
-                    is HomeUiEffect.NavigateToInstance -> onInstanceClick(it.instanceId)
-                    is HomeUiEffect.NavigateToProject -> onProjectClick(it.projectId)
-                    HomeUiEffect.CreateInstance -> onCreateInstanceClick()
+                    is HomeUiEffect.NavigateToInstanceDetails -> onNavigateToInstanceDetails(it.instanceId)
+                    is HomeUiEffect.NavigateToProjectDetails -> onNavigateToProjectDetails(it.projectId)
+                    HomeUiEffect.CreateInstance -> onCreateInstance()
+                    HomeUiEffect.NavigateToInstanceList -> onNavigateToInstanceList()
+                    is HomeUiEffect.NavigateToProjectList -> onNavigateToProjectList(it.projectType)
                 }
             }
         }

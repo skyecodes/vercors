@@ -25,6 +25,7 @@ package app.vercors.launcher.app.ui
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import app.vercors.launcher.account.presentation.navigation.accountSection
@@ -35,8 +36,15 @@ import app.vercors.launcher.core.presentation.ui.defaultEnterAnimation
 import app.vercors.launcher.core.presentation.ui.defaultExitAnimation
 import app.vercors.launcher.home.presentation.navigation.homeSection
 import app.vercors.launcher.instance.presentation.navigation.instanceSection
+import app.vercors.launcher.instance.presentation.navigation.navigateToInstanceDetails
+import app.vercors.launcher.instance.presentation.navigation.navigateToInstanceList
+import app.vercors.launcher.project.presentation.navigation.navigateToProjectDetails
+import app.vercors.launcher.project.presentation.navigation.navigateToProjectList
 import app.vercors.launcher.project.presentation.navigation.projectSection
 import app.vercors.launcher.settings.presentation.navigation.settingsSection
+import io.github.oshai.kotlinlogging.KotlinLogging
+
+private val logger = KotlinLogging.logger { }
 
 @Composable
 fun AppNavHost(
@@ -46,6 +54,12 @@ fun AppNavHost(
 ) {
     val animations = AppAnimations.current
 
+    LaunchedEffect(Unit) {
+        navController.currentBackStack.collect { entries ->
+            logger.debug { "Back stack updated: " + entries.mapNotNull { it.destination.route }.joinToString(", ") }
+        }
+    }
+
     NavHost(
         navController = navController,
         startDestination = startDestination,
@@ -53,11 +67,11 @@ fun AppNavHost(
         exitTransition = { if (animations) defaultExitAnimation else ExitTransition.None },
     ) {
         homeSection(
-            onProjectClick = {},
-            onProjectAction = {},
-            onInstanceClick = {},
-            onInstanceAction = {},
-            onCreateInstanceClick = { onIntent(AppUiIntent.OpenDialog(AppDialog.CreateInstance)) }
+            onNavigateToInstanceDetails = { navController.navigateToInstanceDetails(it) },
+            onNavigateToProjectDetails = { navController.navigateToProjectDetails(it) },
+            onCreateInstance = { onIntent(AppUiIntent.OpenDialog(AppDialog.CreateInstance)) },
+            onNavigateToInstanceList = { navController.navigateToInstanceList() },
+            onNavigateToProjectList = { navController.navigateToProjectList() }, // TODO include project type
         )
         instanceSection()
         projectSection()

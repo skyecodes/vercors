@@ -44,7 +44,10 @@ fun HomeSection(
         verticalArrangement = Arrangement.spacedBy(20.dp),
         modifier = modifier.fillMaxWidth().heightIn(max = 600.dp)
     ) {
-        AppSectionTitle(text = stringResource(section.title))
+        AppSectionTitle(
+            text = stringResource(section.title),
+            onClick = { onIntent(HomeUiIntent.ExpandSection(section.type)) }
+        )
         when (section) {
             is HomeSectionUi.Instances -> HomeInstancesSectionContent(
                 data = section.data,

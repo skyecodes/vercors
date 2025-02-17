@@ -31,7 +31,7 @@ import app.vercors.launcher.account.presentation.list.AccountListScreen
 import kotlinx.serialization.Serializable
 
 @Serializable
-data object AccountBaseRoute
+data object AccountGraph
 
 @Serializable
 internal data object AccountListRoute
@@ -42,7 +42,7 @@ fun NavController.navigateToInstanceList(navOptions: NavOptions) = navigate(
 )
 
 fun NavGraphBuilder.accountSection() {
-    navigation<AccountBaseRoute>(startDestination = AccountListRoute) {
+    navigation<AccountGraph>(startDestination = AccountListRoute) {
         composable<AccountListRoute> {
             AccountListScreen()
         }

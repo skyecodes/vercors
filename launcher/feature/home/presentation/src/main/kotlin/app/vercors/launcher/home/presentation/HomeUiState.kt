@@ -23,6 +23,7 @@
 package app.vercors.launcher.home.presentation
 
 import androidx.compose.runtime.Immutable
+import app.vercors.launcher.home.domain.HomeSectionType
 import app.vercors.launcher.instance.domain.InstanceId
 import app.vercors.launcher.project.domain.ProjectId
 import org.jetbrains.compose.resources.StringResource
@@ -35,13 +36,20 @@ value class HomeUiState(
 )
 
 sealed interface HomeSectionUi {
+    val type: HomeSectionType
     val title: StringResource
 
-    data class Instances(override val title: StringResource, val data: HomeSectionDataUi<HomeSectionItemUi.Instance>) :
-        HomeSectionUi
+    data class Instances(
+        override val type: HomeSectionType,
+        override val title: StringResource,
+        val data: HomeSectionDataUi<HomeSectionItemUi.Instance>
+    ) : HomeSectionUi
 
-    data class Projects(override val title: StringResource, val data: HomeSectionDataUi<HomeSectionItemUi.Project>) :
-        HomeSectionUi
+    data class Projects(
+        override val type: HomeSectionType,
+        override val title: StringResource,
+        val data: HomeSectionDataUi<HomeSectionItemUi.Project>
+    ) : HomeSectionUi
 }
 
 sealed interface HomeSectionDataUi<T> {
