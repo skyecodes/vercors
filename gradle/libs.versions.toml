@@ -8,7 +8,7 @@ datetime = "0.6.2"
 io = "0.6.0"
 # Presentation
 compose = "1.8.0-alpha02"
-lifecycle = "2.9.0-alpha02"
+lifecycle = "2.9.0-SNAPSHOT+pull-5245"
 navigation = "2.8.0-alpha12"
 coil = "3.1.0"
 filekit = "0.8.8"
