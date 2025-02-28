@@ -22,7 +22,7 @@ sqlite = "2.5.0-rc01"
 appdirs = "1.2.0"
 # DI
 koin = "4.1.0-Beta5"
-koin-annotations = "2.0.0-Beta3"
+koin-annotations = "2.0.0"
 # Logging
 kotlin-logging = "7.0.4"
 logback = "1.5.17"
