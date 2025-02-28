@@ -38,4 +38,4 @@ interface HomeApi {
 }
 
 @Single
-fun provideHomeApi(@Named("metaKtorfit") ktorfit: Ktorfit) = ktorfit.createHomeApi()
+fun provideHomeApi(@Named("metaKtorfit") ktorfit: Ktorfit): HomeApi = ktorfit.createHomeApi()

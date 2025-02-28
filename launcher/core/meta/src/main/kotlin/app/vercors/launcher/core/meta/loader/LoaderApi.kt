@@ -39,4 +39,4 @@ interface LoaderApi {
 }
 
 @Single
-fun provideLoaderApi(@Named("metaKtorfit") ktorfit: Ktorfit) = ktorfit.createLoaderApi()
+fun provideLoaderApi(@Named("metaKtorfit") ktorfit: Ktorfit): LoaderApi = ktorfit.createLoaderApi()

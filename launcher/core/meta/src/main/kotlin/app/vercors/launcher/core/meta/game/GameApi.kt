@@ -36,4 +36,4 @@ interface GameApi {
 }
 
 @Single
-fun provideGameApi(@Named("metaKtorfit") ktorfit: Ktorfit) = ktorfit.createGameApi()
+fun provideGameApi(@Named("metaKtorfit") ktorfit: Ktorfit): GameApi = ktorfit.createGameApi()
