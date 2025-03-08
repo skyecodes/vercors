@@ -9,7 +9,7 @@ io = "0.7.0"
 # Presentation
 compose = "1.8.0-alpha04"
 lifecycle = "2.9.0-alpha04"
-navigation = "2.9.0-alpha14"
+navigation = "2.9.0-SNAPSHOT+default"
 coil = "3.1.0"
 filekit = "0.8.8"
 prettytime = "5.0.9.Final"
