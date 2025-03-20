@@ -1,6 +1,6 @@
 [versions]
 # Kotlin
-kotlin = "2.1.10"
+kotlin = "2.1.20"
 ksp = "2.1.10-1.0.31"
 coroutines = "1.10.1"
 serialization = "1.8.0"
