@@ -29,6 +29,7 @@ kotlin {
         commonTest.dependencies {
             implementation(libs.kotlin.test)
             implementation(libs.kotlinx.coroutines.test)
+            implementation(libs.turbine)
         }
         jvmTest.dependencies {
             implementation(libs.mockk)
@@ -36,6 +37,7 @@ kotlin {
         }
     }
     compilerOptions.freeCompilerArgs.addAll(
+        "-Xannotation-default-target=param-property",
         "-opt-in=kotlin.time.ExperimentalTime",
         "-opt-in=kotlinx.serialization.ExperimentalSerializationApi",
         "-opt-in=kotlinx.coroutines.ExperimentalCoroutinesApi",

@@ -3,7 +3,7 @@ package app.vercors.launcher.common.domain.instance
 import app.vercors.shared.domain.ResourceStateFlow
 
 interface InstanceRepository {
-    val instances: ResourceStateFlow<List<Instance>, Throwable>
+    val instances: ResourceStateFlow<List<Instance>>
 
     suspend fun reloadInstances()
     suspend fun saveInstance(instance: Instance)

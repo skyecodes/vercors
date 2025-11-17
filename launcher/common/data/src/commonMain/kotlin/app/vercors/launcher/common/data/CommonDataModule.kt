@@ -1,14 +1,14 @@
 package app.vercors.launcher.common.data
 
 import ca.gosyer.appdirs.AppDirs
+import io.github.irgaly.kfswatch.KfsDirectoryWatcher
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
+import kotlinx.io.files.Path
 import kotlinx.serialization.json.Json
-import org.koin.core.annotation.ComponentScan
-import org.koin.core.annotation.Module
-import org.koin.core.annotation.Qualifier
-import org.koin.core.annotation.Single
+import org.koin.core.annotation.*
 
 @Module
 @ComponentScan
@@ -19,29 +19,42 @@ annotation class IODispatcher
 
 @Single
 @IODispatcher
-fun provideIoDispatcher(): CoroutineDispatcher = Dispatchers.IO
+internal fun provideIoDispatcher(): CoroutineDispatcher = Dispatchers.IO
 
 @Qualifier
 annotation class MainDispatcher
 
 @Single
 @MainDispatcher
-fun provideMainDispatcher(): CoroutineDispatcher = Dispatchers.Main
+internal fun provideMainDispatcher(): CoroutineDispatcher = Dispatchers.Main
 
 @Qualifier
 annotation class DefaultDispatcher
 
 @Single
 @DefaultDispatcher
-fun provideDefaultDispatcher(): CoroutineDispatcher = Dispatchers.Default
+internal fun provideDefaultDispatcher(): CoroutineDispatcher = Dispatchers.Default
 
 @Single
-fun provideJson(): Json = Json {
+internal fun provideJson(): Json = Json {
     ignoreUnknownKeys = true
     prettyPrint = true
 }
 
 @Single
-fun provideAppDirs(): AppDirs = AppDirs {
+internal fun provideAppDirs(): AppDirs = AppDirs {
     appName = "vercors-launcher"
 }
+
+@Qualifier
+annotation class AppPath
+
+@Single
+@AppPath
+internal fun provideAppPath(appDirs: AppDirs): Path = Path(appDirs.getUserDataDir())
+
+@Factory
+internal fun provideDirectoryWatcher(
+    coroutineScope: CoroutineScope,
+    @IODispatcher ioDispatcher: CoroutineDispatcher
+): KfsDirectoryWatcher = KfsDirectoryWatcher(coroutineScope, ioDispatcher)

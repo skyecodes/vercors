@@ -21,6 +21,7 @@ kotlin {
         commonTest.dependencies {
             implementation(libs.kotlin.test)
             implementation(libs.kotlinx.coroutines.test)
+            implementation(libs.turbine)
         }
         jvmTest.dependencies {
             implementation(libs.logback)
@@ -28,6 +29,7 @@ kotlin {
     }
     compilerOptions.freeCompilerArgs.addAll(
         "-opt-in=kotlin.time.ExperimentalTime",
+        "-opt-in=kotlinx.coroutines.ExperimentalCoroutinesApi",
     )
 }
 
