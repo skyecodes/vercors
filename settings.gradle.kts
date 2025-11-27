@@ -1,4 +1,6 @@
 rootProject.name = "vercors"
+
+enableFeaturePreview("STABLE_CONFIGURATION_CACHE")
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 pluginManagement {
@@ -36,9 +38,11 @@ include(":launcher:common:domain")
 include(":launcher:common:data")
 include(":launcher:gui")
 include(":launcher:cli")
-include(":meta")
-include(":panel:front")
-include(":panel:back")
+include(":meta:backend")
+include(":meta:client")
+include(":meta:lib")
+include(":panel:frontend")
+include(":panel:backend")
 include(":shared:data")
 include(":shared:domain")
 include(":shared:ui")
