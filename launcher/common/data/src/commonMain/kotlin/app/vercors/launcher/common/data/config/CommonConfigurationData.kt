@@ -1,6 +1,6 @@
 package app.vercors.launcher.common.data.config
 
-import app.vercors.launcher.common.domain.config.CommonConfiguration
+import app.vercors.launcher.common.domain.config.model.CommonConfiguration
 import kotlinx.serialization.Serializable
 
 @Serializable

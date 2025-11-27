@@ -25,6 +25,7 @@ dependencies {
     implementation(libs.ktor.server.caching.headers)
     implementation(libs.ktor.simple.cache)
     implementation(libs.ktor.simple.redis.cache)
+    implementation(libs.ktor.simple.memory.cache)
     implementation(libs.ktor.client.core)
     implementation(libs.ktor.client.cio)
     implementation(libs.ktor.client.content.negotiation)

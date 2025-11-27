@@ -1,4 +1,4 @@
-package app.vercors.launcher.common.domain.instance
+package app.vercors.launcher.common.domain.instance.model
 
 import app.vercors.shared.domain.toSlug
 import kotlin.time.Clock
@@ -15,5 +15,7 @@ data class Instance(
     val updatedAt: Instant = Clock.System.now(),
     val lastPlayedAt: Instant? = null,
     val playTime: Duration = Duration.ZERO,
-)
-
+) {
+    val loaderName: String get() = modLoader?.type?.name ?: "Vanilla"
+    val typeName: String get() = modpackInfo?.platform?.name ?: "Custom"
+}

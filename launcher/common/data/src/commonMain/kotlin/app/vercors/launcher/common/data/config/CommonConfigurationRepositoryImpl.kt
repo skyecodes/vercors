@@ -1,7 +1,7 @@
 package app.vercors.launcher.common.data.config
 
-import app.vercors.launcher.common.domain.config.CommonConfiguration
 import app.vercors.launcher.common.domain.config.CommonConfigurationRepository
+import app.vercors.launcher.common.domain.config.model.CommonConfiguration
 import app.vercors.shared.domain.*
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope

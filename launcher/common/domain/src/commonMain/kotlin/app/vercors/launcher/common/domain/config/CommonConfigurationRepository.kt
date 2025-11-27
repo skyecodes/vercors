@@ -1,5 +1,6 @@
 package app.vercors.launcher.common.domain.config
 
+import app.vercors.launcher.common.domain.config.model.CommonConfiguration
 import app.vercors.shared.domain.Resource
 import kotlinx.coroutines.flow.StateFlow
 

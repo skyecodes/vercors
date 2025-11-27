@@ -3,7 +3,7 @@ package app.vercors.meta.lib.game
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class GameVersionList(
+data class GameVersionListData(
     val latestRelease: String,
     val latestSnapshot: String,
     val versions: List<Version>
@@ -11,6 +11,6 @@ data class GameVersionList(
     @Serializable
     data class Version(
         val id: String,
-        val type: GameVersionType,
+        val type: GameVersionTypeData,
     )
 }

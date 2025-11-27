@@ -3,7 +3,7 @@ package app.vercors.launcher.common.data.instance
 import app.vercors.launcher.common.data.platform.PlatformTypeData
 import app.vercors.launcher.common.data.platform.toData
 import app.vercors.launcher.common.data.platform.toDomain
-import app.vercors.launcher.common.domain.instance.InstanceModpackInfo
+import app.vercors.launcher.common.domain.instance.model.InstanceModpackInfo
 import kotlinx.serialization.Serializable
 
 @Serializable

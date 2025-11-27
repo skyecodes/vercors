@@ -4,7 +4,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-enum class GameVersionType {
+enum class GameVersionTypeData {
     @SerialName("release")
     Release,
 

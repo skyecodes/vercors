@@ -1,5 +1,6 @@
 package app.vercors.launcher.common.domain.instance
 
+import app.vercors.launcher.common.domain.instance.model.Instance
 import app.vercors.shared.domain.ResourceStateFlow
 
 interface InstanceRepository {

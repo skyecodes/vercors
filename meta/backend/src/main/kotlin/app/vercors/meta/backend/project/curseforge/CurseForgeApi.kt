@@ -20,7 +20,7 @@ internal const val RESOURCEPACK_CLASS_ID = 12
 internal const val SHADERPACK_CLASS_ID = 6552
 internal const val WORLD_CLASS_ID = 17
 
-fun interface CurseForgeApi {
+interface CurseForgeApi {
     @GET("/v1/mods/search")
     suspend fun search(
         @Query gameId: Int,

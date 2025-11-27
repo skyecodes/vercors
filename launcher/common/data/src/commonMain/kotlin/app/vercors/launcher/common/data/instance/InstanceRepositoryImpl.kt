@@ -1,7 +1,7 @@
 package app.vercors.launcher.common.data.instance
 
-import app.vercors.launcher.common.domain.instance.Instance
 import app.vercors.launcher.common.domain.instance.InstanceRepository
+import app.vercors.launcher.common.domain.instance.model.Instance
 import app.vercors.shared.domain.*
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope

@@ -1,6 +1,7 @@
 package app.vercors.launcher.cli
 
-import app.vercors.launcher.common.domain.instance.InstanceRepository
+import app.vercors.launcher.common.domain.instance.usecase.GetInstanceListUseCase
+import app.vercors.launcher.common.domain.plural
 import app.vercors.shared.domain.awaitValueOrThrow
 import com.github.ajalt.clikt.command.SuspendingCliktCommand
 import com.github.ajalt.clikt.core.Context
@@ -13,16 +14,16 @@ class ListCommand : SuspendingCliktCommand("list") {
     override fun help(context: Context): String = "Lists existing instances"
 
     override suspend fun run() {
-        val instanceRepository = koin.get<InstanceRepository>()
-        val instances = instanceRepository.instances.awaitValueOrThrow()
+        val getInstanceList = koin.get<GetInstanceListUseCase>()
+        val instances = getInstanceList().awaitValueOrThrow()
         if (instances.isEmpty()) {
-            echo("No instances found")
+            echo("No instance found. Create a new instance using 'vercors create'.")
         } else {
-            echo("Found ${instances.size} instance(s)")
+            echo("Found ${instances.size} instance${plural(instances)}:")
             echo(table {
-                header { row("ID", "Name") }
+                header { row("ID", "Name", "Minecraft Version", "Loader", "Type") }
                 body {
-                    instances.forEach { row(it.id, it.name) }
+                    instances.forEach { row(it.id, it.name, it.gameVersion, it.loaderName, it.typeName) }
                 }
             })
         }

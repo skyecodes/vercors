@@ -12,6 +12,7 @@ import org.koin.core.annotation.*
 
 @Module
 @ComponentScan
+@Configuration
 class CommonDataModule
 
 @Qualifier

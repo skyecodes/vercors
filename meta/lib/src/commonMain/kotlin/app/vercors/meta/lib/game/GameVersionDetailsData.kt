@@ -6,9 +6,9 @@ import kotlin.jvm.JvmInline
 import kotlin.time.Instant
 
 @Serializable
-data class GameVersionDetails(
+data class GameVersionDetailsData(
     val id: String,
-    val type: GameVersionType,
+    val type: GameVersionTypeData,
     val releaseTime: Instant,
     val minimumLauncherVersion: Int,
     val clientDownload: Download,
@@ -42,8 +42,8 @@ data class GameVersionDetails(
             @SerialName("allow")
             Allow,
 
-            @SerialName("deny")
-            Deny
+            @SerialName("disallow")
+            Disallow
         }
 
         @Serializable

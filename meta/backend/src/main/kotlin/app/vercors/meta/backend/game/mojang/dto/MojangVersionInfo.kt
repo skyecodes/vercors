@@ -98,8 +98,13 @@ data class MojangVersionInfo(
         data class Client(
             val argument: String,
             val file: File,
-            val type: String
+            val type: Type
         )
+
+        enum class Type {
+            @SerialName("log4j2-xml")
+            Log4j2Xml
+        }
 
         @Serializable
         data class File(
@@ -112,7 +117,7 @@ data class MojangVersionInfo(
 
     @Serializable
     data class Rule(
-        val action: String,
+        val action: Action,
         val os: Os? = null,
         val features: Map<String, Boolean>? = null
     ) {
@@ -122,5 +127,13 @@ data class MojangVersionInfo(
             val version: String? = null,
             val arch: String? = null
         )
+
+        enum class Action {
+            @SerialName("allow")
+            Allow,
+
+            @SerialName("disallow")
+            Disallow
+        }
     }
 }

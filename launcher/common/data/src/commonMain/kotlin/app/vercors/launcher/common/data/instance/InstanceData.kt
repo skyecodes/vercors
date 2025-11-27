@@ -1,6 +1,6 @@
 package app.vercors.launcher.common.data.instance
 
-import app.vercors.launcher.common.domain.instance.Instance
+import app.vercors.launcher.common.domain.instance.model.Instance
 import kotlinx.serialization.Serializable
 import kotlin.time.Duration
 import kotlin.time.Instant

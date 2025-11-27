@@ -1,30 +1,30 @@
 package app.vercors.meta.backend.game
 
 import app.vercors.meta.backend.game.mojang.dto.*
-import app.vercors.meta.lib.game.GameVersionDetails
-import app.vercors.meta.lib.game.GameVersionList
-import app.vercors.meta.lib.game.GameVersionType
+import app.vercors.meta.lib.game.GameVersionDetailsData
+import app.vercors.meta.lib.game.GameVersionListData
+import app.vercors.meta.lib.game.GameVersionTypeData
 import kotlin.time.toKotlinInstant
 
-internal fun MojangVersionManifest.convert(): GameVersionList = GameVersionList(
+internal fun MojangVersionManifest.convert(): GameVersionListData = GameVersionListData(
     latestRelease = latest.release,
     latestSnapshot = latest.snapshot,
     versions = versions.sortedBy { it.releaseTime }.reversed().map {
-        GameVersionList.Version(
+        GameVersionListData.Version(
             id = it.id,
             type = it.type.convert(),
         )
     }
 )
 
-private fun MojangReleaseType.convert(): GameVersionType = when (this) {
-    MojangReleaseType.Release -> GameVersionType.Release
-    MojangReleaseType.Snapshot -> GameVersionType.Snapshot
-    MojangReleaseType.Beta -> GameVersionType.Beta
-    MojangReleaseType.Alpha -> GameVersionType.Alpha
+private fun MojangReleaseType.convert(): GameVersionTypeData = when (this) {
+    MojangReleaseType.Release -> GameVersionTypeData.Release
+    MojangReleaseType.Snapshot -> GameVersionTypeData.Snapshot
+    MojangReleaseType.Beta -> GameVersionTypeData.Beta
+    MojangReleaseType.Alpha -> GameVersionTypeData.Alpha
 }
 
-internal fun MojangVersionInfo.convert(): GameVersionDetails = GameVersionDetails(
+internal fun MojangVersionInfo.convert(): GameVersionDetailsData = GameVersionDetailsData(
     id = id,
     gameArgs = arguments?.game?.map { it.convert() },
     jvmArgs = arguments?.jvm?.map { it.convert() },
@@ -40,52 +40,54 @@ internal fun MojangVersionInfo.convert(): GameVersionDetails = GameVersionDetail
     type = type.convert()
 )
 
-private fun MojangVersionInfo.Logging.File.convert(): GameVersionDetails.Logging.File = GameVersionDetails.Logging.File(
+private fun MojangVersionInfo.Logging.File.convert(): GameVersionDetailsData.Logging.File =
+    GameVersionDetailsData.Logging.File(
     id = id,
     sha1 = sha1,
     size = size,
     url = url,
 )
 
-private fun MojangVersionInfo.Logging.Client.convertType(): GameVersionDetails.Logging.Type =
-    when (type) {
-        "log4j2-xml" -> GameVersionDetails.Logging.Type.LOG4J2_XML
-        else -> error("Unknown logging type $type")
-    }
+private fun MojangVersionInfo.Logging.Type.convert(): GameVersionDetailsData.Logging.Type = when (this) {
+    MojangVersionInfo.Logging.Type.Log4j2Xml -> GameVersionDetailsData.Logging.Type.LOG4J2_XML
+}
 
-private fun MojangVersionInfo.Logging.Client.convert(): GameVersionDetails.Logging = GameVersionDetails.Logging(
+private fun MojangVersionInfo.Logging.Client.convert(): GameVersionDetailsData.Logging = GameVersionDetailsData.Logging(
     argument = argument,
     file = file.convert(),
-    type = convertType()
+    type = type.convert()
 )
 
-private fun MojangVersionInfo.Library.convert(): GameVersionDetails.Library =
-    GameVersionDetails.Library(
+private fun MojangVersionInfo.Library.convert(): GameVersionDetailsData.Library =
+    GameVersionDetailsData.Library(
         name = name,
         artifact = downloads.artifact?.convert(),
         rules = rules?.map { it.convert() }
     )
 
-private fun MojangVersionInfo.Library.Downloads.Artifact.convert(): GameVersionDetails.Library.Artifact =
-    GameVersionDetails.Library.Artifact(
+private fun MojangVersionInfo.Library.Downloads.Artifact.convert(): GameVersionDetailsData.Library.Artifact =
+    GameVersionDetailsData.Library.Artifact(
         path = path,
         sha1 = sha1,
         size = size,
         url = url
     )
 
-private fun MojangVersionInfo.JavaVersion.convert(): GameVersionDetails.JavaVersion = GameVersionDetails.JavaVersion(
+private fun MojangVersionInfo.JavaVersion.convert(): GameVersionDetailsData.JavaVersion =
+    GameVersionDetailsData.JavaVersion(
     component = component,
     majorVersion = majorVersion
 )
 
-private fun MojangVersionInfo.Downloads.Download.convert(): GameVersionDetails.Download = GameVersionDetails.Download(
+private fun MojangVersionInfo.Downloads.Download.convert(): GameVersionDetailsData.Download =
+    GameVersionDetailsData.Download(
     sha1 = sha1,
     size = size,
     url = url
 )
 
-private fun MojangVersionInfo.AssetIndex.convert(): GameVersionDetails.AssetIndex = GameVersionDetails.AssetIndex(
+private fun MojangVersionInfo.AssetIndex.convert(): GameVersionDetailsData.AssetIndex =
+    GameVersionDetailsData.AssetIndex(
     id = id,
     sha1 = sha1,
     size = size,
@@ -93,18 +95,18 @@ private fun MojangVersionInfo.AssetIndex.convert(): GameVersionDetails.AssetInde
     url = url
 )
 
-private fun MojangArgument.convert(): GameVersionDetails.Argument =
+private fun MojangArgument.convert(): GameVersionDetailsData.Argument =
     when (this) {
-        is BasicArgument -> GameVersionDetails.BasicArgument(value)
-        is ConditionalArgument -> GameVersionDetails.ConditionalArgument(rules.map { it.convert() }, value)
+        is BasicArgument -> GameVersionDetailsData.BasicArgument(value)
+        is ConditionalArgument -> GameVersionDetailsData.ConditionalArgument(rules.map { it.convert() }, value)
     }
 
-private fun MojangVersionInfo.Rule.convert(): GameVersionDetails.Rule =
-    GameVersionDetails.Rule(
-        action = convertAction(),
+private fun MojangVersionInfo.Rule.convert(): GameVersionDetailsData.Rule =
+    GameVersionDetailsData.Rule(
+        action = action.convert(),
         features = features,
         os = os?.let { os ->
-            GameVersionDetails.Rule.Os(
+            GameVersionDetailsData.Rule.Os(
                 name = os.name,
                 arch = os.arch,
                 version = os.version
@@ -112,8 +114,7 @@ private fun MojangVersionInfo.Rule.convert(): GameVersionDetails.Rule =
         }
     )
 
-private fun MojangVersionInfo.Rule.convertAction(): GameVersionDetails.Rule.Action = when (action) {
-    "allow" -> GameVersionDetails.Rule.Action.Allow
-    "deny" -> GameVersionDetails.Rule.Action.Deny
-    else -> error("Unknown action $this")
+private fun MojangVersionInfo.Rule.Action.convert(): GameVersionDetailsData.Rule.Action = when (this) {
+    MojangVersionInfo.Rule.Action.Allow -> GameVersionDetailsData.Rule.Action.Allow
+    MojangVersionInfo.Rule.Action.Disallow -> GameVersionDetailsData.Rule.Action.Disallow
 }

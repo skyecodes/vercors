@@ -1,5 +1,6 @@
 package app.vercors.launcher.cli
 
+import app.vercors.launcher.common.domain.instance.usecase.LaunchInstanceUseCase
 import com.github.ajalt.clikt.command.SuspendingCliktCommand
 import com.github.ajalt.clikt.core.Context
 import com.github.ajalt.clikt.core.requireObject
@@ -15,6 +16,7 @@ class LaunchCommand : SuspendingCliktCommand("launch") {
     }
 
     override suspend fun run() {
-        echo("launching instance $id!!")
+        val launchInstance = koin.get<LaunchInstanceUseCase>()
+        launchInstance(id)
     }
 }

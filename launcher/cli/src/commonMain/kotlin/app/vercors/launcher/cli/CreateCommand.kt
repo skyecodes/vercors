@@ -1,7 +1,7 @@
 package app.vercors.launcher.cli
 
-import app.vercors.launcher.common.domain.instance.Instance
-import app.vercors.launcher.common.domain.instance.InstanceRepository
+import app.vercors.launcher.common.domain.instance.model.Instance
+import app.vercors.launcher.common.domain.instance.usecase.CreateInstanceUseCase
 import com.github.ajalt.clikt.command.SuspendingCliktCommand
 import com.github.ajalt.clikt.core.Context
 import com.github.ajalt.clikt.core.requireObject
@@ -12,13 +12,16 @@ import org.koin.core.Koin
 class CreateCommand : SuspendingCliktCommand("create") {
     private val koin by requireObject<Koin>()
     override fun help(context: Context): String = "Create a new instance"
-    private val name by option(help = "Instance name").prompt()
-    private val gameVersion by option(help = "Minecraft version").prompt(default = "latest-release")
+    private val name by option(help = "Instance name").prompt(text = "Instance name")
+    private val gameVersion by option(help = "Minecraft version").prompt(
+        text = "Minecraft version",
+        default = "latest-release"
+    )
 
     override suspend fun run() {
-        val instanceRepository = koin.get<InstanceRepository>()
+        val createInstance = koin.get<CreateInstanceUseCase>()
         val instance = Instance(name = name, gameVersion = gameVersion)
-        instanceRepository.saveInstance(instance)
+        createInstance(instance)
         echo("Instance created with ID: ${instance.id}")
     }
 }

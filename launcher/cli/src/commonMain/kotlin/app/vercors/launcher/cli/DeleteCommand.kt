@@ -1,7 +1,6 @@
 package app.vercors.launcher.cli
 
-import app.vercors.launcher.common.domain.instance.InstanceRepository
-import app.vercors.shared.domain.awaitValueOrThrow
+import app.vercors.launcher.common.domain.instance.usecase.DeleteInstanceUseCase
 import com.github.ajalt.clikt.command.SuspendingCliktCommand
 import com.github.ajalt.clikt.core.Context
 import com.github.ajalt.clikt.core.requireObject
@@ -14,11 +13,11 @@ class DeleteCommand : SuspendingCliktCommand("delete") {
     private val id by argument(help = "Instance ID")
 
     override suspend fun run() {
-        val instanceRepository = koin.get<InstanceRepository>()
-        val instances = instanceRepository.instances.awaitValueOrThrow()
-        instances.find { it.id == id }?.let {
-            instanceRepository.deleteInstance(it)
+        val deleteInstance = koin.get<DeleteInstanceUseCase>()
+        val result = deleteInstance(id)
+        if (result)
             echo("Instance deleted!")
-        } ?: echo("Instance with ID '$id' not found", err = true)
+        else
+            echo("Instance with ID '$id' not found", err = true)
     }
 }
