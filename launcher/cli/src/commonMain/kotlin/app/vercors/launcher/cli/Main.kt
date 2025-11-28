@@ -5,10 +5,7 @@ import app.vercors.launcher.common.domain.CommonDomainModule
 import com.github.ajalt.clikt.command.SuspendingCliktCommand
 import com.github.ajalt.clikt.command.main
 import com.github.ajalt.clikt.core.subcommands
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.*
 import org.koin.core.Koin
 import org.koin.core.annotation.KoinApplication
 import org.koin.dsl.module
@@ -17,13 +14,26 @@ import org.koin.ksp.generated.startKoin
 fun main(args: Array<String>) {
     configureLogging()
     val koin = CLIApplication.startKoin {
+        properties(
+            mapOf(
+                "AUTH_CLIENT_ID" to ""
+            )
+        )
         modules(module {
             single<CoroutineScope> { CoroutineScope(SupervisorJob() + Dispatchers.Default) }
         })
     }.koin
     runBlocking {
         MainCommand(koin)
-            .subcommands(ListCommand(), CreateCommand(), LaunchCommand(), DeleteCommand())
+            .subcommands(
+                ListCommand(),
+                CreateCommand(),
+                LaunchCommand(),
+                DeleteCommand(),
+                AccountsCommand(),
+                LoginCommand(),
+                LogoutCommand()
+            )
             .main(args)
     }
 }

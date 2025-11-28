@@ -5,7 +5,6 @@ import app.vercors.launcher.common.domain.config.model.CommonConfiguration
 import app.vercors.shared.domain.*
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -19,7 +18,7 @@ internal class CommonConfigurationRepositoryImpl(
     coroutineScope: CoroutineScope,
     private val dataSource: CommonConfigurationDataSource
 ) : CommonConfigurationRepository {
-    private val _state: MutableStateFlow<Resource<CommonConfiguration>> = MutableResourceStateFlow()
+    private val _state: MutableResourceStateFlow<CommonConfiguration> = MutableResourceStateFlow()
     override val state: ResourceStateFlow<CommonConfiguration> = _state.asResourceStateFlow(
         coroutineScope = coroutineScope,
         onStart = {

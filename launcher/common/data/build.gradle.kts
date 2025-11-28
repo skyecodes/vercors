@@ -16,15 +16,25 @@ kotlin {
             implementation(projects.launcher.common.domain)
             implementation(projects.shared.data)
             implementation(projects.shared.domain)
+            implementation(projects.meta.lib)
+            implementation(projects.meta.client)
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.kotlinx.io.core)
             implementation(libs.kotlin.logging)
+            implementation(libs.ktor.client.core)
+            implementation(libs.ktor.client.content.negotiation)
+            implementation(libs.ktor.serialization.kotlinx.json)
+            implementation(libs.ktor.server.cio)
+            implementation(libs.ktorfit.lib)
             implementation(libs.kfswatch)
             implementation(libs.appdirs)
             implementation(project.dependencies.platform(libs.koin.bom))
             implementation(libs.koin.core)
             implementation(libs.koin.annotations)
+            implementation(libs.cryptography.core)
+            implementation(libs.cryptography.random)
+            implementation(libs.cryptography.provider.optimal)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -41,6 +51,7 @@ kotlin {
         "-opt-in=kotlin.time.ExperimentalTime",
         "-opt-in=kotlinx.serialization.ExperimentalSerializationApi",
         "-opt-in=kotlinx.coroutines.ExperimentalCoroutinesApi",
+        "-opt-in=kotlin.uuid.ExperimentalUuidApi"
     )
 }
 

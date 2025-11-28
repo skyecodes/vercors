@@ -19,6 +19,9 @@ kotlin {
             implementation(project.dependencies.platform(libs.koin.bom))
             implementation(libs.koin.core)
             implementation(libs.koin.annotations)
+            implementation(libs.cryptography.core)
+            implementation(libs.cryptography.random)
+            implementation(libs.cryptography.provider.optimal)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -29,7 +32,9 @@ kotlin {
         }
     }
     compilerOptions.freeCompilerArgs.addAll(
+        "-Xannotation-default-target=param-property",
         "-opt-in=kotlin.time.ExperimentalTime",
+        "-opt-in=kotlin.uuid.ExperimentalUuidApi",
     )
 }
 

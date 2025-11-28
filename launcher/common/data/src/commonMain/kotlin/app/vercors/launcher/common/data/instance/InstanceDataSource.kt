@@ -4,7 +4,10 @@ import app.vercors.launcher.common.data.AppPath
 import app.vercors.launcher.common.data.IODispatcher
 import app.vercors.launcher.common.data.deleteRecursively
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.withContext
 import kotlinx.io.buffered
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
@@ -20,7 +23,6 @@ internal const val INSTANCE_FILE_NAME = "instance.json"
 
 @Single
 internal class InstanceRepositoryDataSource(
-    coroutinesScope: CoroutineScope,
     @AppPath private val appPath: Path,
     @IODispatcher private val ioDispatcher: CoroutineDispatcher,
     private val json: Json,

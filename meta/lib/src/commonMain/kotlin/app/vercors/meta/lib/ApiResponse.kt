@@ -1,5 +1,6 @@
 package app.vercors.meta.lib
 
+import app.vercors.shared.domain.Result
 import kotlin.jvm.JvmInline
 
 sealed interface ApiResponse<out T> {
@@ -28,5 +29,10 @@ sealed interface ApiResponse<out T> {
         data class NetworkError(override val throwable: Throwable) : Error
         data class SerializationError(override val throwable: Throwable) : Error
         data class UnknownError(override val throwable: Throwable) : Error
+    }
+
+    fun toResult(): Result<T> = when (this) {
+        is Error -> Result.Error(throwable)
+        is Success -> Result.Success(data)
     }
 }

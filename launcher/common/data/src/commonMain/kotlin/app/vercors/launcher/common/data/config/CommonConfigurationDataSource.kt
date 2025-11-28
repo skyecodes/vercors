@@ -43,15 +43,17 @@ internal class CommonConfigurationDataSource(
     }
 
     suspend fun loadFromFile(): CommonConfigurationData? = withContext(ioDispatcher) {
-        if (SystemFileSystem.exists(configFile)) {
-            if (SystemFileSystem.metadataOrNull(configFile)?.isRegularFile == true) {
-                logger.debug { "Loading common configuration file" }
-                return@withContext SystemFileSystem.source(configFile).buffered().use {
-                    json.decodeFromSource<CommonConfigurationData>(it)
+        runCatching {
+            if (SystemFileSystem.exists(configFile)) {
+                if (SystemFileSystem.metadataOrNull(configFile)?.isRegularFile == true) {
+                    logger.debug { "Loading common configuration file" }
+                    return@withContext SystemFileSystem.source(configFile).buffered().use {
+                        json.decodeFromSource<CommonConfigurationData>(it)
+                    }
+                } else {
+                    logger.warn { "Illegal file found at location $configFile" }
+                    SystemFileSystem.deleteRecursively(configFile)
                 }
-            } else {
-                logger.warn { "Illegal file found at location $configFile" }
-                SystemFileSystem.deleteRecursively(configFile)
             }
         }
         return@withContext null

@@ -1,7 +1,17 @@
 package app.vercors.launcher.common.data
 
+import app.vercors.meta.client.ApiResponseConverter
 import ca.gosyer.appdirs.AppDirs
+import de.jensklingenberg.ktorfit.Ktorfit
+import dev.whyoleg.cryptography.CryptographyProvider
+import dev.whyoleg.cryptography.algorithms.SHA256
+import dev.whyoleg.cryptography.operations.Hasher
 import io.github.irgaly.kfswatch.KfsDirectoryWatcher
+import io.ktor.client.*
+import io.ktor.client.plugins.*
+import io.ktor.client.plugins.cache.*
+import io.ktor.client.plugins.contentnegotiation.*
+import io.ktor.serialization.kotlinx.json.*
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -59,3 +69,28 @@ internal fun provideDirectoryWatcher(
     coroutineScope: CoroutineScope,
     @IODispatcher ioDispatcher: CoroutineDispatcher
 ): KfsDirectoryWatcher = KfsDirectoryWatcher(coroutineScope, ioDispatcher)
+
+@Single
+internal fun provideHttpClient(
+    json: Json
+): HttpClient = HttpClient {
+    install(ContentNegotiation) {
+        json(json)
+    }
+    install(HttpCache)
+    install(HttpRequestRetry)
+}
+
+@Single
+internal fun provideKtorfit(httpClient: HttpClient): Ktorfit = Ktorfit.Builder()
+    .httpClient(httpClient)
+    .converterFactories(ApiResponseConverter())
+    .baseUrl("http://localhost:8080/")
+    .build()
+
+@Qualifier
+annotation class Sha256
+
+@Single
+@Sha256
+internal fun provideSha256Hasher(): Hasher = CryptographyProvider.Default.get(SHA256).hasher()

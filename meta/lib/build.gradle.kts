@@ -12,6 +12,7 @@ kotlin {
     mingwX64()
     sourceSets {
         commonMain.dependencies {
+            implementation(projects.shared.domain)
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.kotlinx.io.core)

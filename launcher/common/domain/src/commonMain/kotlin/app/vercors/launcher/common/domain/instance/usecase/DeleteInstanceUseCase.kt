@@ -1,6 +1,8 @@
 package app.vercors.launcher.common.domain.instance.usecase
 
+import app.vercors.launcher.common.domain.instance.InstanceNotFoundException
 import app.vercors.launcher.common.domain.instance.InstanceRepository
+import app.vercors.launcher.common.domain.instance.model.Instance
 import app.vercors.shared.domain.awaitValueOrThrow
 import org.koin.core.annotation.Factory
 
@@ -8,11 +10,10 @@ import org.koin.core.annotation.Factory
 class DeleteInstanceUseCase(
     private val instanceRepository: InstanceRepository
 ) {
-    suspend operator fun invoke(instanceId: String): Boolean {
+    suspend operator fun invoke(instanceId: String): Instance {
         val instances = instanceRepository.instances.awaitValueOrThrow()
-        return instances.find { it.id == instanceId }?.let {
-            instanceRepository.deleteInstance(it)
-            true
-        } ?: false
+        val instance = instances.find { it.id == instanceId } ?: throw InstanceNotFoundException(instanceId)
+        instanceRepository.deleteInstance(instance)
+        return instance
     }
 }

@@ -4,8 +4,8 @@ import kotlinx.coroutines.CancellationException
 
 sealed interface Result<out T> {
     data class Success<out T>(val data: T) : Result<T>
-    data class Error(val exception: Exception) : Result<Nothing> {
-        val isCancelled = exception is CancellationException
+    data class Error(val throwable: Throwable) : Result<Nothing> {
+        val isCancelled = throwable is CancellationException
     }
 }
 
@@ -26,5 +26,13 @@ fun <T> Result<T>.getOrNull(): T? = when (this) {
 
 fun <T> Result<T>.getOrThrow(): T = when (this) {
     is Result.Success -> data
-    is Result.Error -> throw exception
+    is Result.Error -> throw throwable
 }
+
+fun <T> runResult(block: () -> T): Result<T> = runCatching(block)
+    .map { Result.Success(it) }
+    .getOrElse { Result.Error(it) }
+
+suspend fun <T> suspendRunResult(block: suspend () -> T): Result<T> = runCatching { block() }
+    .map { Result.Success(it) }
+    .getOrElse { Result.Error(it) }

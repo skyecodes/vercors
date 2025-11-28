@@ -21,6 +21,7 @@ kotlin {
             implementation(libs.clikt)
             implementation(libs.mordant.coroutines)
             implementation(libs.kotlinx.coroutines.core)
+            implementation(libs.ktor.client.cio)
             implementation(project.dependencies.platform(libs.koin.bom))
             implementation(libs.koin.core)
             implementation(libs.koin.annotations)
@@ -50,7 +51,8 @@ kotlin {
 
     compilerOptions.freeCompilerArgs.addAll(
         "-opt-in=kotlin.time.ExperimentalTime",
-        "-opt-in=kotlinx.serialization.ExperimentalSerializationApi"
+        "-opt-in=kotlinx.serialization.ExperimentalSerializationApi",
+        "-opt-in=kotlin.uuid.ExperimentalUuidApi"
     )
 }
 
@@ -66,4 +68,20 @@ dependencies {
 
 tasks.matching { it.name.startsWith("ksp") && it.name != "kspCommonMainKotlinMetadata" }.configureEach {
     dependsOn("kspCommonMainKotlinMetadata")
+}
+
+tasks {
+    val fatJar = register<Jar>("fatJar") {
+        dependsOn.addAll(listOf("compileJvmMainJava", "compileKotlinJvm", "processJvmMainResources"))
+        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+        manifest { attributes(mapOf("Main-Class" to "app.vercors.launcher.cli.MainKt")) }
+        val sourcesMain = sourceSets["jvmMain"]
+        val contents = configurations["jvmMainRuntimeClasspath"]
+            .map { if (it.isDirectory) it else zipTree(it) } +
+                sourcesMain.output
+        from(contents)
+    }
+    build {
+        dependsOn(fatJar)
+    }
 }
