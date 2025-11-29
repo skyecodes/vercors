@@ -1,0 +1,59 @@
+{
+  "reflection": [
+    {
+      "type": "ch.qos.logback.classic.encoder.PatternLayoutEncoder"
+    },
+    {
+      "type": "io.ktor.network.selector.InterestSuspensionsMap",
+      "allDeclaredFields": true
+    },
+    {
+      "type": "kotlinx.serialization.json.JsonObject",
+      "fields": [
+        {
+          "name": "Companion"
+        }
+      ]
+    },
+    {
+      "type": "kotlinx.serialization.json.JsonObject$Companion",
+      "methods": [
+        {
+          "name": "serializer",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "app.vercors.meta.lib.game.GameVersionListData",
+      "fields": [
+        {
+          "name": "Companion"
+        }
+      ]
+    },
+    {
+      "type": "app.vercors.meta.lib.game.GameVersionListData$Companion",
+      "methods": [
+        {
+          "name": "serializer",
+          "parameterTypes": []
+        }
+      ]
+    }
+  ],
+  "resources": [
+    {
+      "glob": "META-INF/services/ch.qos.logback.classic.spi.Configurator"
+    },
+    {
+      "glob": "META-INF/services/javax.xml.parsers.SAXParserFactory"
+    },
+    {
+      "glob": "META-INF/services/dev.whyoleg.cryptography.providers.jdk.DefaultJdkSecurityProvider"
+    },
+    {
+      "glob": "META-INF/services/java.net.spi.InetAddressResolverProvider"
+    }
+  ]
+}

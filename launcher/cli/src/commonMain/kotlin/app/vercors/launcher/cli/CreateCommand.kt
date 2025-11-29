@@ -5,9 +5,8 @@ import app.vercors.launcher.common.domain.instance.model.Instance
 import app.vercors.launcher.common.domain.instance.model.InstanceModLoader
 import app.vercors.launcher.common.domain.instance.usecase.CreateInstanceUseCase
 import app.vercors.launcher.common.domain.loader.ModLoaderType
-import app.vercors.shared.domain.getOrNull
+import app.vercors.shared.domain.getOrThrow
 import com.github.ajalt.clikt.core.BadParameterValue
-import com.github.ajalt.clikt.core.CliktError
 import com.github.ajalt.clikt.core.Context
 import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.option
@@ -44,9 +43,7 @@ class CreateCommand : VercorsCommandBase("create") {
 
     private suspend fun resolveGameVersion(): String {
         val getGameVersionList = koin.get<GetGameVersionListUseCase>()
-        val versionList = getGameVersionList().getOrNull() ?: run {
-            throw CliktError("Failed to fetch game version list")
-        }
+        val versionList = getGameVersionList().getOrThrow()
         val version = when (gameVersion) {
             LATEST_RELEASE -> versionList.latestRelease
             LATEST_SNAPSHOT -> versionList.latestSnapshot

@@ -69,19 +69,3 @@ dependencies {
 tasks.matching { it.name.startsWith("ksp") && it.name != "kspCommonMainKotlinMetadata" }.configureEach {
     dependsOn("kspCommonMainKotlinMetadata")
 }
-
-tasks {
-    val fatJar = register<Jar>("fatJar") {
-        dependsOn.addAll(listOf("compileJvmMainJava", "compileKotlinJvm", "processJvmMainResources"))
-        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-        manifest { attributes(mapOf("Main-Class" to "app.vercors.launcher.cli.MainKt")) }
-        val sourcesMain = sourceSets["jvmMain"]
-        val contents = configurations["jvmMainRuntimeClasspath"]
-            .map { if (it.isDirectory) it else zipTree(it) } +
-                sourcesMain.output
-        from(contents)
-    }
-    build {
-        dependsOn(fatJar)
-    }
-}

@@ -9,6 +9,8 @@ import de.jensklingenberg.ktorfit.converter.TypeData
 import io.ktor.client.call.*
 import io.ktor.client.plugins.*
 import io.ktor.client.statement.*
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.io.IOException
 import kotlinx.serialization.SerializationException
 
@@ -20,7 +22,12 @@ class ApiResponseConverter : Converter.Factory {
         if (typeData.typeInfo.type == ApiResponse::class)
             object : Converter.SuspendResponseConverter<HttpResponse, ApiResponse<Any>> {
                 override suspend fun convert(result: KtorfitResult): ApiResponse<Any> = when (result) {
-                    is KtorfitResult.Success -> ApiResponse.Success(result.response.body(typeData.typeArgs.first().typeInfo))
+                    is KtorfitResult.Success -> try {
+                        ApiResponse.Success(result.response.body(typeData.typeArgs.first().typeInfo))
+                    } catch (e: Exception) {
+                        currentCoroutineContext().ensureActive()
+                        ApiResponse.Error.UnknownError(e)
+                    }
                     is KtorfitResult.Failure -> when (val e = result.throwable) {
                         is IOException -> ApiResponse.Error.NetworkError(e)
                         is ClientRequestException -> ApiResponse.Error.Http.ClientError(

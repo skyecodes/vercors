@@ -22,6 +22,7 @@ mockk = "1.14.6"
 turbine = "1.2.1"
 ktorfit = "2.6.4"
 cryptography = "0.5.0"
+graalvm = "0.11.3"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -74,3 +75,4 @@ ktor = { id = "io.ktor.plugin", version.ref = "ktor" }
 ktorfit = { id = "de.jensklingenberg.ktorfit", version.ref = "ktorfit" }
 kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+graalvm = { id = "org.graalvm.buildtools.native", version.ref = "graalvm" }

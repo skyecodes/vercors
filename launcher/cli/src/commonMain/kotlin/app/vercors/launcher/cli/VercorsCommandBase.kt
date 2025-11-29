@@ -12,8 +12,10 @@ abstract class VercorsCommandBase(name: String) : SuspendingCliktCommand(name) {
         try {
             execute()
         } catch (e: CliktError) {
+            e.printStackTrace()
             throw e
         } catch (e: Exception) {
+            e.printStackTrace()
             throw CliktError(e.message, e)
         }
     }
