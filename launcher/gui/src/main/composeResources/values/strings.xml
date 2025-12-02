@@ -1,0 +1,11 @@
+<resources>
+    <string name="appTitle">Vercors</string>
+    <string name="minimize">Minimize</string>
+    <string name="maximize">Maximize</string>
+    <string name="close">Close</string>
+    <string name="home">Home</string>
+    <string name="instances">Instances</string>
+    <string name="content">Content</string>
+    <string name="settings">Settings</string>
+    <string name="account">Account</string>
+</resources>
