@@ -12,22 +12,15 @@ import io.ktor.client.request.*
 import org.koin.core.annotation.Property
 import org.koin.core.annotation.Single
 
-
-internal const val MINECRAFT_GAME_ID = 432
-internal const val MODPACK_CLASS_ID = 4471
-internal const val MOD_CLASS_ID = 6
-internal const val RESOURCEPACK_CLASS_ID = 12
-internal const val SHADERPACK_CLASS_ID = 6552
-internal const val WORLD_CLASS_ID = 17
-
 interface CurseForgeApi {
-    @GET("/v1/mods/search")
+    @GET("v1/mods/search")
     suspend fun search(
-        @Query gameId: Int,
-        @Query classId: Int,
-        @Query sortField: CurseForgeProjectSearchSortField,
-        @Query sortOrder: CurseForgeSortOrder,
-        @Query pageSize: Int
+        @Query("gameId") gameId: Int,
+        @Query("classId") classId: Int? = null,
+        @Query("pageSize") pageSize: Int? = null,
+        @Query("searchFilter") searchFilter: String? = null,
+        @Query("sortField") sortField: CurseForgeProjectSearchSortField? = CurseForgeProjectSearchSortField.Featured,
+        @Query("sortOrder") sortOrder: CurseForgeSortOrder? = CurseForgeSortOrder.Desc
     ): CurseForgeProjectSearchResponse
 }
 
@@ -41,6 +34,6 @@ fun provideCurseForgeApi(
             header("x-api-key", curseForgeApiKey)
         }
     })
-    .baseUrl("https://api.curseforge.com")
+    .baseUrl("https://api.curseforge.com/")
     .build()
     .createCurseForgeApi()

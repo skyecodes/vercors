@@ -4,8 +4,8 @@ import kotlinx.serialization.SerialName
 
 enum class CurseForgeSortOrder {
     @SerialName("asc")
-    ASC,
+    Asc,
 
     @SerialName("desc")
-    DESC
+    Desc
 }

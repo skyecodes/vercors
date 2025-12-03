@@ -2,6 +2,7 @@ package app.vercors.meta.backend
 
 import de.jensklingenberg.ktorfit.Ktorfit
 import io.ktor.client.*
+import io.ktor.client.plugins.*
 import io.ktor.client.plugins.cache.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.serialization.kotlinx.json.*
@@ -28,6 +29,9 @@ fun provideHttpClient(json: Json): HttpClient = HttpClient {
         json(json)
     }
     install(HttpCache)
+    install(UserAgent) {
+        agent = "skyecodes/vercors/$VERSION (contact@skye.codes)"
+    }
 }
 
 @Factory

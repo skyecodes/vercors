@@ -1,6 +1,7 @@
 package app.vercors.meta.backend
 
 import app.vercors.meta.backend.game.gameRoutes
+import app.vercors.meta.backend.project.projectRoutes
 import com.ucasoft.ktor.simpleCache.SimpleCache
 import com.ucasoft.ktor.simpleMemoryCache.memoryCache
 import com.ucasoft.ktor.simpleRedisCache.redisCache
@@ -20,16 +21,16 @@ import org.koin.ksp.generated.module
 import org.koin.ktor.plugin.Koin
 import org.koin.ktor.plugin.koin
 
-lateinit var scope: CoroutineScope
+const val VERSION = "0.1.0"
 
 fun main() {
-    scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-    embeddedServer(CIO, port = 8080, host = "0.0.0.0", module = Application::module)
+    val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    embeddedServer(CIO, port = 8080, host = "0.0.0.0", module = { module(scope) })
         .start(wait = true)
     scope.cancel()
 }
 
-fun Application.module() {
+fun Application.module(scope: CoroutineScope) {
     install(Koin) {
         modules(
             MetaBackModule().module,
@@ -48,7 +49,7 @@ fun Application.module() {
         if (cacheHost != null) {
             redisCache {
                 host = cacheHost
-                port = koin().getProperty("CACHE_PORT") ?: 6379
+                port = koin().getProperty<String>("CACHE_PORT")?.toInt() ?: 6379
             }
         } else {
             memoryCache {}
@@ -56,8 +57,7 @@ fun Application.module() {
     }
 
     routing {
-        route("/v1") {
-            gameRoutes()
-        }
+        gameRoutes()
+        projectRoutes()
     }
 }
