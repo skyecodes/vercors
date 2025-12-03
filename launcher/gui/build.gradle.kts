@@ -6,7 +6,6 @@ plugins {
     alias(libs.plugins.ksp)
     alias(libs.plugins.compose.multiplatform)
     alias(libs.plugins.compose.compiler)
-    alias(libs.plugins.compose.hot.reload)
 }
 
 dependencies {

@@ -1,46 +1,50 @@
 [versions]
-androidx-lifecycle = "2.10.0-alpha05"
-androidx-navigation3 = "1.0.0-alpha05"
-compose = "1.10.0-beta02"
-compose-hot-reload = "1.0.0"
+# General
 kotlin = "2.2.21"
-kotlinx-coroutines = "1.10.2"
-kotlinx-serialization = "1.9.0"
-kotlinx-io = "0.8.2"
+coroutines = "1.10.2"
+ksp = "2.3.3"
+cryptography = "0.5.0"
+# Data
+serialization = "1.9.0"
+io = "0.8.2"
 ktor = "3.3.3"
 ktor-simple-cache = "0.55.3"
-logback = "1.5.21"
-clikt = "5.0.3"
-mordant = "3.0.2"
-kfswatch = "1.4.0"
-kotlin-logging = "7.0.13"
-koin = "4.2.0-alpha3"
-koin-annotations = "2.3.2-Beta1"
-ksp = "2.3.3"
-appdirs = "2.0.0"
-mockk = "1.14.6"
-turbine = "1.2.1"
 ktorfit = "2.6.4"
-cryptography = "0.5.0"
-graalvm = "0.11.3"
+kfswatch = "1.4.0"
+appdirs = "2.0.0"
+# GUI
+compose = "1.10.0-rc01"
+lifecycle = "2.10.0-alpha06"
+navigation3 = "1.0.0-alpha06"
 flowmvi = "3.2.1"
 unstyled = "1.49.3"
 lucide = "1.0.0"
 ripple = "1.1.0"
+# CLI
+clikt = "5.0.3"
+mordant = "3.0.2"
+graalvm = "0.11.3"
+# DI
+koin = "4.2.0-alpha3"
+koin-annotations = "2.3.2-Beta1"
+# Logging
+logback = "1.5.21"
+kotlin-logging = "7.0.13"
+# Test
+mockk = "1.14.6"
+turbine = "1.2.1"
 
 [libraries]
-kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
-kotlin-testJunit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
-compose-components-resources = { module = "org.jetbrains.compose.components:components-resources", version.ref = "compose" }
-androidx-lifecycle-viewmodel = { module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "androidx-lifecycle" }
-androidx-lifecycle-runtime = { module = "org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose", version.ref = "androidx-lifecycle" }
-androidx-navigation3-ui = { module = "org.jetbrains.androidx.navigation3:navigation3-ui", version.ref = "androidx-navigation3" }
-kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
-kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }
-kotlinx-coroutines-swing = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-swing", version.ref = "kotlinx-coroutines" }
-kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json-io", version.ref = "kotlinx-serialization" }
-kotlinx-io-core = { module = "org.jetbrains.kotlinx:kotlinx-io-core", version.ref = "kotlinx-io" }
-logback = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
+# General
+kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
+kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
+kotlinx-coroutines-swing = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-swing", version.ref = "coroutines" }
+cryptography-core = { module = "dev.whyoleg.cryptography:cryptography-core", version.ref = "cryptography" }
+cryptography-random = { module = "dev.whyoleg.cryptography:cryptography-random", version.ref = "cryptography" }
+cryptography-provider-optimal = { module = "dev.whyoleg.cryptography:cryptography-provider-optimal", version.ref = "cryptography" }
+# Data
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json-io", version.ref = "serialization" }
+kotlinx-io-core = { module = "org.jetbrains.kotlinx:kotlinx-io-core", version.ref = "io" }
 ktor-server-core = { module = "io.ktor:ktor-server-core", version.ref = "ktor" }
 ktor-server-cio = { module = "io.ktor:ktor-server-cio", version.ref = "ktor" }
 ktor-server-content-negotiation = { module = "io.ktor:ktor-server-content-negotiation", version.ref = "ktor" }
@@ -54,10 +58,24 @@ ktor-client-cio = { module = "io.ktor:ktor-client-cio", version.ref = "ktor" }
 ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }
 ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }
 ktorfit-lib = { module = "de.jensklingenberg.ktorfit:ktorfit-lib-light", version.ref = "ktorfit" }
+kfswatch = { module = "io.github.irgaly.kfswatch:kfswatch", version.ref = "kfswatch" }
+appdirs = { module = "ca.gosyer:kotlin-multiplatform-appdirs", version.ref = "appdirs" }
+# GUI
+compose-components-resources = { module = "org.jetbrains.compose.components:components-resources", version.ref = "compose" }
+androidx-lifecycle-viewmodel = { module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycle" }
+androidx-lifecycle-runtime = { module = "org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycle" }
+androidx-navigation3-ui = { module = "org.jetbrains.androidx.navigation3:navigation3-ui", version.ref = "navigation3" }
+flowmvi-core = { module = "pro.respawn.flowmvi:core", version.ref = "flowmvi" }
+flowmvi-test = { module = "pro.respawn.flowmvi:test", version.ref = "flowmvi" }
+flowmvi-compose = { module = "pro.respawn.flowmvi:compose", version.ref = "flowmvi" }
+flowmvi-android = { module = "pro.respawn.flowmvi:android", version.ref = "flowmvi" }
+composables-composeunstyled = { module = "com.composables:core", version.ref = "unstyled" }
+composables-ripple = { module = "com.composables:ripple-indication", version.ref = "ripple" }
+composables-icons-lucide = { module = "com.composables:icons-lucide", version.ref = "lucide" }
+# CLI
 clikt = { module = "com.github.ajalt.clikt:clikt", version.ref = "clikt" }
 mordant-coroutines = { module = "com.github.ajalt.mordant:mordant-coroutines", version.ref = "mordant" }
-kfswatch = { module = "io.github.irgaly.kfswatch:kfswatch", version.ref = "kfswatch" }
-kotlin-logging = { module = "io.github.oshai:kotlin-logging", version.ref = "kotlin-logging" }
+# DI
 koin-bom = { module = "io.insert-koin:koin-bom", version.ref = "koin" }
 koin-core = { module = "io.insert-koin:koin-core" }
 koin-compose = { module = "io.insert-koin:koin-compose" }
@@ -66,28 +84,26 @@ koin-compose-navigation3 = { module = "io.insert-koin:koin-compose-navigation3" 
 koin-ktor = { module = "io.insert-koin:koin-ktor" }
 koin-annotations = { module = "io.insert-koin:koin-annotations", version.ref = "koin-annotations" }
 koin-ksp-compiler = { module = "io.insert-koin:koin-ksp-compiler", version.ref = "koin-annotations" }
-appdirs = { module = "ca.gosyer:kotlin-multiplatform-appdirs", version.ref = "appdirs" }
+# Logging
+logback = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
+kotlin-logging = { module = "io.github.oshai:kotlin-logging", version.ref = "kotlin-logging" }
+# Test
+kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
+kotlin-testJunit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 turbine = { module = "app.cash.turbine:turbine", version.ref = "turbine" }
-cryptography-core = { module = "dev.whyoleg.cryptography:cryptography-core", version.ref = "cryptography" }
-cryptography-random = { module = "dev.whyoleg.cryptography:cryptography-random", version.ref = "cryptography" }
-cryptography-provider-optimal = { module = "dev.whyoleg.cryptography:cryptography-provider-optimal", version.ref = "cryptography" }
-flowmvi-core = { module = "pro.respawn.flowmvi:core", version.ref = "flowmvi" }
-flowmvi-test = { module = "pro.respawn.flowmvi:test", version.ref = "flowmvi" }
-flowmvi-compose = { module = "pro.respawn.flowmvi:compose", version.ref = "flowmvi" }
-flowmvi-android = { module = "pro.respawn.flowmvi:android", version.ref = "flowmvi" }
-composables-composeunstyled = { module = "com.composables:core", version.ref = "unstyled" }
-composables-ripple = { module = "com.composables:ripple-indication", version.ref = "ripple" }
-composables-icons-lucide = { module = "com.composables:icons-lucide", version.ref = "lucide" }
 
 [plugins]
-compose-multiplatform = { id = "org.jetbrains.compose", version.ref = "compose" }
-compose-hot-reload = { id = "org.jetbrains.compose.hot-reload", version.ref = "compose-hot-reload" }
-compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+# General
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
-ktor = { id = "io.ktor.plugin", version.ref = "ktor" }
-ktorfit = { id = "de.jensklingenberg.ktorfit", version.ref = "ktorfit" }
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+# Data
+serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+ktor = { id = "io.ktor.plugin", version.ref = "ktor" }
+ktorfit = { id = "de.jensklingenberg.ktorfit", version.ref = "ktorfit" }
+# GUI
+compose-multiplatform = { id = "org.jetbrains.compose", version.ref = "compose" }
+compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+# CLI
 graalvm = { id = "org.graalvm.buildtools.native", version.ref = "graalvm" }
