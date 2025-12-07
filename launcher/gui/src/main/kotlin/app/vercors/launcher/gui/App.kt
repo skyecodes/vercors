@@ -1,16 +1,20 @@
 package app.vercors.launcher.gui
 
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.WindowScope
 import androidx.navigation3.ui.NavDisplay
 import app.vercors.shared.ui.AppTheme
 import app.vercors.shared.ui.background
+import app.vercors.shared.ui.backgroundAlt
 import app.vercors.shared.ui.colors
 import com.composeunstyled.theme.Theme
 import org.koin.compose.navigation3.koinEntryProvider
@@ -40,17 +44,21 @@ fun App(
 @Composable
 context(_: WindowScope, _: IntentReceiver<AppIntent>)
 private fun App(state: AppState, isMinimized: Boolean, onWindowEvent: (AppWindowEvent) -> Unit) {
-    AppTheme {
-        Column(
-            modifier = Modifier.fillMaxSize().background(Theme[colors][background])
-        ) {
-            AppTopBar(
-                isMinimized = isMinimized,
-                onWindowEvent = onWindowEvent
-            )
-            Row {
-                AppMenu(state.currentBackStackEntry)
-                AppContent(state.backStack)
+    if (state.guiConfig != null) {
+        AppTheme {
+            Column(
+                modifier = Modifier.fillMaxSize().background(Theme[colors][backgroundAlt])
+            ) {
+                AppTopBar(
+                    canGoBack = state.canGoBack,
+                    canGoNext = state.canGoNext,
+                    isMinimized = isMinimized,
+                    onWindowEvent = onWindowEvent
+                )
+                Row {
+                    AppMenu(state.currentBackStackEntry, state.guiConfig.menuDrawerOpen)
+                    AppContent(state.backStack)
+                }
             }
         }
     }
@@ -62,11 +70,23 @@ context(store: IntentReceiver<AppIntent>)
 private fun AppContent(backStack: List<Any>) {
     val entryProvider = koinEntryProvider()
 
-    NavDisplay(
-        backStack = backStack,
-        onBack = { store.intent(AppIntent.Back) },
-        entryProvider = entryProvider
-    )
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(end = 4.dp, top = 4.dp, bottom = 4.dp)
+            .background(
+                color = Theme[colors][background],
+                shape = RoundedCornerShape(16.dp)
+            )
+            .padding(12.dp)
+    ) {
+        NavDisplay(
+            backStack = backStack,
+            onBack = { store.intent(AppIntent.Back) },
+            entryProvider = entryProvider,
+            transitionSpec = { fadeIn() togetherWith fadeOut() }
+        )
+    }
 }
 
 sealed interface AppWindowEvent {

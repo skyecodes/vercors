@@ -7,5 +7,5 @@ import kotlinx.serialization.Serializable
 data class ModrinthLicense(
     val id: String,
     val name: String,
-    val url: String
+    val url: String? = null
 )

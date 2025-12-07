@@ -1,11 +1,13 @@
 package app.vercors.launcher.gui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.window.WindowDraggableArea
+import androidx.compose.material.ContentAlpha.disabled
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -14,10 +16,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.WindowScope
 import app.vercors.launcher.gui.res.*
-import app.vercors.shared.ui.backgroundAlt
 import app.vercors.shared.ui.colors
 import app.vercors.shared.ui.component.AppButton
 import app.vercors.shared.ui.component.AppIcon
@@ -28,14 +31,19 @@ import com.composables.icons.lucide.*
 import com.composeunstyled.LocalContentColor
 import com.composeunstyled.theme.Theme
 import org.jetbrains.compose.resources.stringResource
+import pro.respawn.flowmvi.api.IntentReceiver
 
 @Composable
-context(windowScope: WindowScope)
-fun AppTopBar(isMinimized: Boolean, onWindowEvent: (AppWindowEvent) -> Unit) {
+context(windowScope: WindowScope, store: IntentReceiver<AppIntent>)
+fun AppTopBar(
+    canGoBack: Boolean,
+    canGoNext: Boolean,
+    isMinimized: Boolean,
+    onWindowEvent: (AppWindowEvent) -> Unit
+) {
     windowScope.WindowDraggableArea {
         Row(
             modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Max)
-                .background(Theme[colors][backgroundAlt])
         ) {
             Row(
                 modifier = Modifier.weight(1f).padding(8.dp),
@@ -47,6 +55,18 @@ fun AppTopBar(isMinimized: Boolean, onWindowEvent: (AppWindowEvent) -> Unit) {
                     contentDescription = stringResource(Res.string.appTitle)
                 )
                 AppText(stringResource(Res.string.appTitle))
+                AppNavButton(
+                    imageVector = Lucide.ChevronLeft,
+                    contentDescription = stringResource(Res.string.back),
+                    enabled = canGoBack,
+                    onClick = { store.intent(AppIntent.Back) }
+                )
+                AppNavButton(
+                    imageVector = Lucide.ChevronRight,
+                    contentDescription = stringResource(Res.string.next),
+                    enabled = canGoNext,
+                    onClick = { store.intent(AppIntent.Next) }
+                )
                 Spacer(Modifier.weight(1f))
             }
             Row(
@@ -80,6 +100,27 @@ fun AppTopBar(isMinimized: Boolean, onWindowEvent: (AppWindowEvent) -> Unit) {
 }
 
 @Composable
+private fun AppNavButton(
+    imageVector: ImageVector,
+    contentDescription: String,
+    enabled: Boolean,
+    onClick: () -> Unit
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    AppIcon(
+        imageVector = imageVector,
+        contentDescription = contentDescription,
+        modifier = Modifier.size(20.dp).clickable(
+            interactionSource = interactionSource,
+            enabled = enabled,
+            onClick = onClick,
+            indication = null
+        ) then (if (enabled) Modifier.pointerHoverIcon(PointerIcon.Hand) else Modifier),
+        tint = if (enabled) LocalContentColor.current else LocalContentColor.current.copy(alpha = disabled)
+    )
+}
+
+@Composable
 private fun AppWindowButton(
     onClick: () -> Unit,
     imageVector: ImageVector,
@@ -92,7 +133,6 @@ private fun AppWindowButton(
         onClick = onClick,
         shape = RectangleShape,
         contentPadding = PaddingValues.Zero
-
     ) {
         AppIcon(
             imageVector = imageVector,

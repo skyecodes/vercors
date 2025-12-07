@@ -49,6 +49,9 @@ class ProjectService(
         limit = limit,
     )
 
+    suspend fun getProjectDetails(platformId: String, projectId: String) =
+        getPlatformService(platformId).getProject(projectId)
+
     private fun getPlatformService(platformId: String): PlatformServiceBase =
         requireNotNull(platformServices[platformId]) { "Unknown platform: $platformId" }
 }

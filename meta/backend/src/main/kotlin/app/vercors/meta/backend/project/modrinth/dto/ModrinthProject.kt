@@ -7,50 +7,53 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class ModrinthProject(
     @SerialName("additional_categories")
-    val additionalCategories: List<String>,
-    val approved: String,
-    val body: String,
+    val additionalCategories: List<String> = emptyList(),
+    val approved: ModrinthInstant? = null,
+    val body: String? = null,
+    @SerialName("body_url")
+    val bodyUrl: String? = null,
     val categories: List<String>,
     @SerialName("client_side")
-    val clientSide: String,
-    val color: Int,
+    val clientSide: ModrinthProjectSideSupport = ModrinthProjectSideSupport.Unknown,
+    val color: Int? = null,
     val description: String,
     @SerialName("discord_url")
-    val discordUrl: String,
+    val discordUrl: String? = null,
     @SerialName("donation_urls")
-    val donationUrls: List<ModrinthProjectDonationUrl>,
+    val donationUrls: List<ModrinthProjectDonationUrl> = emptyList(),
     val downloads: Int,
     val followers: Int,
-    val gallery: List<ModrinthProjectGallery>,
+    val gallery: List<ModrinthProjectGallery> = emptyList(),
     @SerialName("game_versions")
-    val gameVersions: List<String>,
+    val gameVersions: List<String> = emptyList(),
     @SerialName("icon_url")
-    val iconUrl: String,
+    val iconUrl: String? = null,
     val id: String,
     @SerialName("issues_url")
-    val issuesUrl: String,
-    val license: ModrinthLicense,
-    val loaders: List<String>,
+    val issuesUrl: String? = null,
+    val license: ModrinthLicense? = null,
+    val loaders: List<String> = emptyList(),
+    val moderatorMessage: ModrinthModeratorMessage? = null,
     @SerialName("monetization_status")
-    val monetizationStatus: String,
+    val monetizationStatus: ModrinthProjectMonetizationStatus? = null,
     @SerialName("project_type")
-    val projectType: String,
-    val published: String,
-    val queued: String,
+    val projectType: ModrinthProjectType,
+    val published: ModrinthInstant,
+    val queued: ModrinthInstant? = null,
     @SerialName("requested_status")
-    val requestedStatus: String,
+    val requestedStatus: ModrinthProjectStatus? = null,
     @SerialName("server_side")
-    val serverSide: String,
+    val serverSide: ModrinthProjectSideSupport = ModrinthProjectSideSupport.Unknown,
     val slug: String,
     @SerialName("source_url")
-    val sourceUrl: String,
-    val status: String,
+    val sourceUrl: String? = null,
+    val status: ModrinthProjectStatus? = null,
     val team: String,
     @SerialName("thread_id")
-    val threadId: String,
+    val threadId: String? = null,
     val title: String,
-    val updated: String,
-    val versions: List<String>,
+    val updated: ModrinthInstant,
+    val versions: List<String> = emptyList(),
     @SerialName("wiki_url")
-    val wikiUrl: String
+    val wikiUrl: String? = null
 )

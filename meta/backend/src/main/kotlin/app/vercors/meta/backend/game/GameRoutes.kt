@@ -19,7 +19,7 @@ fun Route.gameRoutes() {
         }
 
         cacheOutput {
-            route("/versions") {
+            route("/version") {
                 get {
                     call.respond(service.getVersionList())
                 }

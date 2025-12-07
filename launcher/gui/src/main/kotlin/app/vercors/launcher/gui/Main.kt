@@ -1,30 +1,49 @@
 package app.vercors.launcher.gui
 
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.*
+import app.vercors.launcher.common.data.AppPath
 import app.vercors.launcher.common.data.CommonDataModule
 import app.vercors.launcher.common.domain.CommonDomainModule
 import app.vercors.launcher.gui.account.AccountListRoute
 import app.vercors.launcher.gui.config.ConfigurationRoute
+import app.vercors.launcher.gui.home.HomeContainer
 import app.vercors.launcher.gui.home.HomeRoute
+import app.vercors.launcher.gui.home.HomeScreen
 import app.vercors.launcher.gui.instance.details.InstanceDetailsRoute
 import app.vercors.launcher.gui.instance.list.InstanceListContainer
 import app.vercors.launcher.gui.instance.list.InstanceListRoute
 import app.vercors.launcher.gui.instance.list.InstanceListScreen
 import app.vercors.launcher.gui.project.list.ProjectListRoute
-import app.vercors.shared.ui.*
+import app.vercors.shared.data.SharedDataModule
+import app.vercors.shared.domain.SharedDomainModule
+import app.vercors.shared.ui.container
+import app.vercors.shared.ui.label
+import app.vercors.shared.ui.subtitle
+import app.vercors.shared.ui.textStyles
+import coil3.ImageLoader
+import coil3.compose.setSingletonImageLoaderFactory
+import coil3.disk.DiskCache
 import com.composeunstyled.Text
 import com.composeunstyled.theme.Theme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.io.files.Path
+import okio.Path.Companion.toPath
 import org.koin.compose.KoinIsolatedContext
+import org.koin.compose.getKoin
+import org.koin.core.Koin
+import org.koin.core.annotation.ComponentScan
 import org.koin.core.annotation.KoinApplication
 import org.koin.core.annotation.KoinExperimentalAPI
+import org.koin.core.annotation.Module
 import org.koin.core.module.dsl.new
+import org.koin.core.qualifier.qualifier
 import org.koin.dsl.module
 import org.koin.dsl.navigation3.navigation
 import org.koin.ksp.generated.startKoin
@@ -33,20 +52,36 @@ import java.awt.Dimension
 @OptIn(ExperimentalComposeUiApi::class)
 fun main() {
     val coroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-    val koin = GUIApplication.startKoin { modules(AppModule, module { single { coroutineScope } }) }
+    val koinApplication = GUIApplication.startKoin { modules(AppModule, module { single { coroutineScope } }) }
+    initializeLauncher(koinApplication.koin)
 
     application(exitProcessOnExit = false) {
         val windowState = rememberWindowState()
         windowState.size = DpSize(1280.dp, 720.dp)
 
-        KoinIsolatedContext(koin) {
+        KoinIsolatedContext(koinApplication) {
+            val appPath = getKoin().get<Path>(qualifier<AppPath>())
+
+            setSingletonImageLoaderFactory {
+                ImageLoader.Builder(it)
+                    .diskCache(
+                        DiskCache.Builder()
+                            .directory(appPath.toString().toPath().resolve("cache").resolve("coil"))
+                            .build()
+                    )
+                    .build()
+            }
+
             Window(
                 state = windowState,
                 onCloseRequest = ::exitApplication,
                 decoration = WindowDecoration.Undecorated(),
                 title = "vercors",
             ) {
-                window.minimumSize = Dimension(960, 540)
+                LaunchedEffect(Unit) {
+                    window.minimumSize = Dimension(960, 540)
+                }
+
                 App(
                     container = container(),
                     onWindowEvent = {
@@ -68,16 +103,23 @@ fun main() {
     coroutineScope.cancel()
 }
 
-@KoinApplication(modules = [CommonDomainModule::class, CommonDataModule::class])
+@Module
+@ComponentScan
+class GUIModule
+
+@KoinApplication(modules = [GUIModule::class, CommonDomainModule::class, CommonDataModule::class, SharedDomainModule::class, SharedDataModule::class])
 object GUIApplication
 
 @OptIn(KoinExperimentalAPI::class)
-val AppModule = module {
+private val AppModule = module {
     container { new(::AppContainer) }
-    container { new(::InstanceListContainer) }
+    container { new(::HomeContainer) }
     navigation<HomeRoute> {
-        Text("Home", style = Theme[textStyles][title])
+        HomeScreen(
+            container = container(),
+        )
     }
+    container { new(::InstanceListContainer) }
     navigation<InstanceListRoute> {
         InstanceListScreen(
             container = container(),
@@ -96,4 +138,10 @@ val AppModule = module {
     navigation<AccountListRoute> {
         Text("Account", style = Theme[textStyles][label])
     }
+}
+
+fun initializeLauncher(koin: Koin) {
+    val appPath = koin.get<Path>(qualifier<AppPath>())
+    val logDir = Path(appPath, "logs")
+    System.setProperty("app.vercors.logDir", logDir.toString())
 }

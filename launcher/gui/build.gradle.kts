@@ -12,10 +12,12 @@ dependencies {
     implementation(projects.launcher.common.domain)
     implementation(projects.launcher.common.data)
     implementation(projects.shared.domain)
+    implementation(projects.shared.data)
     implementation(projects.shared.ui)
     implementation(compose.desktop.currentOs)
     implementation(libs.compose.components.resources)
     implementation(libs.kotlinx.coroutines.swing)
+    implementation(libs.kotlinx.datetime)
     implementation(project.dependencies.platform(libs.koin.bom))
     implementation(libs.koin.core)
     implementation(libs.koin.compose)
@@ -32,6 +34,16 @@ dependencies {
     implementation(libs.flowmvi.core)
     implementation(libs.flowmvi.compose)
     implementation(libs.flowmvi.android)
+    implementation(libs.coil.compose)
+    implementation(libs.coil.network.ktor3)
+    implementation(libs.flowmvi.android)
+    implementation(libs.kotlinx.serialization.json)
+    implementation(libs.kotlinx.io.core)
+    implementation(libs.appdirs)
+    implementation(libs.kfswatch)
+    implementation(libs.ktor.client.cio)
+    implementation(libs.human.readable)
+    implementation(libs.kotlin.logging)
     ksp(libs.koin.ksp.compiler)
     testImplementation(libs.kotlin.test)
     testImplementation(libs.flowmvi.test)
@@ -39,7 +51,10 @@ dependencies {
 
 kotlin {
     compilerOptions {
-        freeCompilerArgs.add("-Xcontext-parameters")
+        freeCompilerArgs.addAll(
+            "-Xcontext-parameters",
+            "-opt-in=kotlin.time.ExperimentalTime"
+        )
     }
 }
 

@@ -1,10 +1,9 @@
 package app.vercors.meta.backend.project.curseforge
 
-import app.vercors.meta.backend.project.curseforge.dto.CurseForgeProjectSearchResponse
-import app.vercors.meta.backend.project.curseforge.dto.CurseForgeProjectSearchSortField
-import app.vercors.meta.backend.project.curseforge.dto.CurseForgeSortOrder
+import app.vercors.meta.backend.project.curseforge.dto.*
 import de.jensklingenberg.ktorfit.Ktorfit
 import de.jensklingenberg.ktorfit.http.GET
+import de.jensklingenberg.ktorfit.http.Path
 import de.jensklingenberg.ktorfit.http.Query
 import io.ktor.client.*
 import io.ktor.client.plugins.*
@@ -22,6 +21,9 @@ interface CurseForgeApi {
         @Query("sortField") sortField: CurseForgeProjectSearchSortField? = CurseForgeProjectSearchSortField.Featured,
         @Query("sortOrder") sortOrder: CurseForgeSortOrder? = CurseForgeSortOrder.Desc
     ): CurseForgeProjectSearchResponse
+
+    @GET("v1/mods/{projectId}")
+    suspend fun getProject(@Path("projectId") projectId: String): CurseForgeResponse<CurseForgeProject>
 }
 
 @Single

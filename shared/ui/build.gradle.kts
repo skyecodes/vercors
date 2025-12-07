@@ -20,6 +20,7 @@ kotlin {
             implementation(libs.flowmvi.core)
             implementation(libs.flowmvi.compose)
             implementation(libs.flowmvi.android)
+            implementation(libs.kotlin.logging)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

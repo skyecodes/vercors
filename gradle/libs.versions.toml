@@ -1,15 +1,17 @@
 [versions]
 # General
 kotlin = "2.2.21"
-coroutines = "1.10.2"
 ksp = "2.3.3"
+coroutines = "1.10.2"
+datetime = "0.7.1"
 cryptography = "0.5.0"
+human-readable = "1.12.1"
 # Data
 serialization = "1.9.0"
 io = "0.8.2"
 ktor = "3.3.3"
 ktor-simple-cache = "0.55.3"
-ktorfit = "2.6.4"
+ktorfit = "2.6.5"
 kfswatch = "1.4.0"
 appdirs = "2.0.0"
 # GUI
@@ -20,6 +22,7 @@ flowmvi = "3.2.1"
 unstyled = "1.49.3"
 lucide = "1.0.0"
 ripple = "1.1.0"
+coil = "3.3.0"
 # CLI
 clikt = "5.0.3"
 mordant = "3.0.2"
@@ -39,9 +42,11 @@ turbine = "1.2.1"
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
 kotlinx-coroutines-swing = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-swing", version.ref = "coroutines" }
+kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "datetime" }
 cryptography-core = { module = "dev.whyoleg.cryptography:cryptography-core", version.ref = "cryptography" }
 cryptography-random = { module = "dev.whyoleg.cryptography:cryptography-random", version.ref = "cryptography" }
 cryptography-provider-optimal = { module = "dev.whyoleg.cryptography:cryptography-provider-optimal", version.ref = "cryptography" }
+human-readable = { module = "nl.jacobras:Human-Readable", version.ref = "human-readable" }
 # Data
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json-io", version.ref = "serialization" }
 kotlinx-io-core = { module = "org.jetbrains.kotlinx:kotlinx-io-core", version.ref = "io" }
@@ -72,6 +77,8 @@ flowmvi-android = { module = "pro.respawn.flowmvi:android", version.ref = "flowm
 composables-composeunstyled = { module = "com.composables:core", version.ref = "unstyled" }
 composables-ripple = { module = "com.composables:ripple-indication", version.ref = "ripple" }
 composables-icons-lucide = { module = "com.composables:icons-lucide", version.ref = "lucide" }
+coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil" }
+coil-network-ktor3 = { module = "io.coil-kt.coil3:coil-network-ktor3", version.ref = "coil" }
 # CLI
 clikt = { module = "com.github.ajalt.clikt:clikt", version.ref = "clikt" }
 mordant-coroutines = { module = "com.github.ajalt.mordant:mordant-coroutines", version.ref = "mordant" }

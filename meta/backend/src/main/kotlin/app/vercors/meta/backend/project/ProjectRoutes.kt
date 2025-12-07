@@ -1,43 +1,67 @@
 package app.vercors.meta.backend.project
 
-import com.ucasoft.ktor.simpleCache.cacheOutput
+import app.vercors.meta.backend.cache
+import app.vercors.meta.backend.getValue
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import io.ktor.server.util.*
 import org.koin.ktor.ext.inject
 import kotlin.time.Duration.Companion.hours
+import kotlin.time.Duration.Companion.minutes
 
 fun Route.projectRoutes() {
     val service by inject<ProjectService>()
 
-    route("/project") {
-        cacheOutput(invalidateAt = 24.hours) {
-            route("/platform") {
-                get {
-                    call.respond(service.getPlatformList())
-                }
+    route("/platform") {
+        getPlatformList(service)
 
-                route("/{platformId}") {
+        route("/{platformId}") {
+            getPlatformDetails(service)
 
-                    get {
-                        val platformId = call.pathParameters.getOrFail("platformId")
-                        call.respond(service.getPlatformDetails(platformId))
-                    }
-
-                    route("/featured") {
-                        get {
-                            val platformId = call.pathParameters.getOrFail("platformId")
-                            call.respond(service.getFeaturedProjectList(platformId))
-                        }
-                    }
-                }
-            }
-            route("/type") {
-                get {
-                    call.respond(service.getProjectTypeList())
-                }
+            route("/featured-projects") {
+                getFeaturedProjectList(service)
             }
 
+            route("/project") {
+                route("/{projectId}") {
+                    getProjectDetails(service)
+                }
+            }
+        }
+    }
+}
+
+private fun Route.getPlatformList(service: ProjectService) {
+    cache(24.hours) {
+        get {
+            call.respond(service.getPlatformList())
+        }
+    }
+}
+
+private fun Route.getPlatformDetails(service: ProjectService) {
+    cache(24.hours) {
+        get {
+            val platformId by call.pathParameters
+            call.respond(service.getPlatformDetails(platformId))
+        }
+    }
+}
+
+private fun Route.getFeaturedProjectList(service: ProjectService) {
+    cache(24.hours) {
+        get {
+            val platformId by call.pathParameters
+            call.respond(service.getFeaturedProjectList(platformId))
+        }
+    }
+}
+
+private fun Route.getProjectDetails(service: ProjectService) {
+    cache(1.minutes) {
+        get {
+            val platformId by call.pathParameters
+            val projectId by call.pathParameters
+            call.respond(service.getProjectDetails(platformId, projectId))
         }
     }
 }

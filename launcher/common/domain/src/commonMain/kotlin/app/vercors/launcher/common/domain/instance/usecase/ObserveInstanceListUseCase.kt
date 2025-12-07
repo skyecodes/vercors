@@ -6,7 +6,7 @@ import app.vercors.shared.domain.ResourceStateFlow
 import org.koin.core.annotation.Factory
 
 @Factory
-class GetInstanceListUseCase(
+class ObserveInstanceListUseCase(
     private val instanceRepository: InstanceRepository
 ) {
     operator fun invoke(): ResourceStateFlow<List<Instance>> = instanceRepository.instances

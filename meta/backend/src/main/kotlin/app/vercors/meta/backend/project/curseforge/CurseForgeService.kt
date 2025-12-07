@@ -2,6 +2,7 @@ package app.vercors.meta.backend.project.curseforge
 
 import app.vercors.meta.backend.project.PlatformServiceBase
 import app.vercors.meta.lib.project.PlatformData
+import app.vercors.meta.lib.project.ProjectData
 import app.vercors.meta.lib.project.ProjectTypeData
 import org.koin.core.annotation.Single
 
@@ -11,12 +12,14 @@ internal const val MODPACK_CLASS_ID = 4471
 internal const val RESOURCEPACK_CLASS_ID = 12
 internal const val SHADERPACK_CLASS_ID = 6552
 
+internal const val CURSEFORGE_PLATFORM_ID = "curseforge"
+
 @Single
 class CurseForgeService(
     private val api: CurseForgeApi
 ) : PlatformServiceBase {
     override val info: PlatformData = PlatformData(
-        id = "curseforge",
+        id = CURSEFORGE_PLATFORM_ID,
         name = "CurseForge",
         baseUrl = "https://www.curseforge.com/minecraft"
     )
@@ -31,6 +34,6 @@ class CurseForgeService(
         searchFilter = query,
         pageSize = limit
     ).convert()
+
+    override suspend fun getProject(projectId: String): ProjectData = api.getProject(projectId).data.convert()
 }
-
-

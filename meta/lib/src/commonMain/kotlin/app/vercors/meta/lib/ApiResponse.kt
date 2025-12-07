@@ -32,7 +32,12 @@ sealed interface ApiResponse<out T> {
     }
 
     fun toResult(): Result<T> = when (this) {
-        is Error -> Result.Error(throwable)
         is Success -> Result.Success(data)
+        is Error -> Result.Error(throwable)
+    }
+
+    fun <U> map(mapper: (T) -> U): ApiResponse<U> = when (this) {
+        is Success -> Success(mapper(data))
+        is Error -> this
     }
 }

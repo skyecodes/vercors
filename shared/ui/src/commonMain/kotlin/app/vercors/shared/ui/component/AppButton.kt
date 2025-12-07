@@ -34,14 +34,14 @@ fun AppButton(
     shape: Shape = RoundedCornerShape(8.dp),
     backgroundColor: Color = Color.Unspecified,
     contentColor: Color = LocalContentColor.current,
-    contentPadding: PaddingValues = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+    contentPadding: PaddingValues = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
     borderColor: Color = Color.Unspecified,
     borderWidth: Dp = 0.dp,
     modifier: Modifier = Modifier,
     role: Role = Role.Button,
     indication: Indication? = LocalIndication.current,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
-    horizontalArrangement: Arrangement.Horizontal = Arrangement.Center,
+    horizontalArrangement: Arrangement.Horizontal = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
     verticalAlignment: Alignment.Vertical = Alignment.CenterVertically,
     content: @Composable (RowScope.() -> Unit)
 ) {

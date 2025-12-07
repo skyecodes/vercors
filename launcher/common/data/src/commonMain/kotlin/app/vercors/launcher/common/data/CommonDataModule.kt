@@ -72,12 +72,15 @@ internal fun provideDirectoryWatcher(
 
 @Single
 internal fun provideHttpClient(
-    json: Json
+    json: Json,
+    @AppPath appPath: Path
 ): HttpClient = HttpClient {
     install(ContentNegotiation) {
         json(json)
     }
-    install(HttpCache)
+    install(HttpCache) {
+        platformHttpCache(appPath)
+    }
     install(HttpRequestRetry)
 }
 

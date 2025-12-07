@@ -9,13 +9,12 @@ sealed interface Result<out T> {
     }
 }
 
-fun <T, U> Result<T>.map(transform: (T) -> U): Result<U> = when (this) {
+inline fun <T, U> Result<T>.map(transform: (T) -> U): Result<U> = when (this) {
     is Result.Success -> try {
         Result.Success(transform(data))
     } catch (e: Exception) {
         Result.Error(e)
     }
-
     is Result.Error -> this
 }
 
@@ -29,10 +28,6 @@ fun <T> Result<T>.getOrThrow(): T = when (this) {
     is Result.Error -> throw throwable
 }
 
-fun <T> runResult(block: () -> T): Result<T> = runCatching(block)
-    .map { Result.Success(it) }
-    .getOrElse { Result.Error(it) }
-
-suspend fun <T> suspendRunResult(block: suspend () -> T): Result<T> = runCatching { block() }
+inline fun <T> runResult(block: () -> T): Result<T> = runCatching(block)
     .map { Result.Success(it) }
     .getOrElse { Result.Error(it) }

@@ -23,7 +23,8 @@ fun <T> MutableResourceStateFlow<T>.asResourceStateFlow(
     onStart: suspend FlowCollector<Resource<T>>.() -> Unit = {},
     onEach: suspend (Resource<T>) -> Unit = {},
     onCompletion: suspend FlowCollector<Resource<T>>.(cause: Throwable?) -> Unit = {},
-): ResourceStateFlow<T> = onStart(onStart)
+): ResourceStateFlow<T> = this
+    .onStart(onStart)
     .onEach(onEach)
     .onCompletion(onCompletion)
     .stateIn(coroutineScope, SharingStarted.WhileSubscribed(5000), value)

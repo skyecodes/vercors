@@ -1,7 +1,9 @@
 package app.vercors.meta.backend.project.modrinth
 
+import app.vercors.meta.backend.project.modrinth.dto.ModrinthProject
 import app.vercors.meta.backend.project.modrinth.dto.ModrinthProjectResult
 import app.vercors.meta.backend.project.modrinth.dto.ModrinthProjectSearchResult
+import app.vercors.meta.lib.project.BriefProjectData
 import app.vercors.meta.lib.project.ProjectData
 import app.vercors.meta.lib.project.ProjectSearchResponseData
 import app.vercors.meta.lib.project.ProjectTypeData
@@ -33,12 +35,25 @@ internal fun ModrinthProjectSearchResult.convert(): ProjectSearchResponseData = 
     results = hits.map { it.convert() }
 )
 
-internal fun ModrinthProjectResult.convert(): ProjectData = ProjectData(
+internal fun ModrinthProjectResult.convert(): BriefProjectData = BriefProjectData(
     id = projectId,
+    platform = MODRINTH_PLATFORM_ID,
     name = title,
     description = description,
     author = author,
     url = "https://modrinth.com/project/$projectId",
+    downloads = downloads,
+    lastUpdated = dateModified,
     logoUrl = iconUrl,
     imageUrl = featuredGallery
+)
+
+internal fun ModrinthProject.convert(): ProjectData = ProjectData(
+    id = id,
+    platform = MODRINTH_PLATFORM_ID,
+    name = title,
+    description = description,
+    body = body,
+    url = "https://modrinth.com/project/$id",
+    logoUrl = iconUrl
 )

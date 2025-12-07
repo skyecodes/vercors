@@ -4,5 +4,5 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class ProjectSearchResponseData(
-    val results: List<ProjectData>
+    val results: List<BriefProjectData>
 )
