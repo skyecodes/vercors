@@ -2,6 +2,7 @@ package app.vercors.launcher.gui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
@@ -41,7 +42,16 @@ fun AppTopBar(
     isMinimized: Boolean,
     onWindowEvent: (AppWindowEvent) -> Unit
 ) {
-    windowScope.WindowDraggableArea {
+    val interactionSource = remember { MutableInteractionSource() }
+
+    windowScope.WindowDraggableArea(
+        modifier = Modifier.combinedClickable(
+            interactionSource = interactionSource,
+            indication = null,
+            onDoubleClick = { onWindowEvent(AppWindowEvent.Maximize) },
+            onClick = {}
+        )
+    ) {
         Row(
             modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Max)
         ) {

@@ -6,11 +6,6 @@ import kotlinx.serialization.Serializable
 data class GameVersionListData(
     val latestRelease: String,
     val latestSnapshot: String,
-    val versions: List<Version>
+    val versions: List<BriefGameVersionData>
 ) {
-    @Serializable
-    data class Version(
-        val id: String,
-        val type: GameVersionTypeData,
-    )
 }

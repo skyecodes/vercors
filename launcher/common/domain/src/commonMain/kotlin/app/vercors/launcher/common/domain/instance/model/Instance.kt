@@ -7,7 +7,7 @@ import kotlin.time.Instant
 
 data class Instance(
     val name: String,
-    val id: String = name.toSlug(),
+    val id: InstanceId = name.toSlug(),
     val gameVersion: String,
     val modLoader: InstanceModLoader? = null,
     val modpackInfo: InstanceModpackInfo? = null,
@@ -19,3 +19,5 @@ data class Instance(
     val loaderName: String get() = modLoader?.type?.name ?: "Vanilla"
     val typeName: String get() = modpackInfo?.platform?.name ?: "Custom"
 }
+
+typealias InstanceId = String

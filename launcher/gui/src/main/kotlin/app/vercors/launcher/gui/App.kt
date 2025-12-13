@@ -7,11 +7,16 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.WindowScope
 import androidx.navigation3.ui.NavDisplay
+import app.vercors.launcher.gui.navigation.LocalNavigator
+import app.vercors.launcher.gui.navigation.Navigator
+import app.vercors.launcher.gui.navigation.Route
 import app.vercors.shared.ui.AppTheme
 import app.vercors.shared.ui.background
 import app.vercors.shared.ui.backgroundAlt
@@ -34,11 +39,30 @@ fun App(
             else -> {}
         }
     }
-    App(
-        state = state,
-        isMinimized = isMinimized,
-        onWindowEvent = onWindowEvent
-    )
+
+    val navigator = remember {
+        object : Navigator {
+            override fun navigateTo(route: Route) {
+                intent(AppIntent.Navigate(route))
+            }
+
+            override fun navigateBack() {
+                intent(AppIntent.Back)
+            }
+
+            override fun navigateNext() {
+                intent(AppIntent.Next)
+            }
+        }
+    }
+
+    CompositionLocalProvider(LocalNavigator provides navigator) {
+        App(
+            state = state,
+            isMinimized = isMinimized,
+            onWindowEvent = onWindowEvent
+        )
+    }
 }
 
 @Composable

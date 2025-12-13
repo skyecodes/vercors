@@ -21,7 +21,7 @@ import pro.respawn.flowmvi.api.*
 inline fun <reified T : Container<S, I, A>, S : MVIState, I : MVIIntent, A : MVIAction> Module.container(
     crossinline definition: Definition<T>,
 ) = viewModel(qualifier = qualifier<T>()) { params ->
-    ContainerViewModel<T, _, _, _>(container = definition(params))
+    ContainerViewModel(container = definition(params))
 }
 
 @FlowMVIDSL

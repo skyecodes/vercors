@@ -21,7 +21,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
@@ -30,22 +29,21 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import app.vercors.launcher.common.domain.instance.model.InstanceId
 import app.vercors.launcher.gui.res.*
+import app.vercors.shared.domain.project.model.ProjectId
 import app.vercors.shared.ui.*
 import app.vercors.shared.ui.component.AppButton
 import app.vercors.shared.ui.component.AppIcon
 import app.vercors.shared.ui.component.AppText
-import coil3.compose.AsyncImage
+import coil3.compose.rememberAsyncImagePainter
 import com.composables.icons.lucide.Calendar
 import com.composables.icons.lucide.Download
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Plus
 import com.composeunstyled.Text
 import com.composeunstyled.theme.Theme
-import kotlinx.datetime.LocalDate
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.format
-import kotlinx.datetime.toLocalDateTime
+import nl.jacobras.humanreadable.HumanReadable
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.imageResource
 import org.jetbrains.compose.resources.stringResource
@@ -55,10 +53,15 @@ import pro.respawn.flowmvi.compose.dsl.subscribe
 @Composable
 fun HomeScreen(
     container: HomeContainer,
+    navigateToCreateInstance: () -> Unit,
+    navigateToProjectDetails: (ProjectId) -> Unit,
+    navigateToInstanceDetails: (InstanceId) -> Unit,
 ) = with(container.store) {
     val state by subscribe { action ->
         when (action) {
-            else -> {}
+            HomeAction.NavigateToCreateInstance -> navigateToCreateInstance()
+            is HomeAction.NavigateToInstanceDetails -> navigateToInstanceDetails(action.instanceId)
+            is HomeAction.NavigateToProjectDetails -> navigateToProjectDetails(action.projectId)
         }
     }
 
@@ -169,12 +172,11 @@ private fun HomeProjectCard(project: BriefProjectView) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            AsyncImage(
-                model = project.logoUrl,
+            Image(
+                painter = rememberAsyncImagePainter(project.logoUrl),
                 contentDescription = project.name,
                 modifier = Modifier.size(36.dp).clip(RoundedCornerShape(4.dp)),
-                contentScale = ContentScale.Crop,
-                filterQuality = FilterQuality.High
+                contentScale = ContentScale.Crop
             )
             Column {
                 AppText(
@@ -195,8 +197,8 @@ private fun HomeProjectCard(project: BriefProjectView) {
             val blurRadius by animateDpAsState(if (isHovered) 4.dp else 0.dp)
 
             project.imageUrl?.let {
-                AsyncImage(
-                    model = it,
+                Image(
+                    painter = rememberAsyncImagePainter(it),
                     contentDescription = project.name,
                     modifier = Modifier.fillMaxSize().blur(blurRadius),
                     contentScale = ContentScale.Crop
@@ -210,7 +212,6 @@ private fun HomeProjectCard(project: BriefProjectView) {
 
             val gradientBackground = arrayOf(
                 0.0f to Theme[colors][surface],
-                0.2f to Theme[colors][surface],
                 1f to Theme[colors][surface].copy(alpha = 0.7f)
             )
 
@@ -233,11 +234,11 @@ private fun HomeProjectCard(project: BriefProjectView) {
             ) {
                 HomeProjectChip(
                     icon = Lucide.Download,
-                    text = project.downloads.toString()
+                    text = HumanReadable.abbreviation(project.downloads, decimals = 1)
                 )
                 HomeProjectChip(
                     icon = Lucide.Calendar,
-                    text = project.lastUpdated.toLocalDateTime(TimeZone.currentSystemDefault()).date.format(LocalDate.Formats.ISO)
+                    text = HumanReadable.timeAgo(project.lastUpdated)
                 )
             }
         }

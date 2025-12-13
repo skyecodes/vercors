@@ -1,6 +1,7 @@
 package app.vercors.meta.backend.game
 
 import app.vercors.meta.backend.game.mojang.dto.*
+import app.vercors.meta.lib.game.BriefGameVersionData
 import app.vercors.meta.lib.game.GameVersionDetailsData
 import app.vercors.meta.lib.game.GameVersionListData
 import app.vercors.meta.lib.game.GameVersionTypeData
@@ -10,7 +11,7 @@ internal fun MojangVersionManifest.convert(): GameVersionListData = GameVersionL
     latestRelease = latest.release,
     latestSnapshot = latest.snapshot,
     versions = versions.sortedBy { it.releaseTime }.reversed().map {
-        GameVersionListData.Version(
+        BriefGameVersionData(
             id = it.id,
             type = it.type.convert(),
         )

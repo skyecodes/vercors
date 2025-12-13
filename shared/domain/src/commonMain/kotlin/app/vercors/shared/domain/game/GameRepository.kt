@@ -1,8 +1,8 @@
-package app.vercors.launcher.common.domain.game
+package app.vercors.shared.domain.game
 
-import app.vercors.launcher.common.domain.game.model.GameVersionDetails
-import app.vercors.launcher.common.domain.game.model.GameVersionList
 import app.vercors.shared.domain.Result
+import app.vercors.shared.domain.game.model.GameVersionDetails
+import app.vercors.shared.domain.game.model.GameVersionList
 
 interface GameRepository {
     suspend fun getVersionList(): Result<GameVersionList>

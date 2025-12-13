@@ -4,6 +4,7 @@ import app.vercors.launcher.gui.config.model.GuiConfiguration
 import app.vercors.launcher.gui.config.usecase.ObserveGuiConfigurationUseCase
 import app.vercors.launcher.gui.config.usecase.UpdateGuiConfigurationUseCase
 import app.vercors.launcher.gui.home.HomeRoute
+import app.vercors.launcher.gui.navigation.Route
 import app.vercors.shared.domain.getOrNull
 import app.vercors.shared.ui.configureWithLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -23,25 +24,22 @@ class AppContainer(
     private val updateGuiConfiguration: UpdateGuiConfigurationUseCase,
 ) : Container<AppState, AppIntent, AppAction> {
     override val store = store(initial = AppState()) {
-        configureWithLogger(logger) {
-            debuggable = true
-            name = "AppContainer"
-        }
+        configureWithLogger(logger)
 
         reduce { intent ->
             logt { "Intent: $intent" }
             when (intent) {
                 AppIntent.Back -> updateState {
-                    copy(backStack = backStack.dropLast(1), frontStack = frontStack + backStack.last())
+                    copy(backStack = backStack.dropLast(1), nextStack = nextStack + backStack.last())
                 }
 
                 AppIntent.Next -> updateState {
-                    copy(backStack = backStack + frontStack.last(), frontStack = frontStack.dropLast(1))
+                    copy(backStack = backStack + nextStack.last(), nextStack = nextStack.dropLast(1))
                 }
 
                 is AppIntent.Navigate -> updateState {
                     if (intent.route != currentBackStackEntry)
-                        copy(backStack = backStack + intent.route, frontStack = emptyList())
+                        copy(backStack = backStack + intent.route, nextStack = emptyList())
                     else
                         this
                 }
@@ -59,19 +57,19 @@ class AppContainer(
 }
 
 data class AppState(
-    val backStack: List<Any> = listOf(HomeRoute),
-    val frontStack: List<Any> = emptyList(),
+    val backStack: List<Route> = listOf(HomeRoute),
+    val nextStack: List<Route> = emptyList(),
     val guiConfig: GuiConfiguration? = null,
 ) : MVIState {
-    val currentBackStackEntry: Any? = backStack.lastOrNull()
+    val currentBackStackEntry: Route? = backStack.lastOrNull()
     val canGoBack: Boolean = backStack.size > 1
-    val canGoNext: Boolean = frontStack.isNotEmpty()
+    val canGoNext: Boolean = nextStack.isNotEmpty()
 }
 
 sealed interface AppIntent : MVIIntent {
     data object Back : AppIntent
     data object Next : AppIntent
-    data class Navigate(val route: Any) : AppIntent
+    data class Navigate(val route: Route) : AppIntent
     data object ToggleDrawer : AppIntent
 }
 

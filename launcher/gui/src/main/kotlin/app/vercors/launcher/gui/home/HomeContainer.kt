@@ -1,6 +1,7 @@
 package app.vercors.launcher.gui.home
 
 import app.vercors.launcher.common.domain.instance.model.Instance
+import app.vercors.launcher.common.domain.instance.model.InstanceId
 import app.vercors.launcher.gui.home.usecase.HomeSection
 import app.vercors.launcher.gui.home.usecase.ObserveHomeSectionListUseCase
 import app.vercors.shared.domain.Resource
@@ -25,15 +26,14 @@ class HomeContainer(
     val observeHomeSectionList: ObserveHomeSectionListUseCase,
 ) : Container<HomeState, HomeIntent, HomeAction> {
     override val store = store(initial = HomeState.Loading) {
-        configureWithLogger(logger) {
-            debuggable = true
-            name = "HomeContainer"
-        }
+        configureWithLogger(logger)
 
         reduce { intent ->
             logt { "Intent: $intent" }
             when (intent) {
-                else -> {}
+                HomeIntent.OnCreateInstanceClick -> action(HomeAction.NavigateToCreateInstance)
+                is HomeIntent.OnInstanceClick -> action(HomeAction.NavigateToInstanceDetails(intent.instanceId))
+                is HomeIntent.OnProjectClick -> action(HomeAction.NavigateToProjectDetails(intent.projectId))
             }
         }
 
@@ -87,21 +87,24 @@ sealed interface HomeSectionView<T : HomeSectionViewElement> {
     ) : HomeSectionView<BriefProjectView>
 }
 
+sealed interface HomeIntent : MVIIntent {
+    data object OnCreateInstanceClick : HomeIntent
+    data class OnProjectClick(val projectId: ProjectId) : HomeIntent
+    data class OnInstanceClick(val instanceId: InstanceId) : HomeIntent
+}
+
+sealed interface HomeAction : MVIAction {
+    data object NavigateToCreateInstance : HomeAction
+    data class NavigateToProjectDetails(val projectId: ProjectId) : HomeAction
+    data class NavigateToInstanceDetails(val instanceId: InstanceId) : HomeAction
+}
+
 enum class HomeSectionType {
     RecentlyPlayed,
     FeaturedMods,
     FeaturedModpacks,
     FeaturedResourcePacks,
     FeaturedShaderPacks
-}
-
-sealed interface HomeIntent : MVIIntent {
-    data object OnCreateInstanceClick : HomeIntent
-    data class OnProjectClick(val projectId: ProjectId) : HomeIntent
-    data class OnInstanceClick(val instanceId: String) : HomeIntent
-}
-
-sealed interface HomeAction : MVIAction {
 }
 
 sealed interface HomeSectionViewElement {

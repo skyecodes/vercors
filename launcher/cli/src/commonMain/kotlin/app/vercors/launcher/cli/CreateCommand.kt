@@ -1,10 +1,10 @@
 package app.vercors.launcher.cli
 
-import app.vercors.launcher.common.domain.game.usecase.GetGameVersionListUseCase
 import app.vercors.launcher.common.domain.instance.model.Instance
 import app.vercors.launcher.common.domain.instance.model.InstanceModLoader
 import app.vercors.launcher.common.domain.instance.usecase.CreateInstanceUseCase
 import app.vercors.launcher.common.domain.loader.ModLoaderType
+import app.vercors.shared.domain.game.usecase.GetGameVersionListUseCase
 import app.vercors.shared.domain.getOrThrow
 import com.github.ajalt.clikt.core.BadParameterValue
 import com.github.ajalt.clikt.core.Context

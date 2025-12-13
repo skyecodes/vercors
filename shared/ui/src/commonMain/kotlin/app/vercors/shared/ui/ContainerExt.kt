@@ -7,17 +7,17 @@ import pro.respawn.flowmvi.api.MVIAction
 import pro.respawn.flowmvi.api.MVIIntent
 import pro.respawn.flowmvi.api.MVIState
 import pro.respawn.flowmvi.dsl.StoreBuilder
-import pro.respawn.flowmvi.dsl.StoreConfigurationBuilder
 import pro.respawn.flowmvi.logging.StoreLogLevel
 import pro.respawn.flowmvi.logging.StoreLogger
 
 @FlowMVIDSL
-inline fun <S : MVIState, I : MVIIntent, A : MVIAction> StoreBuilder<S, I, A>.configureWithLogger(
+fun <S : MVIState, I : MVIIntent, A : MVIAction> StoreBuilder<S, I, A>.configureWithLogger(
     logger: KLogger,
-    block: StoreConfigurationBuilder.() -> Unit
+    debuggable: Boolean = true,
 ): Unit =
     configure {
-        block()
+        this.debuggable = debuggable
+        this.name = logger.name
         this.logger = StoreLogger { level: StoreLogLevel, tag: String?, message: () -> String ->
             val marker = tag?.let { KMarkerFactory.getMarker(it) }
             when (level) {

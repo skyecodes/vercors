@@ -8,27 +8,17 @@ import androidx.compose.ui.window.*
 import app.vercors.launcher.common.data.AppPath
 import app.vercors.launcher.common.data.CommonDataModule
 import app.vercors.launcher.common.domain.CommonDomainModule
-import app.vercors.launcher.gui.account.AccountListRoute
-import app.vercors.launcher.gui.config.ConfigurationRoute
-import app.vercors.launcher.gui.home.HomeContainer
-import app.vercors.launcher.gui.home.HomeRoute
-import app.vercors.launcher.gui.home.HomeScreen
-import app.vercors.launcher.gui.instance.details.InstanceDetailsRoute
-import app.vercors.launcher.gui.instance.list.InstanceListContainer
-import app.vercors.launcher.gui.instance.list.InstanceListRoute
-import app.vercors.launcher.gui.instance.list.InstanceListScreen
-import app.vercors.launcher.gui.project.list.ProjectListRoute
+import app.vercors.launcher.gui.account.AccountModule
+import app.vercors.launcher.gui.config.ConfigurationModule
+import app.vercors.launcher.gui.home.HomeModule
+import app.vercors.launcher.gui.instance.InstanceModule
+import app.vercors.launcher.gui.project.ProjectModule
 import app.vercors.shared.data.SharedDataModule
 import app.vercors.shared.domain.SharedDomainModule
 import app.vercors.shared.ui.container
-import app.vercors.shared.ui.label
-import app.vercors.shared.ui.subtitle
-import app.vercors.shared.ui.textStyles
 import coil3.ImageLoader
 import coil3.compose.setSingletonImageLoaderFactory
 import coil3.disk.DiskCache
-import com.composeunstyled.Text
-import com.composeunstyled.theme.Theme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -40,12 +30,10 @@ import org.koin.compose.getKoin
 import org.koin.core.Koin
 import org.koin.core.annotation.ComponentScan
 import org.koin.core.annotation.KoinApplication
-import org.koin.core.annotation.KoinExperimentalAPI
 import org.koin.core.annotation.Module
 import org.koin.core.module.dsl.new
 import org.koin.core.qualifier.qualifier
 import org.koin.dsl.module
-import org.koin.dsl.navigation3.navigation
 import org.koin.ksp.generated.startKoin
 import java.awt.Dimension
 
@@ -110,34 +98,9 @@ class GUIModule
 @KoinApplication(modules = [GUIModule::class, CommonDomainModule::class, CommonDataModule::class, SharedDomainModule::class, SharedDataModule::class])
 object GUIApplication
 
-@OptIn(KoinExperimentalAPI::class)
 private val AppModule = module {
+    includes(HomeModule, InstanceModule, ProjectModule, AccountModule, ConfigurationModule)
     container { new(::AppContainer) }
-    container { new(::HomeContainer) }
-    navigation<HomeRoute> {
-        HomeScreen(
-            container = container(),
-        )
-    }
-    container { new(::InstanceListContainer) }
-    navigation<InstanceListRoute> {
-        InstanceListScreen(
-            container = container(),
-            navigateToInstanceDetailsAction = { }
-        )
-    }
-    navigation<InstanceDetailsRoute> {
-        Text("Instance details")
-    }
-    navigation<ProjectListRoute> {
-        Text("Content", style = Theme[textStyles][subtitle])
-    }
-    navigation<ConfigurationRoute> {
-        Text("Settings")
-    }
-    navigation<AccountListRoute> {
-        Text("Account", style = Theme[textStyles][label])
-    }
 }
 
 fun initializeLauncher(koin: Koin) {

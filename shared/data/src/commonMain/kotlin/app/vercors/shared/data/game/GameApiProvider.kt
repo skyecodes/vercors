@@ -1,4 +1,4 @@
-package app.vercors.launcher.common.data.game
+package app.vercors.shared.data.game
 
 import app.vercors.meta.client.game.GameApi
 import app.vercors.meta.client.game.createGameApi

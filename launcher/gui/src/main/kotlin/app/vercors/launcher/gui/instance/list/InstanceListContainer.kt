@@ -1,5 +1,6 @@
 package app.vercors.launcher.gui.instance.list
 
+import app.vercors.launcher.common.domain.instance.model.InstanceId
 import app.vercors.launcher.common.domain.instance.usecase.ObserveInstanceListUseCase
 import app.vercors.shared.domain.Resource
 import app.vercors.shared.domain.Result
@@ -20,10 +21,7 @@ class InstanceListContainer(
     val observeInstanceListUseCase: ObserveInstanceListUseCase
 ) : Container<InstanceListState, InstanceListIntent, InstanceListAction> {
     override val store = store(initial = InstanceListState.Loading) {
-        configureWithLogger(logger) {
-            debuggable = true
-            name = "InstanceListContainer"
-        }
+        configureWithLogger(logger)
 
         reduce { intent ->
             logt { "Intent: $intent" }
@@ -56,11 +54,11 @@ sealed interface InstanceListState : MVIState {
 }
 
 sealed interface InstanceListIntent : MVIIntent {
-    data class OpenInstanceClick(val instanceId: String) : InstanceListIntent
+    data class OpenInstanceClick(val instanceId: InstanceId) : InstanceListIntent
 }
 
 sealed interface InstanceListAction : MVIAction {
-    data class NavigateToInstanceDetails(val instanceId: String) : InstanceListAction
+    data class NavigateToInstanceDetails(val instanceId: InstanceId) : InstanceListAction
 }
 
 data class InstanceView(

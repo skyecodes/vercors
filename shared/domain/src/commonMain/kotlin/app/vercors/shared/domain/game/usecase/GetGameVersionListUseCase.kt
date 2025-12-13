@@ -1,8 +1,8 @@
-package app.vercors.launcher.common.domain.game.usecase
+package app.vercors.shared.domain.game.usecase
 
-import app.vercors.launcher.common.domain.game.GameRepository
-import app.vercors.launcher.common.domain.game.model.GameVersionList
 import app.vercors.shared.domain.Result
+import app.vercors.shared.domain.game.GameRepository
+import app.vercors.shared.domain.game.model.GameVersionList
 import org.koin.core.annotation.Factory
 
 @Factory
