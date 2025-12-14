@@ -26,7 +26,7 @@ enum class TopLevelDestination(
         icon = Lucide.Gamepad2
     ),
     Content(
-        route = ProjectListRoute,
+        route = ProjectListRoute(),
         text = Res.string.content,
         icon = Lucide.Box
     ),

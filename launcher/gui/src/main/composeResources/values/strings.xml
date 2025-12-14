@@ -19,4 +19,20 @@
     <string name="create">Create</string>
     <string name="downloads">Downloads</string>
     <string name="lastUpdated">Last updated</string>
+    <string name="createInstance">Create a new instance</string>
+    <string name="createCustomInstance">Custom instance</string>
+    <string name="createCustomInstanceDescription">Select your version, mod loader, and add all the mods you want; or
+        play vanilla
+    </string>
+    <string name="importModpack">From a modpack</string>
+    <string name="importModpackDescription">Select a pre-made modpack from platforms such as CurseForge or Modrinth
+    </string>
+    <string name="importOtherLauncher">From another launcher</string>
+    <string name="importOtherLauncherDescription">Import an instance from another launcher such as PrismLauncher
+    </string>
+    <string name="instanceName">Instance name</string>
+    <string name="minecraftVersion">Minecraft version</string>
+    <string name="showSnapshots">Show snapshot versions</string>
+    <string name="latestRelease">Latest release</string>
+    <string name="latestSnapshot">Latest snapshot</string>
 </resources>

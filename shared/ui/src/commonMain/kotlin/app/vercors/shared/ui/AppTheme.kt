@@ -24,6 +24,7 @@ val onPrimary = ThemeToken<Color>("on_primary")
 val error = ThemeToken<Color>("error")
 val onError = ThemeToken<Color>("on_error")
 val surface = ThemeToken<Color>("surface")
+val surface2 = ThemeToken<Color>("surface2")
 
 val fonts = ThemeProperty<FontFamily>("fonts")
 val standard = ThemeToken<FontFamily>("standard")
@@ -70,7 +71,8 @@ val AppTheme = buildTheme {
         onPrimary to Color(0xff11111b),
         error to Color(0xfff38ba8),
         onError to Color(0xff11111b),
-        surface to Color(0xff313244)
+        surface to Color(0xff313244),
+        surface2 to Color(0xff45475a)
     )
 
     properties[fonts] = mapOf(

@@ -1,6 +1,6 @@
 [versions]
 # General
-kotlin = "2.2.21"
+kotlin = "2.3.0-RC3"
 ksp = "2.3.3"
 coroutines = "1.10.2"
 datetime = "0.7.1"
@@ -11,11 +11,11 @@ serialization = "1.9.0"
 io = "0.8.2"
 ktor = "3.3.3"
 ktor-simple-cache = "0.55.3"
-ktorfit = "2.6.5"
+ktorfit = "2.7.1"
 kfswatch = "1.4.0"
 appdirs = "2.0.0"
 # GUI
-compose = "1.10.0-rc01"
+compose = "1.10.0-rc02"
 lifecycle = "2.10.0-alpha06"
 navigation3 = "1.0.0-alpha06"
 flowmvi = "3.2.1"
@@ -31,10 +31,10 @@ graalvm = "0.11.3"
 koin = "4.2.0-alpha3"
 koin-annotations = "2.3.2-Beta1"
 # Logging
-logback = "1.5.21"
+logback = "1.5.22"
 kotlin-logging = "7.0.13"
 # Test
-mockk = "1.14.6"
+mockk = "1.14.7"
 turbine = "1.2.1"
 
 [libraries]
@@ -48,6 +48,7 @@ cryptography-random = { module = "dev.whyoleg.cryptography:cryptography-random",
 cryptography-provider-optimal = { module = "dev.whyoleg.cryptography:cryptography-provider-optimal", version.ref = "cryptography" }
 human-readable = { module = "nl.jacobras:Human-Readable", version.ref = "human-readable" }
 # Data
+kotlinx-serialization-core = { module = "org.jetbrains.kotlinx:kotlinx-serialization-core", version.ref = "serialization" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json-io", version.ref = "serialization" }
 kotlinx-io-core = { module = "org.jetbrains.kotlinx:kotlinx-io-core", version.ref = "io" }
 ktor-server-core = { module = "io.ktor:ktor-server-core", version.ref = "ktor" }

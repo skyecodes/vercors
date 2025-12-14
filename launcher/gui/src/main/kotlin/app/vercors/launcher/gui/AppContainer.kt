@@ -1,5 +1,6 @@
 package app.vercors.launcher.gui
 
+import androidx.compose.runtime.Immutable
 import app.vercors.launcher.gui.config.model.GuiConfiguration
 import app.vercors.launcher.gui.config.usecase.ObserveGuiConfigurationUseCase
 import app.vercors.launcher.gui.config.usecase.UpdateGuiConfigurationUseCase
@@ -13,7 +14,6 @@ import pro.respawn.flowmvi.api.MVIAction
 import pro.respawn.flowmvi.api.MVIIntent
 import pro.respawn.flowmvi.api.MVIState
 import pro.respawn.flowmvi.dsl.store
-import pro.respawn.flowmvi.logging.logt
 import pro.respawn.flowmvi.plugins.reduce
 import pro.respawn.flowmvi.plugins.whileSubscribed
 
@@ -27,7 +27,6 @@ class AppContainer(
         configureWithLogger(logger)
 
         reduce { intent ->
-            logt { "Intent: $intent" }
             when (intent) {
                 AppIntent.Back -> updateState {
                     copy(backStack = backStack.dropLast(1), nextStack = nextStack + backStack.last())
@@ -56,6 +55,7 @@ class AppContainer(
     }
 }
 
+@Immutable
 data class AppState(
     val backStack: List<Route> = listOf(HomeRoute),
     val nextStack: List<Route> = emptyList(),

@@ -1,8 +1,9 @@
 package app.vercors.shared.domain.project.model
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class ProjectId(
     val id: String,
-    val platform: ProjectPlatform
-) {
-    constructor(id: String, platformId: String) : this(id, ProjectPlatform.entries.first { it.id == platformId })
-}
+    val platform: String
+)

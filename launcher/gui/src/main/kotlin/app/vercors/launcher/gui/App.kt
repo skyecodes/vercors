@@ -1,5 +1,6 @@
 package app.vercors.launcher.gui
 
+import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
@@ -17,10 +18,7 @@ import androidx.navigation3.ui.NavDisplay
 import app.vercors.launcher.gui.navigation.LocalNavigator
 import app.vercors.launcher.gui.navigation.Navigator
 import app.vercors.launcher.gui.navigation.Route
-import app.vercors.shared.ui.AppTheme
-import app.vercors.shared.ui.background
-import app.vercors.shared.ui.backgroundAlt
-import app.vercors.shared.ui.colors
+import app.vercors.shared.ui.*
 import com.composeunstyled.theme.Theme
 import org.koin.compose.navigation3.koinEntryProvider
 import org.koin.core.annotation.KoinExperimentalAPI
@@ -34,11 +32,7 @@ fun App(
     onWindowEvent: (AppWindowEvent) -> Unit,
     isMinimized: Boolean
 ) = with(container.store) {
-    val state by subscribe { action ->
-        when (action) {
-            else -> {}
-        }
-    }
+    val state by subscribe { _ -> }
 
     val navigator = remember {
         object : Navigator {
@@ -102,14 +96,17 @@ private fun AppContent(backStack: List<Any>) {
                 color = Theme[colors][background],
                 shape = RoundedCornerShape(16.dp)
             )
-            .padding(12.dp)
     ) {
-        NavDisplay(
-            backStack = backStack,
-            onBack = { store.intent(AppIntent.Back) },
-            entryProvider = entryProvider,
-            transitionSpec = { fadeIn() togetherWith fadeOut() }
-        )
+        SharedTransitionLayout {
+            CompositionLocalProvider(LocalSharedTransitionScope provides this) {
+                NavDisplay(
+                    backStack = backStack,
+                    onBack = { store.intent(AppIntent.Back) },
+                    entryProvider = entryProvider,
+                    transitionSpec = { fadeIn() togetherWith fadeOut() }
+                )
+            }
+        }
     }
 }
 

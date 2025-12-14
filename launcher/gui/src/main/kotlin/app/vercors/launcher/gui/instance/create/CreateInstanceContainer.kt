@@ -1,12 +1,29 @@
 package app.vercors.launcher.gui.instance.create
 
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
+import androidx.compose.ui.graphics.vector.ImageVector
+import app.vercors.launcher.common.domain.instance.model.Instance
+import app.vercors.launcher.common.domain.instance.model.InstanceId
 import app.vercors.launcher.common.domain.instance.usecase.CreateInstanceUseCase
 import app.vercors.launcher.common.domain.loader.ModLoaderType
-import app.vercors.shared.domain.Result
+import app.vercors.launcher.gui.res.*
+import app.vercors.shared.domain.Resource
 import app.vercors.shared.domain.game.model.GameVersionList
+import app.vercors.shared.domain.game.model.GameVersionType
 import app.vercors.shared.domain.game.usecase.GetGameVersionListUseCase
+import app.vercors.shared.domain.getOrNull
+import app.vercors.shared.domain.map
+import app.vercors.shared.domain.resourceFlow
 import app.vercors.shared.ui.configureWithLogger
+import com.composables.icons.lucide.Import
+import com.composables.icons.lucide.Lucide
+import com.composables.icons.lucide.PackagePlus
+import com.composables.icons.lucide.SquarePlus
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.flow.collectLatest
+import org.jetbrains.compose.resources.StringResource
+import org.jetbrains.compose.resources.stringResource
 import pro.respawn.flowmvi.api.*
 import pro.respawn.flowmvi.dsl.store
 import pro.respawn.flowmvi.plugins.init
@@ -24,29 +41,126 @@ class CreateInstanceContainer(
 
             reduce { intent ->
                 when (intent) {
-                    else -> {}
+                    is CreateInstanceIntent.OnTabClick -> updateState { copy(selectedTab = intent.tab) }
+                    is CreateInstanceIntent.OnInstanceNameChange -> updateState { copy(instanceName = intent.name) }
+                    is CreateInstanceIntent.OnGameVersionChange -> updateState { copy(selectedGameVersion = intent.version) }
+                    is CreateInstanceIntent.OnGameVersionSearchChange -> updateState { copy(gameVersionFilter = intent.search) }
+                    CreateInstanceIntent.OnShowSnapshotClick -> updateState { copy(showSnapshot = !showSnapshot) }
+                    CreateInstanceIntent.OnCreateInstanceClick -> withState {
+                        val instance = Instance(
+                            name = instanceName,
+                            gameVersion = selectedGameVersion!!.id,
+                        )
+                        createInstance(instance)
+                        action(CreateInstanceAction.NavigateToInstanceDetails(instance.id))
+                    }
                 }
             }
 
             init {
-                val versionList = getMinecraftVersionList()
-                updateState {
-                    copy(gameVersionList = versionList)
+                resourceFlow(getMinecraftVersionList::invoke).collectLatest {
+                    val gameVersionList = it.map(GameVersionList::convert)
+                    updateState {
+                        copy(
+                            gameVersionList = gameVersionList,
+                            selectedGameVersion = gameVersionList.getOrNull()
+                                ?.firstOrNull(GameVersionView::isLatestRelease)
+                        )
+                    }
+                }
+            }
+
+            install {
+                onState { _, new ->
+                    new.copy(
+                        selectedGameVersion = new.filteredGameVersionList.find { it == new.selectedGameVersion }
+                            ?: new.filteredGameVersionList.firstOrNull()
+                    )
                 }
             }
         }
 }
 
-data class CreateInstanceState(
-    val instanceName: String = "",
-    val gameVersion: String = "",
-    val gameVersionList: Result<GameVersionList>? = null,
-    val modLoader: ModLoaderType? = null
-) : MVIState
+private fun GameVersionList.convert(): List<GameVersionView> = versions.map {
+    GameVersionView(
+        id = it.id,
+        isLatestRelease = it.id == latestRelease,
+        isLatestSnapshot = it.id == latestSnapshot,
+        isSnapshot = it.type != GameVersionType.Release
+    )
+}
 
+@Immutable
+data class CreateInstanceState(
+    val selectedTab: CreateInstanceTab = CreateInstanceTab.Custom,
+    val instanceName: String = "",
+
+    val selectedGameVersion: GameVersionView? = null,
+    val gameVersionList: Resource<List<GameVersionView>> = Resource.Unloaded,
+    val showSnapshot: Boolean = false,
+    val gameVersionFilter: String = "",
+
+    val modLoader: ModLoaderType? = null
+) : MVIState {
+    val filteredGameVersionList: List<GameVersionView> = gameVersionList.getOrNull()?.filter {
+        (gameVersionFilter.isBlank() || it.id.contains(
+            gameVersionFilter,
+            ignoreCase = true
+        )) && (showSnapshot || !it.isSnapshot)
+    } ?: emptyList()
+    val canCreateInstance: Boolean = instanceName.isNotBlank() && selectedGameVersion != null
+}
+
+data class GameVersionView(
+    val id: String,
+    val isLatestRelease: Boolean,
+    val isLatestSnapshot: Boolean,
+    val isSnapshot: Boolean,
+) {
+    val displayName: String
+        @Composable get() = when {
+            isLatestRelease -> "$id (${stringResource(Res.string.latestRelease)})"
+            isLatestSnapshot -> "$id (${stringResource(Res.string.latestSnapshot)})"
+            else -> id
+        }
+}
+
+enum class CreateInstanceTab(
+    val icon: ImageVector,
+    val title: StringResource,
+    val description: StringResource,
+    val intent: () -> CreateInstanceIntent
+) {
+    Custom(
+        icon = Lucide.SquarePlus,
+        title = Res.string.createCustomInstance,
+        description = Res.string.createCustomInstanceDescription,
+        intent = { CreateInstanceIntent.OnTabClick(Custom) }
+    ),
+    Modpack(
+        icon = Lucide.PackagePlus,
+        title = Res.string.importModpack,
+        description = Res.string.importModpackDescription,
+        intent = { CreateInstanceIntent.OnTabClick(Modpack) }
+    ),
+    Import(
+        icon = Lucide.Import,
+        title = Res.string.importOtherLauncher,
+        description = Res.string.importOtherLauncherDescription,
+        intent = { CreateInstanceIntent.OnTabClick(Import) }
+    )
+}
 
 sealed interface CreateInstanceIntent : MVIIntent {
+    data class OnTabClick(val tab: CreateInstanceTab) : CreateInstanceIntent
+    data class OnInstanceNameChange(val name: String) : CreateInstanceIntent
+    data class OnGameVersionChange(val version: GameVersionView?) : CreateInstanceIntent
+    data class OnGameVersionSearchChange(val search: String) : CreateInstanceIntent
+    data object OnShowSnapshotClick : CreateInstanceIntent
+    data object OnCreateInstanceClick : CreateInstanceIntent
 }
 
 sealed interface CreateInstanceAction : MVIAction {
+    data object NavigateToModpackList : CreateInstanceAction
+    data class NavigateToInstanceDetails(val id: InstanceId) : CreateInstanceAction
 }

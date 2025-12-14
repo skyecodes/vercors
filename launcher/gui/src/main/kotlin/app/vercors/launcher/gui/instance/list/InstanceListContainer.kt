@@ -11,7 +11,6 @@ import pro.respawn.flowmvi.api.MVIAction
 import pro.respawn.flowmvi.api.MVIIntent
 import pro.respawn.flowmvi.api.MVIState
 import pro.respawn.flowmvi.dsl.store
-import pro.respawn.flowmvi.logging.logt
 import pro.respawn.flowmvi.plugins.reduce
 import pro.respawn.flowmvi.plugins.whileSubscribed
 
@@ -24,7 +23,6 @@ class InstanceListContainer(
         configureWithLogger(logger)
 
         reduce { intent ->
-            logt { "Intent: $intent" }
             when (intent) {
                 is InstanceListIntent.OpenInstanceClick -> action(InstanceListAction.NavigateToInstanceDetails(intent.instanceId))
             }
@@ -32,7 +30,6 @@ class InstanceListContainer(
 
         whileSubscribed {
             observeInstanceListUseCase().collect { instances ->
-                logt { "InstanceList: $instances" }
                 updateState {
                     when (instances) {
                         Resource.Unloaded, Resource.Loading -> InstanceListState.Loading

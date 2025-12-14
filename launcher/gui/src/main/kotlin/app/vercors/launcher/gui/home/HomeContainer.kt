@@ -1,5 +1,6 @@
 package app.vercors.launcher.gui.home
 
+import androidx.compose.runtime.Immutable
 import app.vercors.launcher.common.domain.instance.model.Instance
 import app.vercors.launcher.common.domain.instance.model.InstanceId
 import app.vercors.launcher.gui.home.usecase.HomeSection
@@ -15,7 +16,6 @@ import pro.respawn.flowmvi.api.MVIAction
 import pro.respawn.flowmvi.api.MVIIntent
 import pro.respawn.flowmvi.api.MVIState
 import pro.respawn.flowmvi.dsl.store
-import pro.respawn.flowmvi.logging.logt
 import pro.respawn.flowmvi.plugins.reduce
 import pro.respawn.flowmvi.plugins.whileSubscribed
 import kotlin.time.Instant
@@ -29,7 +29,6 @@ class HomeContainer(
         configureWithLogger(logger)
 
         reduce { intent ->
-            logt { "Intent: $intent" }
             when (intent) {
                 HomeIntent.OnCreateInstanceClick -> action(HomeAction.NavigateToCreateInstance)
                 is HomeIntent.OnInstanceClick -> action(HomeAction.NavigateToInstanceDetails(intent.instanceId))
@@ -40,7 +39,6 @@ class HomeContainer(
         whileSubscribed {
             observeHomeSectionList().collect {
                 updateState {
-                    logt { "HomeSectionList: $it" }
                     when (it) {
                         is Resource.Loaded -> when (val res = it.result) {
                             is Result.Success -> HomeState.Loaded(res.data.map { section ->
@@ -66,9 +64,14 @@ class HomeContainer(
     }
 }
 
+@Immutable
 sealed interface HomeState : MVIState {
     data object Loading : HomeState
+
+    @Immutable
     data class Loaded(val sections: List<HomeSectionView<*>>) : HomeState
+
+    @Immutable
     data class Error(val throwable: Throwable) : HomeState
 }
 

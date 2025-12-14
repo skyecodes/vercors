@@ -1,5 +1,6 @@
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
+    alias(libs.plugins.serialization)
     alias(libs.plugins.ksp)
 }
 
@@ -13,6 +14,7 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             implementation(libs.kotlinx.coroutines.core)
+            implementation(libs.kotlinx.serialization.core)
             implementation(libs.kotlin.logging)
             implementation(project.dependencies.platform(libs.koin.bom))
             implementation(libs.koin.core)

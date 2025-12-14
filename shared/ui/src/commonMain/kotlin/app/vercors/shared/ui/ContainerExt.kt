@@ -9,12 +9,13 @@ import pro.respawn.flowmvi.api.MVIState
 import pro.respawn.flowmvi.dsl.StoreBuilder
 import pro.respawn.flowmvi.logging.StoreLogLevel
 import pro.respawn.flowmvi.logging.StoreLogger
+import pro.respawn.flowmvi.plugins.enableLogging
 
 @FlowMVIDSL
 fun <S : MVIState, I : MVIIntent, A : MVIAction> StoreBuilder<S, I, A>.configureWithLogger(
     logger: KLogger,
     debuggable: Boolean = true,
-): Unit =
+) {
     configure {
         this.debuggable = debuggable
         this.name = logger.name
@@ -29,3 +30,6 @@ fun <S : MVIState, I : MVIIntent, A : MVIAction> StoreBuilder<S, I, A>.configure
             }
         }
     }
+
+    enableLogging()
+}

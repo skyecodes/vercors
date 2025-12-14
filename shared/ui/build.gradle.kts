@@ -26,6 +26,10 @@ kotlin {
             implementation(libs.kotlin.test)
         }
     }
+
+    compilerOptions.freeCompilerArgs.addAll(
+        "-opt-in=androidx.compose.animation.ExperimentalSharedTransitionApi",
+    )
 }
 
 
