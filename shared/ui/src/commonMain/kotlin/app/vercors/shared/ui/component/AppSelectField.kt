@@ -31,10 +31,10 @@ import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun <T> AppSelectField(
-    label: String,
     value: T,
     items: List<T>,
     onValueChange: (T) -> Unit,
+    label: String? = null,
     backgroundColor: Color = Theme[colors][surface],
     textConverter: @Composable (T) -> String = { it.toString() },
     itemRenderer: @Composable RowScope.(T) -> Unit = {
@@ -51,28 +51,30 @@ fun <T> AppSelectField(
 ) {
     var expanded by remember { mutableStateOf(false) }
 
-    Box {
+    BoxWithConstraints(modifier = modifier) {
         DropdownMenu(
             onExpandRequest = { expanded = true }
         ) {
             Column(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                AppText(
-                    text = label,
-                    fontWeight = FontWeight.Medium
-                )
+                label?.let {
+                    AppText(
+                        text = it,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
 
                 AppButton(
                     onClick = { expanded = !expanded },
                     backgroundColor = backgroundColor,
-                    modifier = modifier,
                     horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxWidth()
                 ) {
                     AppText(textConverter(value))
                     AppIcon(
                         imageVector = Lucide.ChevronDown,
-                        contentDescription = "Open dropdown"
+                        contentDescription = null
                     )
                 }
             }
@@ -81,7 +83,8 @@ fun <T> AppSelectField(
         DropdownMenuPanel(
             expanded = expanded,
             onDismissRequest = { expanded = false },
-            modifier = modifier.appCard(backgroundColor = Theme[colors][surface2]).heightIn(max = 400.dp),
+            modifier = Modifier.appCard(backgroundColor = Theme[colors][surface2])
+                .widthIn(min = minWidth, max = maxWidth).heightIn(max = 400.dp),
             anchor = anchor
         ) {
             if (searchable) {
@@ -108,7 +111,7 @@ fun <T> AppSelectField(
 
                 LazyColumn(
                     state = listState,
-                    modifier = Modifier.fillMaxHeight().weight(1f)
+                    modifier = Modifier.weight(1f)
                 ) {
                     items.forEach {
                         item(it) {
@@ -124,9 +127,11 @@ fun <T> AppSelectField(
                     }
                 }
 
-                VerticalScrollbar(
-                    adapter = rememberScrollbarAdapter(listState)
-                )
+                if (listState.canScrollBackward || listState.canScrollForward) {
+                    VerticalScrollbar(
+                        adapter = rememberScrollbarAdapter(listState)
+                    )
+                }
             }
         }
     }

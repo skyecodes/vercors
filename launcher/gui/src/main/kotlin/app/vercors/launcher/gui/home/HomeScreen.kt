@@ -33,17 +33,20 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.vercors.launcher.common.domain.instance.model.InstanceId
+import app.vercors.launcher.gui.instance.BriefInstanceCard
+import app.vercors.launcher.gui.instance.BriefInstanceView
 import app.vercors.launcher.gui.res.*
 import app.vercors.shared.domain.project.model.ProjectId
 import app.vercors.shared.ui.*
 import app.vercors.shared.ui.component.AppButton
 import app.vercors.shared.ui.component.AppIcon
+import app.vercors.shared.ui.component.AppIconTextButton
 import app.vercors.shared.ui.component.AppText
 import app.vercors.shared.ui.layout.AppError
+import app.vercors.shared.ui.layout.AppLoading
 import app.vercors.shared.ui.modifier.appCard
 import coil3.compose.rememberAsyncImagePainter
 import com.composables.icons.lucide.*
-import com.composeunstyled.Text
 import com.composeunstyled.theme.Theme
 import kotlinx.coroutines.launch
 import nl.jacobras.humanreadable.HumanReadable
@@ -83,7 +86,7 @@ context(
 )
 private fun HomeScreen(state: HomeState) {
     when (state) {
-        HomeState.Loading -> Text("Loading...")
+        HomeState.Loading -> AppLoading()
         is HomeState.Loaded -> Column {
             LazyColumn {
                 state.sections.forEach { section ->
@@ -104,7 +107,7 @@ context(
     _: AnimatedContentScope,
     _: SharedTransitionScope
 )
-private fun HomeSectionDisplay(section: HomeSectionView<*>) {
+private fun <T> HomeSectionDisplay(section: HomeSectionView<T>) {
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = Modifier.padding(vertical = 8.dp)
@@ -129,8 +132,8 @@ context(
     _: AnimatedContentScope,
     _: SharedTransitionScope
 )
-private fun HomeSectionList(
-    section: HomeSectionView<*>
+private fun <T> HomeSectionList(
+    section: HomeSectionView<T>
 ) {
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
@@ -165,28 +168,31 @@ private fun HomeSectionList(
 }
 
 context(
-    _: IntentReceiver<HomeIntent>,
+    store: IntentReceiver<HomeIntent>,
     _: AnimatedContentScope,
     _: SharedTransitionScope
 )
-private fun LazyListScope.homeCardItem(
-    section: HomeSectionView<*>,
+private fun <T> LazyListScope.homeCardItem(
+    section: HomeSectionView<T>,
     index: Int,
-    element: HomeSectionViewElement
+    element: T
 ) {
     val modifier = Modifier.padding(
         start = if (index == 0) 8.dp else 0.dp,
         end = if (index == section.data.lastIndex) 8.dp else 0.dp
     )
 
-    item(element.id) {
-        when (element) {
-            is BriefInstanceView -> HomeInstanceCard(
+    when (element) {
+        is BriefInstanceView -> item(element.id) {
+            BriefInstanceCard(
                 instance = element,
-                modifier = modifier
+                onInstanceClick = { store.intent(HomeIntent.OnInstanceClick(it)) },
+                modifier = modifier.size(width = 150.dp, height = 150.dp)
             )
+        }
 
-            is BriefProjectView -> HomeProjectCard(
+        is BriefProjectView -> item(element.id) {
+            HomeProjectCard(
                 project = element,
                 modifier = modifier
             )
@@ -214,7 +220,8 @@ private fun BoxScope.HomeScrollButton(
     }
 }
 
-context(store: IntentReceiver<HomeIntent>) @Composable
+@Composable
+context(store: IntentReceiver<HomeIntent>)
 private fun NoInstanceFoundDisplay() {
     Column(
         modifier = Modifier.fillMaxWidth().height(100.dp),
@@ -225,26 +232,14 @@ private fun NoInstanceFoundDisplay() {
             text = stringResource(Res.string.noInstanceFound)
         )
 
-        AppButton(
+        AppIconTextButton(
             onClick = { store.intent(HomeIntent.OnCreateInstanceClick) },
+            text = stringResource(Res.string.create),
+            imageVector = Lucide.Plus,
             backgroundColor = Theme[colors][primary],
-            contentColor = Theme[colors][onPrimary]
-        ) {
-            AppIcon(
-                imageVector = Lucide.Plus,
-                contentDescription = stringResource(Res.string.create)
-            )
-            AppText(
-                text = stringResource(Res.string.create)
-            )
-        }
+            contentColor = Theme[colors][onPrimary],
+        )
     }
-}
-
-@Composable
-context(store: IntentReceiver<HomeIntent>)
-private fun HomeInstanceCard(instance: BriefInstanceView, modifier: Modifier) {
-
 }
 
 @Composable

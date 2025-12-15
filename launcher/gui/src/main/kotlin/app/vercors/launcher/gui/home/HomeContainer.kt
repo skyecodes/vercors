@@ -1,10 +1,11 @@
 package app.vercors.launcher.gui.home
 
 import androidx.compose.runtime.Immutable
-import app.vercors.launcher.common.domain.instance.model.Instance
 import app.vercors.launcher.common.domain.instance.model.InstanceId
 import app.vercors.launcher.gui.home.usecase.HomeSection
 import app.vercors.launcher.gui.home.usecase.ObserveHomeSectionListUseCase
+import app.vercors.launcher.gui.instance.BriefInstanceView
+import app.vercors.launcher.gui.instance.toBriefView
 import app.vercors.shared.domain.Resource
 import app.vercors.shared.domain.Result
 import app.vercors.shared.domain.project.model.BriefProject
@@ -75,7 +76,7 @@ sealed interface HomeState : MVIState {
     data class Error(val throwable: Throwable) : HomeState
 }
 
-sealed interface HomeSectionView<T : HomeSectionViewElement> {
+sealed interface HomeSectionView<T> {
     val type: HomeSectionType
     val data: List<T>
 
@@ -110,18 +111,8 @@ enum class HomeSectionType {
     FeaturedShaderPacks
 }
 
-sealed interface HomeSectionViewElement {
-    val id: Any
-}
-
-data class BriefInstanceView(
-    override val id: String,
-    val name: String,
-    val version: String
-) : HomeSectionViewElement
-
 data class BriefProjectView(
-    override val id: ProjectId,
+    val id: ProjectId,
     val name: String,
     val description: String,
     val author: String,
@@ -130,15 +121,9 @@ data class BriefProjectView(
     val lastUpdated: Instant,
     val logoUrl: String?,
     val imageUrl: String?
-) : HomeSectionViewElement
-
-private fun Instance.toBriefView(): BriefInstanceView = BriefInstanceView(
-    id = id,
-    name = name,
-    version = gameVersion
 )
 
-private fun BriefProject.toView(): BriefProjectView = BriefProjectView(
+fun BriefProject.toView(): BriefProjectView = BriefProjectView(
     id = id,
     name = name,
     description = description,

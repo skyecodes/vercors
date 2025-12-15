@@ -2,8 +2,11 @@ package app.vercors.launcher.gui.instance.list
 
 import app.vercors.launcher.common.domain.instance.model.InstanceId
 import app.vercors.launcher.common.domain.instance.usecase.ObserveInstanceListUseCase
+import app.vercors.launcher.gui.instance.BriefInstanceView
+import app.vercors.launcher.gui.instance.toBriefView
 import app.vercors.shared.domain.Resource
-import app.vercors.shared.domain.Result
+import app.vercors.shared.domain.getOrNull
+import app.vercors.shared.domain.map
 import app.vercors.shared.ui.configureWithLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
 import pro.respawn.flowmvi.api.Container
@@ -19,45 +22,62 @@ private val logger = KotlinLogging.logger {}
 class InstanceListContainer(
     val observeInstanceListUseCase: ObserveInstanceListUseCase
 ) : Container<InstanceListState, InstanceListIntent, InstanceListAction> {
-    override val store = store(initial = InstanceListState.Loading) {
+    override val store = store(initial = InstanceListState()) {
         configureWithLogger(logger)
 
         reduce { intent ->
             when (intent) {
-                is InstanceListIntent.OpenInstanceClick -> action(InstanceListAction.NavigateToInstanceDetails(intent.instanceId))
+                InstanceListIntent.OnCreateInstanceClick -> action(InstanceListAction.NavigateToCreateInstance)
+                is InstanceListIntent.OnNameFilterChange -> updateState { copy(nameFilter = intent.name) }
+                is InstanceListIntent.OnVersionFilterChange -> updateState { copy(versionFilter = intent.version) }
+                is InstanceListIntent.OnLoaderFilterChange -> updateState { copy(loaderFilter = intent.loader) }
+                is InstanceListIntent.OnInstanceClick -> action(InstanceListAction.NavigateToInstanceDetails(intent.instanceId))
+                InstanceListIntent.OnResetFilterClick -> updateState {
+                    copy(
+                        nameFilter = "",
+                        versionFilter = "",
+                        loaderFilter = ""
+                    )
+                }
             }
         }
 
         whileSubscribed {
             observeInstanceListUseCase().collect { instances ->
                 updateState {
-                    when (instances) {
-                        Resource.Unloaded, Resource.Loading -> InstanceListState.Loading
-                        is Resource.Loaded -> when (val result = instances.result) {
-                            is Result.Error -> InstanceListState.Error(result.throwable)
-                            is Result.Success -> InstanceListState.Loaded(result.data.map { InstanceView(it.name) })
-                        }
-                    }
+                    copy(instances = instances.map { list -> list.map { it.toBriefView() } })
                 }
             }
         }
     }
 }
 
-sealed interface InstanceListState : MVIState {
-    data object Loading : InstanceListState
-    data class Loaded(val instances: List<InstanceView>) : InstanceListState
-    data class Error(val throwable: Throwable) : InstanceListState
+data class InstanceListState(
+    val nameFilter: String = "",
+    val versionFilter: String = "",
+    val loaderFilter: String = "",
+    val instances: Resource<List<BriefInstanceView>> = Resource.Unloaded
+) : MVIState {
+    val loadedInstances = instances.getOrNull() ?: emptyList()
+    val filteredInstances = loadedInstances.filter {
+        it.name.contains(nameFilter, ignoreCase = true) &&
+                (versionFilter.isBlank() || it.version == versionFilter) &&
+                (loaderFilter.isBlank() || it.loader == loaderFilter)
+    }
+    val versionList = listOf("") + loadedInstances.map { it.version }.distinct()
+    val loaderList = listOf("") + loadedInstances.map { it.loader }.distinct()
 }
 
 sealed interface InstanceListIntent : MVIIntent {
-    data class OpenInstanceClick(val instanceId: InstanceId) : InstanceListIntent
+    data object OnCreateInstanceClick : InstanceListIntent
+    data class OnNameFilterChange(val name: String) : InstanceListIntent
+    data class OnVersionFilterChange(val version: String) : InstanceListIntent
+    data class OnLoaderFilterChange(val loader: String) : InstanceListIntent
+    data class OnInstanceClick(val instanceId: InstanceId) : InstanceListIntent
+    data object OnResetFilterClick : InstanceListIntent
 }
 
 sealed interface InstanceListAction : MVIAction {
+    data object NavigateToCreateInstance : InstanceListAction
     data class NavigateToInstanceDetails(val instanceId: InstanceId) : InstanceListAction
 }
-
-data class InstanceView(
-    val name: String
-)

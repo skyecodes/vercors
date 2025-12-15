@@ -8,6 +8,12 @@ plugins {
     alias(libs.plugins.compose.compiler)
 }
 
+repositories {
+    mavenCentral()
+    google()
+    maven("https://jogamp.org/deployment/maven")
+}
+
 dependencies {
     implementation(projects.launcher.common.domain)
     implementation(projects.launcher.common.data)
@@ -36,6 +42,9 @@ dependencies {
     implementation(libs.flowmvi.android)
     implementation(libs.coil.compose)
     implementation(libs.coil.network.ktor3)
+    implementation(libs.markdown.renderer)
+    implementation(libs.markdown.renderer.coil3)
+    api(libs.webview)
     implementation(libs.flowmvi.android)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.io.core)

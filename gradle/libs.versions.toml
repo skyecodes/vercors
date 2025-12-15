@@ -23,6 +23,8 @@ unstyled = "1.49.3"
 lucide = "1.0.0"
 ripple = "1.1.0"
 coil = "3.3.0"
+markdown-renderer = "0.38.1"
+webview = "2.0.3"
 # CLI
 clikt = "5.0.3"
 mordant = "3.0.2"
@@ -80,6 +82,9 @@ composables-ripple = { module = "com.composables:ripple-indication", version.ref
 composables-icons-lucide = { module = "com.composables:icons-lucide", version.ref = "lucide" }
 coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil" }
 coil-network-ktor3 = { module = "io.coil-kt.coil3:coil-network-ktor3", version.ref = "coil" }
+markdown-renderer = { module = "com.mikepenz:multiplatform-markdown-renderer-jvm", version.ref = "markdown-renderer" }
+markdown-renderer-coil3 = { module = "com.mikepenz:multiplatform-markdown-renderer-coil3", version.ref = "markdown-renderer" }
+webview = { module = "io.github.kevinnzou:compose-webview-multiplatform", version.ref = "webview" }
 # CLI
 clikt = { module = "com.github.ajalt.clikt:clikt", version.ref = "clikt" }
 mordant-coroutines = { module = "com.github.ajalt.mordant:mordant-coroutines", version.ref = "mordant" }

@@ -149,20 +149,14 @@ private fun CreateCustomInstanceView(state: CreateInstanceState) {
             )
         }
 
-        AppButton(
+        AppIconTextButton(
             onClick = { store.intent(CreateInstanceIntent.OnCreateInstanceClick) },
+            text = stringResource(Res.string.create),
+            imageVector = Lucide.Plus,
             backgroundColor = Theme[colors][primary],
             contentColor = Theme[colors][onPrimary],
-            enabled = state.canCreateInstance
-        ) {
-            AppIcon(
-                imageVector = Lucide.Plus,
-                contentDescription = stringResource(Res.string.create)
-            )
-            AppText(
-                text = stringResource(Res.string.create)
-            )
-        }
+            enabled = state.canCreateInstance,
+        )
     }
 }
 

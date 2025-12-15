@@ -15,6 +15,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.semantics.Role
@@ -64,6 +65,51 @@ fun AppButton(
             horizontalArrangement = horizontalArrangement,
             verticalAlignment = verticalAlignment,
             content = content
+        )
+    }
+}
+
+@Composable
+fun AppIconTextButton(
+    onClick: () -> Unit,
+    text: String,
+    imageVector: ImageVector,
+    enabled: Boolean = true,
+    shape: Shape = RoundedCornerShape(4.dp),
+    backgroundColor: Color = Color.Unspecified,
+    contentColor: Color = LocalContentColor.current,
+    contentPadding: PaddingValues = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
+    borderColor: Color = Color.Unspecified,
+    borderWidth: Dp = 0.dp,
+    modifier: Modifier = Modifier,
+    role: Role = Role.Button,
+    indication: Indication? = LocalIndication.current,
+    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+    horizontalArrangement: Arrangement.Horizontal = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+    verticalAlignment: Alignment.Vertical = Alignment.CenterVertically,
+) {
+    AppButton(
+        onClick = onClick,
+        enabled = enabled,
+        shape = shape,
+        backgroundColor = backgroundColor,
+        contentColor = contentColor,
+        contentPadding = contentPadding,
+        borderColor = borderColor,
+        borderWidth = borderWidth,
+        modifier = modifier,
+        role = role,
+        indication = indication,
+        interactionSource = interactionSource,
+        horizontalArrangement = horizontalArrangement,
+        verticalAlignment = verticalAlignment,
+    ) {
+        AppIcon(
+            imageVector = imageVector,
+            contentDescription = text
+        )
+        AppText(
+            text = text
         )
     }
 }
