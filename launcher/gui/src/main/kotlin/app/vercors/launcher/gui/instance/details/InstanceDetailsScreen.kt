@@ -8,19 +8,22 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import app.vercors.launcher.gui.res.Res
+import app.vercors.launcher.gui.res.delete
+import app.vercors.launcher.gui.res.launch
 import app.vercors.shared.domain.Resource
 import app.vercors.shared.domain.Result
-import app.vercors.shared.ui.component.AppIcon
-import app.vercors.shared.ui.component.AppText
+import app.vercors.shared.ui.*
+import app.vercors.shared.ui.component.*
 import app.vercors.shared.ui.layout.AppError
 import app.vercors.shared.ui.layout.AppLoading
 import app.vercors.shared.ui.modifier.appCard
-import com.composables.icons.lucide.Gamepad2
-import com.composables.icons.lucide.Lucide
+import com.composables.icons.lucide.*
+import com.composeunstyled.DropdownPanelAnchor
+import com.composeunstyled.theme.Theme
+import org.jetbrains.compose.resources.stringResource
 import pro.respawn.flowmvi.api.IntentReceiver
 import pro.respawn.flowmvi.compose.dsl.subscribe
 
@@ -72,10 +75,7 @@ fun InstanceDetailsScreen(
         modifier = Modifier.padding(8.dp)
     ) {
         Row(
-            modifier = Modifier.appCard().padding(8.dp).fillMaxWidth().sharedElement(
-                sharedContentState = rememberSharedContentState("instance/${instance.id}/card"),
-                animatedVisibilityScope = animatedVisibilityScope
-            ),
+            modifier = Modifier.appCard().padding(horizontal = 16.dp, vertical = 8.dp).fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -97,8 +97,6 @@ fun InstanceDetailsScreen(
                     text = instance.name,
                     fontWeight = FontWeight.SemiBold,
                     singleLine = true,
-                    textAlign = TextAlign.Center,
-                    overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.sharedElement(
                         sharedContentState = rememberSharedContentState("instance/${instance.id}/title"),
                         animatedVisibilityScope = animatedVisibilityScope
@@ -111,8 +109,6 @@ fun InstanceDetailsScreen(
                     AppText(
                         text = instance.loader,
                         fontSize = 12.sp,
-                        singleLine = true,
-                        overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.sharedElement(
                             sharedContentState = rememberSharedContentState("instance/${instance.id}/loader"),
                             animatedVisibilityScope = animatedVisibilityScope
@@ -121,8 +117,6 @@ fun InstanceDetailsScreen(
                     AppText(
                         text = instance.version,
                         fontSize = 12.sp,
-                        singleLine = true,
-                        overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.sharedElement(
                             sharedContentState = rememberSharedContentState("instance/${instance.id}/version"),
                             animatedVisibilityScope = animatedVisibilityScope
@@ -130,6 +124,30 @@ fun InstanceDetailsScreen(
                     )
                 }
             }
+
+            AppIconTextButton(
+                onClick = { store.intent(InstanceDetailsIntent.LaunchInstance) },
+                text = stringResource(Res.string.launch),
+                backgroundColor = Theme[colors][success],
+                contentColor = Theme[colors][onSuccess],
+                imageVector = Lucide.Play,
+            )
+
+            AppMenuButton(
+                imageVector = Lucide.EllipsisVertical,
+                backgroundColor = Theme[colors][surface2],
+                menuModifier = Modifier.offset(y = 4.dp),
+                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 4.dp),
+                anchor = DropdownPanelAnchor.BottomEnd,
+                menuContent = {
+                    AppMenuItem(
+                        text = stringResource(Res.string.delete),
+                        imageVector = Lucide.Trash,
+                        onClick = { store.intent(InstanceDetailsIntent.DeleteInstance) },
+                        contentColor = Theme[colors][error]
+                    )
+                }
+            )
         }
     }
 }

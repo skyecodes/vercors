@@ -29,7 +29,10 @@ val InstanceModule = module {
     container { new(::InstanceDetailsContainer) }
     appNavigation<InstanceDetailsRoute> { route, _ ->
         InstanceDetailsScreen(
-            container = container(params = { parametersOf(route.instanceId) })
+            container = container(
+                key = route.toString(),
+                params = { parametersOf(route.instanceId) }
+            )
         )
     }
 

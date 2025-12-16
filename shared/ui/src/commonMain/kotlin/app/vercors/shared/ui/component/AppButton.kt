@@ -72,8 +72,8 @@ fun AppButton(
 @Composable
 fun AppIconTextButton(
     onClick: () -> Unit,
-    text: String,
-    imageVector: ImageVector,
+    text: String? = null,
+    imageVector: ImageVector? = null,
     enabled: Boolean = true,
     shape: Shape = RoundedCornerShape(4.dp),
     backgroundColor: Color = Color.Unspecified,
@@ -104,12 +104,16 @@ fun AppIconTextButton(
         horizontalArrangement = horizontalArrangement,
         verticalAlignment = verticalAlignment,
     ) {
-        AppIcon(
-            imageVector = imageVector,
-            contentDescription = text
-        )
-        AppText(
-            text = text
-        )
+        imageVector?.let {
+            AppIcon(
+                imageVector = it,
+                contentDescription = text
+            )
+        }
+        text?.let {
+            AppText(
+                text = it
+            )
+        }
     }
 }

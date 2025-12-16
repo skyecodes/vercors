@@ -19,8 +19,8 @@ import pro.respawn.flowmvi.plugins.whileSubscribed
 private val logger = KotlinLogging.logger {}
 
 class InstanceDetailsContainer(
-    val id: InstanceId,
-    val observeInstanceListUseCase: ObserveInstanceListUseCase
+    private val instanceId: InstanceId,
+    private val observeInstanceListUseCase: ObserveInstanceListUseCase
 ) : Container<InstanceDetailsState, InstanceDetailsIntent, InstanceDetailsAction> {
     override val store = store(initial = InstanceDetailsState()) {
         configureWithLogger(logger)
@@ -33,7 +33,7 @@ class InstanceDetailsContainer(
 
         whileSubscribed {
             observeInstanceListUseCase()
-                .map { instances -> instances.map { list -> list.first { it.id == id }.toView() } }
+                .map { instances -> instances.map { list -> list.first { it.id == instanceId }.toView() } }
                 .collect { instance ->
                     updateState { copy(instance = instance) }
                 }
@@ -60,6 +60,8 @@ fun Instance.toView(): InstanceView = InstanceView(
 )
 
 sealed interface InstanceDetailsIntent : MVIIntent {
+    data object LaunchInstance : InstanceDetailsIntent
+    data object DeleteInstance : InstanceDetailsIntent
 }
 
 sealed interface InstanceDetailsAction : MVIAction {

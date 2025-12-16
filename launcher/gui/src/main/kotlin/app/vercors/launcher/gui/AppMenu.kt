@@ -4,6 +4,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -101,14 +102,15 @@ context(store: IntentReceiver<AppIntent>)
 private fun ToggleDrawerButton(isDrawerOpen: Boolean) {
     AppButton(
         onClick = { store.intent(AppIntent.ToggleDrawer) },
-        modifier = Modifier.offset(x = 8.dp),
+        modifier = Modifier.offset(x = 2.dp),
         contentPadding = PaddingValues(vertical = 8.dp),
+        shape = RoundedCornerShape(topStart = 16.dp, bottomStart = 16.dp),
         backgroundColor = Theme[colors][background],
     ) {
         AppIcon(
             imageVector = if (isDrawerOpen) Lucide.ChevronLeft else Lucide.ChevronRight,
             contentDescription = null,
-            modifier = Modifier.padding(end = 4.dp).size(16.dp)
+            modifier = Modifier.size(16.dp)
         )
     }
 }
