@@ -1,11 +1,10 @@
 package app.vercors.meta.backend.project.curseforge
 
+import app.vercors.meta.backend.project.curseforge.dto.CurseForgeCategory
+import app.vercors.meta.backend.project.curseforge.dto.CurseForgeModLoaderType
 import app.vercors.meta.backend.project.curseforge.dto.CurseForgeProject
 import app.vercors.meta.backend.project.curseforge.dto.CurseForgeProjectSearchResponse
-import app.vercors.meta.lib.project.BriefProjectData
-import app.vercors.meta.lib.project.ProjectData
-import app.vercors.meta.lib.project.ProjectSearchResponseData
-import app.vercors.meta.lib.project.ProjectTypeData
+import app.vercors.meta.lib.project.*
 
 internal fun CurseForgeProjectSearchResponse.convert(): ProjectSearchResponseData = ProjectSearchResponseData(
     results = data.map { it.convertBrief() }
@@ -34,9 +33,28 @@ internal fun CurseForgeProject.convert(): ProjectData = ProjectData(
     logoUrl = logo.thumbnailUrl
 )
 
-internal fun ProjectTypeData.toClassId(): Int = when (this) {
+internal fun ProjectTypeData.toCurseForgeClassId(): Int = when (this) {
     ProjectTypeData.Mod -> MOD_CLASS_ID
     ProjectTypeData.Modpack -> MODPACK_CLASS_ID
     ProjectTypeData.ResourcePack -> RESOURCEPACK_CLASS_ID
     ProjectTypeData.ShaderPack -> SHADERPACK_CLASS_ID
+    ProjectTypeData.DataPack -> DATAPACK_CLASS_ID
+    ProjectTypeData.World -> WORLD_CLASS_ID
+}
+
+internal fun CurseForgeCategory.convertToType(): ProjectTypeData? = when (id) {
+    MOD_CLASS_ID -> ProjectTypeData.Mod
+    MODPACK_CLASS_ID -> ProjectTypeData.Modpack
+    RESOURCEPACK_CLASS_ID -> ProjectTypeData.ResourcePack
+    SHADERPACK_CLASS_ID -> ProjectTypeData.ShaderPack
+    DATAPACK_CLASS_ID -> ProjectTypeData.DataPack
+    WORLD_CLASS_ID -> ProjectTypeData.World
+    else -> null
+}
+
+internal fun ProjectLoaderData.toCurseForgeModLoaderType(): CurseForgeModLoaderType = when (this) {
+    ProjectLoaderData.Forge -> CurseForgeModLoaderType.Forge
+    ProjectLoaderData.Fabric -> CurseForgeModLoaderType.Fabric
+    ProjectLoaderData.Quilt -> CurseForgeModLoaderType.Quilt
+    ProjectLoaderData.Neoforge -> CurseForgeModLoaderType.NeoForge
 }

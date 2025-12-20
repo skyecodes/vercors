@@ -4,16 +4,19 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-enum class ModrinthProjectType(val value: String) {
+enum class ModrinthProjectType {
     @SerialName("mod")
-    Mod("mod"),
+    Mod,
 
     @SerialName("modpack")
-    Modpack("modpack"),
+    Modpack,
 
     @SerialName("resourcepack")
-    ResourcePack("resourcepack"),
+    ResourcePack,
 
     @SerialName("shader")
-    ShaderPack("shader")
+    ShaderPack,
+
+    @SerialName("datapack")
+    DataPack
 }

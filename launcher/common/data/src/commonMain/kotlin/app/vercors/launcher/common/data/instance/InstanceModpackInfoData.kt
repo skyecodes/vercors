@@ -10,20 +10,17 @@ import kotlinx.serialization.Serializable
 data class InstanceModpackInfoData(
     val platform: PlatformTypeData,
     val projectId: String,
-    val version: String,
     val fileId: String,
 )
 
 fun InstanceModpackInfoData.toDomain(): InstanceModpackInfo = InstanceModpackInfo(
     platform = platform.toDomain(),
     projectId = projectId,
-    version = version,
     fileId = fileId,
 )
 
 fun InstanceModpackInfo.toData(): InstanceModpackInfoData = InstanceModpackInfoData(
     platform = platform.toData(),
     projectId = projectId,
-    version = version,
     fileId = fileId,
 )

@@ -7,5 +7,7 @@ enum class ProjectType {
     Mod,
     Modpack,
     ResourcePack,
-    ShaderPack
+    ShaderPack,
+    DataPack,
+    World,
 }

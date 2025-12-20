@@ -49,14 +49,16 @@ data class InstanceView(
     val id: InstanceId,
     val name: String,
     val version: String,
-    val loader: String
+    val loader: String,
+    val type: String,
 )
 
 fun Instance.toView(): InstanceView = InstanceView(
     id = id,
     name = name,
     version = gameVersion,
-    loader = loaderName
+    loader = loaderName,
+    type = typeName,
 )
 
 sealed interface InstanceDetailsIntent : MVIIntent {

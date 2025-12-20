@@ -35,11 +35,16 @@
     <string name="latestRelease">Latest release</string>
     <string name="latestSnapshot">Latest snapshot</string>
     <string name="loader">Loader</string>
-    <string name="noFilter">%1$s: no filter</string>
+    <string name="anyType">Any type</string>
+    <string name="anyLoader">Any loader</string>
+    <string name="anyVersion">Any version</string>
 
-    <string name="search">Search...</string>
-    <string name="loading">Loading...</string>
+    <string name="search">Search</string>
+    <string name="loading">Loading</string>
 
     <string name="launch">Launch</string>
-    <string name="delete">Delete...</string>
+    <string name="delete">Delete</string>
+
+    <string name="provider">Provider</string>
+    <string name="type">Type</string>
 </resources>

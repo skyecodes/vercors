@@ -12,20 +12,20 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import app.vercors.shared.ui.colors
 import app.vercors.shared.ui.modifier.appCard
-import app.vercors.shared.ui.onBackground
 import app.vercors.shared.ui.res.Res
 import app.vercors.shared.ui.res.search
-import app.vercors.shared.ui.surface
-import app.vercors.shared.ui.surface2
+import app.vercors.shared.ui.theme.colors
+import app.vercors.shared.ui.theme.onBackground
+import app.vercors.shared.ui.theme.surface
+import app.vercors.shared.ui.theme.surface2
 import com.composables.core.HorizontalSeparator
 import com.composables.icons.lucide.ChevronDown
+import com.composables.icons.lucide.ChevronUp
 import com.composables.icons.lucide.Lucide
 import com.composeunstyled.DropdownMenu
 import com.composeunstyled.DropdownMenuPanel
 import com.composeunstyled.DropdownPanelAnchor
-import com.composeunstyled.Text
 import com.composeunstyled.theme.Theme
 import org.jetbrains.compose.resources.stringResource
 
@@ -38,9 +38,9 @@ fun <T> AppSelectField(
     backgroundColor: Color = Theme[colors][surface],
     textConverter: @Composable (T) -> String = { it.toString() },
     itemRenderer: @Composable RowScope.(T) -> Unit = {
-        Text(
+        AppText(
             text = textConverter(it),
-            fontWeight = if (it == value) FontWeight.Bold else FontWeight.Normal
+            fontWeight = if (it == value) FontWeight.Bold else FontWeight.Normal,
         )
     },
     searchable: Boolean = false,
@@ -50,10 +50,11 @@ fun <T> AppSelectField(
     anchor: DropdownPanelAnchor = DropdownPanelAnchor.BottomStart
 ) {
     var expanded by remember { mutableStateOf(false) }
+    val listState = rememberLazyListState()
 
     BoxWithConstraints(modifier = modifier) {
         DropdownMenu(
-            onExpandRequest = { expanded = true }
+            onExpandRequest = { expanded = true },
         ) {
             Column(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -73,7 +74,7 @@ fun <T> AppSelectField(
                 ) {
                     AppText(textConverter(value))
                     AppIcon(
-                        imageVector = Lucide.ChevronDown,
+                        imageVector = if (expanded) Lucide.ChevronUp else Lucide.ChevronDown,
                         contentDescription = null
                     )
                 }
@@ -102,10 +103,9 @@ fun <T> AppSelectField(
             }
 
             Row {
-                val listState = rememberLazyListState()
-
                 LaunchedEffect(value) {
-                    val index = items.indexOfFirst { it == value }
+                    val index =
+                        items.indexOfFirst { it == value } - (listState.layoutInfo.visibleItemsInfo.size - 1) / 2
                     if (index >= 0) listState.scrollToItem(index)
                 }
 

@@ -15,11 +15,12 @@ import app.vercors.launcher.gui.res.delete
 import app.vercors.launcher.gui.res.launch
 import app.vercors.shared.domain.Resource
 import app.vercors.shared.domain.Result
-import app.vercors.shared.ui.*
+import app.vercors.shared.ui.animation.appSharedElement
 import app.vercors.shared.ui.component.*
 import app.vercors.shared.ui.layout.AppError
 import app.vercors.shared.ui.layout.AppLoading
 import app.vercors.shared.ui.modifier.appCard
+import app.vercors.shared.ui.theme.*
 import com.composables.icons.lucide.*
 import com.composeunstyled.DropdownPanelAnchor
 import com.composeunstyled.theme.Theme
@@ -83,7 +84,7 @@ fun InstanceDetailsScreen(
                 imageVector = Lucide.Gamepad2,
                 contentDescription = instance.name,
                 modifier = Modifier.size(48.dp)
-                    .sharedElement(
+                    .appSharedElement(
                         sharedContentState = rememberSharedContentState("instance/${instance.id}/icon"),
                         animatedVisibilityScope = animatedVisibilityScope
                     )
@@ -97,19 +98,26 @@ fun InstanceDetailsScreen(
                     text = instance.name,
                     fontWeight = FontWeight.SemiBold,
                     singleLine = true,
-                    modifier = Modifier.sharedElement(
+                    modifier = Modifier.appSharedElement(
                         sharedContentState = rememberSharedContentState("instance/${instance.id}/title"),
                         animatedVisibilityScope = animatedVisibilityScope
                     )
                 )
-
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    horizontalArrangement = Arrangement.spacedBy(3.dp)
                 ) {
+                    AppText(
+                        text = "${instance.type} -",
+                        fontSize = 12.sp,
+                        modifier = Modifier.appSharedElement(
+                            sharedContentState = rememberSharedContentState("instance/${instance.id}/type"),
+                            animatedVisibilityScope = animatedVisibilityScope
+                        )
+                    )
                     AppText(
                         text = instance.loader,
                         fontSize = 12.sp,
-                        modifier = Modifier.sharedElement(
+                        modifier = Modifier.appSharedElement(
                             sharedContentState = rememberSharedContentState("instance/${instance.id}/loader"),
                             animatedVisibilityScope = animatedVisibilityScope
                         )
@@ -117,7 +125,7 @@ fun InstanceDetailsScreen(
                     AppText(
                         text = instance.version,
                         fontSize = 12.sp,
-                        modifier = Modifier.sharedElement(
+                        modifier = Modifier.appSharedElement(
                             sharedContentState = rememberSharedContentState("instance/${instance.id}/version"),
                             animatedVisibilityScope = animatedVisibilityScope
                         )

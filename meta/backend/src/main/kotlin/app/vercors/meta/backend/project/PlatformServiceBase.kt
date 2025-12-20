@@ -1,18 +1,34 @@
 package app.vercors.meta.backend.project
 
-import app.vercors.meta.lib.project.PlatformData
-import app.vercors.meta.lib.project.ProjectData
-import app.vercors.meta.lib.project.ProjectSearchResponseData
-import app.vercors.meta.lib.project.ProjectTypeData
+import app.vercors.meta.lib.project.*
 
 interface PlatformServiceBase {
-    val info: PlatformData
+    val info: PlatformInfo
+
+    suspend fun getPlatformData(): PlatformData = PlatformData(
+        id = info.id,
+        name = info.name,
+        baseUrl = info.baseUrl,
+        categories = getCategories()
+    )
+
+    suspend fun getCategories(): Map<ProjectTypeData, List<ProjectCategoryData>>
 
     suspend fun search(
-        type: ProjectTypeData,
-        query: String? = null,
-        limit: Int? = null
+        projectType: ProjectTypeData?,
+        loaders: List<ProjectLoaderData>?,
+        gameVersions: List<String>?,
+        categories: List<String>?,
+        query: String?,
+        firstIndex: Int?,
+        pageSize: Int?
     ): ProjectSearchResponseData
 
     suspend fun getProject(projectId: String): ProjectData
 }
+
+data class PlatformInfo(
+    val id: String,
+    val name: String,
+    val baseUrl: String
+)

@@ -17,7 +17,7 @@ interface ProjectApi {
         @Path("platformId") platformId: String
     ): ApiResponse<PlatformData>
 
-    @GET("platform/{platformId}/featured-projects")
+    @GET("platform/{platformId}/featured-project")
     suspend fun getFeaturedProjectList(
         @Path("platformId") platformId: String
     ): ApiResponse<Map<ProjectTypeData, List<BriefProjectData>>>

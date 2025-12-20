@@ -5,16 +5,21 @@ import app.vercors.meta.backend.project.projectRoutes
 import com.ucasoft.ktor.simpleCache.SimpleCache
 import com.ucasoft.ktor.simpleMemoryCache.memoryCache
 import com.ucasoft.ktor.simpleRedisCache.redisCache
+import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
 import io.ktor.server.cio.*
 import io.ktor.server.engine.*
+import io.ktor.server.plugins.*
 import io.ktor.server.plugins.contentnegotiation.*
+import io.ktor.server.plugins.statuspages.*
+import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.serialization.Serializable
 import org.koin.dsl.module
 import org.koin.environmentProperties
 import org.koin.ksp.generated.module
@@ -56,8 +61,23 @@ fun Application.module(scope: CoroutineScope) {
         }
     }
 
+    install(StatusPages) {
+        exception<NotFoundException> { call, exception ->
+            call.respondError(HttpStatusCode.NotFound, exception)
+        }
+        exception<Throwable> { call, exception ->
+            call.respondError(HttpStatusCode.InternalServerError, exception)
+        }
+    }
+
     routing {
         gameRoutes()
         projectRoutes()
     }
 }
+
+private suspend inline fun ApplicationCall.respondError(status: HttpStatusCode, throwable: Throwable) =
+    respond(status = status, message = ErrorResponse(throwable.message ?: status.description))
+
+@Serializable
+private data class ErrorResponse(val error: String)

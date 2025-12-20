@@ -16,6 +16,7 @@ import app.vercors.shared.domain.project.usecase.GetFeaturedProjectListUseCase
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.transform
 import org.koin.core.annotation.Factory
 
 @Factory
@@ -29,12 +30,16 @@ class ObserveHomeSectionListUseCase(
             .distinctUntilChanged()
         val instanceFlow = observeInstanceList().map { res -> res.map { list -> list.sortedBy { it.lastPlayedAt } } }
             .distinctUntilChanged()
-        return configFlow.combineResource(instanceFlow).map { resources ->
-            resources.map { (config, instances) ->
+        return configFlow.combineResource(instanceFlow).transform { resources ->
+            emit(resources.map { (config, instances) ->
+                val (_, categories) = config
+                categories.map { it.toSection(instances, null) }
+            })
+            emit(resources.map { (config, instances) ->
                 val (platform, categories) = config
                 val featuredProjectList = loadFeaturedProjectList(platform, categories)
                 categories.map { it.toSection(instances, featuredProjectList) }
-            }
+            })
         }
     }
 
@@ -48,7 +53,7 @@ class ObserveHomeSectionListUseCase(
 
     private fun HomeCategoryConfig.toSection(
         instances: List<Instance>,
-        featuredProjectList: Map<ProjectType, List<BriefProject>>
+        featuredProjectList: Map<ProjectType, List<BriefProject>>?
     ): HomeSection<*> = when (this) {
         HomeCategoryConfig.Instances -> HomeSection.InstanceListSection(
             type = HomeSectionType.RecentlyPlayed,
@@ -57,37 +62,37 @@ class ObserveHomeSectionListUseCase(
 
         HomeCategoryConfig.Modpacks -> HomeSection.ProjectListSection(
             type = HomeSectionType.FeaturedModpacks,
-            data = featuredProjectList.getValue(ProjectType.Modpack)
+            data = featuredProjectList?.getValue(ProjectType.Modpack)
         )
 
         HomeCategoryConfig.Mods -> HomeSection.ProjectListSection(
             type = HomeSectionType.FeaturedMods,
-            data = featuredProjectList.getValue(ProjectType.Mod)
+            data = featuredProjectList?.getValue(ProjectType.Mod)
         )
 
         HomeCategoryConfig.ResourcePacks -> HomeSection.ProjectListSection(
             type = HomeSectionType.FeaturedResourcePacks,
-            data = featuredProjectList.getValue(ProjectType.ResourcePack)
+            data = featuredProjectList?.getValue(ProjectType.ResourcePack)
         )
 
         HomeCategoryConfig.ShaderPacks -> HomeSection.ProjectListSection(
             type = HomeSectionType.FeaturedShaderPacks,
-            data = featuredProjectList.getValue(ProjectType.ShaderPack)
+            data = featuredProjectList?.getValue(ProjectType.ShaderPack)
         )
     }
 }
 
 sealed interface HomeSection<T : Any> {
     val type: HomeSectionType
-    val data: List<T>
+    val data: List<T>?
 
     data class InstanceListSection(
         override val type: HomeSectionType,
-        override val data: List<Instance>
+        override val data: List<Instance>?
     ) : HomeSection<Instance>
 
     data class ProjectListSection(
         override val type: HomeSectionType,
-        override val data: List<BriefProject>
+        override val data: List<BriefProject>?
     ) : HomeSection<BriefProject>
 }

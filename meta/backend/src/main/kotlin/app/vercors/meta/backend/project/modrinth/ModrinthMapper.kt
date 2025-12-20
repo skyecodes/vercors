@@ -1,27 +1,20 @@
 package app.vercors.meta.backend.project.modrinth
 
-import app.vercors.meta.backend.project.modrinth.dto.ModrinthProject
-import app.vercors.meta.backend.project.modrinth.dto.ModrinthProjectResult
-import app.vercors.meta.backend.project.modrinth.dto.ModrinthProjectSearchResult
-import app.vercors.meta.lib.project.BriefProjectData
-import app.vercors.meta.lib.project.ProjectData
-import app.vercors.meta.lib.project.ProjectSearchResponseData
-import app.vercors.meta.lib.project.ProjectTypeData
+import app.vercors.meta.backend.project.modrinth.dto.*
+import app.vercors.meta.lib.project.*
 
 internal fun buildFacets(
     projectType: ProjectTypeData? = null,
-    categories: String? = null,
-    versions: String? = null
+    loaders: List<ProjectLoaderData>? = null,
+    gameVersions: List<String>? = null,
+    categories: List<String>? = null
 ): String {
     val parts = mutableListOf<String>()
-    projectType?.let { parts.add("[\"project_type:${it.asModrinthString()}\"]") }
-    categories?.let { parts.add("[\"categories:$it\"]") }
-    versions?.let { parts.add("[\"versions:$it\"]") }
-    return parts.joinToString(
-        separator = ",",
-        prefix = "[",
-        postfix = "]"
-    )
+    projectType?.let { parts.add("[\"project_type:${projectType.asModrinthString()}\"]") }
+    loaders?.let { parts.add(it.joinToString(",", "[", "]") { loader -> "\"categories:$loader\"" }) }
+    gameVersions?.let { parts.add(it.joinToString(",", "[", "]") { gameVersion -> "\"versions:$gameVersion\"" }) }
+    categories?.let { parts.add(it.joinToString(",", "[", "]") { category -> "\"categories:$category\"" }) }
+    return parts.joinToString(",", "[", "]")
 }
 
 private fun ProjectTypeData.asModrinthString(): String = when (this) {
@@ -29,6 +22,8 @@ private fun ProjectTypeData.asModrinthString(): String = when (this) {
     ProjectTypeData.Modpack -> "modpack"
     ProjectTypeData.ResourcePack -> "resourcepack"
     ProjectTypeData.ShaderPack -> "shader"
+    ProjectTypeData.DataPack -> "datapack"
+    ProjectTypeData.World -> error("Worlds are not supported by Modrinth")
 }
 
 internal fun ModrinthProjectSearchResult.convert(): ProjectSearchResponseData = ProjectSearchResponseData(
@@ -47,6 +42,29 @@ internal fun ModrinthProjectResult.convert(): BriefProjectData = BriefProjectDat
     logoUrl = iconUrl,
     imageUrl = featuredGallery
 )
+
+internal fun ModrinthProjectType.convert(): ProjectTypeData? = when (this) {
+    ModrinthProjectType.Mod -> ProjectTypeData.Mod
+    ModrinthProjectType.Modpack -> ProjectTypeData.Modpack
+    ModrinthProjectType.ResourcePack -> ProjectTypeData.ResourcePack
+    ModrinthProjectType.ShaderPack -> ProjectTypeData.ShaderPack
+    ModrinthProjectType.DataPack -> ProjectTypeData.DataPack
+}
+
+internal fun ModrinthCategory.convert(): ProjectCategoryData = ProjectCategoryData(
+    id = name,
+    slug = name,
+    name = name
+)
+
+internal fun String.toModrinthProjectType(): ProjectTypeData? = when (this) {
+    "mod" -> ProjectTypeData.Mod
+    "modpack" -> ProjectTypeData.Modpack
+    "resourcepack" -> ProjectTypeData.ResourcePack
+    "shader" -> ProjectTypeData.ShaderPack
+    "datapack" -> ProjectTypeData.DataPack
+    else -> null
+}
 
 internal fun ModrinthProject.convert(): ProjectData = ProjectData(
     id = id,

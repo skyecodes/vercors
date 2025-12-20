@@ -1,5 +1,6 @@
 package app.vercors.meta.backend.project.modrinth
 
+import app.vercors.meta.backend.project.modrinth.dto.ModrinthCategory
 import app.vercors.meta.backend.project.modrinth.dto.ModrinthProject
 import app.vercors.meta.backend.project.modrinth.dto.ModrinthProjectMember
 import app.vercors.meta.backend.project.modrinth.dto.ModrinthProjectSearchResult
@@ -11,6 +12,12 @@ import io.ktor.client.*
 import org.koin.core.annotation.Single
 
 interface ModrinthApi {
+    @GET("v2/tag/project_type")
+    suspend fun getProjectTypes(): List<String>
+
+    @GET("v2/tag/category")
+    suspend fun getCategories(): List<ModrinthCategory>
+
     @GET("v2/search")
     suspend fun search(
         @Query("query") query: String? = null,

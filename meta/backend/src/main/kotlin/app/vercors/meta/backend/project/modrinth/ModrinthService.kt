@@ -1,10 +1,10 @@
 package app.vercors.meta.backend.project.modrinth
 
+import app.vercors.meta.backend.project.PlatformInfo
 import app.vercors.meta.backend.project.PlatformServiceBase
-import app.vercors.meta.lib.project.PlatformData
-import app.vercors.meta.lib.project.ProjectData
-import app.vercors.meta.lib.project.ProjectSearchResponseData
-import app.vercors.meta.lib.project.ProjectTypeData
+import app.vercors.meta.lib.project.*
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import org.koin.core.annotation.Single
 
 internal const val MODRINTH_PLATFORM_ID = "modrinth"
@@ -13,20 +13,39 @@ internal const val MODRINTH_PLATFORM_ID = "modrinth"
 class ModrinthService(
     private val api: ModrinthApi
 ) : PlatformServiceBase {
-    override val info: PlatformData = PlatformData(
+    override val info: PlatformInfo = PlatformInfo(
         id = MODRINTH_PLATFORM_ID,
         name = "Modrinth",
         baseUrl = "https://modrinth.com/"
     )
 
+    override suspend fun getCategories(): Map<ProjectTypeData, List<ProjectCategoryData>> = coroutineScope {
+        val types = async { api.getProjectTypes().mapNotNull { it.toModrinthProjectType() } }
+        val categories = async { api.getCategories() }
+
+        categories.await().groupBy { it.projectType.convert() }
+            .filterKeys { it in types.await() }
+            .map { (k, v) -> k!! to v.map { it.convert() } }
+            .toMap()
+    }
+
     override suspend fun search(
-        type: ProjectTypeData,
+        projectType: ProjectTypeData?,
+        loaders: List<ProjectLoaderData>?,
+        gameVersions: List<String>?,
+        categories: List<String>?,
         query: String?,
-        limit: Int?
+        firstIndex: Int?,
+        pageSize: Int?
     ): ProjectSearchResponseData = api.search(
         query = query,
-        facets = buildFacets(type),
-        limit = limit
+        facets = buildFacets(
+            projectType = projectType,
+            loaders = loaders,
+            gameVersions = gameVersions,
+            categories = categories
+        ),
+        limit = pageSize
     ).convert()
 
     override suspend fun getProject(projectId: String): ProjectData = api.getProject(projectId).convert()

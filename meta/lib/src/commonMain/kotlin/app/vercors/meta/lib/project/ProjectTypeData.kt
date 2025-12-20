@@ -12,5 +12,11 @@ enum class ProjectTypeData {
     @SerialName("resourcepack")
     ResourcePack,
     @SerialName("shaderpack")
-    ShaderPack
+    ShaderPack,
+
+    @SerialName("datapack")
+    DataPack,
+
+    @SerialName("world")
+    World
 }

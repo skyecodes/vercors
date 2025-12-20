@@ -11,18 +11,21 @@ import kotlinx.serialization.Serializable
 @Serializable
 internal data class GuiConfigurationData(
     val menuDrawerOpen: Boolean,
+    val animations: Boolean,
     val preferredPlatform: PlatformTypeData,
     val homeCategories: List<HomeCategoryConfigData>
 )
 
 internal fun GuiConfigurationData.toDomain(): GuiConfiguration = GuiConfiguration(
     menuDrawerOpen = menuDrawerOpen,
+    animations = animations,
     preferredPlatform = preferredPlatform.toDomain(),
     homeCategories = homeCategories.map { it.toDomain() }
 )
 
 internal fun GuiConfiguration.toData(): GuiConfigurationData = GuiConfigurationData(
     menuDrawerOpen = menuDrawerOpen,
+    animations = animations,
     preferredPlatform = preferredPlatform.toData(),
     homeCategories = homeCategories.map { it.toData() }
 )

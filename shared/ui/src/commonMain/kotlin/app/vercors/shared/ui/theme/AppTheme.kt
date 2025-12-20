@@ -1,4 +1,4 @@
-package app.vercors.shared.ui
+package app.vercors.shared.ui.theme
 
 import androidx.compose.foundation.text.selection.TextSelectionColors
 import androidx.compose.ui.graphics.Color

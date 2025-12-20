@@ -10,9 +10,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.unit.dp
-import app.vercors.shared.ui.colors
-import app.vercors.shared.ui.onBackground
-import app.vercors.shared.ui.surface
+import app.vercors.shared.ui.theme.colors
+import app.vercors.shared.ui.theme.onBackground
+import app.vercors.shared.ui.theme.surface
 import com.composables.icons.lucide.Check
 import com.composables.icons.lucide.Lucide
 import com.composeunstyled.Checkbox

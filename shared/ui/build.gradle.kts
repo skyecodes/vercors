@@ -10,6 +10,7 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             implementation(libs.compose.components.resources)
+            implementation(compose.desktop.currentOs)
             implementation(libs.composables.composeunstyled)
             implementation(libs.composables.ripple)
             implementation(libs.composables.icons.lucide)
@@ -20,6 +21,7 @@ kotlin {
             implementation(libs.flowmvi.core)
             implementation(libs.flowmvi.compose)
             implementation(libs.flowmvi.android)
+            implementation(libs.flowmvi.metrics)
             implementation(libs.kotlin.logging)
         }
         commonTest.dependencies {
@@ -28,6 +30,7 @@ kotlin {
     }
 
     compilerOptions.freeCompilerArgs.addAll(
+        "-Xcontext-parameters",
         "-opt-in=androidx.compose.animation.ExperimentalSharedTransitionApi",
     )
 }

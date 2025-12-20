@@ -22,6 +22,7 @@ import com.composables.icons.lucide.PackagePlus
 import com.composables.icons.lucide.SquarePlus
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import pro.respawn.flowmvi.api.*
@@ -58,14 +59,10 @@ class CreateInstanceContainer(
             }
 
             init {
-                resourceFlow(getMinecraftVersionList::invoke).collectLatest {
-                    val gameVersionList = it.map(GameVersionList::convert)
-                    updateState {
-                        copy(
-                            gameVersionList = gameVersionList,
-                            selectedGameVersion = gameVersionList.getOrNull()
-                                ?.firstOrNull(GameVersionView::isLatestRelease)
-                        )
+                launch {
+                    resourceFlow(getMinecraftVersionList::invoke).collectLatest {
+                        val gameVersionList = it.map(GameVersionList::convert)
+                        updateState { copy(gameVersionList = gameVersionList) }
                     }
                 }
             }
@@ -74,6 +71,7 @@ class CreateInstanceContainer(
                 onState { _, new ->
                     new.copy(
                         selectedGameVersion = new.filteredGameVersionList.find { it == new.selectedGameVersion }
+                            ?: new.filteredGameVersionList.firstOrNull(GameVersionView::isLatestRelease)
                             ?: new.filteredGameVersionList.firstOrNull()
                     )
                 }

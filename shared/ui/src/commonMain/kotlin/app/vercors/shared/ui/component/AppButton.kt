@@ -4,9 +4,7 @@ import androidx.compose.foundation.Indication
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -21,8 +19,8 @@ import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import app.vercors.shared.ui.button
-import app.vercors.shared.ui.textStyles
+import app.vercors.shared.ui.theme.button
+import app.vercors.shared.ui.theme.textStyles
 import com.composeunstyled.Button
 import com.composeunstyled.LocalContentColor
 import com.composeunstyled.ProvideTextStyle
@@ -107,7 +105,8 @@ fun AppIconTextButton(
         imageVector?.let {
             AppIcon(
                 imageVector = it,
-                contentDescription = text
+                contentDescription = text,
+                modifier = Modifier.padding(vertical = 4.dp).size(16.dp)
             )
         }
         text?.let {

@@ -40,7 +40,7 @@ val InstanceModule = module {
     appNavigation<CreateInstanceRoute> { _, navigator ->
         CreateInstanceScreen(
             container = container(),
-            navigateToModpackList = { navigator.navigateTo(ProjectListRoute()) },
+            navigateToModpackList = { navigator.navigateTo(ProjectListRoute) },
             navigateToInstanceDetails = { navigator.navigateTo(InstanceDetailsRoute(it)) }
         )
     }

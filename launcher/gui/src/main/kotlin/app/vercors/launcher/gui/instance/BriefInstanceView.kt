@@ -8,11 +8,13 @@ data class BriefInstanceView(
     val name: String,
     val version: String,
     val loader: String,
+    val type: String
 )
 
 fun Instance.toBriefView(): BriefInstanceView = BriefInstanceView(
     id = id,
     name = name,
     version = gameVersion,
-    loader = loaderName
+    loader = loaderName,
+    type = typeName
 )

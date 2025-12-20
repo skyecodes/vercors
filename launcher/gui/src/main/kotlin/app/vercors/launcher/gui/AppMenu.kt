@@ -1,8 +1,5 @@
 package app.vercors.launcher.gui
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
@@ -13,12 +10,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import app.vercors.launcher.gui.navigation.Route
 import app.vercors.launcher.gui.navigation.TopLevelDestination
-import app.vercors.shared.ui.background
-import app.vercors.shared.ui.colors
+import app.vercors.shared.ui.animation.AppAnimatedVisibility
+import app.vercors.shared.ui.animation.appAnimateColorAsState
+import app.vercors.shared.ui.animation.appAnimateDpAsState
 import app.vercors.shared.ui.component.AppButton
 import app.vercors.shared.ui.component.AppIcon
 import app.vercors.shared.ui.component.AppText
-import app.vercors.shared.ui.primary
+import app.vercors.shared.ui.theme.background
+import app.vercors.shared.ui.theme.colors
+import app.vercors.shared.ui.theme.primary
 import com.composables.icons.lucide.ChevronLeft
 import com.composables.icons.lucide.ChevronRight
 import com.composables.icons.lucide.Lucide
@@ -66,13 +66,13 @@ private fun AppMenuDestination(
     currentBackStackEntry: Route?,
     isDrawerOpen: Boolean
 ) {
-    val backgroundColor by animateColorAsState(
+    val backgroundColor by appAnimateColorAsState(
         if (topLevelDestination == currentBackStackEntry?.topLevelDestination) Theme[colors][primary].copy(
             alpha = 0.2f
         ) else Color.Unspecified
     )
-    val horizontalPadding by animateDpAsState(if (isDrawerOpen) 16.dp else 8.dp)
-    val width by animateDpAsState(if (isDrawerOpen) 140.dp else 40.dp)
+    val horizontalPadding by appAnimateDpAsState(if (isDrawerOpen) 16.dp else 8.dp)
+    val width by appAnimateDpAsState(if (isDrawerOpen) 140.dp else 40.dp)
 
     AppButton(
         onClick = { store.intent(AppIntent.Navigate(topLevelDestination.route)) },
@@ -85,7 +85,7 @@ private fun AppMenuDestination(
             imageVector = topLevelDestination.icon,
             contentDescription = stringResource(topLevelDestination.text)
         )
-        AnimatedVisibility(
+        AppAnimatedVisibility(
             visible = isDrawerOpen,
             modifier = Modifier.weight(1f)
         ) {

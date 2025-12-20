@@ -1,9 +1,6 @@
 package app.vercors.launcher.gui
 
-import androidx.compose.animation.SharedTransitionLayout
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.togetherWith
+import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -18,7 +15,13 @@ import androidx.navigation3.ui.NavDisplay
 import app.vercors.launcher.gui.navigation.LocalNavigator
 import app.vercors.launcher.gui.navigation.Navigator
 import app.vercors.launcher.gui.navigation.Route
-import app.vercors.shared.ui.*
+import app.vercors.shared.ui.animation.LocalAnimation
+import app.vercors.shared.ui.animation.LocalSharedTransitionScope
+import app.vercors.shared.ui.animation.shouldAnimate
+import app.vercors.shared.ui.theme.AppTheme
+import app.vercors.shared.ui.theme.background
+import app.vercors.shared.ui.theme.backgroundAlt
+import app.vercors.shared.ui.theme.colors
 import com.composeunstyled.theme.Theme
 import org.koin.compose.navigation3.koinEntryProvider
 import org.koin.core.annotation.KoinExperimentalAPI
@@ -63,19 +66,25 @@ fun App(
 context(_: WindowScope, _: IntentReceiver<AppIntent>)
 private fun App(state: AppState, isMinimized: Boolean, onWindowEvent: (AppWindowEvent) -> Unit) {
     if (state.guiConfig != null) {
-        AppTheme {
-            Column(
-                modifier = Modifier.fillMaxSize().background(Theme[colors][backgroundAlt])
-            ) {
-                AppTopBar(
-                    canGoBack = state.canGoBack,
-                    canGoNext = state.canGoNext,
-                    isMinimized = isMinimized,
-                    onWindowEvent = onWindowEvent
-                )
-                Row {
-                    AppMenu(state.currentBackStackEntry, state.guiConfig.menuDrawerOpen)
-                    AppContent(state.backStack)
+        CompositionLocalProvider(LocalAnimation provides state.guiConfig.animations) {
+            AppTheme {
+                Box(
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    Column(
+                        modifier = Modifier.fillMaxSize().background(Theme[colors][backgroundAlt])
+                    ) {
+                        AppTopBar(
+                            canGoBack = state.canGoBack,
+                            canGoNext = state.canGoNext,
+                            isMinimized = isMinimized,
+                            onWindowEvent = onWindowEvent
+                        )
+                        Row {
+                            AppMenu(state.currentBackStackEntry, state.guiConfig.menuDrawerOpen)
+                            AppContent(state.backStack)
+                        }
+                    }
                 }
             }
         }
@@ -99,11 +108,12 @@ private fun AppContent(backStack: List<Any>) {
     ) {
         SharedTransitionLayout {
             CompositionLocalProvider(LocalSharedTransitionScope provides this) {
+                val shouldAnimate = shouldAnimate()
                 NavDisplay(
                     backStack = backStack,
                     onBack = { store.intent(AppIntent.Back) },
                     entryProvider = entryProvider,
-                    transitionSpec = { fadeIn() togetherWith fadeOut() }
+                    transitionSpec = { if (shouldAnimate) fadeIn() togetherWith fadeOut() else EnterTransition.None togetherWith ExitTransition.None }
                 )
             }
         }

@@ -8,10 +8,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import app.vercors.shared.ui.colors
 import app.vercors.shared.ui.component.AppIcon
 import app.vercors.shared.ui.component.AppText
-import app.vercors.shared.ui.error
+import app.vercors.shared.ui.theme.colors
+import app.vercors.shared.ui.theme.error
 import com.composables.icons.lucide.CircleX
 import com.composables.icons.lucide.Lucide
 import com.composeunstyled.ProvideContentColor

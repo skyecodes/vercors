@@ -39,26 +39,26 @@ class HomeContainer(
 
         whileSubscribed {
             observeHomeSectionList().collect {
-                updateState {
-                    when (it) {
-                        is Resource.Loaded -> when (val res = it.result) {
-                            is Result.Success -> HomeState.Loaded(res.data.map { section ->
+                when (it) {
+                    is Resource.Loaded -> when (val res = it.result) {
+                        is Result.Success -> updateState {
+                            HomeState.Loaded(res.data.map { section ->
                                 when (section) {
                                     is HomeSection.InstanceListSection -> HomeSectionView.InstanceListSection(
                                         section.type,
-                                        section.data.map { it.toBriefView() })
+                                        section.data?.map { it.toBriefView() })
 
                                     is HomeSection.ProjectListSection -> HomeSectionView.ProjectListSection(
                                         section.type,
-                                        section.data.map { it.toView() })
+                                        section.data?.map { it.toView() })
                                 }
                             })
-
-                            is Result.Error -> HomeState.Error(res.throwable)
                         }
 
-                        else -> HomeState.Loading
+                        is Result.Error -> action(HomeAction.ShowErrorPopup(res.throwable))
                     }
+
+                    else -> updateState { HomeState.Loading }
                 }
             }
         }
@@ -78,16 +78,16 @@ sealed interface HomeState : MVIState {
 
 sealed interface HomeSectionView<T> {
     val type: HomeSectionType
-    val data: List<T>
+    val data: List<T>?
 
     data class InstanceListSection(
         override val type: HomeSectionType,
-        override val data: List<BriefInstanceView>
+        override val data: List<BriefInstanceView>?
     ) : HomeSectionView<BriefInstanceView>
 
     data class ProjectListSection(
         override val type: HomeSectionType,
-        override val data: List<BriefProjectView>
+        override val data: List<BriefProjectView>?
     ) : HomeSectionView<BriefProjectView>
 }
 
@@ -101,6 +101,7 @@ sealed interface HomeAction : MVIAction {
     data object NavigateToCreateInstance : HomeAction
     data class NavigateToProjectDetails(val projectId: ProjectId) : HomeAction
     data class NavigateToInstanceDetails(val instanceId: InstanceId) : HomeAction
+    data class ShowErrorPopup(val throwable: Throwable) : HomeAction
 }
 
 enum class HomeSectionType {

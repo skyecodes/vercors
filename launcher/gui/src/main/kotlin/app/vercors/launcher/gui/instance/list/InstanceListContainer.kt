@@ -29,8 +29,9 @@ class InstanceListContainer(
             when (intent) {
                 InstanceListIntent.OnCreateInstanceClick -> action(InstanceListAction.NavigateToCreateInstance)
                 is InstanceListIntent.OnNameFilterChange -> updateState { copy(nameFilter = intent.name) }
-                is InstanceListIntent.OnVersionFilterChange -> updateState { copy(versionFilter = intent.version) }
+                is InstanceListIntent.OnTypeFilterChange -> updateState { copy(typeFilter = intent.type) }
                 is InstanceListIntent.OnLoaderFilterChange -> updateState { copy(loaderFilter = intent.loader) }
+                is InstanceListIntent.OnVersionFilterChange -> updateState { copy(versionFilter = intent.version) }
                 is InstanceListIntent.OnInstanceClick -> action(InstanceListAction.NavigateToInstanceDetails(intent.instanceId))
                 InstanceListIntent.OnResetFilterClick -> updateState {
                     copy(
@@ -56,6 +57,7 @@ data class InstanceListState(
     val nameFilter: String = "",
     val versionFilter: String = "",
     val loaderFilter: String = "",
+    val typeFilter: String = "",
     val instances: Resource<List<BriefInstanceView>> = Resource.Unloaded
 ) : MVIState {
     val loadedInstances = instances.getOrNull() ?: emptyList()
@@ -66,13 +68,15 @@ data class InstanceListState(
     }
     val versionList = listOf("") + loadedInstances.map { it.version }.distinct()
     val loaderList = listOf("") + loadedInstances.map { it.loader }.distinct()
+    val typeList = listOf("") + loadedInstances.map { it.type }.distinct()
 }
 
 sealed interface InstanceListIntent : MVIIntent {
     data object OnCreateInstanceClick : InstanceListIntent
     data class OnNameFilterChange(val name: String) : InstanceListIntent
-    data class OnVersionFilterChange(val version: String) : InstanceListIntent
+    data class OnTypeFilterChange(val type: String) : InstanceListIntent
     data class OnLoaderFilterChange(val loader: String) : InstanceListIntent
+    data class OnVersionFilterChange(val version: String) : InstanceListIntent
     data class OnInstanceClick(val instanceId: InstanceId) : InstanceListIntent
     data object OnResetFilterClick : InstanceListIntent
 }

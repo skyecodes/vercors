@@ -4,7 +4,7 @@ import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.runtime.Composable
 import androidx.navigation3.ui.LocalNavAnimatedContentScope
-import app.vercors.shared.ui.LocalSharedTransitionScope
+import app.vercors.shared.ui.animation.LocalSharedTransitionScope
 import org.koin.compose.navigation3.EntryProviderInstaller
 import org.koin.core.definition.KoinDefinition
 import org.koin.core.module.Module

@@ -14,9 +14,10 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import app.vercors.shared.ui.colors
-import app.vercors.shared.ui.surface
+import app.vercors.shared.ui.theme.colors
+import app.vercors.shared.ui.theme.surface
 import com.composeunstyled.LocalContentColor
+import com.composeunstyled.ProvideContentColor
 import com.composeunstyled.TextField
 import com.composeunstyled.TextInput
 import com.composeunstyled.theme.Theme
@@ -60,7 +61,9 @@ fun AppTextField(
                 shape = shape,
                 backgroundColor = backgroundColor,
                 contentPadding = PaddingValues(8.dp),
-                placeholder = placeholder
+                placeholder = placeholder?.let {
+                    { ProvideContentColor(LocalContentColor.current.copy(alpha = 0.66f), it) }
+                }
             )
         }
     }

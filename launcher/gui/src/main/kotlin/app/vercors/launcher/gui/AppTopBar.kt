@@ -22,12 +22,12 @@ import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.WindowScope
 import app.vercors.launcher.gui.res.*
-import app.vercors.shared.ui.colors
 import app.vercors.shared.ui.component.AppButton
 import app.vercors.shared.ui.component.AppIcon
 import app.vercors.shared.ui.component.AppText
-import app.vercors.shared.ui.error
-import app.vercors.shared.ui.onError
+import app.vercors.shared.ui.theme.colors
+import app.vercors.shared.ui.theme.error
+import app.vercors.shared.ui.theme.onError
 import com.composables.icons.lucide.*
 import com.composeunstyled.LocalContentColor
 import com.composeunstyled.theme.Theme

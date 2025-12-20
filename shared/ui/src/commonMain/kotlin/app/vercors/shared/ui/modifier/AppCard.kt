@@ -12,8 +12,8 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.unit.dp
-import app.vercors.shared.ui.colors
-import app.vercors.shared.ui.surface
+import app.vercors.shared.ui.theme.colors
+import app.vercors.shared.ui.theme.surface
 import com.composeunstyled.theme.Theme
 
 @Composable

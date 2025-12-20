@@ -11,10 +11,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import app.vercors.launcher.common.domain.instance.model.InstanceId
 import app.vercors.launcher.gui.res.*
-import app.vercors.shared.ui.*
 import app.vercors.shared.ui.component.*
 import app.vercors.shared.ui.layout.AppForm
 import app.vercors.shared.ui.modifier.appCard
+import app.vercors.shared.ui.theme.*
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Plus
 import com.composeunstyled.theme.Theme

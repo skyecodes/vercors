@@ -1,7 +1,7 @@
 [versions]
 # General
-kotlin = "2.3.0-RC3"
-ksp = "2.3.3"
+kotlin = "2.3.0"
+ksp = "2.3.4"
 coroutines = "1.10.2"
 datetime = "0.7.1"
 cryptography = "0.5.0"
@@ -18,9 +18,9 @@ appdirs = "2.0.0"
 compose = "1.10.0-rc02"
 lifecycle = "2.10.0-alpha06"
 navigation3 = "1.0.0-alpha06"
-flowmvi = "3.2.1"
+flowmvi = "3.3.0-alpha02"
 unstyled = "1.49.3"
-lucide = "1.0.0"
+lucide = "2.2.1"
 ripple = "1.1.0"
 coil = "3.3.0"
 markdown-renderer = "0.38.1"
@@ -57,6 +57,7 @@ ktor-server-core = { module = "io.ktor:ktor-server-core", version.ref = "ktor" }
 ktor-server-cio = { module = "io.ktor:ktor-server-cio", version.ref = "ktor" }
 ktor-server-content-negotiation = { module = "io.ktor:ktor-server-content-negotiation", version.ref = "ktor" }
 ktor-server-caching-headers = { module = "io.ktor:ktor-server-caching-headers", version.ref = "ktor" }
+ktor-server-status-pages = { module = "io.ktor:ktor-server-status-pages", version.ref = "ktor" }
 ktor-simple-cache = { module = "com.ucasoft.ktor:ktor-simple-cache", version.ref = "ktor-simple-cache" }
 ktor-simple-redis-cache = { module = "com.ucasoft.ktor:ktor-simple-redis-cache", version.ref = "ktor-simple-cache" }
 ktor-simple-memory-cache = { module = "com.ucasoft.ktor:ktor-simple-memory-cache", version.ref = "ktor-simple-cache" }
@@ -76,10 +77,11 @@ androidx-navigation3-ui = { module = "org.jetbrains.androidx.navigation3:navigat
 flowmvi-core = { module = "pro.respawn.flowmvi:core", version.ref = "flowmvi" }
 flowmvi-test = { module = "pro.respawn.flowmvi:test", version.ref = "flowmvi" }
 flowmvi-compose = { module = "pro.respawn.flowmvi:compose", version.ref = "flowmvi" }
+flowmvi-metrics = { module = "pro.respawn.flowmvi:metrics", version.ref = "flowmvi" }
 flowmvi-android = { module = "pro.respawn.flowmvi:android", version.ref = "flowmvi" }
 composables-composeunstyled = { module = "com.composables:core", version.ref = "unstyled" }
 composables-ripple = { module = "com.composables:ripple-indication", version.ref = "ripple" }
-composables-icons-lucide = { module = "com.composables:icons-lucide", version.ref = "lucide" }
+composables-icons-lucide = { module = "com.composables:icons-lucide-cmp", version.ref = "lucide" }
 coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil" }
 coil-network-ktor3 = { module = "io.coil-kt.coil3:coil-network-ktor3", version.ref = "coil" }
 markdown-renderer = { module = "com.mikepenz:multiplatform-markdown-renderer-jvm", version.ref = "markdown-renderer" }

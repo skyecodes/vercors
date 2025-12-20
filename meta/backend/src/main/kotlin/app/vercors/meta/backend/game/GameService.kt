@@ -7,29 +7,25 @@ import app.vercors.meta.lib.game.GameVersionListData
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.request.*
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
+import io.ktor.server.plugins.*
 import org.koin.core.annotation.Single
 
 @Single
 class GameService(
     private val api: MojangApi,
     private val httpClient: HttpClient,
-    private val backgroundScope: CoroutineScope
 ) {
     private var urlCache: Map<String, String>? = null
 
     suspend fun getVersionList(): GameVersionListData {
-        return api.getVersionManifest().also { manifest ->
-            backgroundScope.launch {
-                urlCache = manifest.versions.associate { it.id to it.url }
-            }
-        }.convert()
+        val manifest = api.getVersionManifest()
+        urlCache = manifest.versions.associate { it.id to it.url }
+        return manifest.convert()
     }
 
     suspend fun getVersionDetails(id: String): GameVersionDetailsData {
-        val url = urlCache?.get(id) ?: error("Version $id not found")
+        if (urlCache == null) getVersionList()
+        val url = urlCache!![id] ?: throw NotFoundException("Version $id not found")
         return httpClient.get(url).body<MojangVersionInfo>().convert()
     }
 }
-

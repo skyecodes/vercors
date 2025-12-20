@@ -13,6 +13,8 @@ internal fun ProjectTypeData.toDomain(): ProjectType = when (this) {
     ProjectTypeData.Modpack -> ProjectType.Modpack
     ProjectTypeData.ResourcePack -> ProjectType.ResourcePack
     ProjectTypeData.ShaderPack -> ProjectType.ShaderPack
+    ProjectTypeData.DataPack -> ProjectType.DataPack
+    ProjectTypeData.World -> ProjectType.World
 }
 
 internal fun BriefProjectData.toDomain(): BriefProject = BriefProject(

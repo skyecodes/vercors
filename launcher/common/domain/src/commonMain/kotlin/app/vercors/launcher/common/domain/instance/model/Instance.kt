@@ -17,7 +17,7 @@ data class Instance(
     val playTime: Duration = Duration.ZERO,
 ) {
     val loaderName: String get() = modLoader?.type?.name ?: "Vanilla"
-    val typeName: String get() = modpackInfo?.platform?.name ?: "Custom"
+    val typeName: String get() = modpackInfo?.platform?.name?.let { "$it modpack" } ?: "Custom"
 }
 
 typealias InstanceId = String

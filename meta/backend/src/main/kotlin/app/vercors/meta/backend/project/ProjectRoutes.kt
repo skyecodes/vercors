@@ -17,7 +17,7 @@ fun Route.projectRoutes() {
         route("/{platformId}") {
             getPlatformDetails(service)
 
-            route("/featured-projects") {
+            route("/featured-project") {
                 getFeaturedProjectList(service)
             }
 
