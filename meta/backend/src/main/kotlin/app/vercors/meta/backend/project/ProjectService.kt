@@ -17,10 +17,14 @@ class ProjectService(
     private val platformServices: Map<String, PlatformServiceBase> =
         listOf(modrinthService, curseForgeService).associateBy { it.info.id }
 
-    suspend fun getPlatformList(): List<PlatformData> =
+    private fun getPlatformService(platformId: String): PlatformServiceBase =
+        requireNotNull(platformServices[platformId]) { "Unknown platform: $platformId" }
+
+    suspend fun getPlatformList(): List<ProjectPlatformData> =
         platformServices.values.map { it.getPlatformData() }.sortedBy { it.id }
 
-    suspend fun getPlatformDetails(platformId: String): PlatformData = getPlatformService(platformId).getPlatformData()
+    suspend fun getPlatformDetails(platformId: String): ProjectPlatformData =
+        getPlatformService(platformId).getPlatformData()
 
     suspend fun getFeaturedProjectList(platformId: String): FeaturedProjectListData = withContext(Dispatchers.IO) {
         getPlatformService(platformId).getCategories().keys.map { projectType ->
@@ -54,7 +58,4 @@ class ProjectService(
 
     suspend fun getProjectDetails(platformId: String, projectId: String) =
         getPlatformService(platformId).getProject(projectId)
-
-    private fun getPlatformService(platformId: String): PlatformServiceBase =
-        requireNotNull(platformServices[platformId]) { "Unknown platform: $platformId" }
 }

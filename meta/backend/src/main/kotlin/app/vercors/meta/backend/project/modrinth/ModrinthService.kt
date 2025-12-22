@@ -19,13 +19,27 @@ class ModrinthService(
         baseUrl = "https://modrinth.com/"
     )
 
-    override suspend fun getCategories(): Map<ProjectTypeData, List<ProjectCategoryData>> = coroutineScope {
+    val pattern = Regex("^(\\d+).*$")
+
+    override suspend fun getCategories(): Map<ProjectTypeData, Map<String, List<ProjectCategoryData>>> =
+        coroutineScope {
         val types = async { api.getProjectTypes().mapNotNull { it.toModrinthProjectType() } }
         val categories = async { api.getCategories() }
 
-        categories.await().groupBy { it.projectType.convert() }
+            categories.await()
+                .groupBy { it.projectType.convert() }
             .filterKeys { it in types.await() }
-            .map { (k, v) -> k!! to v.map { it.convert() } }
+                .map { (type, cats) ->
+                    type!! to cats.groupBy { it.header }.mapValues { (group, list) ->
+                        list.map { it.convert() }.let { mappedList ->
+                            if (group == "resolutions")
+                                mappedList.sortedBy { pattern.matchEntire(it.slug)?.groups[1]?.value?.toInt() }
+                            else
+                                mappedList.sortedBy { it.slug }
+                        }
+
+                    }
+                }
             .toMap()
     }
 

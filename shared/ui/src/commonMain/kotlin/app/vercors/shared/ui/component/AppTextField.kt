@@ -60,7 +60,7 @@ fun AppTextField(
             TextInput(
                 shape = shape,
                 backgroundColor = backgroundColor,
-                contentPadding = PaddingValues(8.dp),
+                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 7.5.dp),
                 placeholder = placeholder?.let {
                     { ProvideContentColor(LocalContentColor.current.copy(alpha = 0.66f), it) }
                 }

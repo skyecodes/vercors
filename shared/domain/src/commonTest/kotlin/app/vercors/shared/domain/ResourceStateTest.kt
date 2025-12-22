@@ -18,19 +18,19 @@ class ResourceStateTest {
     private val testData = TestData("test")
 
     @Test
-    fun `given resource not collected, when get value, should return Unloaded`() = runTest {
+    fun `given resource not collected when get value should return Unloaded`() = runTest {
         val flow = MutableResourceStateFlow<TestData>()
         assertEquals(Resource.Unloaded, flow.value)
     }
 
     @Test
-    fun `given resource initialized with value, when get value, should return Loaded`() = runTest {
+    fun `given resource initialized with value when get value should return Loaded`() = runTest {
         val flow = MutableResourceStateFlow(testData)
         assertEquals(Resource.Success(testData), flow.value)
     }
 
     @Test
-    fun `given resource loading, when get value, should return Loading`() = runTest {
+    fun `given resource loading when get value should return Loading`() = runTest {
         val flow = MutableResourceStateFlow<TestData>()
         backgroundScope.launch {
             flow.load(Mutex()) {
@@ -44,7 +44,7 @@ class ResourceStateTest {
     }
 
     @Test
-    fun `given resource loaded, when get value, should return Loaded`() = runTest {
+    fun `given resource loaded when get value should return Loaded`() = runTest {
         val flow = MutableResourceStateFlow<TestData>()
         backgroundScope.launch {
             flow.load(Mutex()) {
@@ -58,7 +58,7 @@ class ResourceStateTest {
     }
 
     @Test
-    fun `given resource error, when get value, should return Error`() = runTest {
+    fun `given resource error when get value should return Error`() = runTest {
         val testException = Exception("Test error")
         val flow = MutableResourceStateFlow<TestData>()
         backgroundScope.launch {
@@ -73,7 +73,7 @@ class ResourceStateTest {
     }
 
     @Test
-    fun `given resource cancel, when get value, should return cancellation Error`() = runTest {
+    fun `given resource cancel when get value should return cancellation Error`() = runTest {
         val flow = MutableResourceStateFlow<TestData>()
         backgroundScope.launch {
             flow.load(Mutex()) {
@@ -90,7 +90,7 @@ class ResourceStateTest {
     }
 
     @Test
-    fun `given resource uninitialized, when reload multiple times, should only load once`() = runTest {
+    fun `given resource uninitialized when reload multiple times should only load once`() = runTest {
         val flow = MutableResourceStateFlow<TestData>()
         val mutex = Mutex()
 

@@ -1,11 +1,9 @@
 package app.vercors.launcher.gui.config.model
 
-import app.vercors.shared.domain.project.model.ProjectPlatform
-
 data class GuiConfiguration(
     val menuDrawerOpen: Boolean = true,
     val animations: Boolean = true,
-    val preferredPlatform: ProjectPlatform = ProjectPlatform.Modrinth,
+    val preferredPlatform: String = "modrinth",
     val homeCategories: List<HomeCategoryConfig> = HomeCategoryConfig.entries
 )
 

@@ -10,7 +10,7 @@ import app.vercors.shared.domain.combineResource
 import app.vercors.shared.domain.getOrThrow
 import app.vercors.shared.domain.map
 import app.vercors.shared.domain.project.model.BriefProject
-import app.vercors.shared.domain.project.model.ProjectPlatform
+import app.vercors.shared.domain.project.model.PlatformId
 import app.vercors.shared.domain.project.model.ProjectType
 import app.vercors.shared.domain.project.usecase.GetFeaturedProjectListUseCase
 import kotlinx.coroutines.flow.Flow
@@ -36,19 +36,19 @@ class ObserveHomeSectionListUseCase(
                 categories.map { it.toSection(instances, null) }
             })
             emit(resources.map { (config, instances) ->
-                val (platform, categories) = config
-                val featuredProjectList = loadFeaturedProjectList(platform, categories)
+                val (platformId, categories) = config
+                val featuredProjectList = loadFeaturedProjectList(platformId, categories)
                 categories.map { it.toSection(instances, featuredProjectList) }
             })
         }
     }
 
     private suspend fun loadFeaturedProjectList(
-        platform: ProjectPlatform,
+        platformId: PlatformId,
         categories: List<HomeCategoryConfig>
     ): Map<ProjectType, List<BriefProject>> =
         if (categories.any { it.type == HomeCategoryConfig.Type.Project })
-            getFeaturedProjectList(platform).getOrThrow()
+            getFeaturedProjectList(platformId).getOrThrow()
         else emptyMap()
 
     private fun HomeCategoryConfig.toSection(

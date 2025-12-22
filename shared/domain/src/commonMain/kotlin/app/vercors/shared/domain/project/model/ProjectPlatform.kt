@@ -1,6 +1,10 @@
 package app.vercors.shared.domain.project.model
 
-enum class ProjectPlatform(val id: String) {
-    Modrinth("modrinth"),
-    CurseForge("curseforge")
-}
+data class ProjectPlatform(
+    val id: PlatformId,
+    val name: String,
+    val baseUrl: String,
+    val categories: Map<ProjectType, Map<String, List<ProjectCategory>>>
+)
+
+typealias PlatformId = String

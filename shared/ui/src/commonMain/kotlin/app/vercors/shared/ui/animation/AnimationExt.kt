@@ -7,6 +7,7 @@ import androidx.compose.animation.SharedTransitionScope.SharedContentState
 import androidx.compose.animation.core.*
 import androidx.compose.animation.core.Spring.StiffnessMediumLow
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.lazy.grid.LazyGridItemScope
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
@@ -119,6 +120,18 @@ fun Modifier.appSharedElement(
 
 @Composable
 context(scope: LazyGridItemScope)
+fun Modifier.appAnimateItem(
+    fadeInSpec: FiniteAnimationSpec<Float>? = spring(stiffness = StiffnessMediumLow),
+    placementSpec: FiniteAnimationSpec<IntOffset>? =
+        spring(
+            stiffness = StiffnessMediumLow,
+            visibilityThreshold = IntOffset.VisibilityThreshold,
+        ),
+    fadeOutSpec: FiniteAnimationSpec<Float>? = spring(stiffness = StiffnessMediumLow),
+): Modifier = if (shouldAnimate()) with(scope) { animateItem(fadeInSpec, placementSpec, fadeOutSpec) } else this
+
+@Composable
+context(scope: LazyItemScope)
 fun Modifier.appAnimateItem(
     fadeInSpec: FiniteAnimationSpec<Float>? = spring(stiffness = StiffnessMediumLow),
     placementSpec: FiniteAnimationSpec<IntOffset>? =

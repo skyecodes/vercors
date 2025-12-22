@@ -25,18 +25,17 @@ class CurseForgeService(
         baseUrl = "https://www.curseforge.com/minecraft",
     )
 
-    override suspend fun getCategories(): Map<ProjectTypeData, List<ProjectCategoryData>> = api.getCategories(
+    override suspend fun getCategories(): Map<ProjectTypeData, Map<String, List<ProjectCategoryData>>> =
+        api.getCategories(
         gameId = MINECRAFT_GAME_ID
     ).data.let { categories ->
         categories.filter { it.isClass == true && it.convertToType() != null }.associate { type ->
-            type.convertToType()!! to categories.filter { it.classId == type.id && it.parentCategoryId == type.id }
-                .map {
-                    ProjectCategoryData(
-                        id = "${it.id}",
-                        slug = it.slug,
-                        name = it.name
-                    )
-                }
+            type.convertToType()!! to mapOf(
+                "categories" to categories
+                    .filter { it.classId == type.id && it.parentCategoryId == type.id }
+                    .map { it.convert() }
+                    .sortedBy { it.name ?: it.slug }
+            )
         }
     }
 

@@ -13,6 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
@@ -105,6 +106,56 @@ fun AppIconTextButton(
         imageVector?.let {
             AppIcon(
                 imageVector = it,
+                contentDescription = text,
+                modifier = Modifier.padding(vertical = 4.dp).size(16.dp)
+            )
+        }
+        text?.let {
+            AppText(
+                text = it
+            )
+        }
+    }
+}
+
+@Composable
+fun AppIconTextButton(
+    onClick: () -> Unit,
+    text: String? = null,
+    painter: Painter? = null,
+    enabled: Boolean = true,
+    shape: Shape = RoundedCornerShape(4.dp),
+    backgroundColor: Color = Color.Unspecified,
+    contentColor: Color = LocalContentColor.current,
+    contentPadding: PaddingValues = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
+    borderColor: Color = Color.Unspecified,
+    borderWidth: Dp = 0.dp,
+    modifier: Modifier = Modifier,
+    role: Role = Role.Button,
+    indication: Indication? = LocalIndication.current,
+    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+    horizontalArrangement: Arrangement.Horizontal = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+    verticalAlignment: Alignment.Vertical = Alignment.CenterVertically,
+) {
+    AppButton(
+        onClick = onClick,
+        enabled = enabled,
+        shape = shape,
+        backgroundColor = backgroundColor,
+        contentColor = contentColor,
+        contentPadding = contentPadding,
+        borderColor = borderColor,
+        borderWidth = borderWidth,
+        modifier = modifier,
+        role = role,
+        indication = indication,
+        interactionSource = interactionSource,
+        horizontalArrangement = horizontalArrangement,
+        verticalAlignment = verticalAlignment,
+    ) {
+        painter?.let {
+            AppIcon(
+                painter = it,
                 contentDescription = text,
                 modifier = Modifier.padding(vertical = 4.dp).size(16.dp)
             )

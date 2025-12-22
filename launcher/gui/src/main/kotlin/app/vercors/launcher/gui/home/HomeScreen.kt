@@ -32,7 +32,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.vercors.launcher.common.domain.instance.model.InstanceId
-import app.vercors.launcher.gui.instance.BriefInstanceCard2
+import app.vercors.launcher.gui.instance.BriefInstanceCard
 import app.vercors.launcher.gui.instance.BriefInstanceView
 import app.vercors.launcher.gui.res.*
 import app.vercors.shared.domain.project.model.ProjectId
@@ -158,10 +158,10 @@ private fun <T> HomeSectionList(
                     index = index,
                     element = element
                 )
-            } ?: repeat(3) {
+            } ?: repeat(10) {
                 fakeCardItem(
                     index = it,
-                    maxIndex = 2,
+                    maxIndex = 9,
                     sectionType = section.type
                 )
             }
@@ -199,7 +199,7 @@ private fun <T> LazyListScope.homeCardItem(
 
     when (element) {
         is BriefInstanceView -> item(element.id) {
-            BriefInstanceCard2(
+            BriefInstanceCard(
                 instance = element,
                 onInstanceClick = { store.intent(HomeIntent.OnInstanceClick(it)) },
                 modifier = modifier.size(width = 150.dp, height = 150.dp)
@@ -207,7 +207,7 @@ private fun <T> LazyListScope.homeCardItem(
         }
 
         is BriefProjectView -> item(element.id) {
-            HomeProjectCard2(
+            HomeProjectCard(
                 project = element,
                 modifier = modifier
             )
@@ -232,13 +232,13 @@ private fun LazyListScope.fakeCardItem(
 
     item(sectionType to index) {
         when (sectionType) {
-            HomeSectionType.RecentlyPlayed -> BriefInstanceCard2(
+            HomeSectionType.RecentlyPlayed -> BriefInstanceCard(
                 instance = null,
                 onInstanceClick = {},
                 modifier = modifier.size(width = 150.dp, height = 150.dp)
             )
 
-            else -> HomeProjectCard2(
+            else -> HomeProjectCard(
                 project = null,
                 modifier = modifier
             )
@@ -295,116 +295,6 @@ context(
     sharedTransitionScope: SharedTransitionScope
 )
 private fun HomeProjectCard(
-    project: BriefProjectView,
-    modifier: Modifier
-) = with(sharedTransitionScope) {
-    val interactionSource = remember { MutableInteractionSource() }
-    val isHovered by interactionSource.collectIsHoveredAsState()
-
-    Column(
-        modifier = modifier
-            .appCard(interactionSource = interactionSource) { store.intent(HomeIntent.OnProjectClick(project.id)) }
-            .size(width = 250.dp, height = 180.dp)
-            .hoverable(interactionSource = interactionSource)
-    ) {
-        Row(
-            modifier = Modifier.padding(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Image(
-                painter = rememberAsyncImagePainter(project.logoUrl),
-                contentDescription = project.name,
-                modifier = Modifier.size(36.dp)
-                    .clip(RoundedCornerShape(4.dp))
-                    .appSharedElement(
-                        sharedContentState = rememberSharedContentState("project/${project.id}/logo"),
-                        animatedVisibilityScope = animatedVisibilityScope
-                    ),
-                contentScale = ContentScale.Crop
-            )
-            Column {
-                AppText(
-                    text = project.name,
-                    fontWeight = FontWeight.SemiBold,
-                    singleLine = true,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.appSharedElement(
-                        sharedContentState = rememberSharedContentState("project/${project.id}/title"),
-                        animatedVisibilityScope = animatedVisibilityScope
-                    )
-                )
-                AppText(
-                    text = "by ${project.author}",
-                    singleLine = true,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-        }
-
-        Box(modifier = Modifier.weight(1f)) {
-            val blurRadius by appAnimateDpAsState(if (isHovered) 4.dp else 0.dp)
-            val projectImageModifier = Modifier.fillMaxSize().blur(blurRadius).appSharedElement(
-                sharedContentState = rememberSharedContentState("project/${project.id}/image"),
-                animatedVisibilityScope = animatedVisibilityScope
-            )
-
-            project.imageUrl?.let {
-                Image(
-                    painter = rememberAsyncImagePainter(it),
-                    contentDescription = project.name,
-                    modifier = projectImageModifier,
-                    contentScale = ContentScale.Crop
-                )
-            } ?: Image(
-                bitmap = imageResource(Res.drawable.pack),
-                contentDescription = project.name,
-                modifier = projectImageModifier,
-                contentScale = ContentScale.Crop
-            )
-
-            val gradientBackground = arrayOf(
-                0.0f to Theme[colors][surface],
-                1f to Theme[colors][surface].copy(alpha = 0.7f)
-            )
-
-            Column(
-                modifier = Modifier.background(Brush.verticalGradient(colorStops = gradientBackground))
-                    .appAnimateContentSize()
-                        then if (isHovered) Modifier.fillMaxSize() else Modifier.fillMaxWidth().height(0.dp)
-            ) {
-                AppText(
-                    text = project.description,
-                    fontSize = 12.sp,
-                    modifier = Modifier.padding(8.dp),
-                )
-            }
-
-            Row(
-                modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                HomeProjectChip(
-                    icon = Lucide.Download,
-                    text = HumanReadable.abbreviation(project.downloads, decimals = 1)
-                )
-                HomeProjectChip(
-                    icon = Lucide.Calendar,
-                    text = HumanReadable.timeAgo(project.lastUpdated)
-                )
-            }
-        }
-    }
-}
-
-@Composable
-context(
-    store: IntentReceiver<HomeIntent>,
-    animatedVisibilityScope: AnimatedContentScope,
-    sharedTransitionScope: SharedTransitionScope
-)
-private fun HomeProjectCard2(
     project: BriefProjectView?,
     modifier: Modifier
 ) = with(sharedTransitionScope) {
@@ -413,7 +303,12 @@ private fun HomeProjectCard2(
         val isHovered by interactionSource.collectIsHoveredAsState()
 
         HomeProjectCardLayout(
-            modifier = modifier.hoverable(interactionSource = interactionSource),
+            modifier = modifier
+                .hoverable(interactionSource = interactionSource)
+                .appSharedElement(
+                    sharedContentState = rememberSharedContentState("project/${project.id}/card"),
+                    animatedVisibilityScope = animatedVisibilityScope
+                ),
             interactionSource = interactionSource,
             onClick = { store.intent(HomeIntent.OnProjectClick(project.id)) },
             icon = {
@@ -425,7 +320,9 @@ private fun HomeProjectCard2(
                         .appSharedElement(
                             sharedContentState = contextOf<SharedTransitionScope>()
                                 .rememberSharedContentState("project/${project.id}/logo"),
-                            animatedVisibilityScope = animatedVisibilityScope
+                            animatedVisibilityScope = animatedVisibilityScope,
+                            clipInOverlayDuringTransition = contextOf<SharedTransitionScope>()
+                                .OverlayClip(RoundedCornerShape(4.dp))
                         ),
                     contentScale = ContentScale.Crop
                 )
@@ -521,7 +418,7 @@ context(
     _: AnimatedContentScope,
     _: SharedTransitionScope
 )
-fun HomeProjectCardLayout(
+private fun HomeProjectCardLayout(
     modifier: Modifier,
     interactionSource: MutableInteractionSource? = null,
     onClick: (() -> Unit)? = null,
@@ -562,7 +459,7 @@ private fun HomeProjectChip(icon: ImageVector, text: String) {
     ) {
         AppIcon(
             imageVector = icon,
-            contentDescription = stringResource(Res.string.downloads),
+            contentDescription = null,
             modifier = Modifier.size(12.dp)
         )
         AppText(

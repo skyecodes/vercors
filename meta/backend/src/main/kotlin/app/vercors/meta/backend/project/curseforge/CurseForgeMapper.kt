@@ -4,6 +4,7 @@ import app.vercors.meta.backend.project.curseforge.dto.CurseForgeCategory
 import app.vercors.meta.backend.project.curseforge.dto.CurseForgeModLoaderType
 import app.vercors.meta.backend.project.curseforge.dto.CurseForgeProject
 import app.vercors.meta.backend.project.curseforge.dto.CurseForgeProjectSearchResponse
+import app.vercors.meta.backend.project.iconMap
 import app.vercors.meta.lib.project.*
 
 internal fun CurseForgeProjectSearchResponse.convert(): ProjectSearchResponseData = ProjectSearchResponseData(
@@ -31,6 +32,13 @@ internal fun CurseForgeProject.convert(): ProjectData = ProjectData(
     url = "https://www.curseforge.com/minecraft/mc-mods/$slug",
     body = null, // TODO: call /description endpoint to get full body
     logoUrl = logo.thumbnailUrl
+)
+
+internal fun CurseForgeCategory.convert(): ProjectCategoryData = ProjectCategoryData(
+    id = "$id",
+    slug = slug,
+    name = name,
+    icon = iconMap[slug]
 )
 
 internal fun ProjectTypeData.toCurseForgeClassId(): Int = when (this) {

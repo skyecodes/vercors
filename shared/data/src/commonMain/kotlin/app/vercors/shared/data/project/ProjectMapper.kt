@@ -1,12 +1,7 @@
 package app.vercors.shared.data.project
 
-import app.vercors.meta.lib.project.BriefProjectData
-import app.vercors.meta.lib.project.ProjectData
-import app.vercors.meta.lib.project.ProjectTypeData
-import app.vercors.shared.domain.project.model.BriefProject
-import app.vercors.shared.domain.project.model.Project
-import app.vercors.shared.domain.project.model.ProjectId
-import app.vercors.shared.domain.project.model.ProjectType
+import app.vercors.meta.lib.project.*
+import app.vercors.shared.domain.project.model.*
 
 internal fun ProjectTypeData.toDomain(): ProjectType = when (this) {
     ProjectTypeData.Mod -> ProjectType.Mod
@@ -15,6 +10,15 @@ internal fun ProjectTypeData.toDomain(): ProjectType = when (this) {
     ProjectTypeData.ShaderPack -> ProjectType.ShaderPack
     ProjectTypeData.DataPack -> ProjectType.DataPack
     ProjectTypeData.World -> ProjectType.World
+}
+
+internal fun ProjectType.toData(): ProjectTypeData = when (this) {
+    ProjectType.Mod -> ProjectTypeData.Mod
+    ProjectType.Modpack -> ProjectTypeData.Modpack
+    ProjectType.ResourcePack -> ProjectTypeData.ResourcePack
+    ProjectType.ShaderPack -> ProjectTypeData.ShaderPack
+    ProjectType.DataPack -> ProjectTypeData.DataPack
+    ProjectType.World -> ProjectTypeData.World
 }
 
 internal fun BriefProjectData.toDomain(): BriefProject = BriefProject(
@@ -37,3 +41,24 @@ internal fun ProjectData.toDomain(): Project = Project(
     url = url,
     logoUrl = logoUrl
 )
+
+internal fun ProjectPlatformData.toDomain(): ProjectPlatform = ProjectPlatform(
+    id = id,
+    name = name,
+    baseUrl = baseUrl,
+    categories = categories.map { (type, groups) ->
+        type.toDomain() to groups.mapValues { (_, list) -> list.map { it.toDomain() } }
+    }.toMap()
+)
+
+internal fun ProjectCategoryData.toDomain(): ProjectCategory = ProjectCategory(
+    id = id,
+    name = name,
+    slug = slug,
+    icon = icon?.toDomain()
+)
+
+internal fun IconData.toDomain(): ProjectCategory.Icon = when (this) {
+    is IconNameData -> ProjectCategory.Icon.Named(name)
+    is IconSvgData -> ProjectCategory.Icon.Data(svgString)
+}

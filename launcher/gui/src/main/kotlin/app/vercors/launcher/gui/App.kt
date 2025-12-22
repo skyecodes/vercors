@@ -9,6 +9,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.WindowScope
 import androidx.navigation3.ui.NavDisplay
@@ -105,6 +106,7 @@ private fun AppContent(backStack: List<Any>) {
                 color = Theme[colors][background],
                 shape = RoundedCornerShape(16.dp)
             )
+            .clip(RoundedCornerShape(16.dp))
     ) {
         SharedTransitionLayout {
             CompositionLocalProvider(LocalSharedTransitionScope provides this) {

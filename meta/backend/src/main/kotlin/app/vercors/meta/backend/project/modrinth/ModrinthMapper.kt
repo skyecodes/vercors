@@ -1,5 +1,6 @@
 package app.vercors.meta.backend.project.modrinth
 
+import app.vercors.meta.backend.project.iconMap
 import app.vercors.meta.backend.project.modrinth.dto.*
 import app.vercors.meta.lib.project.*
 
@@ -54,7 +55,8 @@ internal fun ModrinthProjectType.convert(): ProjectTypeData? = when (this) {
 internal fun ModrinthCategory.convert(): ProjectCategoryData = ProjectCategoryData(
     id = name,
     slug = name,
-    name = name
+    name = null,
+    icon = iconMap[name]
 )
 
 internal fun String.toModrinthProjectType(): ProjectTypeData? = when (this) {

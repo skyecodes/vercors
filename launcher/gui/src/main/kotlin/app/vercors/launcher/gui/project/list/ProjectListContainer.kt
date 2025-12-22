@@ -2,15 +2,23 @@ package app.vercors.launcher.gui.project.list
 
 import androidx.compose.runtime.Immutable
 import app.vercors.launcher.gui.home.BriefProjectView
+import app.vercors.launcher.gui.home.toView
 import app.vercors.launcher.gui.project.list.ProjectListAction.NavigateToProjectDetails
 import app.vercors.shared.domain.Resource
+import app.vercors.shared.domain.game.usecase.GetGameVersionListUseCase
+import app.vercors.shared.domain.getOrNull
+import app.vercors.shared.domain.map
+import app.vercors.shared.domain.project.model.ProjectCategory
 import app.vercors.shared.domain.project.model.ProjectId
+import app.vercors.shared.domain.project.model.ProjectType
+import app.vercors.shared.domain.project.usecase.GetPlatformListUseCase
+import app.vercors.shared.domain.project.usecase.GetProjectListUseCase
+import app.vercors.shared.domain.resourceFlow
 import app.vercors.shared.ui.configureWithLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
-import pro.respawn.flowmvi.api.Container
-import pro.respawn.flowmvi.api.MVIAction
-import pro.respawn.flowmvi.api.MVIIntent
-import pro.respawn.flowmvi.api.MVIState
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
+import pro.respawn.flowmvi.api.*
 import pro.respawn.flowmvi.dsl.store
 import pro.respawn.flowmvi.plugins.reduce
 import pro.respawn.flowmvi.plugins.whileSubscribed
@@ -18,62 +26,158 @@ import pro.respawn.flowmvi.plugins.whileSubscribed
 private val logger = KotlinLogging.logger {}
 
 class ProjectListContainer(
-
+    private val getPlatformList: GetPlatformListUseCase,
+    private val getProjectList: GetProjectListUseCase,
+    private val getGameVersionList: GetGameVersionListUseCase
 ) : Container<ProjectListState, ProjectListIntent, ProjectListAction> {
     override val store = store(initial = ProjectListState()) {
         configureWithLogger(logger)
 
         reduce { intent ->
             when (intent) {
-                is ProjectListIntent.OnProjectProviderChange -> updateState { copy(selectedProvider = intent.provider) }
-                is ProjectListIntent.OnProjectTypeChange -> updateState { copy(selectedType = intent.provider) }
+                is ProjectListIntent.OnProjectProviderChange -> updateState { copy(selectedPlatform = intent.provider) }
+                is ProjectListIntent.OnProjectTypeChange -> updateState { copy(selectedType = intent.type) }
                 is ProjectListIntent.OnSearchQueryChange -> updateState { copy(searchQuery = intent.query) }
+                is ProjectListIntent.OnCategoryClick -> updateState { copy(selectedCategories = if (intent.category in selectedCategories) selectedCategories - intent.category else selectedCategories + intent.category) }
                 is ProjectListIntent.OnProjectClick -> action(NavigateToProjectDetails(intent.projectId))
-                ProjectListIntent.OnSearchButtonClick -> {}
+                ProjectListIntent.OnSearchButtonClick -> searchProjects()
             }
         }
 
         whileSubscribed {
+            launch {
+                resourceFlow { getPlatformList() }.collectLatest { resource ->
+                    val providerList = resource.map {
+                        it.map { platform ->
+                            ProjectPlatformView(
+                                id = platform.id,
+                                name = platform.name,
+                                iconData = "",
+                                categoryGroups = platform.categories.convert()
+                            )
+                        }
+                    }
+                    updateState {
+                        copy(
+                            providerList = providerList,
+                            selectedPlatform = selectedPlatform ?: providerList.getOrNull()?.firstOrNull(),
+                            selectedType = selectedType ?: providerList.getOrNull()
+                                ?.firstOrNull()?.categoryGroups?.keys?.let { types -> ProjectType.entries.first { it in types } }
+                        )
+                    }
+                }
+            }
+        }
 
+        install {
+            onState { old, new ->
+                new.let {
+                    if (old.selectedPlatform != it.selectedPlatform && it.selectedPlatform != null && it.selectedType !in it.selectedPlatform.categoryGroups.keys)
+                        it.copy(selectedType = ProjectType.entries.first { type -> type in it.selectedPlatform.categoryGroups.keys })
+                    else it
+                }.let {
+                    if (old.selectedType != it.selectedType) it.copy(selectedCategories = emptyList()) else new
+                }.also {
+                    if (it.selectedPlatform != null && it.selectedType != null && (
+                                old.selectedPlatform?.id != it.selectedPlatform.id ||
+                                        old.selectedType != it.selectedType ||
+                                        old.selectedCategories != it.selectedCategories)
+                    ) {
+                        launch { searchProjects() }
+                    }
+                }
+            }
+        }
+    }
+
+    suspend fun PipelineContext<ProjectListState, ProjectListIntent, ProjectListAction>.searchProjects() {
+        withState {
+            if (selectedPlatform != null || selectedType != null) {
+                resourceFlow {
+                    getProjectList(
+                        platformId = selectedPlatform!!.id,
+                        type = selectedType!!,
+                        query = searchQuery.ifBlank { null },
+                        categories = selectedCategories.map { it.id },
+                        pageSize = 20
+                    ).map { list -> list.map { it.toView() } }
+                }.collectLatest {
+                    updateState { copy(projects = it) }
+                    action(ProjectListAction.ScrollUp)
+                }
+            }
         }
     }
 }
 
 @Immutable
 data class ProjectListState(
-    val providerList: List<ProjectProviderView> = listOf(
-        ProjectProviderView("modrinth", "Modrinth", ""),
-        ProjectProviderView("curseforge", "CurseForge", ""),
-    ),
-    val selectedProvider: ProjectProviderView = providerList.first(),
-    val typeList: List<ProjectTypeView> = listOf(
-        ProjectTypeView("mod", "Mod", "box"),
-    ),
-    val selectedType: ProjectTypeView = typeList.first(),
+    val providerList: Resource<List<ProjectPlatformView>> = Resource.Unloaded,
+    val selectedPlatform: ProjectPlatformView? = null,
+    val selectedType: ProjectType? = null,
+    val selectedCategories: List<ProjectCategoryView> = emptyList(),
     val searchQuery: String = "",
     val projects: Resource<List<BriefProjectView>> = Resource.Unloaded
 ) : MVIState
 
-data class ProjectProviderView(
+data class ProjectPlatformView(
     val id: String,
     val name: String,
-    val iconData: String
+    val iconData: String,
+    val categoryGroups: Map<ProjectType, List<ProjectCategoryGroupView>>
 )
 
-data class ProjectTypeView(
-    val id: String,
+data class ProjectCategoryGroupView(
     val name: String,
-    val iconId: String
+    val categories: List<ProjectCategoryView>
 )
+
+data class ProjectCategoryView(
+    val id: String,
+    val slug: String,
+    val name: String?,
+    val iconView: IconView?
+) {
+    val slugSnakeCase: String = slug.replace('-', '_')
+}
+
+sealed interface IconView {
+    data class Named(val name: String) : IconView
+    data class Data(val svgString: String) : IconView
+}
 
 sealed interface ProjectListIntent : MVIIntent {
-    data class OnProjectProviderChange(val provider: ProjectProviderView) : ProjectListIntent
-    data class OnProjectTypeChange(val provider: ProjectTypeView) : ProjectListIntent
+    data class OnProjectProviderChange(val provider: ProjectPlatformView) : ProjectListIntent
+    data class OnProjectTypeChange(val type: ProjectType) : ProjectListIntent
     data class OnSearchQueryChange(val query: String) : ProjectListIntent
+    data class OnCategoryClick(val category: ProjectCategoryView) : ProjectListIntent
     data class OnProjectClick(val projectId: ProjectId) : ProjectListIntent
     data object OnSearchButtonClick : ProjectListIntent
 }
 
 sealed interface ProjectListAction : MVIAction {
     data class NavigateToProjectDetails(val projectId: ProjectId) : ProjectListAction
+    data object ScrollUp : ProjectListAction
 }
+
+fun Map<ProjectType, Map<String, List<ProjectCategory>>>.convert(): Map<ProjectType, List<ProjectCategoryGroupView>> =
+    mapValues { (_, groups) ->
+        groups.map { (group, categories) ->
+            ProjectCategoryGroupView(
+                name = group,
+                categories = categories.map { category ->
+                    ProjectCategoryView(
+                        id = category.id,
+                        slug = category.slug,
+                        name = category.name,
+                        iconView = category.icon?.let {
+                            when (it) {
+                                is ProjectCategory.Icon.Named -> IconView.Named(it.name)
+                                is ProjectCategory.Icon.Data -> IconView.Data(it.svgString)
+                            }
+                        }
+                    )
+                }
+            )
+        }.sortedBy { it.name }
+    }

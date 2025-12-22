@@ -29,7 +29,7 @@ context(
     animatedVisibilityScope: AnimatedContentScope,
     sharedTransitionScope: SharedTransitionScope
 )
-fun BriefInstanceCard2(
+fun BriefInstanceCard(
     instance: BriefInstanceView?,
     onInstanceClick: (InstanceId) -> Unit,
     modifier: Modifier

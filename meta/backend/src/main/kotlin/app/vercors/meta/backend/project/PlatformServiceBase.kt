@@ -5,14 +5,14 @@ import app.vercors.meta.lib.project.*
 interface PlatformServiceBase {
     val info: PlatformInfo
 
-    suspend fun getPlatformData(): PlatformData = PlatformData(
+    suspend fun getPlatformData(): ProjectPlatformData = ProjectPlatformData(
         id = info.id,
         name = info.name,
         baseUrl = info.baseUrl,
         categories = getCategories()
     )
 
-    suspend fun getCategories(): Map<ProjectTypeData, List<ProjectCategoryData>>
+    suspend fun getCategories(): Map<ProjectTypeData, Map<String, List<ProjectCategoryData>>>
 
     suspend fun search(
         projectType: ProjectTypeData?,

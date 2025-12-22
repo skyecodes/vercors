@@ -1,8 +1,5 @@
 package app.vercors.launcher.gui.config.data
 
-import app.vercors.launcher.common.data.platform.PlatformTypeData
-import app.vercors.launcher.common.data.platform.toData
-import app.vercors.launcher.common.data.platform.toDomain
 import app.vercors.launcher.gui.config.model.GuiConfiguration
 import app.vercors.launcher.gui.config.model.HomeCategoryConfig
 import kotlinx.serialization.SerialName
@@ -12,21 +9,21 @@ import kotlinx.serialization.Serializable
 internal data class GuiConfigurationData(
     val menuDrawerOpen: Boolean,
     val animations: Boolean,
-    val preferredPlatform: PlatformTypeData,
+    val preferredPlatform: String,
     val homeCategories: List<HomeCategoryConfigData>
 )
 
 internal fun GuiConfigurationData.toDomain(): GuiConfiguration = GuiConfiguration(
     menuDrawerOpen = menuDrawerOpen,
     animations = animations,
-    preferredPlatform = preferredPlatform.toDomain(),
+    preferredPlatform = preferredPlatform,
     homeCategories = homeCategories.map { it.toDomain() }
 )
 
 internal fun GuiConfiguration.toData(): GuiConfigurationData = GuiConfigurationData(
     menuDrawerOpen = menuDrawerOpen,
     animations = animations,
-    preferredPlatform = preferredPlatform.toData(),
+    preferredPlatform = preferredPlatform,
     homeCategories = homeCategories.map { it.toData() }
 )
 

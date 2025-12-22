@@ -10,7 +10,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import app.vercors.launcher.gui.instance.BriefInstanceCard2
+import app.vercors.launcher.gui.instance.BriefInstanceCard
 import app.vercors.launcher.gui.res.*
 import app.vercors.shared.ui.animation.appAnimateItem
 import app.vercors.shared.ui.component.AppIconTextButton
@@ -70,7 +70,7 @@ private fun InstanceListScreen(state: InstanceListState) {
         ) {
             state.filteredInstances.forEach { instance ->
                 item(instance.id) {
-                    BriefInstanceCard2(
+                    BriefInstanceCard(
                         instance = instance,
                         onInstanceClick = { store.intent(InstanceListIntent.OnInstanceClick(it)) },
                         modifier = Modifier.fillMaxWidth().height(150.dp).appAnimateItem()
