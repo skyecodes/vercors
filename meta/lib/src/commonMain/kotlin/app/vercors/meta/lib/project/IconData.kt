@@ -13,11 +13,9 @@ import kotlin.jvm.JvmInline
 @Serializable(IconDataSerializer::class)
 sealed interface IconData
 
-@Serializable
 @JvmInline
 value class IconSvgData(val svgString: String) : IconData
 
-@Serializable
 @JvmInline
 value class IconNameData(val name: String) : IconData
 

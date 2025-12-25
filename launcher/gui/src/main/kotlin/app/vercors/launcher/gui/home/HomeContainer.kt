@@ -6,9 +6,10 @@ import app.vercors.launcher.gui.home.usecase.HomeSection
 import app.vercors.launcher.gui.home.usecase.ObserveHomeSectionListUseCase
 import app.vercors.launcher.gui.instance.BriefInstanceView
 import app.vercors.launcher.gui.instance.toBriefView
+import app.vercors.launcher.gui.project.BriefProjectView
+import app.vercors.launcher.gui.project.toView
 import app.vercors.shared.domain.Resource
 import app.vercors.shared.domain.Result
-import app.vercors.shared.domain.project.model.BriefProject
 import app.vercors.shared.domain.project.model.ProjectId
 import app.vercors.shared.ui.configureWithLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -19,7 +20,6 @@ import pro.respawn.flowmvi.api.MVIState
 import pro.respawn.flowmvi.dsl.store
 import pro.respawn.flowmvi.plugins.reduce
 import pro.respawn.flowmvi.plugins.whileSubscribed
-import kotlin.time.Instant
 
 private val logger = KotlinLogging.logger {}
 
@@ -111,27 +111,3 @@ enum class HomeSectionType {
     FeaturedResourcePacks,
     FeaturedShaderPacks
 }
-
-data class BriefProjectView(
-    val id: ProjectId,
-    val name: String,
-    val description: String,
-    val author: String,
-    val url: String,
-    val downloads: Long,
-    val lastUpdated: Instant,
-    val logoUrl: String?,
-    val imageUrl: String?
-)
-
-fun BriefProject.toView(): BriefProjectView = BriefProjectView(
-    id = id,
-    name = name,
-    description = description,
-    author = author,
-    url = url,
-    downloads = downloads,
-    lastUpdated = lastUpdated,
-    logoUrl = logoUrl,
-    imageUrl = imageUrl
-)

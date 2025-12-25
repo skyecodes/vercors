@@ -32,30 +32,22 @@ context(
 fun BriefInstanceCard(
     instance: BriefInstanceView?,
     onInstanceClick: (InstanceId) -> Unit,
-    modifier: Modifier
+    modifier: Modifier,
+    origin: InstanceSharedElementOrigin
 ) = with(sharedTransitionScope) {
     if (instance != null) {
         val interactionSource = remember { MutableInteractionSource() }
 
         BriefInstanceCardLayout(
-            modifier = modifier
-                .hoverable(interactionSource = interactionSource)
-                .appSharedElement(
-                    sharedContentState = rememberSharedContentState("instance/${instance.id}/card"),
-                    animatedVisibilityScope = animatedVisibilityScope
-                ),
+            modifier = modifier.hoverable(interactionSource = interactionSource)
+                .instanceSharedElement(instance.id, "card", origin),
             interactionSource = interactionSource,
             onClick = { onInstanceClick(instance.id) },
             icon = {
                 AppIcon(
                     imageVector = Lucide.Gamepad2,
                     contentDescription = instance.name,
-                    modifier = Modifier.size(36.dp)
-                        .appSharedElement(
-                            sharedContentState = contextOf<SharedTransitionScope>()
-                                .rememberSharedContentState("instance/${instance.id}/icon"),
-                            animatedVisibilityScope = animatedVisibilityScope
-                        )
+                    modifier = Modifier.size(36.dp).instanceSharedElement(instance.id, "icon", origin),
                 )
             },
             title = {
@@ -66,22 +58,14 @@ fun BriefInstanceCard(
                     maxLines = 2,
                     textAlign = TextAlign.Center,
                     overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.appSharedElement(
-                        sharedContentState = contextOf<SharedTransitionScope>()
-                            .rememberSharedContentState("instance/${instance.id}/title"),
-                        animatedVisibilityScope = animatedVisibilityScope
-                    )
+                    modifier = Modifier.instanceSharedElement(instance.id, "title", origin),
                 )
             },
             type = {
                 AppText(
                     text = instance.type,
                     fontSize = 12.sp,
-                    modifier = Modifier.appSharedElement(
-                        sharedContentState = contextOf<SharedTransitionScope>()
-                            .rememberSharedContentState("instance/${instance.id}/type"),
-                        animatedVisibilityScope = animatedVisibilityScope
-                    )
+                    modifier = Modifier.instanceSharedElement(instance.id, "type", origin),
                 )
             },
             loaderVersion = {
@@ -91,20 +75,12 @@ fun BriefInstanceCard(
                     AppText(
                         text = instance.loader,
                         fontSize = 12.sp,
-                        modifier = Modifier.appSharedElement(
-                            sharedContentState = contextOf<SharedTransitionScope>()
-                                .rememberSharedContentState("instance/${instance.id}/loader"),
-                            animatedVisibilityScope = animatedVisibilityScope
-                        )
+                        modifier = Modifier.instanceSharedElement(instance.id, "loader", origin),
                     )
                     AppText(
                         text = instance.version,
                         fontSize = 12.sp,
-                        modifier = Modifier.appSharedElement(
-                            sharedContentState = contextOf<SharedTransitionScope>()
-                                .rememberSharedContentState("instance/${instance.id}/version"),
-                            animatedVisibilityScope = animatedVisibilityScope
-                        )
+                        modifier = Modifier.instanceSharedElement(instance.id, "version", origin),
                     )
                 }
             },
@@ -150,5 +126,29 @@ fun BriefInstanceCardLayout(
             type()
             loaderVersion()
         }
+    }
+}
+
+enum class InstanceSharedElementOrigin {
+    Home, InstanceList
+}
+
+@Composable
+context(
+    animatedVisibilityScope: AnimatedContentScope,
+    sharedTransitionScope: SharedTransitionScope
+)
+fun Modifier.instanceSharedElement(
+    instanceId: InstanceId,
+    key: String,
+    origin: InstanceSharedElementOrigin? = null
+): Modifier = with(sharedTransitionScope) {
+    origin?.let {
+        appSharedElement(
+            sharedContentState = rememberSharedContentState("$it/instance/$instanceId/$key"),
+            animatedVisibilityScope = animatedVisibilityScope
+        )
+    } ?: InstanceSharedElementOrigin.entries.fold(this@instanceSharedElement) { modifier, it ->
+        modifier.instanceSharedElement(instanceId, key, it)
     }
 }

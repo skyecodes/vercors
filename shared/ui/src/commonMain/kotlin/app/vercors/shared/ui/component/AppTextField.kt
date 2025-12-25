@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -13,6 +14,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import app.vercors.shared.ui.theme.colors
 import app.vercors.shared.ui.theme.surface
@@ -21,6 +23,7 @@ import com.composeunstyled.ProvideContentColor
 import com.composeunstyled.TextField
 import com.composeunstyled.TextInput
 import com.composeunstyled.theme.Theme
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 
 @Composable
@@ -29,6 +32,8 @@ fun AppTextField(
     initialValue: String,
     placeholder: (@Composable () -> Unit)? = null,
     onValueChange: (String) -> Unit = {},
+    debounceMillis: Long = 0L,
+    imeAction: ImeAction = ImeAction.Unspecified,
     editable: Boolean = true,
     shape: Shape = RoundedCornerShape(4.dp),
     backgroundColor: Color = Theme[colors][surface],
@@ -37,7 +42,10 @@ fun AppTextField(
     val state = rememberTextFieldState(initialValue)
 
     LaunchedEffect(state) {
-        snapshotFlow { state.text.toString() }.collectLatest { onValueChange(it) }
+        snapshotFlow { state.text.toString() }.collectLatest {
+            delay(debounceMillis)
+            onValueChange(it)
+        }
     }
 
     TextField(
@@ -45,7 +53,14 @@ fun AppTextField(
         modifier = modifier,
         singleLine = true,
         cursorBrush = SolidColor(LocalContentColor.current),
-        editable = editable
+        editable = editable,
+        onKeyboardAction = {
+            onValueChange(state.text.toString())
+            it()
+        },
+        keyboardOptions = KeyboardOptions(
+            imeAction = imeAction
+        )
     ) {
         Column(
             verticalArrangement = Arrangement.spacedBy(8.dp)

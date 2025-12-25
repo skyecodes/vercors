@@ -24,11 +24,14 @@ import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import app.vercors.launcher.gui.home.BriefProjectView
+import app.vercors.launcher.gui.project.BriefProjectView
+import app.vercors.launcher.gui.project.ProjectSharedElementOrigin
+import app.vercors.launcher.gui.project.projectSharedElement
 import app.vercors.launcher.gui.res.*
 import app.vercors.shared.domain.Resource
 import app.vercors.shared.domain.Result
@@ -36,19 +39,21 @@ import app.vercors.shared.domain.getOrNull
 import app.vercors.shared.domain.project.model.ProjectId
 import app.vercors.shared.domain.project.model.ProjectType
 import app.vercors.shared.ui.animation.appAnimateItem
-import app.vercors.shared.ui.animation.appSharedElement
 import app.vercors.shared.ui.component.*
 import app.vercors.shared.ui.layout.AppError
 import app.vercors.shared.ui.modifier.appCard
 import app.vercors.shared.ui.theme.colors
 import app.vercors.shared.ui.theme.surface2
 import coil3.compose.rememberAsyncImagePainter
+import com.composables.icons.fontawesome.FontAwesome
+import com.composables.icons.fontawesome.brands.Twitch
 import com.composables.icons.lucide.*
 import com.composeunstyled.theme.Theme
 import nl.jacobras.humanreadable.HumanReadable
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.decodeToSvgPainter
 import org.jetbrains.compose.resources.stringResource
+import org.jetbrains.compose.resources.vectorResource
 import pro.respawn.flowmvi.api.IntentReceiver
 import pro.respawn.flowmvi.compose.dsl.subscribe
 import java.util.Locale.getDefault
@@ -125,15 +130,10 @@ private fun ProjectListHeader(state: ProjectListState) {
             placeholder = { AppText(stringResource(Res.string.search)) },
             initialValue = state.searchQuery,
             onValueChange = { store.intent(ProjectListIntent.OnSearchQueryChange(it)) },
+            debounceMillis = 750,
+            imeAction = ImeAction.Search,
             backgroundColor = Theme[colors][surface2],
             modifier = Modifier.weight(1f)
-        )
-
-        AppIconTextButton(
-            onClick = { store.intent(ProjectListIntent.OnSearchButtonClick) },
-            imageVector = Lucide.Search,
-            text = stringResource(Res.string.search),
-            backgroundColor = Theme[colors][surface2],
         )
     }
 }
@@ -156,7 +156,7 @@ private fun ProjectFilters(state: ProjectListState) {
                         group.categories.forEach {
                             AppIconTextButton(
                                 onClick = { store.intent(ProjectListIntent.OnCategoryClick(it)) },
-                                painter = it.iconView.painter,
+                                painter = it.iconView?.painter,
                                 text = translateCategory(it),
                                 backgroundColor = if (it in state.selectedCategories) Theme[colors][surface2] else Color.Unspecified,
                                 modifier = Modifier.fillMaxWidth(),
@@ -244,10 +244,7 @@ private fun LazyItemScope.ProjectListItemCard(
             modifier = Modifier
                 .hoverable(interactionSource = interactionSource)
                 .appAnimateItem()
-                .appSharedElement(
-                    sharedContentState = rememberSharedContentState("project/${project.id}/card"),
-                    animatedVisibilityScope = animatedVisibilityScope
-                ),
+                .projectSharedElement(project.id, "card", ProjectSharedElementOrigin.ProjectList),
             interactionSource = interactionSource,
             onClick = { store.intent(ProjectListIntent.OnProjectClick(project.id)) },
             icon = {
@@ -255,14 +252,8 @@ private fun LazyItemScope.ProjectListItemCard(
                     painter = rememberAsyncImagePainter(project.logoUrl),
                     contentDescription = project.name,
                     modifier = it
-                        .clip(RoundedCornerShape(4.dp))
-                        .appSharedElement(
-                            sharedContentState = contextOf<SharedTransitionScope>()
-                                .rememberSharedContentState("project/${project.id}/logo"),
-                            animatedVisibilityScope = animatedVisibilityScope,
-                            clipInOverlayDuringTransition = contextOf<SharedTransitionScope>()
-                                .OverlayClip(RoundedCornerShape(4.dp))
-                        ),
+                        .projectSharedElement(project.id, "logo", ProjectSharedElementOrigin.ProjectList)
+                        .clip(RoundedCornerShape(4.dp)),
                     contentScale = ContentScale.Crop
                 )
             },
@@ -272,11 +263,8 @@ private fun LazyItemScope.ProjectListItemCard(
                     fontWeight = FontWeight.SemiBold,
                     singleLine = true,
                     overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.appSharedElement(
-                        sharedContentState = contextOf<SharedTransitionScope>()
-                            .rememberSharedContentState("project/${project.id}/title"),
-                        animatedVisibilityScope = animatedVisibilityScope
-                    )
+                    modifier = Modifier
+                        .projectSharedElement(project.id, "title", ProjectSharedElementOrigin.ProjectList)
                 )
             },
             author = {
@@ -292,11 +280,8 @@ private fun LazyItemScope.ProjectListItemCard(
                     overflow = TextOverflow.Ellipsis,
                     maxLines = 2,
                     fontSize = 12.sp,
-                    modifier = Modifier.appSharedElement(
-                        sharedContentState = contextOf<SharedTransitionScope>()
-                            .rememberSharedContentState("project/${project.id}/description"),
-                        animatedVisibilityScope = animatedVisibilityScope
-                    )
+                    modifier = Modifier
+                        .projectSharedElement(project.id, "description", ProjectSharedElementOrigin.ProjectList)
                 )
             },
             downloads = {
@@ -418,11 +403,10 @@ val ProjectType.icon: ImageVector
         ProjectType.World -> Lucide.Earth
     }
 
-val IconView?.painter: Painter
+val IconView.painter: Painter
     @Composable get() = when (this) {
         is IconView.Data -> LocalDensity.current.let { remember { svgString.toByteArray().decodeToSvgPainter(it) } }
         is IconView.Named -> rememberVectorPainter(getIconFromName(name))
-        null -> rememberVectorPainter(Lucide.CircleQuestionMark)
     }
 
 @Composable
@@ -438,6 +422,7 @@ private fun categoryText(category: String): String = when (category) {
 private fun translateCategory(category: ProjectCategoryView): String =
     Res.allStringResources[category.slugSnakeCase]?.let { stringResource(it) } ?: category.name ?: category.slug
 
+@Composable
 private fun getIconFromName(name: String): ImageVector = when (name) {
     "compass" -> Lucide.Compass
     "cloud-sun-rain" -> Lucide.CloudSunRain
@@ -490,7 +475,6 @@ private fun getIconFromName(name: String): ImageVector = when (name) {
     "toolbox" -> Lucide.ToolCase
     "ice-cream-cone" -> Lucide.IceCreamCone
     "earth" -> Lucide.Earth
-    // CURSEFORGE
     "shield" -> Lucide.Shield
     "boxes" -> Lucide.Boxes
     "heart-crack" -> Lucide.HeartCrack
@@ -509,5 +493,12 @@ private fun getIconFromName(name: String): ImageVector = when (name) {
     "castle" -> Lucide.Castle
     "cog" -> Lucide.Cog
     "trophy" -> Lucide.Trophy
+    "badge-check" -> Lucide.BadgeCheck
+    "twitch" -> FontAwesome.Brands.Twitch
+    "creeper" -> vectorResource(Res.drawable.creeper)
+    "path-tracing" -> vectorResource(Res.drawable.path_tracing)
+    "potato" -> vectorResource(Res.drawable.potato)
+    "sink" -> vectorResource(Res.drawable.sink)
+    "mcreator" -> vectorResource(Res.drawable.mcreator)
     else -> Lucide.CircleQuestionMark
 }

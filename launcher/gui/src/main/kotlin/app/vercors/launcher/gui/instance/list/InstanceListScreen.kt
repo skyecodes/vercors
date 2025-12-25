@@ -9,8 +9,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import app.vercors.launcher.gui.instance.BriefInstanceCard
+import app.vercors.launcher.gui.instance.InstanceSharedElementOrigin
 import app.vercors.launcher.gui.res.*
 import app.vercors.shared.ui.animation.appAnimateItem
 import app.vercors.shared.ui.component.AppIconTextButton
@@ -73,7 +75,8 @@ private fun InstanceListScreen(state: InstanceListState) {
                     BriefInstanceCard(
                         instance = instance,
                         onInstanceClick = { store.intent(InstanceListIntent.OnInstanceClick(it)) },
-                        modifier = Modifier.fillMaxWidth().height(150.dp).appAnimateItem()
+                        modifier = Modifier.fillMaxWidth().height(150.dp).appAnimateItem(),
+                        origin = InstanceSharedElementOrigin.InstanceList
                     )
                 }
             }
@@ -128,6 +131,7 @@ fun InstanceListFilterCard(state: InstanceListState) {
             placeholder = { AppText(stringResource(Res.string.search)) },
             initialValue = state.nameFilter,
             onValueChange = { store.intent(InstanceListIntent.OnNameFilterChange(it)) },
+            imeAction = ImeAction.Search,
             backgroundColor = Theme[colors][surface2],
             modifier = Modifier.weight(1f)
         )

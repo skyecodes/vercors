@@ -10,12 +10,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import app.vercors.launcher.gui.instance.instanceSharedElement
 import app.vercors.launcher.gui.res.Res
 import app.vercors.launcher.gui.res.delete
 import app.vercors.launcher.gui.res.launch
 import app.vercors.shared.domain.Resource
 import app.vercors.shared.domain.Result
-import app.vercors.shared.ui.animation.appSharedElement
 import app.vercors.shared.ui.component.*
 import app.vercors.shared.ui.layout.AppError
 import app.vercors.shared.ui.layout.AppLoading
@@ -76,18 +76,15 @@ fun InstanceDetailsScreen(
         modifier = Modifier.padding(8.dp)
     ) {
         Row(
-            modifier = Modifier.appCard().padding(horizontal = 16.dp, vertical = 8.dp).fillMaxWidth(),
+            modifier = Modifier.appCard().padding(horizontal = 16.dp, vertical = 8.dp).fillMaxWidth()
+                .instanceSharedElement(instance.id, "card"),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             AppIcon(
                 imageVector = Lucide.Gamepad2,
                 contentDescription = instance.name,
-                modifier = Modifier.size(48.dp)
-                    .appSharedElement(
-                        sharedContentState = rememberSharedContentState("instance/${instance.id}/icon"),
-                        animatedVisibilityScope = animatedVisibilityScope
-                    )
+                modifier = Modifier.size(48.dp).instanceSharedElement(instance.id, "icon")
             )
 
             Column(
@@ -98,10 +95,7 @@ fun InstanceDetailsScreen(
                     text = instance.name,
                     fontWeight = FontWeight.SemiBold,
                     singleLine = true,
-                    modifier = Modifier.appSharedElement(
-                        sharedContentState = rememberSharedContentState("instance/${instance.id}/title"),
-                        animatedVisibilityScope = animatedVisibilityScope
-                    )
+                    modifier = Modifier.instanceSharedElement(instance.id, "title")
                 )
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(3.dp)
@@ -109,26 +103,17 @@ fun InstanceDetailsScreen(
                     AppText(
                         text = "${instance.type} -",
                         fontSize = 12.sp,
-                        modifier = Modifier.appSharedElement(
-                            sharedContentState = rememberSharedContentState("instance/${instance.id}/type"),
-                            animatedVisibilityScope = animatedVisibilityScope
-                        )
+                        modifier = Modifier.instanceSharedElement(instance.id, "type")
                     )
                     AppText(
                         text = instance.loader,
                         fontSize = 12.sp,
-                        modifier = Modifier.appSharedElement(
-                            sharedContentState = rememberSharedContentState("instance/${instance.id}/loader"),
-                            animatedVisibilityScope = animatedVisibilityScope
-                        )
+                        modifier = Modifier.instanceSharedElement(instance.id, "loader")
                     )
                     AppText(
                         text = instance.version,
                         fontSize = 12.sp,
-                        modifier = Modifier.appSharedElement(
-                            sharedContentState = rememberSharedContentState("instance/${instance.id}/version"),
-                            animatedVisibilityScope = animatedVisibilityScope
-                        )
+                        modifier = Modifier.instanceSharedElement(instance.id, "version")
                     )
                 }
             }

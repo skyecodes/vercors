@@ -37,6 +37,7 @@ dependencies {
     implementation(libs.composables.composeunstyled)
     implementation(libs.composables.ripple)
     implementation(libs.composables.icons.lucide)
+    implementation(libs.composables.icons.fontawesome.brands)
     implementation(libs.flowmvi.core)
     implementation(libs.flowmvi.compose)
     implementation(libs.flowmvi.android)

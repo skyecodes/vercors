@@ -34,11 +34,14 @@ import androidx.compose.ui.unit.sp
 import app.vercors.launcher.common.domain.instance.model.InstanceId
 import app.vercors.launcher.gui.instance.BriefInstanceCard
 import app.vercors.launcher.gui.instance.BriefInstanceView
+import app.vercors.launcher.gui.instance.InstanceSharedElementOrigin
+import app.vercors.launcher.gui.project.BriefProjectView
+import app.vercors.launcher.gui.project.ProjectSharedElementOrigin
+import app.vercors.launcher.gui.project.projectSharedElement
 import app.vercors.launcher.gui.res.*
 import app.vercors.shared.domain.project.model.ProjectId
 import app.vercors.shared.ui.animation.appAnimateContentSize
 import app.vercors.shared.ui.animation.appAnimateDpAsState
-import app.vercors.shared.ui.animation.appSharedElement
 import app.vercors.shared.ui.animation.shouldAnimate
 import app.vercors.shared.ui.component.*
 import app.vercors.shared.ui.layout.AppError
@@ -202,7 +205,8 @@ private fun <T> LazyListScope.homeCardItem(
             BriefInstanceCard(
                 instance = element,
                 onInstanceClick = { store.intent(HomeIntent.OnInstanceClick(it)) },
-                modifier = modifier.size(width = 150.dp, height = 150.dp)
+                modifier = modifier.size(width = 150.dp, height = 150.dp),
+                origin = InstanceSharedElementOrigin.Home
             )
         }
 
@@ -235,7 +239,8 @@ private fun LazyListScope.fakeCardItem(
             HomeSectionType.RecentlyPlayed -> BriefInstanceCard(
                 instance = null,
                 onInstanceClick = {},
-                modifier = modifier.size(width = 150.dp, height = 150.dp)
+                modifier = modifier.size(width = 150.dp, height = 150.dp),
+                origin = InstanceSharedElementOrigin.Home
             )
 
             else -> HomeProjectCard(
@@ -305,10 +310,7 @@ private fun HomeProjectCard(
         HomeProjectCardLayout(
             modifier = modifier
                 .hoverable(interactionSource = interactionSource)
-                .appSharedElement(
-                    sharedContentState = rememberSharedContentState("project/${project.id}/card"),
-                    animatedVisibilityScope = animatedVisibilityScope
-                ),
+                .projectSharedElement(project.id, "card", ProjectSharedElementOrigin.Home),
             interactionSource = interactionSource,
             onClick = { store.intent(HomeIntent.OnProjectClick(project.id)) },
             icon = {
@@ -316,14 +318,8 @@ private fun HomeProjectCard(
                     painter = rememberAsyncImagePainter(project.logoUrl),
                     contentDescription = project.name,
                     modifier = it
-                        .clip(RoundedCornerShape(4.dp))
-                        .appSharedElement(
-                            sharedContentState = contextOf<SharedTransitionScope>()
-                                .rememberSharedContentState("project/${project.id}/logo"),
-                            animatedVisibilityScope = animatedVisibilityScope,
-                            clipInOverlayDuringTransition = contextOf<SharedTransitionScope>()
-                                .OverlayClip(RoundedCornerShape(4.dp))
-                        ),
+                        .projectSharedElement(project.id, "logo", ProjectSharedElementOrigin.Home)
+                        .clip(RoundedCornerShape(4.dp)),
                     contentScale = ContentScale.Crop
                 )
             },
@@ -333,11 +329,8 @@ private fun HomeProjectCard(
                     fontWeight = FontWeight.SemiBold,
                     singleLine = true,
                     overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.appSharedElement(
-                        sharedContentState = contextOf<SharedTransitionScope>()
-                            .rememberSharedContentState("project/${project.id}/title"),
-                        animatedVisibilityScope = animatedVisibilityScope
-                    )
+                    modifier = Modifier
+                        .projectSharedElement(project.id, "title", ProjectSharedElementOrigin.Home)
                 )
             },
             author = {
@@ -349,11 +342,7 @@ private fun HomeProjectCard(
             },
             image = {
                 val blurRadius by appAnimateDpAsState(if (isHovered) 4.dp else 0.dp)
-                val projectImageModifier = Modifier.fillMaxSize().blur(blurRadius).appSharedElement(
-                    sharedContentState = contextOf<SharedTransitionScope>()
-                        .rememberSharedContentState("project/${project.id}/image"),
-                    animatedVisibilityScope = animatedVisibilityScope
-                )
+                val projectImageModifier = Modifier.fillMaxSize().blur(blurRadius)
 
                 project.imageUrl?.let {
                     Image(
@@ -382,7 +371,8 @@ private fun HomeProjectCard(
                     AppText(
                         text = project.description,
                         fontSize = 12.sp,
-                        modifier = Modifier.padding(8.dp),
+                        modifier = Modifier.padding(8.dp)
+                            .projectSharedElement(project.id, "description", ProjectSharedElementOrigin.Home),
                     )
                 }
 

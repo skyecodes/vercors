@@ -56,7 +56,7 @@ internal fun ModrinthCategory.convert(): ProjectCategoryData = ProjectCategoryDa
     id = name,
     slug = name,
     name = null,
-    icon = iconMap[name]
+    icon = iconMap[name]?.let { IconNameData(it) } ?: icon.ifBlank { null }?.let { IconSvgData(it) }
 )
 
 internal fun String.toModrinthProjectType(): ProjectTypeData? = when (this) {

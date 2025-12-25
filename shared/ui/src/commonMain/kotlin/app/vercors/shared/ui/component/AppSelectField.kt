@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import app.vercors.shared.ui.modifier.appCard
 import app.vercors.shared.ui.res.Res
@@ -93,6 +94,7 @@ fun <T> AppSelectField(
                     initialValue = search,
                     placeholder = { AppText(stringResource(Res.string.search)) },
                     onValueChange = onSearchChange,
+                    imeAction = ImeAction.Search,
                     backgroundColor = Color.Unspecified,
                     shape = RectangleShape
                 )

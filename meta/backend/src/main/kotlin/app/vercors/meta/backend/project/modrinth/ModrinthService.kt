@@ -26,7 +26,7 @@ class ModrinthService(
         val types = async { api.getProjectTypes().mapNotNull { it.toModrinthProjectType() } }
         val categories = async { api.getCategories() }
 
-            categories.await()
+            val result = categories.await()
                 .groupBy { it.projectType.convert() }
             .filterKeys { it in types.await() }
                 .map { (type, cats) ->
@@ -37,10 +37,11 @@ class ModrinthService(
                             else
                                 mappedList.sortedBy { it.slug }
                         }
-
                     }
                 }
             .toMap()
+            result + (ProjectTypeData.DataPack to result.getValue(ProjectTypeData.Mod)
+                .filterKeys { it == "categories" })
     }
 
     override suspend fun search(

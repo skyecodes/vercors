@@ -1,21 +1,21 @@
 package app.vercors.launcher.gui.project.list
 
 import androidx.compose.runtime.Immutable
-import app.vercors.launcher.gui.home.BriefProjectView
-import app.vercors.launcher.gui.home.toView
+import app.vercors.launcher.gui.config.usecase.ObserveGuiConfigurationUseCase
+import app.vercors.launcher.gui.project.BriefProjectView
 import app.vercors.launcher.gui.project.list.ProjectListAction.NavigateToProjectDetails
-import app.vercors.shared.domain.Resource
+import app.vercors.launcher.gui.project.toView
+import app.vercors.shared.domain.*
 import app.vercors.shared.domain.game.usecase.GetGameVersionListUseCase
-import app.vercors.shared.domain.getOrNull
-import app.vercors.shared.domain.map
 import app.vercors.shared.domain.project.model.ProjectCategory
 import app.vercors.shared.domain.project.model.ProjectId
 import app.vercors.shared.domain.project.model.ProjectType
 import app.vercors.shared.domain.project.usecase.GetPlatformListUseCase
 import app.vercors.shared.domain.project.usecase.GetProjectListUseCase
-import app.vercors.shared.domain.resourceFlow
 import app.vercors.shared.ui.configureWithLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import pro.respawn.flowmvi.api.*
@@ -28,7 +28,8 @@ private val logger = KotlinLogging.logger {}
 class ProjectListContainer(
     private val getPlatformList: GetPlatformListUseCase,
     private val getProjectList: GetProjectListUseCase,
-    private val getGameVersionList: GetGameVersionListUseCase
+    private val getGameVersionList: GetGameVersionListUseCase,
+    private val observeGuiConfigurationUseCase: ObserveGuiConfigurationUseCase
 ) : Container<ProjectListState, ProjectListIntent, ProjectListAction> {
     override val store = store(initial = ProjectListState()) {
         configureWithLogger(logger)
@@ -45,9 +46,10 @@ class ProjectListContainer(
         }
 
         whileSubscribed {
+            val preferredPlatform = async { observeGuiConfigurationUseCase().awaitValueOrNull()?.preferredPlatform }
             launch {
                 resourceFlow { getPlatformList() }.collectLatest { resource ->
-                    val providerList = resource.map {
+                    val platformList = resource.map {
                         it.map { platform ->
                             ProjectPlatformView(
                                 id = platform.id,
@@ -58,11 +60,13 @@ class ProjectListContainer(
                         }
                     }
                     updateState {
+                        val defaultPlatform = platformList.getOrNull()?.find { it.id == preferredPlatform.await() }
+                            ?: platformList.getOrNull()?.firstOrNull()
                         copy(
-                            providerList = providerList,
-                            selectedPlatform = selectedPlatform ?: providerList.getOrNull()?.firstOrNull(),
-                            selectedType = selectedType ?: providerList.getOrNull()
-                                ?.firstOrNull()?.categoryGroups?.keys?.let { types -> ProjectType.entries.first { it in types } }
+                            providerList = platformList,
+                            selectedPlatform = selectedPlatform ?: defaultPlatform,
+                            selectedType = selectedType
+                                ?: defaultPlatform?.categoryGroups?.keys?.let { types -> ProjectType.entries.first { it in types } }
                         )
                     }
                 }
@@ -81,7 +85,8 @@ class ProjectListContainer(
                     if (it.selectedPlatform != null && it.selectedType != null && (
                                 old.selectedPlatform?.id != it.selectedPlatform.id ||
                                         old.selectedType != it.selectedType ||
-                                        old.selectedCategories != it.selectedCategories)
+                                        old.selectedCategories != it.selectedCategories ||
+                                        old.searchQuery != it.searchQuery)
                     ) {
                         launch { searchProjects() }
                     }
@@ -103,6 +108,7 @@ class ProjectListContainer(
                     ).map { list -> list.map { it.toView() } }
                 }.collectLatest {
                     updateState { copy(projects = it) }
+                    delay(50)
                     action(ProjectListAction.ScrollUp)
                 }
             }

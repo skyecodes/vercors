@@ -38,7 +38,7 @@ internal fun CurseForgeCategory.convert(): ProjectCategoryData = ProjectCategory
     id = "$id",
     slug = slug,
     name = name,
-    icon = iconMap[slug]
+    icon = iconMap[slug]?.let { IconNameData(it) }
 )
 
 internal fun ProjectTypeData.toCurseForgeClassId(): Int = when (this) {
