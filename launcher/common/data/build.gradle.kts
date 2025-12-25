@@ -41,9 +41,15 @@ kotlin {
             implementation(libs.kotlinx.coroutines.test)
             implementation(libs.turbine)
         }
+        jvmMain.dependencies {
+            implementation(libs.ktor.client.cio)
+        }
         jvmTest.dependencies {
             implementation(libs.mockk)
             implementation(libs.logback)
+        }
+        nativeMain.dependencies {
+            implementation(libs.ktor.client.curl)
         }
     }
     compilerOptions.freeCompilerArgs.addAll(

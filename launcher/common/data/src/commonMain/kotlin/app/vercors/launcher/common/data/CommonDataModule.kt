@@ -74,7 +74,7 @@ internal fun provideDirectoryWatcher(
 internal fun provideHttpClient(
     json: Json,
     @AppPath appPath: Path
-): HttpClient = HttpClient {
+): HttpClient = HttpClient(platformHttpClientEngineFactory) {
     install(ContentNegotiation) {
         json(json)
     }
