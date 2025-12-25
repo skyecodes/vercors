@@ -1,6 +1,7 @@
 package app.vercors.launcher.cli
 
 import app.vercors.launcher.common.data.CommonDataModule
+import app.vercors.launcher.common.data.MICROSOFT_CLIENT_ID
 import app.vercors.launcher.common.domain.CommonDomainModule
 import com.github.ajalt.clikt.command.SuspendingCliktCommand
 import com.github.ajalt.clikt.command.main
@@ -13,14 +14,15 @@ import org.koin.ksp.generated.startKoin
 
 fun main(args: Array<String>) {
     configureLogging()
+    val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     val koin = CLIApplication.startKoin {
         properties(
             mapOf(
-                "AUTH_CLIENT_ID" to ""
+                "MICROSOFT_CLIENT_ID" to MICROSOFT_CLIENT_ID
             )
         )
         modules(module {
-            single<CoroutineScope> { CoroutineScope(SupervisorJob() + Dispatchers.Default) }
+            single { scope }
         })
     }.koin
     runBlocking {
@@ -36,6 +38,7 @@ fun main(args: Array<String>) {
             )
             .main(args)
     }
+    scope.cancel()
 }
 
 class MainCommand(private val koin: Koin) : SuspendingCliktCommand("vercors-cli") {

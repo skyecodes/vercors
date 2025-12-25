@@ -33,7 +33,7 @@ private val logger = KotlinLogging.logger {}
 @Single
 internal class AuthenticationServiceImpl(
     private val httpClient: HttpClient,
-    @Property("AUTH_CLIENT_ID") private val clientId: String,
+    @Property("MICROSOFT_CLIENT_ID") private val clientId: String,
     @Sha256 private val sha256Hasher: Hasher,
 ) : AuthenticationService {
     override fun login(): Flow<LoginState> = flow {

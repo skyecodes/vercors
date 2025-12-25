@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.serialization)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.buildconfig)
 }
 
 kotlin {
@@ -73,4 +74,17 @@ dependencies {
 
 tasks.matching { it.name.startsWith("ksp") && it.name != "kspCommonMainKotlinMetadata" }.configureEach {
     dependsOn("kspCommonMainKotlinMetadata")
+}
+
+buildConfig {
+    packageName("app.vercors.launcher.common.data")
+    useKotlinOutput {
+        internalVisibility = false
+        topLevelConstants = true
+    }
+    buildConfigField(
+        "String",
+        "MICROSOFT_CLIENT_ID",
+        "\"${properties["microsoftClientId"] ?: System.getenv("MICROSOFT_CLIENT_ID") ?: error("AUTH_CLIENT_ID not set")}\""
+    )
 }

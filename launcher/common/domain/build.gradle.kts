@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.buildconfig)
 }
 
 kotlin {
@@ -50,4 +51,13 @@ dependencies {
 
 tasks.matching { it.name.startsWith("ksp") && it.name != "kspCommonMainKotlinMetadata" }.configureEach {
     dependsOn("kspCommonMainKotlinMetadata")
+}
+
+buildConfig {
+    packageName("app.vercors.launcher.common.domain")
+    useKotlinOutput {
+        internalVisibility = false
+        topLevelConstants = true
+    }
+    buildConfigField("String", "LAUNCHER_VERSION", "\"${project.version}\"")
 }
