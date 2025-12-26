@@ -1,21 +1,21 @@
 package app.vercors.launcher.gui.instance.create
 
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.vector.ImageVector
 import app.vercors.launcher.common.domain.instance.model.Instance
 import app.vercors.launcher.common.domain.instance.model.InstanceId
 import app.vercors.launcher.common.domain.instance.usecase.CreateInstanceUseCase
-import app.vercors.launcher.common.domain.loader.ModLoaderType
+import app.vercors.launcher.gui.game.GameVersionView
+import app.vercors.launcher.gui.game.convert
 import app.vercors.launcher.gui.res.*
 import app.vercors.shared.domain.Resource
 import app.vercors.shared.domain.game.model.GameVersionList
-import app.vercors.shared.domain.game.model.GameVersionType
 import app.vercors.shared.domain.game.usecase.GetGameVersionListUseCase
 import app.vercors.shared.domain.getOrNull
+import app.vercors.shared.domain.loader.ModLoaderType
 import app.vercors.shared.domain.map
 import app.vercors.shared.domain.resourceFlow
-import app.vercors.shared.ui.configureWithLogger
+import app.vercors.shared.ui.core.configureWithLogger
 import com.composables.icons.lucide.Import
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.PackagePlus
@@ -24,7 +24,6 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.StringResource
-import org.jetbrains.compose.resources.stringResource
 import pro.respawn.flowmvi.api.*
 import pro.respawn.flowmvi.dsl.store
 import pro.respawn.flowmvi.plugins.init
@@ -79,15 +78,6 @@ class CreateInstanceContainer(
         }
 }
 
-private fun GameVersionList.convert(): List<GameVersionView> = versions.map {
-    GameVersionView(
-        id = it.id,
-        isLatestRelease = it.id == latestRelease,
-        isLatestSnapshot = it.id == latestSnapshot,
-        isSnapshot = it.type != GameVersionType.Release
-    )
-}
-
 @Immutable
 data class CreateInstanceState(
     val selectedTab: CreateInstanceTab = CreateInstanceTab.Custom,
@@ -107,20 +97,6 @@ data class CreateInstanceState(
         )) && (showSnapshot || !it.isSnapshot)
     } ?: emptyList()
     val canCreateInstance: Boolean = instanceName.isNotBlank() && selectedGameVersion != null
-}
-
-data class GameVersionView(
-    val id: String,
-    val isLatestRelease: Boolean,
-    val isLatestSnapshot: Boolean,
-    val isSnapshot: Boolean,
-) {
-    val displayName: String
-        @Composable get() = when {
-            isLatestRelease -> "$id (${stringResource(Res.string.latestRelease)})"
-            isLatestSnapshot -> "$id (${stringResource(Res.string.latestSnapshot)})"
-            else -> id
-        }
 }
 
 enum class CreateInstanceTab(

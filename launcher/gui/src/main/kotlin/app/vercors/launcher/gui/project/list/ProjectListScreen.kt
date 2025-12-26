@@ -1,19 +1,15 @@
 package app.vercors.launcher.gui.project.list
 
-import androidx.compose.animation.AnimatedContentScope
-import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.*
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyItemScope
-import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.lazy.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -21,11 +17,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -36,14 +33,18 @@ import app.vercors.launcher.gui.res.*
 import app.vercors.shared.domain.Resource
 import app.vercors.shared.domain.Result
 import app.vercors.shared.domain.getOrNull
+import app.vercors.shared.domain.loader.ModLoaderType
 import app.vercors.shared.domain.project.model.ProjectId
 import app.vercors.shared.domain.project.model.ProjectType
-import app.vercors.shared.ui.animation.appAnimateItem
-import app.vercors.shared.ui.component.*
-import app.vercors.shared.ui.layout.AppError
-import app.vercors.shared.ui.modifier.appCard
-import app.vercors.shared.ui.theme.colors
-import app.vercors.shared.ui.theme.surface2
+import app.vercors.shared.ui.core.animation.AppAnimatedVisibility
+import app.vercors.shared.ui.core.animation.appAnimateItem
+import app.vercors.shared.ui.core.component.*
+import app.vercors.shared.ui.core.layout.AppError
+import app.vercors.shared.ui.core.modifier.appCard
+import app.vercors.shared.ui.core.modifier.scrollGradient
+import app.vercors.shared.ui.core.theme.colors
+import app.vercors.shared.ui.core.theme.surface2
+import app.vercors.shared.ui.loader.icon
 import coil3.compose.rememberAsyncImagePainter
 import com.composables.icons.fontawesome.FontAwesome
 import com.composables.icons.fontawesome.brands.Twitch
@@ -67,16 +68,13 @@ fun ProjectListScreen(
     container: ProjectListContainer,
     navigateToProjectDetails: (ProjectId) -> Unit
 ) = with(container.store) {
-    val listState = rememberLazyListState()
-
     val state by subscribe { action ->
         when (action) {
             is ProjectListAction.NavigateToProjectDetails -> navigateToProjectDetails(action.projectId)
-            ProjectListAction.ScrollUp -> listState.scrollToItem(0)
         }
     }
 
-    ProjectListScreen(state, listState)
+    ProjectListScreen(state)
 }
 
 @Composable
@@ -85,7 +83,7 @@ context(
     _: AnimatedContentScope,
     _: SharedTransitionScope
 )
-private fun ProjectListScreen(state: ProjectListState, listState: LazyListState) {
+private fun ProjectListScreen(state: ProjectListState) {
     Column(
         modifier = Modifier.fillMaxSize().padding(top = 8.dp, start = 8.dp, end = 8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -96,7 +94,7 @@ private fun ProjectListScreen(state: ProjectListState, listState: LazyListState)
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             ProjectFilters(state)
-            ProjectList(state, listState)
+            ProjectList(state)
         }
     }
 }
@@ -112,7 +110,12 @@ private fun ProjectListHeader(state: ProjectListState) {
             value = state.selectedPlatform,
             items = state.providerList.getOrNull() ?: emptyList(),
             onValueChange = { store.intent(ProjectListIntent.OnProjectProviderChange(it!!)) },
-            textConverter = { it?.name ?: "" },
+            itemRenderer = {
+                AppSelectItem(
+                    text = it?.name ?: "",
+                    icon = it.icon
+                )
+            },
             backgroundColor = Theme[colors][surface2],
             modifier = Modifier.width(150.dp)
         )
@@ -121,7 +124,12 @@ private fun ProjectListHeader(state: ProjectListState) {
             value = state.selectedType ?: ProjectType.entries.first(),
             items = ProjectType.entries.filter { state.selectedPlatform?.categoryGroups?.keys?.contains(it) == true },
             onValueChange = { store.intent(ProjectListIntent.OnProjectTypeChange(it)) },
-            textConverter = { stringResource(it.displayName) },
+            itemRenderer = {
+                AppSelectItem(
+                    text = stringResource(it.displayName),
+                    icon = it.icon
+                )
+            },
             backgroundColor = Theme[colors][surface2],
             modifier = Modifier.width(150.dp)
         )
@@ -141,33 +149,134 @@ private fun ProjectListHeader(state: ProjectListState) {
 @Composable
 context(store: IntentReceiver<ProjectListIntent>)
 private fun ProjectFilters(state: ProjectListState) {
+    val listState = rememberLazyListState()
+
+    LaunchedEffect(state.selectedType) {
+        listState.scrollToItem(0)
+    }
+
     LazyColumn(
+        state = listState,
         modifier = Modifier.width(225.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
+        if (state.selectedType?.requiresLoader == true) {
+            item("loader") {
+                ProjectLoaderFilter(state)
+            }
+        }
+
+        item("version") {
+            ProjectVersionFilter(state)
+        }
+
         state.selectedPlatform?.let { platform ->
             val groups = platform.categoryGroups[state.selectedType]
-            groups?.forEachIndexed { index, group ->
-                item(group) {
-                    ProjectFilterCategory(
-                        title = group.name,
-                        modifier = if (index == groups.lastIndex) Modifier.padding(bottom = 8.dp) else Modifier
-                    ) {
-                        group.categories.forEach {
-                            AppIconTextButton(
-                                onClick = { store.intent(ProjectListIntent.OnCategoryClick(it)) },
-                                painter = it.iconView?.painter,
-                                text = translateCategory(it),
-                                backgroundColor = if (it in state.selectedCategories) Theme[colors][surface2] else Color.Unspecified,
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            )
-                        }
-                    }
+            if (groups != null) {
+                itemsIndexed(groups, key = { _, group -> group }) { index, group ->
+                    ProjectCategoryFilter(
+                        group = group,
+                        index = index,
+                        groups = groups,
+                        selectedCategories = state.selectedCategories
+                    )
                 }
             }
         }
     }
+}
+
+@Composable
+context(store: IntentReceiver<ProjectListIntent>)
+private fun ProjectLoaderFilter(state: ProjectListState) {
+    ProjectFilterCategory(
+        title = stringResource(Res.string.loader)
+    ) {
+        Column {
+            ModLoaderType.entries.forEach {
+                AppIconTextButton(
+                    onClick = { store.intent(ProjectListIntent.OnLoaderClick(it)) },
+                    imageVector = it.icon,
+                    text = it.name,
+                    backgroundColor = if (it in state.selectedLoaders) Theme[colors][surface2] else Color.Unspecified,
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+context(store: IntentReceiver<ProjectListIntent>)
+private fun ProjectVersionFilter(state: ProjectListState) {
+    ProjectFilterCategory(
+        title = stringResource(Res.string.gameVersion)
+    ) {
+        val listState = rememberLazyListState()
+
+        AppTextField(
+            initialValue = state.gameVersionSearchQuery,
+            onValueChange = { store.intent(ProjectListIntent.OnGameVersionSearchQueryChange(it)) },
+            placeholder = { AppText(stringResource(Res.string.search)) },
+            backgroundColor = Theme[colors][surface2],
+            modifier = Modifier.fillMaxWidth()
+        )
+        LazyColumn(
+            state = listState,
+            modifier = Modifier.heightIn(max = 200.dp).fillMaxWidth().padding(top = 6.dp).scrollGradient(
+                listState = listState,
+                orientation = Orientation.Vertical,
+            ),
+            verticalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
+            items(state.filteredGameVersionList) { version ->
+                AppIconTextButton(
+                    onClick = { store.intent(ProjectListIntent.OnGameVersionClick(version)) },
+                    imageVector = null,
+                    backgroundColor = if (version in state.selectedGameVersions) Theme[colors][surface2] else Color.Unspecified,
+                    modifier = Modifier.fillMaxWidth(),
+                    text = version.id,
+                    horizontalArrangement = Arrangement.aligned(Alignment.Start)
+                )
+            }
+        }
+        AppCheckbox(
+            label = stringResource(Res.string.showSnapshots),
+            checked = state.showSnapshot,
+            onCheckedChange = { store.intent(ProjectListIntent.OnShowSnapshotClick) },
+            invert = true,
+            backgroundColor = Theme[colors][surface2],
+            checkboxSize = 20.dp,
+            modifier = Modifier.padding(top = 6.dp)
+        )
+    }
+}
+
+@Composable
+context(store: IntentReceiver<ProjectListIntent>)
+private fun ProjectCategoryFilter(
+    group: ProjectCategoryGroupView,
+    index: Int,
+    groups: List<ProjectCategoryGroupView>,
+    selectedCategories: List<ProjectCategoryView>
+) {
+    ProjectFilterCategory(
+        title = group.name,
+        modifier = if (index == groups.lastIndex) Modifier.padding(bottom = 8.dp) else Modifier,
+        {
+            group.categories.forEach {
+                AppIconTextButton(
+                    onClick = { store.intent(ProjectListIntent.OnCategoryClick(it)) },
+                    painter = it.iconView?.painter,
+                    text = translateCategory(it),
+                    backgroundColor = if (it in selectedCategories) Theme[colors][surface2] else Color.Unspecified,
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                )
+            }
+        }
+    )
 }
 
 @Composable
@@ -176,21 +285,42 @@ fun ProjectFilterCategory(
     modifier: Modifier = Modifier,
     content: @Composable ColumnScope.() -> Unit
 ) {
+    var toggled by remember { mutableStateOf(true) }
+
     Column(
         modifier = modifier.fillMaxWidth().appCard().padding(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        AppText(
-            text = categoryText(title),
-            fontWeight = FontWeight.SemiBold,
-            modifier = Modifier.fillMaxWidth(),
-            textAlign = TextAlign.Center
-        )
-
-        Column(
-            verticalArrangement = Arrangement.spacedBy(2.dp)
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp).clickable(
+                interactionSource = null,
+                indication = null,
+                onClick = { toggled = !toggled }
+            ).pointerHoverIcon(PointerIcon.Hand),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            content()
+            AppText(
+                text = categoryText(title),
+                fontWeight = FontWeight.SemiBold,
+            )
+
+            AppIcon(
+                imageVector = if (toggled) Lucide.ChevronUp else Lucide.ChevronDown,
+                contentDescription = null
+            )
+        }
+
+        AppAnimatedVisibility(
+            visible = toggled,
+            enter = fadeIn() + expandVertically(),
+            exit = fadeOut() + shrinkVertically(),
+        ) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                Spacer(Modifier.height(8.dp))
+                content()
+            }
         }
     }
 }
@@ -201,7 +331,13 @@ context(
     _: AnimatedContentScope,
     _: SharedTransitionScope
 )
-private fun RowScope.ProjectList(state: ProjectListState, listState: LazyListState) {
+private fun RowScope.ProjectList(state: ProjectListState) {
+    val listState = rememberLazyListState()
+
+    LaunchedEffect(state.projects) {
+        listState.scrollToItem(0)
+    }
+
     LazyColumn(
         state = listState,
         modifier = Modifier.weight(1f),
@@ -502,3 +638,10 @@ private fun getIconFromName(name: String): ImageVector = when (name) {
     "mcreator" -> vectorResource(Res.drawable.mcreator)
     else -> Lucide.CircleQuestionMark
 }
+
+val ProjectPlatformView?.icon: ImageVector
+    @Composable get() = when (this?.id) {
+        "modrinth" -> vectorResource(Res.drawable.modrinth)
+        "curseforge" -> vectorResource(Res.drawable.curseforge)
+        else -> Lucide.CircleQuestionMark
+    }

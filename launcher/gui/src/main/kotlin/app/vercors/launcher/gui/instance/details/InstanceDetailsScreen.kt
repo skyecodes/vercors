@@ -16,11 +16,11 @@ import app.vercors.launcher.gui.res.delete
 import app.vercors.launcher.gui.res.launch
 import app.vercors.shared.domain.Resource
 import app.vercors.shared.domain.Result
-import app.vercors.shared.ui.component.*
-import app.vercors.shared.ui.layout.AppError
-import app.vercors.shared.ui.layout.AppLoading
-import app.vercors.shared.ui.modifier.appCard
-import app.vercors.shared.ui.theme.*
+import app.vercors.shared.ui.core.component.*
+import app.vercors.shared.ui.core.layout.AppError
+import app.vercors.shared.ui.core.layout.AppLoading
+import app.vercors.shared.ui.core.modifier.appCard
+import app.vercors.shared.ui.core.theme.*
 import com.composables.icons.lucide.*
 import com.composeunstyled.DropdownPanelAnchor
 import com.composeunstyled.theme.Theme

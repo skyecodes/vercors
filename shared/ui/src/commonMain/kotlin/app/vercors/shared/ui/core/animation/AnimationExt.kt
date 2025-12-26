@@ -1,4 +1,4 @@
-package app.vercors.shared.ui.animation
+package app.vercors.shared.ui.core.animation
 
 import androidx.compose.animation.*
 import androidx.compose.animation.SharedTransitionScope.OverlayClip
@@ -6,6 +6,7 @@ import androidx.compose.animation.SharedTransitionScope.PlaceholderSize.Companio
 import androidx.compose.animation.SharedTransitionScope.SharedContentState
 import androidx.compose.animation.core.*
 import androidx.compose.animation.core.Spring.StiffnessMediumLow
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.lazy.grid.LazyGridItemScope
@@ -85,6 +86,19 @@ fun InfiniteTransition.appAnimateFloat(
 
 @Composable
 fun RowScope.AppAnimatedVisibility(
+    visible: Boolean,
+    modifier: Modifier = Modifier,
+    enter: EnterTransition = fadeIn() + expandHorizontally(),
+    exit: ExitTransition = fadeOut() + shrinkHorizontally(),
+    label: String = "AnimatedVisibility",
+    content: @Composable () -> Unit,
+) {
+    if (shouldAnimate()) AnimatedVisibility(visible, modifier, enter, exit, label) { content() }
+    else if (visible) content()
+}
+
+@Composable
+fun ColumnScope.AppAnimatedVisibility(
     visible: Boolean,
     modifier: Modifier = Modifier,
     enter: EnterTransition = fadeIn() + expandHorizontally(),

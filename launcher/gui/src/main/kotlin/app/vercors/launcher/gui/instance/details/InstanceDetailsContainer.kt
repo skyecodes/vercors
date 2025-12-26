@@ -5,7 +5,7 @@ import app.vercors.launcher.common.domain.instance.model.InstanceId
 import app.vercors.launcher.common.domain.instance.usecase.ObserveInstanceListUseCase
 import app.vercors.shared.domain.Resource
 import app.vercors.shared.domain.map
-import app.vercors.shared.ui.configureWithLogger
+import app.vercors.shared.ui.core.configureWithLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.flow.map
 import pro.respawn.flowmvi.api.Container

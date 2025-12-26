@@ -1,4 +1,4 @@
-package app.vercors.shared.ui.component
+package app.vercors.shared.ui.core.component
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -16,8 +16,8 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
-import app.vercors.shared.ui.theme.colors
-import app.vercors.shared.ui.theme.surface
+import app.vercors.shared.ui.core.theme.colors
+import app.vercors.shared.ui.core.theme.surface
 import com.composeunstyled.LocalContentColor
 import com.composeunstyled.ProvideContentColor
 import com.composeunstyled.TextField

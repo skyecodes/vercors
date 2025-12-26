@@ -4,7 +4,7 @@ import app.vercors.launcher.gui.instance.create.CreateInstanceRoute
 import app.vercors.launcher.gui.instance.details.InstanceDetailsRoute
 import app.vercors.launcher.gui.navigation.appNavigation
 import app.vercors.launcher.gui.project.details.ProjectDetailsRoute
-import app.vercors.shared.ui.container
+import app.vercors.shared.ui.core.container
 import org.koin.core.module.dsl.new
 import org.koin.dsl.module
 

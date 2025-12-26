@@ -9,7 +9,7 @@ enum class ProjectLoaderData {
     Forge,
 
     @SerialName("neoforge")
-    Neoforge,
+    NeoForge,
 
     @SerialName("fabric")
     Fabric,

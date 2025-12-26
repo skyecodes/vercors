@@ -52,7 +52,7 @@ class CurseForgeService(
         classId = projectType?.toCurseForgeClassId(),
         categoryIds = categories?.joinToString(",", "[", "]") { "\"$it\"" },
         gameVersions = gameVersions?.joinToString(",", "[", "]") { "\"$it\"" },
-        modLoaderTypes = loaders?.joinToString(",", "[", "]") { "\"${it.toCurseForgeModLoaderType()}\"" },
+        modLoaderTypes = loaders?.joinToString(",", "[", "]") { "\"${it.toCurseForgeModLoaderType().value}\"" },
         searchFilter = query,
         index = firstIndex,
         pageSize = pageSize

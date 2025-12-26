@@ -5,8 +5,8 @@ import app.vercors.launcher.gui.project.details.ProjectDetailsRoute
 import app.vercors.launcher.gui.project.list.ProjectListContainer
 import app.vercors.launcher.gui.project.list.ProjectListRoute
 import app.vercors.launcher.gui.project.list.ProjectListScreen
-import app.vercors.shared.ui.component.AppText
-import app.vercors.shared.ui.container
+import app.vercors.shared.ui.core.component.AppText
+import app.vercors.shared.ui.core.container
 import org.koin.core.module.dsl.new
 import org.koin.dsl.module
 

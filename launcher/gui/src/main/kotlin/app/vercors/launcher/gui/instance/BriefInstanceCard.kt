@@ -15,12 +15,12 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.vercors.launcher.common.domain.instance.model.InstanceId
-import app.vercors.shared.ui.animation.appSharedElement
-import app.vercors.shared.ui.component.AppIcon
-import app.vercors.shared.ui.component.AppLoadingPlaceholder
-import app.vercors.shared.ui.component.AppLoadingTextPlaceholder
-import app.vercors.shared.ui.component.AppText
-import app.vercors.shared.ui.modifier.appCard
+import app.vercors.shared.ui.core.animation.appSharedElement
+import app.vercors.shared.ui.core.component.AppIcon
+import app.vercors.shared.ui.core.component.AppLoadingPlaceholder
+import app.vercors.shared.ui.core.component.AppLoadingTextPlaceholder
+import app.vercors.shared.ui.core.component.AppText
+import app.vercors.shared.ui.core.modifier.appCard
 import com.composables.icons.lucide.Gamepad2
 import com.composables.icons.lucide.Lucide
 

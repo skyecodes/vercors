@@ -28,7 +28,7 @@
     <string name="importOtherLauncher">From another launcher</string>
     <string name="importOtherLauncherDescription">Import an instance from another launcher such as PrismLauncher</string>
     <string name="instanceName">Instance name</string>
-    <string name="minecraftVersion">Minecraft version</string>
+    <string name="gameVersion">Game version</string>
     <string name="showSnapshots">Show snapshot versions</string>
     <string name="latestRelease">Latest release</string>
     <string name="latestSnapshot">Latest snapshot</string>

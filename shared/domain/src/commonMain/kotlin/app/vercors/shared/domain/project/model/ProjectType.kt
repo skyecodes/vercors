@@ -1,13 +1,10 @@
 package app.vercors.shared.domain.project.model
 
-import kotlinx.serialization.Serializable
-
-@Serializable
-enum class ProjectType {
-    Mod,
-    Modpack,
-    ResourcePack,
-    ShaderPack,
-    DataPack,
-    World,
+enum class ProjectType(val requiresLoader: Boolean) {
+    Mod(requiresLoader = true),
+    Modpack(requiresLoader = true),
+    ResourcePack(requiresLoader = false),
+    ShaderPack(requiresLoader = false),
+    DataPack(requiresLoader = false),
+    World(requiresLoader = false),
 }

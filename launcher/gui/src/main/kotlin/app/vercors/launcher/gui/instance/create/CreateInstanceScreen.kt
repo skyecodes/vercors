@@ -11,12 +11,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import app.vercors.launcher.common.domain.instance.model.InstanceId
 import app.vercors.launcher.gui.res.*
-import app.vercors.shared.ui.component.*
-import app.vercors.shared.ui.layout.AppForm
-import app.vercors.shared.ui.modifier.appCard
-import app.vercors.shared.ui.theme.*
+import app.vercors.shared.ui.core.component.*
+import app.vercors.shared.ui.core.layout.AppForm
+import app.vercors.shared.ui.core.modifier.appCard
+import app.vercors.shared.ui.core.theme.*
+import com.composables.icons.lucide.Bug
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Plus
+import com.composables.icons.lucide.Star
 import com.composeunstyled.theme.Theme
 import org.jetbrains.compose.resources.stringResource
 import pro.respawn.flowmvi.api.IntentReceiver
@@ -131,11 +133,16 @@ private fun CreateCustomInstanceView(state: CreateInstanceState) {
             verticalAlignment = Alignment.Bottom
         ) {
             AppSelectField(
-                label = stringResource(Res.string.minecraftVersion),
+                label = stringResource(Res.string.gameVersion),
                 value = state.selectedGameVersion,
                 items = state.filteredGameVersionList,
                 onValueChange = { store.intent(CreateInstanceIntent.OnGameVersionChange(it)) },
-                textConverter = { it?.displayName ?: "" },
+                itemRenderer = {
+                    AppSelectItem(
+                        text = it?.displayName ?: "",
+                        icon = if (it?.isLatestRelease == true) Lucide.Star else if (it?.isLatestSnapshot == true) Lucide.Bug else null
+                    )
+                },
                 searchable = true,
                 search = state.gameVersionFilter,
                 onSearchChange = { store.intent(CreateInstanceIntent.OnGameVersionSearchChange(it)) },

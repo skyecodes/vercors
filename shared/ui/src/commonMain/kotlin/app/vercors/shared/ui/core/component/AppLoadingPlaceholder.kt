@@ -1,4 +1,4 @@
-package app.vercors.shared.ui.component
+package app.vercors.shared.ui.core.component
 
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode.Reverse
@@ -16,9 +16,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
-import app.vercors.shared.ui.animation.appAnimateFloat
-import app.vercors.shared.ui.theme.colors
-import app.vercors.shared.ui.theme.surface2
+import app.vercors.shared.ui.core.animation.appAnimateFloat
+import app.vercors.shared.ui.core.theme.colors
+import app.vercors.shared.ui.core.theme.surface2
 import com.composeunstyled.LocalTextStyle
 import com.composeunstyled.theme.Theme
 

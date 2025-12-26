@@ -1,9 +1,9 @@
 package app.vercors.launcher.gui.account
 
 import app.vercors.launcher.gui.navigation.appNavigation
-import app.vercors.shared.ui.component.AppText
-import app.vercors.shared.ui.theme.label
-import app.vercors.shared.ui.theme.textStyles
+import app.vercors.shared.ui.core.component.AppText
+import app.vercors.shared.ui.core.theme.label
+import app.vercors.shared.ui.core.theme.textStyles
 import com.composeunstyled.theme.Theme
 import org.koin.dsl.module
 

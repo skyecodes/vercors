@@ -5,7 +5,7 @@ import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import app.vercors.shared.domain.project.model.ProjectId
-import app.vercors.shared.ui.animation.appSharedElement
+import app.vercors.shared.ui.core.animation.appSharedElement
 
 enum class ProjectSharedElementOrigin {
     Home, ProjectList

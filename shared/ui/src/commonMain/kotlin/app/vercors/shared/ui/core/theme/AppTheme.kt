@@ -1,4 +1,4 @@
-package app.vercors.shared.ui.theme
+package app.vercors.shared.ui.core.theme
 
 import androidx.compose.foundation.text.selection.TextSelectionColors
 import androidx.compose.ui.graphics.Color
@@ -76,7 +76,7 @@ val AppTheme = buildTheme {
         success to Color(0xffa6e3a1),
         onSuccess to Color(0xff11111b),
         surface to Color(0xff313244),
-        surface2 to Color(0xff45475a)
+        surface2 to Color(0xff45475a),
     )
 
     properties[fonts] = mapOf(

@@ -1,4 +1,4 @@
-package app.vercors.shared.ui.component
+package app.vercors.shared.ui.core.component
 
 import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.clickable
@@ -10,23 +10,22 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
-import app.vercors.shared.ui.modifier.appCard
+import app.vercors.shared.ui.core.modifier.appCard
+import app.vercors.shared.ui.core.theme.colors
+import app.vercors.shared.ui.core.theme.onBackground
+import app.vercors.shared.ui.core.theme.surface
+import app.vercors.shared.ui.core.theme.surface2
 import app.vercors.shared.ui.res.Res
 import app.vercors.shared.ui.res.search
-import app.vercors.shared.ui.theme.colors
-import app.vercors.shared.ui.theme.onBackground
-import app.vercors.shared.ui.theme.surface
-import app.vercors.shared.ui.theme.surface2
 import com.composables.core.HorizontalSeparator
 import com.composables.icons.lucide.ChevronDown
 import com.composables.icons.lucide.ChevronUp
 import com.composables.icons.lucide.Lucide
-import com.composeunstyled.DropdownMenu
-import com.composeunstyled.DropdownMenuPanel
-import com.composeunstyled.DropdownPanelAnchor
+import com.composeunstyled.*
 import com.composeunstyled.theme.Theme
 import org.jetbrains.compose.resources.stringResource
 
@@ -37,13 +36,7 @@ fun <T> AppSelectField(
     onValueChange: (T) -> Unit,
     label: String? = null,
     backgroundColor: Color = Theme[colors][surface],
-    textConverter: @Composable (T) -> String = { it.toString() },
-    itemRenderer: @Composable RowScope.(T) -> Unit = {
-        AppText(
-            text = textConverter(it),
-            fontWeight = if (it == value) FontWeight.Bold else FontWeight.Normal,
-        )
-    },
+    itemRenderer: @Composable RowScope.(T) -> Unit = { AppSelectItem(it.toString()) },
     searchable: Boolean = false,
     search: String = "",
     onSearchChange: (String) -> Unit = {},
@@ -70,10 +63,11 @@ fun <T> AppSelectField(
                 AppButton(
                     onClick = { expanded = !expanded },
                     backgroundColor = backgroundColor,
-                    horizontalArrangement = Arrangement.SpaceBetween,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    AppText(textConverter(value))
+                    itemRenderer(value)
+                    Spacer(Modifier.weight(1f))
                     AppIcon(
                         imageVector = if (expanded) Lucide.ChevronUp else Lucide.ChevronDown,
                         contentDescription = null
@@ -85,7 +79,7 @@ fun <T> AppSelectField(
         DropdownMenuPanel(
             expanded = expanded,
             onDismissRequest = { expanded = false },
-            modifier = Modifier.appCard(backgroundColor = Theme[colors][surface2])
+            modifier = Modifier.Companion.appCard(backgroundColor = Theme[colors][surface2])
                 .widthIn(min = minWidth, max = maxWidth).heightIn(max = 400.dp),
             anchor = anchor
         ) {
@@ -121,9 +115,16 @@ fun <T> AppSelectField(
                                 modifier = Modifier
                                     .clickable { onValueChange(it); expanded = false }
                                     .padding(8.dp)
-                                    .fillMaxWidth()
+                                    .fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                itemRenderer(it)
+                                ProvideTextStyle(
+                                    LocalTextStyle.current.copy(
+                                        fontWeight = if (it == value) FontWeight.SemiBold else FontWeight.Normal
+                                    )
+                                ) {
+                                    itemRenderer(it)
+                                }
                             }
                         }
                     }
@@ -137,4 +138,19 @@ fun <T> AppSelectField(
             }
         }
     }
+}
+
+@Composable
+fun RowScope.AppSelectItem(
+    text: String,
+    icon: ImageVector? = null
+) {
+    icon?.let {
+        AppIcon(
+            imageVector = it,
+            contentDescription = text,
+            modifier = Modifier.size(16.dp)
+        )
+    }
+    AppText(text)
 }

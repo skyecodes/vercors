@@ -1,4 +1,4 @@
-package app.vercors.shared.ui.component
+package app.vercors.shared.ui.core.component
 
 import androidx.compose.runtime.Composable
 import com.composeunstyled.RelativeAlignment

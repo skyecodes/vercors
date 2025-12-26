@@ -11,7 +11,7 @@ import app.vercors.launcher.gui.instance.list.InstanceListRoute
 import app.vercors.launcher.gui.instance.list.InstanceListScreen
 import app.vercors.launcher.gui.navigation.appNavigation
 import app.vercors.launcher.gui.project.list.ProjectListRoute
-import app.vercors.shared.ui.container
+import app.vercors.shared.ui.core.container
 import org.koin.core.module.dsl.new
 import org.koin.core.parameter.parametersOf
 import org.koin.dsl.module

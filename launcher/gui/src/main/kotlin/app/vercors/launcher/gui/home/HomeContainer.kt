@@ -11,7 +11,7 @@ import app.vercors.launcher.gui.project.toView
 import app.vercors.shared.domain.Resource
 import app.vercors.shared.domain.Result
 import app.vercors.shared.domain.project.model.ProjectId
-import app.vercors.shared.ui.configureWithLogger
+import app.vercors.shared.ui.core.configureWithLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
 import pro.respawn.flowmvi.api.Container
 import pro.respawn.flowmvi.api.MVIAction

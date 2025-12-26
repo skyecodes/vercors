@@ -14,16 +14,13 @@ import androidx.compose.ui.unit.dp
 import app.vercors.launcher.gui.instance.BriefInstanceCard
 import app.vercors.launcher.gui.instance.InstanceSharedElementOrigin
 import app.vercors.launcher.gui.res.*
-import app.vercors.shared.ui.animation.appAnimateItem
-import app.vercors.shared.ui.component.AppIconTextButton
-import app.vercors.shared.ui.component.AppSelectField
-import app.vercors.shared.ui.component.AppText
-import app.vercors.shared.ui.component.AppTextField
-import app.vercors.shared.ui.modifier.appCard
-import app.vercors.shared.ui.theme.colors
-import app.vercors.shared.ui.theme.onPrimary
-import app.vercors.shared.ui.theme.primary
-import app.vercors.shared.ui.theme.surface2
+import app.vercors.shared.ui.core.animation.appAnimateItem
+import app.vercors.shared.ui.core.component.*
+import app.vercors.shared.ui.core.modifier.appCard
+import app.vercors.shared.ui.core.theme.colors
+import app.vercors.shared.ui.core.theme.onPrimary
+import app.vercors.shared.ui.core.theme.primary
+import app.vercors.shared.ui.core.theme.surface2
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Plus
 import com.composeunstyled.theme.Theme
@@ -104,7 +101,7 @@ fun InstanceListFilterCard(state: InstanceListState) {
             value = state.typeFilter,
             items = state.typeList,
             onValueChange = { store.intent(InstanceListIntent.OnTypeFilterChange(it)) },
-            textConverter = { it.ifBlank { stringResource(Res.string.anyType) } },
+            itemRenderer = { AppSelectItem(it.ifBlank { stringResource(Res.string.anyType) }) },
             backgroundColor = Theme[colors][surface2],
             modifier = Modifier.width(150.dp)
         )
@@ -113,7 +110,7 @@ fun InstanceListFilterCard(state: InstanceListState) {
             value = state.loaderFilter,
             items = state.loaderList,
             onValueChange = { store.intent(InstanceListIntent.OnLoaderFilterChange(it)) },
-            textConverter = { it.ifBlank { stringResource(Res.string.anyLoader) } },
+            itemRenderer = { AppSelectItem(it.ifBlank { stringResource(Res.string.anyLoader) }) },
             backgroundColor = Theme[colors][surface2],
             modifier = Modifier.width(150.dp)
         )
@@ -122,7 +119,7 @@ fun InstanceListFilterCard(state: InstanceListState) {
             value = state.versionFilter,
             items = state.versionList,
             onValueChange = { store.intent(InstanceListIntent.OnVersionFilterChange(it)) },
-            textConverter = { it.ifBlank { stringResource(Res.string.anyVersion) } },
+            itemRenderer = { AppSelectItem(it.ifBlank { stringResource(Res.string.anyVersion) }) },
             backgroundColor = Theme[colors][surface2],
             modifier = Modifier.width(150.dp)
         )

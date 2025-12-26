@@ -1,7 +1,7 @@
 package app.vercors.launcher.gui.config
 
 import app.vercors.launcher.gui.navigation.appNavigation
-import app.vercors.shared.ui.component.AppText
+import app.vercors.shared.ui.core.component.AppText
 import org.koin.dsl.module
 
 val ConfigurationModule = module {

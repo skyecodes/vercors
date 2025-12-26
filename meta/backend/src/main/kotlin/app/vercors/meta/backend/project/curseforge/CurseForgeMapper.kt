@@ -64,5 +64,5 @@ internal fun ProjectLoaderData.toCurseForgeModLoaderType(): CurseForgeModLoaderT
     ProjectLoaderData.Forge -> CurseForgeModLoaderType.Forge
     ProjectLoaderData.Fabric -> CurseForgeModLoaderType.Fabric
     ProjectLoaderData.Quilt -> CurseForgeModLoaderType.Quilt
-    ProjectLoaderData.Neoforge -> CurseForgeModLoaderType.NeoForge
+    ProjectLoaderData.NeoForge -> CurseForgeModLoaderType.NeoForge
 }

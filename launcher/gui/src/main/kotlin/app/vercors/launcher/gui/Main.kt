@@ -15,7 +15,7 @@ import app.vercors.launcher.gui.instance.InstanceModule
 import app.vercors.launcher.gui.project.ProjectModule
 import app.vercors.shared.data.SharedDataModule
 import app.vercors.shared.domain.SharedDomainModule
-import app.vercors.shared.ui.container
+import app.vercors.shared.ui.core.container
 import coil3.ImageLoader
 import coil3.compose.setSingletonImageLoaderFactory
 import coil3.disk.DiskCache

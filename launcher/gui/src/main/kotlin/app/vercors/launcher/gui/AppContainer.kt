@@ -7,7 +7,7 @@ import app.vercors.launcher.gui.config.usecase.UpdateGuiConfigurationUseCase
 import app.vercors.launcher.gui.home.HomeRoute
 import app.vercors.launcher.gui.navigation.Route
 import app.vercors.shared.domain.getOrNull
-import app.vercors.shared.ui.configureWithLogger
+import app.vercors.shared.ui.core.configureWithLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
 import pro.respawn.flowmvi.api.Container
 import pro.respawn.flowmvi.api.MVIAction

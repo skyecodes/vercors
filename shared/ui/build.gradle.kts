@@ -9,6 +9,7 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
+            implementation(projects.shared.domain)
             implementation(libs.compose.components.resources)
             implementation(compose.desktop.currentOs)
             implementation(libs.composables.composeunstyled)

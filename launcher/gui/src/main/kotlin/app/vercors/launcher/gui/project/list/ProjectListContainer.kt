@@ -2,20 +2,23 @@ package app.vercors.launcher.gui.project.list
 
 import androidx.compose.runtime.Immutable
 import app.vercors.launcher.gui.config.usecase.ObserveGuiConfigurationUseCase
+import app.vercors.launcher.gui.game.GameVersionView
+import app.vercors.launcher.gui.game.convert
 import app.vercors.launcher.gui.project.BriefProjectView
 import app.vercors.launcher.gui.project.list.ProjectListAction.NavigateToProjectDetails
 import app.vercors.launcher.gui.project.toView
 import app.vercors.shared.domain.*
+import app.vercors.shared.domain.game.model.GameVersionList
 import app.vercors.shared.domain.game.usecase.GetGameVersionListUseCase
+import app.vercors.shared.domain.loader.ModLoaderType
 import app.vercors.shared.domain.project.model.ProjectCategory
 import app.vercors.shared.domain.project.model.ProjectId
 import app.vercors.shared.domain.project.model.ProjectType
 import app.vercors.shared.domain.project.usecase.GetPlatformListUseCase
 import app.vercors.shared.domain.project.usecase.GetProjectListUseCase
-import app.vercors.shared.ui.configureWithLogger
+import app.vercors.shared.ui.core.configureWithLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.async
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import pro.respawn.flowmvi.api.*
@@ -38,8 +41,25 @@ class ProjectListContainer(
             when (intent) {
                 is ProjectListIntent.OnProjectProviderChange -> updateState { copy(selectedPlatform = intent.provider) }
                 is ProjectListIntent.OnProjectTypeChange -> updateState { copy(selectedType = intent.type) }
+                is ProjectListIntent.OnLoaderClick -> updateState { copy(selectedLoaders = selectedLoaders.toggle(intent.loader)) }
                 is ProjectListIntent.OnSearchQueryChange -> updateState { copy(searchQuery = intent.query) }
-                is ProjectListIntent.OnCategoryClick -> updateState { copy(selectedCategories = if (intent.category in selectedCategories) selectedCategories - intent.category else selectedCategories + intent.category) }
+                is ProjectListIntent.OnGameVersionSearchQueryChange -> updateState { copy(gameVersionSearchQuery = intent.query) }
+                is ProjectListIntent.OnGameVersionClick -> updateState {
+                    copy(
+                        selectedGameVersions = selectedGameVersions.toggle(
+                            intent.version
+                        )
+                    )
+                }
+
+                ProjectListIntent.OnShowSnapshotClick -> updateState { copy(showSnapshot = !showSnapshot) }
+                is ProjectListIntent.OnCategoryClick -> updateState {
+                    copy(
+                        selectedCategories = selectedCategories.toggle(
+                            intent.category
+                        )
+                    )
+                }
                 is ProjectListIntent.OnProjectClick -> action(NavigateToProjectDetails(intent.projectId))
                 ProjectListIntent.OnSearchButtonClick -> searchProjects()
             }
@@ -54,7 +74,6 @@ class ProjectListContainer(
                             ProjectPlatformView(
                                 id = platform.id,
                                 name = platform.name,
-                                iconData = "",
                                 categoryGroups = platform.categories.convert()
                             )
                         }
@@ -71,26 +90,33 @@ class ProjectListContainer(
                     }
                 }
             }
+            launch {
+                resourceFlow { getGameVersionList() }.collectLatest {
+                    val gameVersionList = it.map(GameVersionList::convert)
+                    updateState { copy(gameVersionList = gameVersionList) }
+                }
+            }
         }
 
         install {
             onState { old, new ->
-                new.let {
-                    if (old.selectedPlatform != it.selectedPlatform && it.selectedPlatform != null && it.selectedType !in it.selectedPlatform.categoryGroups.keys)
-                        it.copy(selectedType = ProjectType.entries.first { type -> type in it.selectedPlatform.categoryGroups.keys })
-                    else it
-                }.let {
-                    if (old.selectedType != it.selectedType) it.copy(selectedCategories = emptyList()) else new
-                }.also {
-                    if (it.selectedPlatform != null && it.selectedType != null && (
-                                old.selectedPlatform?.id != it.selectedPlatform.id ||
-                                        old.selectedType != it.selectedType ||
-                                        old.selectedCategories != it.selectedCategories ||
-                                        old.searchQuery != it.searchQuery)
+                var new = new
+                if (old.selectedPlatform != new.selectedPlatform && new.selectedPlatform != null && new.selectedType !in new.selectedPlatform.categoryGroups.keys)
+                    new =
+                        new.copy(selectedType = ProjectType.entries.first { type -> type in new.selectedPlatform.categoryGroups.keys })
+                if (old.selectedType != new.selectedType)
+                    new = new.copy(selectedCategories = emptyList())
+                if (new.selectedPlatform != null && new.selectedType != null && (
+                            old.selectedPlatform?.id != new.selectedPlatform.id ||
+                                    old.selectedType != new.selectedType ||
+                                    old.selectedLoaders != new.selectedLoaders ||
+                                    old.selectedGameVersions != new.selectedGameVersions ||
+                                    old.selectedCategories != new.selectedCategories ||
+                                    old.searchQuery != new.searchQuery)
                     ) {
                         launch { searchProjects() }
                     }
-                }
+                new
             }
         }
     }
@@ -102,14 +128,14 @@ class ProjectListContainer(
                     getProjectList(
                         platformId = selectedPlatform!!.id,
                         type = selectedType!!,
+                        loaders = if (selectedType.requiresLoader) selectedLoaders.ifEmpty { null } else null,
+                        gameVersions = selectedGameVersions.map { it.id }.ifEmpty { null },
                         query = searchQuery.ifBlank { null },
-                        categories = selectedCategories.map { it.id },
+                        categories = selectedCategories.map { it.id }.ifEmpty { null },
                         pageSize = 20
                     ).map { list -> list.map { it.toView() } }
                 }.collectLatest {
                     updateState { copy(projects = it) }
-                    delay(50)
-                    action(ProjectListAction.ScrollUp)
                 }
             }
         }
@@ -121,15 +147,26 @@ data class ProjectListState(
     val providerList: Resource<List<ProjectPlatformView>> = Resource.Unloaded,
     val selectedPlatform: ProjectPlatformView? = null,
     val selectedType: ProjectType? = null,
+    val selectedLoaders: List<ModLoaderType> = emptyList(),
+    val gameVersionSearchQuery: String = "",
+    val gameVersionList: Resource<List<GameVersionView>> = Resource.Unloaded,
+    val selectedGameVersions: List<GameVersionView> = emptyList(),
+    val showSnapshot: Boolean = false,
     val selectedCategories: List<ProjectCategoryView> = emptyList(),
     val searchQuery: String = "",
     val projects: Resource<List<BriefProjectView>> = Resource.Unloaded
-) : MVIState
+) : MVIState {
+    val filteredGameVersionList: List<GameVersionView> = gameVersionList.getOrNull()?.filter {
+        (gameVersionSearchQuery.isBlank() || it.id.contains(
+            gameVersionSearchQuery,
+            ignoreCase = true
+        )) && (showSnapshot || !it.isSnapshot)
+    } ?: emptyList()
+}
 
 data class ProjectPlatformView(
     val id: String,
     val name: String,
-    val iconData: String,
     val categoryGroups: Map<ProjectType, List<ProjectCategoryGroupView>>
 )
 
@@ -155,15 +192,19 @@ sealed interface IconView {
 sealed interface ProjectListIntent : MVIIntent {
     data class OnProjectProviderChange(val provider: ProjectPlatformView) : ProjectListIntent
     data class OnProjectTypeChange(val type: ProjectType) : ProjectListIntent
+    data class OnLoaderClick(val loader: ModLoaderType) : ProjectListIntent
     data class OnSearchQueryChange(val query: String) : ProjectListIntent
+    data class OnGameVersionSearchQueryChange(val query: String) : ProjectListIntent
+    data class OnGameVersionClick(val version: GameVersionView) : ProjectListIntent
+    data object OnShowSnapshotClick : ProjectListIntent
     data class OnCategoryClick(val category: ProjectCategoryView) : ProjectListIntent
     data class OnProjectClick(val projectId: ProjectId) : ProjectListIntent
+
     data object OnSearchButtonClick : ProjectListIntent
 }
 
 sealed interface ProjectListAction : MVIAction {
     data class NavigateToProjectDetails(val projectId: ProjectId) : ProjectListAction
-    data object ScrollUp : ProjectListAction
 }
 
 fun Map<ProjectType, Map<String, List<ProjectCategory>>>.convert(): Map<ProjectType, List<ProjectCategoryGroupView>> =

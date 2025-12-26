@@ -1,4 +1,4 @@
-package app.vercors.shared.ui
+package app.vercors.shared.ui.core
 
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KMarkerFactory

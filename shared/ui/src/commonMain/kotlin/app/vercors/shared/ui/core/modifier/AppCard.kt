@@ -1,4 +1,4 @@
-package app.vercors.shared.ui.modifier
+package app.vercors.shared.ui.core.modifier
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -12,8 +12,8 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.unit.dp
-import app.vercors.shared.ui.theme.colors
-import app.vercors.shared.ui.theme.surface
+import app.vercors.shared.ui.core.theme.colors
+import app.vercors.shared.ui.core.theme.surface
 import com.composeunstyled.theme.Theme
 
 @Composable

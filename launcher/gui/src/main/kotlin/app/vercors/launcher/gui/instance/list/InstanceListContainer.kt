@@ -7,7 +7,7 @@ import app.vercors.launcher.gui.instance.toBriefView
 import app.vercors.shared.domain.Resource
 import app.vercors.shared.domain.getOrNull
 import app.vercors.shared.domain.map
-import app.vercors.shared.ui.configureWithLogger
+import app.vercors.shared.ui.core.configureWithLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
 import pro.respawn.flowmvi.api.Container
 import pro.respawn.flowmvi.api.MVIAction

@@ -1,4 +1,4 @@
-package app.vercors.shared.ui.layout
+package app.vercors.shared.ui.core.layout
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column

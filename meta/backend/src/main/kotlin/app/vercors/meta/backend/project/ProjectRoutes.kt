@@ -2,6 +2,7 @@ package app.vercors.meta.backend.project
 
 import app.vercors.meta.backend.cache
 import app.vercors.meta.backend.getValue
+import app.vercors.meta.lib.project.ProjectLoaderData
 import app.vercors.meta.lib.project.ProjectTypeData
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
@@ -66,6 +67,8 @@ private fun Route.getProjectList(service: ProjectService) {
             val json by inject<Json>()
             val platformId by call.pathParameters
             val type = call.queryParameters["type"]
+            val loaders = call.queryParameters.getAll("loaders")
+            val gameVersions = call.queryParameters.getAll("gameVersions")
             val categories = call.queryParameters.getAll("categories")
             val query = call.queryParameters["query"]
             val pageSize = call.queryParameters["pageSize"]?.toIntOrNull()
@@ -73,6 +76,8 @@ private fun Route.getProjectList(service: ProjectService) {
                 service.search(
                     platformId = platformId,
                     projectType = type?.let { json.decodeFromString<ProjectTypeData>(""""$it"""") },
+                    loaders = loaders?.map { json.decodeFromString<ProjectLoaderData>(""""$it"""") },
+                    gameVersions = gameVersions,
                     categories = categories,
                     query = query,
                     pageSize = pageSize

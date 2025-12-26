@@ -1,4 +1,4 @@
-package app.vercors.shared.ui.animation
+package app.vercors.shared.ui.core.animation
 
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.runtime.compositionLocalOf

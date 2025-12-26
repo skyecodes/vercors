@@ -1,4 +1,4 @@
-package app.vercors.shared.ui
+package app.vercors.shared.ui.core
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.NonRestartableComposable

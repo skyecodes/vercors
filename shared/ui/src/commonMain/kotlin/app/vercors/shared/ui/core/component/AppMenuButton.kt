@@ -1,4 +1,4 @@
-package app.vercors.shared.ui.component
+package app.vercors.shared.ui.core.component
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -10,9 +10,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
-import app.vercors.shared.ui.modifier.appCard
-import app.vercors.shared.ui.theme.colors
-import app.vercors.shared.ui.theme.surface2
+import app.vercors.shared.ui.core.modifier.appCard
+import app.vercors.shared.ui.core.theme.colors
+import app.vercors.shared.ui.core.theme.surface2
 import com.composeunstyled.DropdownMenu
 import com.composeunstyled.DropdownMenuPanel
 import com.composeunstyled.DropdownPanelAnchor

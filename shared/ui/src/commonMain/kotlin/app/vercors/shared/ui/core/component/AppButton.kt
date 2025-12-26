@@ -1,4 +1,4 @@
-package app.vercors.shared.ui.component
+package app.vercors.shared.ui.core.component
 
 import androidx.compose.foundation.Indication
 import androidx.compose.foundation.LocalIndication
@@ -20,8 +20,8 @@ import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import app.vercors.shared.ui.theme.button
-import app.vercors.shared.ui.theme.textStyles
+import app.vercors.shared.ui.core.theme.button
+import app.vercors.shared.ui.core.theme.textStyles
 import com.composeunstyled.Button
 import com.composeunstyled.LocalContentColor
 import com.composeunstyled.ProvideTextStyle

@@ -24,6 +24,8 @@ interface ProjectApi {
     suspend fun getProjectList(
         @Path("platformId") platformId: String,
         @Query("type") projectType: String,
+        @Query("loaders") loaders: List<String>?,
+        @Query("gameVersions") gameVersions: List<String>?,
         @Query("categories") categories: List<String>?,
         @Query("query") query: String?,
         @Query("pageSize") pageSize: Int?,
