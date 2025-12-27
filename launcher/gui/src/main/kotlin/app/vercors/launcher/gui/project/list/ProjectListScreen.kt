@@ -1,10 +1,8 @@
 package app.vercors.launcher.gui.project.list
 
 import androidx.compose.animation.*
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.*
 import androidx.compose.foundation.gestures.Orientation
-import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.*
@@ -35,23 +33,25 @@ import app.vercors.shared.domain.Result
 import app.vercors.shared.domain.getOrNull
 import app.vercors.shared.domain.loader.ModLoaderType
 import app.vercors.shared.domain.project.model.ProjectId
+import app.vercors.shared.domain.project.model.ProjectSortBy
 import app.vercors.shared.domain.project.model.ProjectType
 import app.vercors.shared.ui.core.animation.AppAnimatedVisibility
 import app.vercors.shared.ui.core.animation.appAnimateItem
 import app.vercors.shared.ui.core.component.*
 import app.vercors.shared.ui.core.layout.AppError
+import app.vercors.shared.ui.core.layout.AppPaginator
 import app.vercors.shared.ui.core.modifier.appCard
 import app.vercors.shared.ui.core.modifier.scrollGradient
 import app.vercors.shared.ui.core.theme.colors
 import app.vercors.shared.ui.core.theme.surface2
 import app.vercors.shared.ui.loader.icon
+import app.vercors.shared.ui.project.displayName
 import coil3.compose.rememberAsyncImagePainter
 import com.composables.icons.fontawesome.FontAwesome
 import com.composables.icons.fontawesome.brands.Twitch
 import com.composables.icons.lucide.*
 import com.composeunstyled.theme.Theme
 import nl.jacobras.humanreadable.HumanReadable
-import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.decodeToSvgPainter
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.resources.vectorResource
@@ -88,32 +88,44 @@ private fun ProjectListScreen(state: ProjectListState) {
         modifier = Modifier.fillMaxSize().padding(top = 8.dp, start = 8.dp, end = 8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        ProjectListHeader(state)
+        ProjectListHeader(
+            filter = state.filter,
+            providerList = state.providerList.getOrNull()
+        )
         Row(
             modifier = Modifier.weight(1f).fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            ProjectFilters(state)
-            ProjectList(state)
+            ProjectListFilters(state, state.filter)
+            Column(
+                modifier = Modifier.weight(1f).fillMaxHeight(),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                ProjectListPagination(state.filter, state.totalElements)
+                ProjectList(state.projects)
+            }
         }
     }
 }
 
 @Composable
 context(store: IntentReceiver<ProjectListIntent>)
-private fun ProjectListHeader(state: ProjectListState) {
+private fun ProjectListHeader(
+    filter: ProjectListFilter,
+    providerList: List<ProjectPlatformView>?
+) {
     Row(
         modifier = Modifier.appCard().padding(8.dp).fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         AppSelectField(
-            value = state.selectedPlatform,
-            items = state.providerList.getOrNull() ?: emptyList(),
+            value = filter.selectedPlatform,
+            items = providerList ?: emptyList(),
             onValueChange = { store.intent(ProjectListIntent.OnProjectProviderChange(it!!)) },
-            itemRenderer = {
+            itemRenderer = { value, _ ->
                 AppSelectItem(
-                    text = it?.name ?: "",
-                    icon = it.icon
+                    text = value?.name ?: "",
+                    icon = value.icon
                 )
             },
             backgroundColor = Theme[colors][surface2],
@@ -121,22 +133,22 @@ private fun ProjectListHeader(state: ProjectListState) {
         )
 
         AppSelectField(
-            value = state.selectedType ?: ProjectType.entries.first(),
-            items = ProjectType.entries.filter { state.selectedPlatform?.categoryGroups?.keys?.contains(it) == true },
+            value = filter.selectedType ?: ProjectType.entries.first(),
+            items = ProjectType.entries.filter { filter.selectedPlatform?.categoryGroups?.keys?.contains(it) == true },
             onValueChange = { store.intent(ProjectListIntent.OnProjectTypeChange(it)) },
-            itemRenderer = {
+            itemRenderer = { value, _ ->
                 AppSelectItem(
-                    text = stringResource(it.displayName),
-                    icon = it.icon
+                    text = value.displayName,
+                    icon = value.icon
                 )
             },
             backgroundColor = Theme[colors][surface2],
-            modifier = Modifier.width(150.dp)
+            modifier = Modifier.width(175.dp)
         )
 
         AppTextField(
             placeholder = { AppText(stringResource(Res.string.search)) },
-            initialValue = state.searchQuery,
+            initialValue = filter.searchQuery,
             onValueChange = { store.intent(ProjectListIntent.OnSearchQueryChange(it)) },
             debounceMillis = 750,
             imeAction = ImeAction.Search,
@@ -148,10 +160,10 @@ private fun ProjectListHeader(state: ProjectListState) {
 
 @Composable
 context(store: IntentReceiver<ProjectListIntent>)
-private fun ProjectFilters(state: ProjectListState) {
+private fun ProjectListFilters(state: ProjectListState, filter: ProjectListFilter) {
     val listState = rememberLazyListState()
 
-    LaunchedEffect(state.selectedType) {
+    LaunchedEffect(filter.selectedType) {
         listState.scrollToItem(0)
     }
 
@@ -160,9 +172,9 @@ private fun ProjectFilters(state: ProjectListState) {
         modifier = Modifier.width(225.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        if (state.selectedType?.requiresLoader == true) {
+        if (filter.selectedType?.requiresLoader == true) {
             item("loader") {
-                ProjectLoaderFilter(state)
+                ProjectLoaderFilter(filter.selectedLoaders)
             }
         }
 
@@ -170,15 +182,15 @@ private fun ProjectFilters(state: ProjectListState) {
             ProjectVersionFilter(state)
         }
 
-        state.selectedPlatform?.let { platform ->
-            val groups = platform.categoryGroups[state.selectedType]
+        filter.selectedPlatform?.let { platform ->
+            val groups = platform.categoryGroups[filter.selectedType]
             if (groups != null) {
                 itemsIndexed(groups, key = { _, group -> group }) { index, group ->
                     ProjectCategoryFilter(
                         group = group,
                         index = index,
                         groups = groups,
-                        selectedCategories = state.selectedCategories
+                        selectedCategories = filter.selectedCategories
                     )
                 }
             }
@@ -188,17 +200,31 @@ private fun ProjectFilters(state: ProjectListState) {
 
 @Composable
 context(store: IntentReceiver<ProjectListIntent>)
-private fun ProjectLoaderFilter(state: ProjectListState) {
+private fun ProjectLoaderFilter(selectedLoaders: List<ModLoaderType>) {
     ProjectFilterCategory(
-        title = stringResource(Res.string.loader)
+        title = stringResource(Res.string.loader),
+        hasSelectedItems = selectedLoaders.isNotEmpty(),
+        selectedContent = {
+            selectedLoaders.forEach { loader ->
+                AppIconTextButton(
+                    onClick = { store.intent(ProjectListIntent.OnLoaderClick(loader)) },
+                    imageVector = loader.icon,
+                    text = loader.name,
+                    backgroundColor = Theme[colors][surface2],
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                )
+            }
+        }
     ) {
-        Column {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
             ModLoaderType.entries.forEach {
                 AppIconTextButton(
                     onClick = { store.intent(ProjectListIntent.OnLoaderClick(it)) },
                     imageVector = it.icon,
                     text = it.name,
-                    backgroundColor = if (it in state.selectedLoaders) Theme[colors][surface2] else Color.Unspecified,
+                    backgroundColor = if (it in selectedLoaders) Theme[colors][surface2] else Color.Unspecified,
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 )
@@ -211,7 +237,19 @@ private fun ProjectLoaderFilter(state: ProjectListState) {
 context(store: IntentReceiver<ProjectListIntent>)
 private fun ProjectVersionFilter(state: ProjectListState) {
     ProjectFilterCategory(
-        title = stringResource(Res.string.gameVersion)
+        title = stringResource(Res.string.gameVersion),
+        hasSelectedItems = state.filter.selectedGameVersions.isNotEmpty(),
+        selectedContent = {
+            state.filter.selectedGameVersions.forEach {
+                AppIconTextButton(
+                    onClick = { store.intent(ProjectListIntent.OnGameVersionClick(it)) },
+                    imageVector = null,
+                    backgroundColor = Theme[colors][surface2],
+                    text = it.id,
+                    horizontalArrangement = Arrangement.aligned(Alignment.Start)
+                )
+            }
+        }
     ) {
         val listState = rememberLazyListState()
 
@@ -222,24 +260,30 @@ private fun ProjectVersionFilter(state: ProjectListState) {
             backgroundColor = Theme[colors][surface2],
             modifier = Modifier.fillMaxWidth()
         )
-        LazyColumn(
-            state = listState,
-            modifier = Modifier.heightIn(max = 200.dp).fillMaxWidth().padding(top = 6.dp).scrollGradient(
-                listState = listState,
-                orientation = Orientation.Vertical,
-            ),
-            verticalArrangement = Arrangement.spacedBy(2.dp)
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(2.dp),
+            modifier = Modifier.fillMaxWidth().heightIn(max = 200.dp).padding(top = 6.dp)
         ) {
-            items(state.filteredGameVersionList) { version ->
-                AppIconTextButton(
-                    onClick = { store.intent(ProjectListIntent.OnGameVersionClick(version)) },
-                    imageVector = null,
-                    backgroundColor = if (version in state.selectedGameVersions) Theme[colors][surface2] else Color.Unspecified,
-                    modifier = Modifier.fillMaxWidth(),
-                    text = version.id,
-                    horizontalArrangement = Arrangement.aligned(Alignment.Start)
-                )
+            LazyColumn(
+                state = listState,
+                modifier = Modifier.weight(1f).scrollGradient(
+                    listState = listState,
+                    orientation = Orientation.Vertical,
+                ),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                items(state.filteredGameVersionList) { version ->
+                    AppIconTextButton(
+                        onClick = { store.intent(ProjectListIntent.OnGameVersionClick(version)) },
+                        imageVector = null,
+                        backgroundColor = if (version in state.filter.selectedGameVersions) Theme[colors][surface2] else Color.Unspecified,
+                        modifier = Modifier.fillMaxWidth(),
+                        text = version.id,
+                        horizontalArrangement = Arrangement.aligned(Alignment.Start)
+                    )
+                }
             }
+            VerticalScrollbar(adapter = rememberScrollbarAdapter(listState))
         }
         AppCheckbox(
             label = stringResource(Res.string.showSnapshots),
@@ -264,25 +308,38 @@ private fun ProjectCategoryFilter(
     ProjectFilterCategory(
         title = group.name,
         modifier = if (index == groups.lastIndex) Modifier.padding(bottom = 8.dp) else Modifier,
-        {
-            group.categories.forEach {
+        hasSelectedItems = selectedCategories.isNotEmpty(),
+        selectedContent = {
+            selectedCategories.forEach {
                 AppIconTextButton(
                     onClick = { store.intent(ProjectListIntent.OnCategoryClick(it)) },
                     painter = it.iconView?.painter,
                     text = translateCategory(it),
-                    backgroundColor = if (it in selectedCategories) Theme[colors][surface2] else Color.Unspecified,
-                    modifier = Modifier.fillMaxWidth(),
+                    backgroundColor = Theme[colors][surface2],
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 )
             }
         }
-    )
+    ) {
+        group.categories.forEach {
+            AppIconTextButton(
+                onClick = { store.intent(ProjectListIntent.OnCategoryClick(it)) },
+                painter = it.iconView?.painter,
+                text = translateCategory(it),
+                backgroundColor = if (it in selectedCategories) Theme[colors][surface2] else Color.Unspecified,
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            )
+        }
+    }
 }
 
 @Composable
 fun ProjectFilterCategory(
     title: String,
     modifier: Modifier = Modifier,
+    hasSelectedItems: Boolean = false,
+    selectedContent: @Composable FlowRowScope.() -> Unit = {},
     content: @Composable ColumnScope.() -> Unit
 ) {
     var toggled by remember { mutableStateOf(true) }
@@ -310,16 +367,116 @@ fun ProjectFilterCategory(
             )
         }
 
+        if (hasSelectedItems) {
+            AppAnimatedVisibility(
+                visible = !toggled,
+                enter = fadeIn() + expandVertically(),
+                exit = fadeOut() + shrinkVertically(),
+            ) {
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                    modifier = Modifier.padding(top = 8.dp)
+                ) {
+                    selectedContent()
+                }
+            }
+        }
+
         AppAnimatedVisibility(
             visible = toggled,
             enter = fadeIn() + expandVertically(),
             exit = fadeOut() + shrinkVertically(),
         ) {
             Column(
-                verticalArrangement = Arrangement.spacedBy(2.dp)
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+                modifier = Modifier.padding(top = 8.dp)
             ) {
-                Spacer(Modifier.height(8.dp))
                 content()
+            }
+        }
+    }
+}
+
+@Composable
+context(store: IntentReceiver<ProjectListIntent>)
+private fun ProjectListPagination(filter: ProjectListFilter, totalElements: Int?) {
+    Column(
+        modifier = Modifier.fillMaxWidth().appCard().padding(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+            itemVerticalAlignment = Alignment.CenterVertically
+        ) {
+            AppSelectField(
+                value = filter.sortBy,
+                items = ProjectSortBy.entries,
+                onValueChange = { store.intent(ProjectListIntent.OnSortByChange(it)) },
+                itemRenderer = { value, isButton ->
+                    AppSelectItem(
+                        text =
+                            if (isButton) "${stringResource(Res.string.sortBy)}: ${value.displayName}"
+                            else value.displayName,
+                    )
+                },
+                backgroundColor = Theme[colors][surface2],
+                modifier = Modifier.width(200.dp)
+            )
+            AppSelectField(
+                value = filter.pageSize,
+                items = listOf(10, 20, 50),
+                onValueChange = { store.intent(ProjectListIntent.OnPageSizeChange(it)) },
+                itemRenderer = { value, isButton ->
+                    AppSelectItem(
+                        text =
+                            if (isButton) "${stringResource(Res.string.itemsPerPage)}: $value"
+                            else "$value",
+                    )
+                },
+                backgroundColor = Theme[colors][surface2],
+                modifier = Modifier.width(115.dp)
+            )
+            totalElements?.let { totalElements ->
+                AppPaginator(
+                    offset = filter.offset,
+                    pageSize = filter.pageSize,
+                    totalElements = totalElements,
+                    onOffsetChange = { store.intent(ProjectListIntent.OnOffsetChange(it)) },
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+        if (filter.selectedLoaders.isNotEmpty() || filter.selectedGameVersions.isNotEmpty() || filter.selectedCategories.isNotEmpty()) {
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                filter.selectedLoaders.forEach { loader ->
+                    AppIconTextButton(
+                        onClick = { store.intent(ProjectListIntent.OnLoaderClick(loader)) },
+                        imageVector = Lucide.X,
+                        text = loader.name,
+                        backgroundColor = Theme[colors][surface2],
+                    )
+                }
+                filter.selectedGameVersions.forEach { version ->
+                    AppIconTextButton(
+                        onClick = { store.intent(ProjectListIntent.OnGameVersionClick(version)) },
+                        imageVector = Lucide.X,
+                        text = version.id,
+                        backgroundColor = Theme[colors][surface2],
+                    )
+                }
+                filter.selectedCategories.forEach { category ->
+                    AppIconTextButton(
+                        onClick = { store.intent(ProjectListIntent.OnCategoryClick(category)) },
+                        imageVector = Lucide.X,
+                        text = translateCategory(category),
+                        backgroundColor = Theme[colors][surface2],
+                    )
+                }
             }
         }
     }
@@ -331,10 +488,10 @@ context(
     _: AnimatedContentScope,
     _: SharedTransitionScope
 )
-private fun RowScope.ProjectList(state: ProjectListState) {
+private fun ColumnScope.ProjectList(projects: Resource<List<BriefProjectView>>) {
     val listState = rememberLazyListState()
 
-    LaunchedEffect(state.projects) {
+    LaunchedEffect(projects) {
         listState.scrollToItem(0)
     }
 
@@ -343,24 +500,39 @@ private fun RowScope.ProjectList(state: ProjectListState) {
         modifier = Modifier.weight(1f),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        when (val projects = state.projects) {
+        when (projects) {
             is Resource.Loaded -> when (val result = projects.result) {
                 is Result.Error -> item(result) { AppError(result.throwable) }
-                is Result.Success -> result.data.forEach {
-                    item(it.id) {
-                        ProjectListItemCard(it)
+                is Result.Success -> {
+                    if (result.data.isEmpty()) {
+                        item { NoProjectsFound() }
+                    }
+                    itemsIndexed(result.data, key = { _, it -> it.id }) { index, it ->
+                        ProjectListItemCard(it, index == result.data.lastIndex)
                     }
                 }
             }
 
             Resource.Loading -> repeat(20) {
                 item {
-                    ProjectListItemCard(null)
+                    ProjectListItemCard(null, it == 19)
                 }
             }
 
             Resource.Unloaded -> Unit
         }
+    }
+}
+
+@Composable
+context(store: IntentReceiver<ProjectListIntent>)
+fun NoProjectsFound() {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.fillMaxSize().padding(16.dp),
+    ) {
+        AppText(text = stringResource(Res.string.noProjectsFound))
     }
 }
 
@@ -371,13 +543,14 @@ context(
     sharedTransitionScope: SharedTransitionScope
 )
 private fun LazyItemScope.ProjectListItemCard(
-    project: BriefProjectView?
+    project: BriefProjectView?,
+    isLast: Boolean
 ) = with(sharedTransitionScope) {
     if (project != null) {
         val interactionSource = remember { MutableInteractionSource() }
 
         ProjectListItemCardLayout(
-            modifier = Modifier
+            modifier = (if (isLast) Modifier.padding(bottom = 8.dp) else Modifier)
                 .hoverable(interactionSource = interactionSource)
                 .appAnimateItem()
                 .projectSharedElement(project.id, "card", ProjectSharedElementOrigin.ProjectList),
@@ -519,15 +692,17 @@ private fun LazyItemScope.ProjectListItemCardLayout(
     }
 }
 
-val ProjectType.displayName: StringResource
-    get() = when (this) {
-        ProjectType.Mod -> Res.string.mod
-        ProjectType.Modpack -> Res.string.modpack
-        ProjectType.ResourcePack -> Res.string.resourcePack
-        ProjectType.ShaderPack -> Res.string.shaderPack
-        ProjectType.DataPack -> Res.string.dataPack
-        ProjectType.World -> Res.string.world
-    }
+val ProjectType.displayName: String
+    @Composable get() = stringResource(
+        when (this) {
+            ProjectType.Mod -> Res.string.mod
+            ProjectType.Modpack -> Res.string.modpack
+            ProjectType.ResourcePack -> Res.string.resourcePack
+            ProjectType.ShaderPack -> Res.string.shaderPack
+            ProjectType.DataPack -> Res.string.dataPack
+            ProjectType.World -> Res.string.world
+        }
+    )
 
 val ProjectType.icon: ImageVector
     get() = when (this) {

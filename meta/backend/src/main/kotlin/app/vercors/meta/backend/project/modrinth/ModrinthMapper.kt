@@ -11,14 +11,14 @@ internal fun buildFacets(
     categories: List<String>? = null
 ): String {
     val parts = mutableListOf<String>()
-    projectType?.let { parts.add("[\"project_type:${projectType.asModrinthString()}\"]") }
+    projectType?.let { parts.add("[\"project_type:${projectType.toModrinthString()}\"]") }
     loaders?.let { parts.add(it.joinToString(",", "[", "]") { loader -> "\"categories:$loader\"" }) }
     gameVersions?.let { parts.add(it.joinToString(",", "[", "]") { gameVersion -> "\"versions:$gameVersion\"" }) }
     categories?.let { parts.add(it.joinToString(",", "[", "]") { category -> "\"categories:$category\"" }) }
     return parts.joinToString(",", "[", "]")
 }
 
-private fun ProjectTypeData.asModrinthString(): String = when (this) {
+private fun ProjectTypeData.toModrinthString(): String = when (this) {
     ProjectTypeData.Mod -> "mod"
     ProjectTypeData.Modpack -> "modpack"
     ProjectTypeData.ResourcePack -> "resourcepack"
@@ -28,7 +28,8 @@ private fun ProjectTypeData.asModrinthString(): String = when (this) {
 }
 
 internal fun ModrinthProjectSearchResult.convert(): ProjectSearchResponseData = ProjectSearchResponseData(
-    results = hits.map { it.convert() }
+    results = hits.map { it.convert() },
+    total = totalHits
 )
 
 internal fun ModrinthProjectResult.convert(): BriefProjectData = BriefProjectData(
@@ -77,3 +78,10 @@ internal fun ModrinthProject.convert(): ProjectData = ProjectData(
     url = "https://modrinth.com/project/$id",
     logoUrl = iconUrl
 )
+
+internal fun ProjectSortByData.toModrinthIndex(): String = when (this) {
+    ProjectSortByData.Relevance -> "relevance"
+    ProjectSortByData.Downloads -> "downloads"
+    ProjectSortByData.DateUpdated -> "updated"
+    ProjectSortByData.DateCreated -> "newest"
+}

@@ -36,7 +36,7 @@ fun <T> AppSelectField(
     onValueChange: (T) -> Unit,
     label: String? = null,
     backgroundColor: Color = Theme[colors][surface],
-    itemRenderer: @Composable RowScope.(T) -> Unit = { AppSelectItem(it.toString()) },
+    itemRenderer: @Composable RowScope.(value: T, isButton: Boolean) -> Unit = { value, _ -> AppSelectItem(value.toString()) },
     searchable: Boolean = false,
     search: String = "",
     onSearchChange: (String) -> Unit = {},
@@ -66,7 +66,7 @@ fun <T> AppSelectField(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    itemRenderer(value)
+                    itemRenderer(value, true)
                     Spacer(Modifier.weight(1f))
                     AppIcon(
                         imageVector = if (expanded) Lucide.ChevronUp else Lucide.ChevronDown,
@@ -123,7 +123,7 @@ fun <T> AppSelectField(
                                         fontWeight = if (it == value) FontWeight.SemiBold else FontWeight.Normal
                                     )
                                 ) {
-                                    itemRenderer(it)
+                                    itemRenderer(it, false)
                                 }
                             }
                         }

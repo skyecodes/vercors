@@ -20,7 +20,8 @@ interface PlatformServiceBase {
         gameVersions: List<String>?,
         categories: List<String>?,
         query: String?,
-        firstIndex: Int?,
+        sortBy: ProjectSortByData?,
+        offset: Int?,
         pageSize: Int?
     ): ProjectSearchResponseData
 

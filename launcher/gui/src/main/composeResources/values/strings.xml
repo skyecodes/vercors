@@ -18,7 +18,7 @@
     <string name="featuredMods">Featured mods</string>
     <string name="featuredResourcePacks">Featured resource packs</string>
     <string name="featuredShaderPacks">Featured shader packs</string>
-    <string name="noInstanceFound">No instance found.</string>
+    <string name="noInstanceFound">No instance found</string>
 
     <string name="createInstance">Create a new instance</string>
     <string name="createCustomInstance">Custom instance</string>
@@ -56,6 +56,11 @@
     <string name="resolutions">Resolutions</string>
     <string name="features">Features</string>
     <string name="performanceImpact">Performance Impact</string>
+
+    <string name="sortBy">Sort by</string>
+    <string name="itemsPerPage">Items</string>
+    <string name="noProjectsFound">No projects found</string>
+    <string name="clearFilters">Clear filters</string>
 
     <string name="adventure">Adventure</string>
     <string name="atmosphere">Atmosphere</string>

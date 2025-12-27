@@ -44,7 +44,8 @@ class ProjectService(
         gameVersions: List<String>? = null,
         categories: List<String>? = null,
         query: String? = null,
-        firstIndex: Int? = 0,
+        sortBy: ProjectSortByData? = null,
+        offset: Int? = 0,
         pageSize: Int? = 10
     ): ProjectSearchResponseData = getPlatformService(platformId).search(
         projectType = projectType,
@@ -52,7 +53,8 @@ class ProjectService(
         gameVersions = gameVersions,
         categories = categories,
         query = query,
-        firstIndex = firstIndex,
+        sortBy = sortBy,
+        offset = offset,
         pageSize = pageSize,
     )
 

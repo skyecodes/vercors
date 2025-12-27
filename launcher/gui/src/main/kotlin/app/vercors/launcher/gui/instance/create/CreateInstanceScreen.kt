@@ -137,10 +137,10 @@ private fun CreateCustomInstanceView(state: CreateInstanceState) {
                 value = state.selectedGameVersion,
                 items = state.filteredGameVersionList,
                 onValueChange = { store.intent(CreateInstanceIntent.OnGameVersionChange(it)) },
-                itemRenderer = {
+                itemRenderer = { value, _ ->
                     AppSelectItem(
-                        text = it?.displayName ?: "",
-                        icon = if (it?.isLatestRelease == true) Lucide.Star else if (it?.isLatestSnapshot == true) Lucide.Bug else null
+                        text = value?.displayName ?: "",
+                        icon = if (value?.isLatestRelease == true) Lucide.Star else if (value?.isLatestSnapshot == true) Lucide.Bug else null
                     )
                 },
                 searchable = true,
@@ -163,6 +163,7 @@ private fun CreateCustomInstanceView(state: CreateInstanceState) {
             backgroundColor = Theme[colors][primary],
             contentColor = Theme[colors][onPrimary],
             enabled = state.canCreateInstance,
+            contentPadding = NormalButtonContentPadding
         )
     }
 }

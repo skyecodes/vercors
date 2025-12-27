@@ -28,7 +28,9 @@ interface ProjectApi {
         @Query("gameVersions") gameVersions: List<String>?,
         @Query("categories") categories: List<String>?,
         @Query("query") query: String?,
+        @Query("sortBy") sortBy: String?,
         @Query("pageSize") pageSize: Int?,
+        @Query("offset") offset: Int?,
     ): ApiResponse<ProjectSearchResponseData>
 
     @GET("platform/{platformId}/project/{projectId}")

@@ -1,14 +1,12 @@
 package app.vercors.meta.backend.project.curseforge
 
-import app.vercors.meta.backend.project.curseforge.dto.CurseForgeCategory
-import app.vercors.meta.backend.project.curseforge.dto.CurseForgeModLoaderType
-import app.vercors.meta.backend.project.curseforge.dto.CurseForgeProject
-import app.vercors.meta.backend.project.curseforge.dto.CurseForgeProjectSearchResponse
+import app.vercors.meta.backend.project.curseforge.dto.*
 import app.vercors.meta.backend.project.iconMap
 import app.vercors.meta.lib.project.*
 
 internal fun CurseForgeProjectSearchResponse.convert(): ProjectSearchResponseData = ProjectSearchResponseData(
-    results = data.map { it.convertBrief() }
+    results = data.map { it.convertBrief() },
+    total = pagination.totalCount
 )
 
 internal fun CurseForgeProject.convertBrief(): BriefProjectData = BriefProjectData(
@@ -65,4 +63,11 @@ internal fun ProjectLoaderData.toCurseForgeModLoaderType(): CurseForgeModLoaderT
     ProjectLoaderData.Fabric -> CurseForgeModLoaderType.Fabric
     ProjectLoaderData.Quilt -> CurseForgeModLoaderType.Quilt
     ProjectLoaderData.NeoForge -> CurseForgeModLoaderType.NeoForge
+}
+
+internal fun ProjectSortByData.toCurseForgeSortField(): CurseForgeProjectSearchSortField = when (this) {
+    ProjectSortByData.Relevance -> CurseForgeProjectSearchSortField.Popularity
+    ProjectSortByData.Downloads -> CurseForgeProjectSearchSortField.TotalDownloads
+    ProjectSortByData.DateUpdated -> CurseForgeProjectSearchSortField.LastUpdated
+    ProjectSortByData.DateCreated -> CurseForgeProjectSearchSortField.ReleasedDate
 }

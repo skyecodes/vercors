@@ -23,8 +23,8 @@ class ModrinthService(
 
     override suspend fun getCategories(): Map<ProjectTypeData, Map<String, List<ProjectCategoryData>>> =
         coroutineScope {
-        val types = async { api.getProjectTypes().mapNotNull { it.toModrinthProjectType() } }
-        val categories = async { api.getCategories() }
+            val types = async { api.getProjectTypes().getOrThrow().mapNotNull { it.toModrinthProjectType() } }
+            val categories = async { api.getCategories().getOrThrow() }
 
             val result = categories.await()
                 .groupBy { it.projectType.convert() }
@@ -50,7 +50,8 @@ class ModrinthService(
         gameVersions: List<String>?,
         categories: List<String>?,
         query: String?,
-        firstIndex: Int?,
+        sortBy: ProjectSortByData?,
+        offset: Int?,
         pageSize: Int?
     ): ProjectSearchResponseData = api.search(
         query = query,
@@ -60,8 +61,10 @@ class ModrinthService(
             gameVersions = gameVersions,
             categories = categories
         ),
+        index = sortBy?.toModrinthIndex(),
+        offset = offset ?: 0,
         limit = pageSize
-    ).convert()
+    ).getOrThrow().convert()
 
-    override suspend fun getProject(projectId: String): ProjectData = api.getProject(projectId).convert()
+    override suspend fun getProject(projectId: String): ProjectData = api.getProject(projectId).getOrThrow().convert()
 }

@@ -45,7 +45,8 @@ class CurseForgeService(
         gameVersions: List<String>?,
         categories: List<String>?,
         query: String?,
-        firstIndex: Int?,
+        sortBy: ProjectSortByData?,
+        offset: Int?,
         pageSize: Int?
     ): ProjectSearchResponseData = api.search(
         gameId = MINECRAFT_GAME_ID,
@@ -54,7 +55,8 @@ class CurseForgeService(
         gameVersions = gameVersions?.joinToString(",", "[", "]") { "\"$it\"" },
         modLoaderTypes = loaders?.joinToString(",", "[", "]") { "\"${it.toCurseForgeModLoaderType().value}\"" },
         searchFilter = query,
-        index = firstIndex,
+        sortField = sortBy?.toCurseForgeSortField(),
+        index = offset,
         pageSize = pageSize
     ).convert()
 

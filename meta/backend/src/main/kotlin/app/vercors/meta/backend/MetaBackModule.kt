@@ -25,6 +25,7 @@ fun provideJson(): Json = Json {
 
 @Single
 fun provideHttpClient(json: Json): HttpClient = HttpClient {
+    expectSuccess = true
     install(ContentNegotiation) {
         json(json)
     }

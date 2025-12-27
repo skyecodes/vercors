@@ -75,6 +75,7 @@ internal fun provideHttpClient(
     json: Json,
     @AppPath appPath: Path
 ): HttpClient = HttpClient(platformHttpClientEngineFactory) {
+    expectSuccess = true
     install(ContentNegotiation) {
         json(json)
     }

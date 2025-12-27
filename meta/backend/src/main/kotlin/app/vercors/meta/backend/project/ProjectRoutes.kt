@@ -3,6 +3,7 @@ package app.vercors.meta.backend.project
 import app.vercors.meta.backend.cache
 import app.vercors.meta.backend.getValue
 import app.vercors.meta.lib.project.ProjectLoaderData
+import app.vercors.meta.lib.project.ProjectSortByData
 import app.vercors.meta.lib.project.ProjectTypeData
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
@@ -71,7 +72,9 @@ private fun Route.getProjectList(service: ProjectService) {
             val gameVersions = call.queryParameters.getAll("gameVersions")
             val categories = call.queryParameters.getAll("categories")
             val query = call.queryParameters["query"]
+            val sortBy = call.queryParameters["sortBy"]
             val pageSize = call.queryParameters["pageSize"]?.toIntOrNull()
+            val offset = call.queryParameters["offset"]?.toIntOrNull()
             call.respond(
                 service.search(
                     platformId = platformId,
@@ -80,7 +83,9 @@ private fun Route.getProjectList(service: ProjectService) {
                     gameVersions = gameVersions,
                     categories = categories,
                     query = query,
-                    pageSize = pageSize
+                    sortBy = sortBy?.let { json.decodeFromString<ProjectSortByData>(""""$it"""") },
+                    pageSize = pageSize,
+                    offset = offset
                 )
             )
         }

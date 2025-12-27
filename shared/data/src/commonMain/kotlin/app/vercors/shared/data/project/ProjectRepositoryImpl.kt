@@ -2,6 +2,7 @@ package app.vercors.shared.data.project
 
 import app.vercors.meta.client.project.ProjectApi
 import app.vercors.meta.lib.project.ProjectLoaderData
+import app.vercors.shared.domain.Page
 import app.vercors.shared.domain.Result
 import app.vercors.shared.domain.loader.ModLoaderType
 import app.vercors.shared.domain.project.ProjectRepository
@@ -35,16 +36,20 @@ internal class ProjectRepositoryImpl(
         gameVersions: List<String>?,
         query: String?,
         categories: List<String>?,
-        pageSize: Int?
-    ): Result<List<BriefProject>> = projectApi.getProjectList(
+        sortBy: ProjectSortBy?,
+        pageSize: Int?,
+        offset: Int?
+    ): Result<Page<BriefProject>> = projectApi.getProjectList(
         platformId = platformId,
         projectType = json.encodeToJsonElement(type.toData()).jsonPrimitive.content,
         loaders = loaders?.let { loaders -> json.encodeToJsonElement(loaders.map { it.toMetaData() }).jsonArray.map { it.jsonPrimitive.content } },
         gameVersions = gameVersions,
         categories = categories,
         query = query,
+        sortBy = sortBy?.let { json.encodeToJsonElement(it.toData()).jsonPrimitive.content },
         pageSize = pageSize,
-    ).map { list -> list.results.map { it.toDomain() } }.toResult()
+        offset = offset
+    ).map { list -> Page(items = list.results.map { it.toDomain() }, total = list.total) }.toResult()
 
     override suspend fun getProject(
         projectId: ProjectId

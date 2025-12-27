@@ -289,6 +289,7 @@ private fun NoInstanceFoundDisplay() {
             imageVector = Lucide.Plus,
             backgroundColor = Theme[colors][primary],
             contentColor = Theme[colors][onPrimary],
+            contentPadding = NormalButtonContentPadding
         )
     }
 }

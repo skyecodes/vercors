@@ -95,13 +95,14 @@ fun InstanceListFilterCard(state: InstanceListState) {
             imageVector = Lucide.Plus,
             backgroundColor = Theme[colors][primary],
             contentColor = Theme[colors][onPrimary],
+            contentPadding = NormalButtonContentPadding
         )
 
         AppSelectField(
             value = state.typeFilter,
             items = state.typeList,
             onValueChange = { store.intent(InstanceListIntent.OnTypeFilterChange(it)) },
-            itemRenderer = { AppSelectItem(it.ifBlank { stringResource(Res.string.anyType) }) },
+            itemRenderer = { value, _ -> AppSelectItem(value.ifBlank { stringResource(Res.string.anyType) }) },
             backgroundColor = Theme[colors][surface2],
             modifier = Modifier.width(150.dp)
         )
@@ -110,7 +111,7 @@ fun InstanceListFilterCard(state: InstanceListState) {
             value = state.loaderFilter,
             items = state.loaderList,
             onValueChange = { store.intent(InstanceListIntent.OnLoaderFilterChange(it)) },
-            itemRenderer = { AppSelectItem(it.ifBlank { stringResource(Res.string.anyLoader) }) },
+            itemRenderer = { value, _ -> AppSelectItem(value.ifBlank { stringResource(Res.string.anyLoader) }) },
             backgroundColor = Theme[colors][surface2],
             modifier = Modifier.width(150.dp)
         )
@@ -119,7 +120,7 @@ fun InstanceListFilterCard(state: InstanceListState) {
             value = state.versionFilter,
             items = state.versionList,
             onValueChange = { store.intent(InstanceListIntent.OnVersionFilterChange(it)) },
-            itemRenderer = { AppSelectItem(it.ifBlank { stringResource(Res.string.anyVersion) }) },
+            itemRenderer = { value, _ -> AppSelectItem(value.ifBlank { stringResource(Res.string.anyVersion) }) },
             backgroundColor = Theme[colors][surface2],
             modifier = Modifier.width(150.dp)
         )

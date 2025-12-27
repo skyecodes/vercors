@@ -17,15 +17,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import app.vercors.shared.ui.core.animation.appAnimateFloat
+import app.vercors.shared.ui.core.theme.background
 import app.vercors.shared.ui.core.theme.colors
-import app.vercors.shared.ui.core.theme.surface2
 import com.composeunstyled.LocalTextStyle
 import com.composeunstyled.theme.Theme
 
 @Composable
 fun AppLoadingPlaceholder(
     modifier: Modifier = Modifier,
-    backgroundColor: Color = Theme[colors][surface2]
+    backgroundColor: Color = Theme[colors][background]
 ) {
     val infiniteTransition = rememberInfiniteTransition()
     val float by infiniteTransition.appAnimateFloat(
@@ -44,7 +44,7 @@ fun AppLoadingPlaceholder(
 fun AppLoadingTextPlaceholder(
     modifier: Modifier = Modifier,
     textStyle: TextStyle = LocalTextStyle.current,
-    backgroundColor: Color = Theme[colors][surface2]
+    backgroundColor: Color = Theme[colors][background]
 ) {
     val padding = 2.dp
     val textHeight = textStyle.fontSize.value.dp + padding * 2

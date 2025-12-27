@@ -21,6 +21,13 @@ internal fun ProjectType.toData(): ProjectTypeData = when (this) {
     ProjectType.World -> ProjectTypeData.World
 }
 
+internal fun ProjectSortBy.toData(): ProjectSortByData = when (this) {
+    ProjectSortBy.Relevance -> ProjectSortByData.Relevance
+    ProjectSortBy.Downloads -> ProjectSortByData.Downloads
+    ProjectSortBy.DateUpdated -> ProjectSortByData.DateUpdated
+    ProjectSortBy.DateCreated -> ProjectSortByData.DateCreated
+}
+
 internal fun BriefProjectData.toDomain(): BriefProject = BriefProject(
     id = ProjectId(id, platform),
     name = name,

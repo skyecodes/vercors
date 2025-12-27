@@ -4,7 +4,10 @@ import androidx.compose.foundation.Indication
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -18,6 +21,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import app.vercors.shared.ui.core.theme.button
@@ -43,11 +47,12 @@ fun AppButton(
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     horizontalArrangement: Arrangement.Horizontal = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
     verticalAlignment: Alignment.Vertical = Alignment.CenterVertically,
+    textStyle: TextStyle = Theme[textStyles][button],
     content: @Composable (RowScope.() -> Unit)
 ) {
     val hovered by interactionSource.collectIsHoveredAsState()
 
-    ProvideTextStyle(Theme[textStyles][button]) {
+    ProvideTextStyle(textStyle) {
         Button(
             onClick = onClick,
             enabled = enabled,
@@ -68,6 +73,10 @@ fun AppButton(
     }
 }
 
+val ThinButtonContentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+
+val NormalButtonContentPadding = PaddingValues(horizontal = 8.dp, vertical = 7.dp)
+
 @Composable
 fun AppIconTextButton(
     onClick: () -> Unit,
@@ -77,7 +86,7 @@ fun AppIconTextButton(
     shape: Shape = RoundedCornerShape(4.dp),
     backgroundColor: Color = Color.Unspecified,
     contentColor: Color = LocalContentColor.current,
-    contentPadding: PaddingValues = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
+    contentPadding: PaddingValues = ThinButtonContentPadding,
     borderColor: Color = Color.Unspecified,
     borderWidth: Dp = 0.dp,
     modifier: Modifier = Modifier,
@@ -86,6 +95,8 @@ fun AppIconTextButton(
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     horizontalArrangement: Arrangement.Horizontal = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
     verticalAlignment: Alignment.Vertical = Alignment.CenterVertically,
+    textStyle: TextStyle = Theme[textStyles][button],
+    iconSize: Dp = 16.dp
 ) {
     AppButton(
         onClick = onClick,
@@ -102,12 +113,13 @@ fun AppIconTextButton(
         interactionSource = interactionSource,
         horizontalArrangement = horizontalArrangement,
         verticalAlignment = verticalAlignment,
+        textStyle = textStyle
     ) {
         imageVector?.let {
             AppIcon(
                 imageVector = it,
                 contentDescription = text,
-                modifier = Modifier.padding(vertical = 4.dp).size(16.dp)
+                modifier = Modifier.size(iconSize)
             )
         }
         text?.let {
@@ -127,7 +139,7 @@ fun AppIconTextButton(
     shape: Shape = RoundedCornerShape(4.dp),
     backgroundColor: Color = Color.Unspecified,
     contentColor: Color = LocalContentColor.current,
-    contentPadding: PaddingValues = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
+    contentPadding: PaddingValues = ThinButtonContentPadding,
     borderColor: Color = Color.Unspecified,
     borderWidth: Dp = 0.dp,
     modifier: Modifier = Modifier,
@@ -136,6 +148,8 @@ fun AppIconTextButton(
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     horizontalArrangement: Arrangement.Horizontal = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
     verticalAlignment: Alignment.Vertical = Alignment.CenterVertically,
+    textStyle: TextStyle = Theme[textStyles][button],
+    iconSize: Dp = 16.dp
 ) {
     AppButton(
         onClick = onClick,
@@ -152,12 +166,13 @@ fun AppIconTextButton(
         interactionSource = interactionSource,
         horizontalArrangement = horizontalArrangement,
         verticalAlignment = verticalAlignment,
+        textStyle = textStyle
     ) {
         painter?.let {
             AppIcon(
                 painter = it,
                 contentDescription = text,
-                modifier = Modifier.padding(vertical = 4.dp).size(16.dp)
+                modifier = Modifier.size(iconSize)
             )
         }
         text?.let {

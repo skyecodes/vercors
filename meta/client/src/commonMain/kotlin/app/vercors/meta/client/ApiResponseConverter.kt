@@ -9,6 +9,7 @@ import de.jensklingenberg.ktorfit.converter.TypeData
 import io.ktor.client.call.*
 import io.ktor.client.plugins.*
 import io.ktor.client.statement.*
+import io.ktor.serialization.*
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.io.IOException
@@ -42,7 +43,7 @@ class ApiResponseConverter : Converter.Factory {
                             e
                         )
 
-                        is SerializationException -> ApiResponse.Error.SerializationError(e)
+                        is SerializationException, is ContentConvertException -> ApiResponse.Error.SerializationError(e)
                         else -> ApiResponse.Error.UnknownError(e)
                     }
                 }

@@ -37,6 +37,10 @@ fun <T> Resource<T>.getOrThrow(): T = when (this) {
     Loading -> error("Resource is loading")
 }
 
+fun <T> Resource<T>.onError(block: (Throwable) -> Unit) {
+    if (this is Loaded && result is Result.Error) block(result.throwable)
+}
+
 fun <T, U> Flow<Resource<T>>.combineResource(other: Flow<Resource<U>>): Flow<Resource<Pair<T, U>>> =
     combine(other) { a, b ->
         when {
