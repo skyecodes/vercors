@@ -1,7 +1,7 @@
 package app.vercors.launcher.cli
 
 import app.vercors.launcher.common.data.CommonDataModule
-import app.vercors.launcher.common.data.MICROSOFT_CLIENT_ID
+import app.vercors.launcher.common.data.commonDataProperties
 import app.vercors.launcher.common.domain.CommonDomainModule
 import com.github.ajalt.clikt.command.SuspendingCliktCommand
 import com.github.ajalt.clikt.command.main
@@ -16,11 +16,7 @@ fun main(args: Array<String>) {
     configureLogging()
     val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     val koin = CLIApplication.startKoin {
-        properties(
-            mapOf(
-                "MICROSOFT_CLIENT_ID" to MICROSOFT_CLIENT_ID
-            )
-        )
+        commonDataProperties()
         modules(module {
             single { scope }
         })

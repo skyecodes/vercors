@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import org.koin.core.annotation.Single
+import kotlin.time.Clock
 
 private val logger = KotlinLogging.logger {}
 
@@ -45,10 +46,10 @@ internal class AccountRepositoryImpl(
 
     override suspend fun addAccount(account: Account) {
         _state.update(mutex) {
-            val newAccounts = it.accounts.filter { acc -> acc.uuid != account.uuid } + account
+            val newAccounts = it.accounts.filter { acc -> acc.id != account.id } + account
             dataSource.saveToFile(
                 it.copy(
-                    selected = account.uuid,
+                    selected = account.id,
                     accounts = newAccounts
                 ).toData()
             )
@@ -57,13 +58,25 @@ internal class AccountRepositoryImpl(
 
     override suspend fun removeAccount(account: Account) {
         _state.update(mutex) {
-            val newAccounts = it.accounts.filter { acc -> acc.uuid != account.uuid }
+            val newAccounts = it.accounts.filter { acc -> acc.id != account.id }
             dataSource.saveToFile(
                 it.copy(
-                    selected = newAccounts.firstOrNull()?.uuid,
+                    selected = newAccounts.firstOrNull()?.id,
                     accounts = newAccounts
                 ).toData()
             )
+        }
+    }
+
+    override suspend fun selectAccount(account: Account) {
+        _state.update(mutex) {
+            dataSource.saveToFile(
+                it.copy(
+                    selected = account.id,
+                    accounts = it.accounts
+                        .map { acc -> if (acc.id == account.id) acc.copy(dateSelected = Clock.System.now()) else acc }
+                        .sortedByDescending { acc -> acc.dateSelected }
+                ).toData())
         }
     }
 }

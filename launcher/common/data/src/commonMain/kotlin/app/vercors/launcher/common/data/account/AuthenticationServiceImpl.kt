@@ -20,6 +20,7 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.*
 import kotlinx.serialization.json.*
@@ -46,9 +47,9 @@ internal class AuthenticationServiceImpl(
                 when (it) {
                     is AuthorizationCodeResult.WaitingForLogin -> this@flow.emit(LoginState.RequireLogin(it.url))
                     is AuthorizationCodeResult.Success -> emit(it)
-                    is AuthorizationCodeResult.Error -> it.throwException()
+                    is AuthorizationCodeResult.Error -> throw it.exception
                 }
-            }.first()
+            }.firstOrNull() ?: throw IllegalStateException("Authorization code not received")
         check(state == reponseState) { "State mismatch" }
         emit(LoginState.Progress(LoginStep.MicrosoftToken))
         val (msAccessToken, refreshToken) = getMicrosoftAccessToken(codeVerifier, authCode, port)
@@ -86,7 +87,7 @@ internal class AuthenticationServiceImpl(
         val (uuid, username) = getMinecraftProfile(mcAccessToken)
         emit(LoginState.Progress(LoginStep.Success))
         val account = Account(
-            uuid = Uuid.parse(uuid),
+            id = Uuid.parse(uuid),
             username = username,
             accessToken = mcAccessToken,
             refreshToken = refreshToken
@@ -117,6 +118,7 @@ internal class AuthenticationServiceImpl(
                         call.respondText("Error: Authentication failed")
                         send(AuthorizationCodeResult.Error("Error", "Authentication failed"))
                     }
+                    delay(100)
                     awaitJob.complete()
                 }
             }
@@ -270,7 +272,7 @@ internal class AuthenticationServiceImpl(
             AuthorizationCodeResult
 
         data class Error(val error: String, val description: String) : AuthorizationCodeResult {
-            fun throwException(): Nothing = throw AuthResponseException(error, description)
+            val exception = AuthResponseException(error, description)
         }
     }
 

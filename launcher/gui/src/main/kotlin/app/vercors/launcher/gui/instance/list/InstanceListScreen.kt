@@ -94,8 +94,7 @@ fun InstanceListFilterCard(state: InstanceListState) {
             text = stringResource(Res.string.create),
             imageVector = Lucide.Plus,
             backgroundColor = Theme[colors][primary],
-            contentColor = Theme[colors][onPrimary],
-            contentPadding = NormalButtonContentPadding
+            contentColor = Theme[colors][onPrimary]
         )
 
         AppSelectField(

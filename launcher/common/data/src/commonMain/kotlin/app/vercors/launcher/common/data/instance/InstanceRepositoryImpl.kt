@@ -21,16 +21,16 @@ internal class InstanceRepositoryImpl(
         .asResourceStateFlow(
             coroutineScope = backgroundScope,
             onStart = { backgroundScope.launch { reloadInstances() } },
-            onEach = { logger.debug { "Instances: $it" } },
+            onEach = { logger.debug { "Instances state updated: $it" } },
         )
     private val instancesMutex = Mutex()
 
     override suspend fun reloadInstances() {
         _instances.load(instancesMutex) {
-            logger.debug { "Reloading instances" }
+            logger.info { "Reloading instances" }
             dataSource.loadAll()
                 .map { (id, instance) -> instance.toDomain(id) }
-                .also { logger.debug { "Instances reloaded" } }
+                .also { logger.info { "Instances reloaded" } }
         }
     }
 
@@ -46,6 +46,3 @@ internal class InstanceRepositoryImpl(
         _instances.removeFromList(instance) { a, b -> a.id == b.id }
     }
 }
-
-
-

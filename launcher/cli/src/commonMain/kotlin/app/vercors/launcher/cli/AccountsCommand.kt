@@ -1,6 +1,6 @@
 package app.vercors.launcher.cli
 
-import app.vercors.launcher.common.domain.account.usecase.GetAccountListUseCase
+import app.vercors.launcher.common.domain.account.usecase.ObserveAccountListUseCase
 import app.vercors.launcher.common.domain.plural
 import app.vercors.shared.domain.awaitValueOrThrow
 import com.github.ajalt.clikt.core.Context
@@ -9,8 +9,8 @@ import com.github.ajalt.mordant.table.table
 
 class AccountsCommand : VercorsCommandBase("accounts") {
     override suspend fun execute() {
-        val getAccountList = koin.get<GetAccountListUseCase>()
-        val accountList = getAccountList().awaitValueOrThrow()
+        val observeAccountList = koin.get<ObserveAccountListUseCase>()
+        val accountList = observeAccountList().awaitValueOrThrow()
         if (accountList.accounts.isEmpty()) {
             echo("No account found. Login to your Microsoft account using 'vercors login'.")
         } else {
@@ -22,8 +22,8 @@ class AccountsCommand : VercorsCommandBase("accounts") {
                     accountList.accounts.forEach {
                         row(
                             it.username,
-                            it.uuid.toHexString(),
-                            it.uuid == accountList.selected
+                            it.id.toHexString(),
+                            it.id == accountList.selected
                         )
                     }
                 }

@@ -64,7 +64,9 @@ kotlin {
     compilerOptions {
         freeCompilerArgs.addAll(
             "-Xcontext-parameters",
+            "-Xannotation-default-target=param-property",
             "-opt-in=kotlin.time.ExperimentalTime",
+            "-opt-in=kotlin.uuid.ExperimentalUuidApi",
             "-opt-in=org.koin.core.annotation.KoinExperimentalAPI"
         )
     }

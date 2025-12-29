@@ -7,9 +7,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import app.vercors.shared.ui.core.theme.colors
 import app.vercors.shared.ui.core.theme.surface
 import com.composeunstyled.theme.Theme
+
+private const val gradientSize = 64f
 
 @Composable
 fun Modifier.scrollGradient(
@@ -18,19 +21,34 @@ fun Modifier.scrollGradient(
     color: Color = Theme[colors][surface]
 ): Modifier = drawWithContent {
     drawContent()
-    val gradients = mutableListOf<Array<Pair<Float, Color>>>()
-    if (listState.canScrollBackward) {
-        gradients += arrayOf(0f to color, 0.15f to Color.Transparent, 1f to Color.Transparent)
-    }
+    if (listState.canScrollBackward) drawGradient(
+        orientation = orientation,
+        colors = listOf(color, Color.Transparent),
+        start = 0f,
+        end = gradientSize
+    )
     if (listState.canScrollForward) {
-        gradients += arrayOf(0f to Color.Transparent, 0.85f to Color.Transparent, 1f to color)
-    }
-    gradients.forEach {
-        drawRect(
-            when (orientation) {
-                Orientation.Vertical -> Brush.verticalGradient(*it)
-                Orientation.Horizontal -> Brush.horizontalGradient(*it)
-            }
+        val sizeOnAxis = when (orientation) {
+            Orientation.Vertical -> size.height
+            Orientation.Horizontal -> size.width
+        }
+        drawGradient(
+            orientation = orientation,
+            colors = listOf(Color.Transparent, color),
+            start = sizeOnAxis - gradientSize,
+            end = sizeOnAxis
         )
     }
 }
+
+private fun DrawScope.drawGradient(
+    orientation: Orientation,
+    colors: List<Color>,
+    start: Float,
+    end: Float
+) = drawRect(
+    when (orientation) {
+        Orientation.Vertical -> Brush.verticalGradient(colors = colors, startY = start, endY = end)
+        Orientation.Horizontal -> Brush.horizontalGradient(colors = colors, startX = start, endX = end)
+    }
+)

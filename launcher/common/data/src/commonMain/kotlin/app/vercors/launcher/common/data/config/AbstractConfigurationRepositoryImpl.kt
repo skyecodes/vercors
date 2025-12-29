@@ -29,7 +29,7 @@ abstract class AbstractConfigurationRepositoryImpl<T : Any, U : Any>(
                 }
             }
         },
-        onEach = { logger.debug { "Configuration: $it" } }
+        onEach = { logger.debug { "Configuration state updated: $it" } }
     )
     private val mutex = Mutex()
 

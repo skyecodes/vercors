@@ -19,12 +19,15 @@
     <appender name="FILE_DEBUG" class="ch.qos.logback.core.FileAppender">
         <file>${app.vercors.logDir}/launcher-gui.log</file>
         <append>true</append>
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>DEBUG</level>
+        </filter>
         <encoder>
             <pattern>%d{YYYY-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
         </encoder>
     </appender>
 
-    <root level="trace">
+    <root level="debug">
         <appender-ref ref="STDOUT"/>
         <appender-ref ref="FILE"/>
         <appender-ref ref="FILE_DEBUG"/>

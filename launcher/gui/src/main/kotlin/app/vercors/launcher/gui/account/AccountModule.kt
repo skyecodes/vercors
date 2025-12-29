@@ -1,14 +1,15 @@
 package app.vercors.launcher.gui.account
 
 import app.vercors.launcher.gui.navigation.appNavigation
-import app.vercors.shared.ui.core.component.AppText
-import app.vercors.shared.ui.core.theme.label
-import app.vercors.shared.ui.core.theme.textStyles
-import com.composeunstyled.theme.Theme
+import app.vercors.shared.ui.core.container
+import org.koin.core.module.dsl.new
 import org.koin.dsl.module
 
 val AccountModule = module {
+    container { new(::AccountListContainer) }
     appNavigation<AccountListRoute> { _, _ ->
-        AppText("Account", style = Theme[textStyles][label])
+        AccountListScreen(
+            container = container()
+        )
     }
 }

@@ -5,13 +5,10 @@ import app.vercors.launcher.common.data.IODispatcher
 import app.vercors.launcher.common.data.deleteRecursively
 import io.github.irgaly.kfswatch.KfsDirectoryWatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import kotlinx.io.buffered
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
@@ -43,10 +40,10 @@ internal class AccountDataSource(
     }
 
     suspend fun loadFromFile(): AccountListData? = withContext(ioDispatcher) {
-        runCatching {
+        try {
             if (SystemFileSystem.exists(accountsFile)) {
                 if (SystemFileSystem.metadataOrNull(accountsFile)?.isRegularFile == true) {
-                    logger.debug { "Loading account list file" }
+                    logger.debug { "Loading account list file $accountsFile" }
                     return@withContext SystemFileSystem.source(accountsFile).buffered().use {
                         json.decodeFromSource<AccountListData>(it)
                     }
@@ -55,6 +52,9 @@ internal class AccountDataSource(
                     SystemFileSystem.deleteRecursively(accountsFile)
                 }
             }
+        } catch (e: Exception) {
+            currentCoroutineContext().ensureActive()
+            logger.error(e) { "Error loading account list file $accountsFile" }
         }
         return@withContext null
     }
@@ -64,7 +64,7 @@ internal class AccountDataSource(
             logger.warn { "Illegal file found at location $accountsFile" }
             SystemFileSystem.deleteRecursively(accountsFile)
         }
-        logger.debug { "Saving account list file" }
+        logger.debug { "Saving account list file $accountsFile" }
         SystemFileSystem.createDirectories(accountsFile.parent!!)
         SystemFileSystem.sink(accountsFile).buffered().use {
             json.encodeToSink(accountListData, it)

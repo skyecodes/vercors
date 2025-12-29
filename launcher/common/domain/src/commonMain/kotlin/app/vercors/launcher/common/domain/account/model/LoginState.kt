@@ -4,7 +4,7 @@ sealed interface LoginState {
     data class RequireLogin(val url: String) : LoginState
     data class Progress(val step: LoginStep) : LoginState
     data class Success(val account: Account) : LoginState
-    data class Error(val error: Exception) : LoginState
+    data class Error(val error: Throwable) : LoginState
 
     fun throwIfError() = if (this is Error) throw error else this
 }

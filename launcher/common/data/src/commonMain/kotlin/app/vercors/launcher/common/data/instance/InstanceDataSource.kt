@@ -4,10 +4,7 @@ import app.vercors.launcher.common.data.AppPath
 import app.vercors.launcher.common.data.IODispatcher
 import app.vercors.launcher.common.data.deleteRecursively
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.*
 import kotlinx.io.buffered
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
@@ -45,16 +42,21 @@ internal class InstanceRepositoryDataSource(
 
     private suspend fun loadFromDirectory(directory: Path): Pair<String, InstanceData>? = withContext(ioDispatcher) {
         val instanceFile = Path(directory, INSTANCE_FILE_NAME)
-        if (SystemFileSystem.exists(instanceFile)) {
-            if (SystemFileSystem.metadataOrNull(instanceFile)?.isRegularFile == true) {
-                logger.debug { "Loading instance file: $instanceFile" }
-                return@withContext directory.name to SystemFileSystem.source(instanceFile).buffered().use {
-                    json.decodeFromSource<InstanceData>(it)
+        try {
+            if (SystemFileSystem.exists(instanceFile)) {
+                if (SystemFileSystem.metadataOrNull(instanceFile)?.isRegularFile == true) {
+                    logger.info { "Loading instance file $instanceFile" }
+                    return@withContext directory.name to SystemFileSystem.source(instanceFile).buffered().use {
+                        json.decodeFromSource<InstanceData>(it)
+                    }
+                } else {
+                    logger.warn { "Unknown file found in instance directory $instanceFile" }
+                    SystemFileSystem.deleteRecursively(instanceFile)
                 }
-            } else {
-                logger.warn { "Unknown file found in instance directory $instanceFile" }
-                SystemFileSystem.deleteRecursively(instanceFile)
             }
+        } catch (e: Exception) {
+            currentCoroutineContext().ensureActive()
+            logger.error(e) { "Error loading instance file $instanceFile" }
         }
         null
     }
@@ -66,7 +68,7 @@ internal class InstanceRepositoryDataSource(
             logger.warn { "Illegal file found at location $instanceFile" }
             SystemFileSystem.deleteRecursively(instanceFile)
         }
-        logger.debug { "Saving instance file" }
+        logger.info { "Saving instance file $instanceFile" }
         SystemFileSystem.createDirectories(instanceDir)
         SystemFileSystem.sink(instanceFile).buffered().use {
             json.encodeToSink(instanceData, it)

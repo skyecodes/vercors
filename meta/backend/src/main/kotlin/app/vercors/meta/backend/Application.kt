@@ -1,5 +1,6 @@
 package app.vercors.meta.backend
 
+import app.vercors.meta.backend.account.accountRoutes
 import app.vercors.meta.backend.game.gameRoutes
 import app.vercors.meta.backend.project.projectRoutes
 import app.vercors.meta.lib.ApiError
@@ -73,6 +74,7 @@ fun Application.module(scope: CoroutineScope) {
     routing {
         gameRoutes()
         projectRoutes()
+        accountRoutes()
     }
 }
 

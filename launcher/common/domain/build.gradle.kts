@@ -59,5 +59,9 @@ buildConfig {
         internalVisibility = false
         topLevelConstants = true
     }
-    buildConfigField("String", "LAUNCHER_VERSION", "\"${project.version}\"")
+    buildConfigField(
+        type = "String",
+        name = "LAUNCHER_VERSION",
+        expression = "\"${project.version}\""
+    )
 }

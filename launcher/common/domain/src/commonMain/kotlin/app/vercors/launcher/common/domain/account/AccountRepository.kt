@@ -10,4 +10,5 @@ interface AccountRepository {
     suspend fun load()
     suspend fun addAccount(account: Account)
     suspend fun removeAccount(account: Account)
+    suspend fun selectAccount(account: Account)
 }

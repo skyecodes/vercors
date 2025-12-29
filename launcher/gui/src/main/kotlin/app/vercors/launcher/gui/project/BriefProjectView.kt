@@ -2,6 +2,7 @@ package app.vercors.launcher.gui.project
 
 import app.vercors.shared.domain.project.model.BriefProject
 import app.vercors.shared.domain.project.model.ProjectId
+import nl.jacobras.humanreadable.HumanReadable
 import kotlin.time.Instant
 
 data class BriefProjectView(
@@ -14,7 +15,10 @@ data class BriefProjectView(
     val lastUpdated: Instant,
     val logoUrl: String?,
     val imageUrl: String?
-)
+) {
+    val downloadsReadable: String = HumanReadable.abbreviation(downloads, decimals = if (downloads > 1000) 1 else 0)
+    val lastUpdatedReadable: String = HumanReadable.timeAgo(lastUpdated)
+}
 
 fun BriefProject.toView(): BriefProjectView = BriefProjectView(
     id = id,

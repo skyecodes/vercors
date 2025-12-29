@@ -13,7 +13,7 @@ class LogoutCommand : VercorsCommandBase("logout") {
     override suspend fun execute() {
         val logout = koin.get<LogoutUseCase>()
         val account = logout(uuidOrUsername)
-        echo("Logged out of ${account.username} (${account.uuid.toHexString()})")
+        echo("Logged out of ${account.username} (${account.id.toHexString()})")
     }
 
     override fun help(context: Context): String = "Log out of your Microsoft account"

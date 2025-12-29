@@ -83,8 +83,13 @@ buildConfig {
         topLevelConstants = true
     }
     buildConfigField(
-        "String",
-        "MICROSOFT_CLIENT_ID",
-        "\"${properties["microsoftClientId"] ?: System.getenv("MICROSOFT_CLIENT_ID") ?: error("AUTH_CLIENT_ID not set")}\""
+        type = "String",
+        name = "MICROSOFT_CLIENT_ID",
+        expression = "\"${properties["microsoftClientId"] ?: System.getenv("MICROSOFT_CLIENT_ID") ?: error("AUTH_CLIENT_ID not set")}\""
+    )
+    buildConfigField(
+        type = "String",
+        name = "META_BASE_URL",
+        expression = "\"${properties["metaBaseUrl"] ?: System.getenv("META_BASE_URL") ?: error("META_BASE_URL not set")}\""
     )
 }

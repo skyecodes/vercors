@@ -6,7 +6,7 @@ import app.vercors.shared.domain.ResourceStateFlow
 import org.koin.core.annotation.Factory
 
 @Factory
-class GetAccountListUseCase(
+class ObserveAccountListUseCase(
     private val accountRepository: AccountRepository
 ) {
     operator fun invoke(): ResourceStateFlow<AccountList> = accountRepository.state

@@ -52,7 +52,6 @@ import coil3.compose.rememberAsyncImagePainter
 import com.composables.icons.lucide.*
 import com.composeunstyled.theme.Theme
 import kotlinx.coroutines.launch
-import nl.jacobras.humanreadable.HumanReadable
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.imageResource
 import org.jetbrains.compose.resources.stringResource
@@ -288,8 +287,7 @@ private fun NoInstanceFoundDisplay() {
             text = stringResource(Res.string.create),
             imageVector = Lucide.Plus,
             backgroundColor = Theme[colors][primary],
-            contentColor = Theme[colors][onPrimary],
-            contentPadding = NormalButtonContentPadding
+            contentColor = Theme[colors][onPrimary]
         )
     }
 }
@@ -384,11 +382,11 @@ private fun HomeProjectCard(
                 ) {
                     HomeProjectChip(
                         icon = Lucide.Download,
-                        text = HumanReadable.abbreviation(project.downloads, decimals = 1)
+                        text = project.downloadsReadable
                     )
                     HomeProjectChip(
                         icon = Lucide.Calendar,
-                        text = HumanReadable.timeAgo(project.lastUpdated)
+                        text = project.lastUpdatedReadable
                     )
                 }
             }

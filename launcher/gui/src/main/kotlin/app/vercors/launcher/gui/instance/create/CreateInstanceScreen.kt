@@ -162,8 +162,7 @@ private fun CreateCustomInstanceView(state: CreateInstanceState) {
             imageVector = Lucide.Plus,
             backgroundColor = Theme[colors][primary],
             contentColor = Theme[colors][onPrimary],
-            enabled = state.canCreateInstance,
-            contentPadding = NormalButtonContentPadding
+            enabled = state.canCreateInstance
         )
     }
 }

@@ -5,13 +5,10 @@ import app.vercors.launcher.common.data.IODispatcher
 import app.vercors.launcher.common.data.deleteRecursively
 import io.github.irgaly.kfswatch.KfsDirectoryWatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import kotlinx.io.buffered
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
@@ -41,10 +38,10 @@ abstract class AbstractConfigurationDataSource<T : Any>(
     }
 
     suspend fun loadFromFile(): T? = withContext(ioDispatcher) {
-        runCatching {
+        try {
             if (SystemFileSystem.exists(configFile)) {
                 if (SystemFileSystem.metadataOrNull(configFile)?.isRegularFile == true) {
-                    logger.debug { "Loading configuration file $configFile" }
+                    logger.info { "Loading configuration file $configFile" }
                     return@withContext SystemFileSystem.source(configFile).buffered().use {
                         json.decodeFromSource(serializer, it)
                     }
@@ -53,6 +50,9 @@ abstract class AbstractConfigurationDataSource<T : Any>(
                     SystemFileSystem.deleteRecursively(configFile)
                 }
             }
+        } catch (e: Exception) {
+            currentCoroutineContext().ensureActive()
+            logger.error(e) { "Error loading configuration file $configFile" }
         }
         return@withContext null
     }
@@ -62,7 +62,7 @@ abstract class AbstractConfigurationDataSource<T : Any>(
             logger.warn { "Illegal file found at location $configFile" }
             SystemFileSystem.deleteRecursively(configFile)
         }
-        logger.debug { "Saving configuration file $configFile" }
+        logger.info { "Saving configuration file $configFile" }
         SystemFileSystem.createDirectories(configFile.parent!!)
         SystemFileSystem.sink(configFile).buffered().use {
             json.encodeToSink(serializer, commonConfigurationData, it)

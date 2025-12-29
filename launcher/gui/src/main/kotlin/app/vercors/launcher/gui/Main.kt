@@ -7,6 +7,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.*
 import app.vercors.launcher.common.data.AppPath
 import app.vercors.launcher.common.data.CommonDataModule
+import app.vercors.launcher.common.data.commonDataProperties
 import app.vercors.launcher.common.domain.CommonDomainModule
 import app.vercors.launcher.gui.account.AccountModule
 import app.vercors.launcher.gui.config.ConfigurationModule
@@ -40,7 +41,10 @@ import java.awt.Dimension
 @OptIn(ExperimentalComposeUiApi::class)
 fun main() {
     val coroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-    val koinApplication = GUIApplication.startKoin { modules(AppModule, module { single { coroutineScope } }) }
+    val koinApplication = GUIApplication.startKoin {
+        commonDataProperties()
+        modules(AppModule, module { single { coroutineScope } })
+    }
     initializeLauncher(koinApplication.koin)
 
     application(exitProcessOnExit = false) {

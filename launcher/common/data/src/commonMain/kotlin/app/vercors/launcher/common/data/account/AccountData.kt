@@ -2,26 +2,33 @@ package app.vercors.launcher.common.data.account
 
 import app.vercors.launcher.common.domain.account.model.Account
 import kotlinx.serialization.Serializable
+import kotlin.time.Instant
 import kotlin.uuid.Uuid
 
 @Serializable
 internal data class AccountData(
-    val uuid: Uuid,
+    val id: Uuid,
     val username: String,
     val accessToken: String,
-    val refreshToken: String
+    val refreshToken: String,
+    val dateAdded: Instant,
+    val dateSelected: Instant
 )
 
 internal fun AccountData.toDomain(): Account = Account(
-    uuid = uuid,
+    id = id,
     username = username,
     accessToken = accessToken,
-    refreshToken = refreshToken
+    refreshToken = refreshToken,
+    dateAdded = dateAdded,
+    dateSelected = dateSelected
 )
 
 internal fun Account.toData(): AccountData = AccountData(
-    uuid = uuid,
+    id = id,
     username = username,
     accessToken = accessToken,
-    refreshToken = refreshToken
+    refreshToken = refreshToken,
+    dateAdded = dateAdded,
+    dateSelected = dateSelected
 )

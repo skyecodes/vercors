@@ -18,11 +18,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.io.files.Path
 import kotlinx.serialization.json.Json
+import org.koin.core.KoinApplication
 import org.koin.core.annotation.*
 
 @Module
 @ComponentScan
-@Configuration
 class CommonDataModule
 
 @Qualifier
@@ -86,10 +86,13 @@ internal fun provideHttpClient(
 }
 
 @Single
-internal fun provideKtorfit(httpClient: HttpClient): Ktorfit = Ktorfit.Builder()
+internal fun provideKtorfit(
+    httpClient: HttpClient,
+    @Property("META_BASE_URL") metaBaseUrl: String
+): Ktorfit = Ktorfit.Builder()
     .httpClient(httpClient)
     .converterFactories(ApiResponseConverter())
-    .baseUrl("http://localhost:8080/")
+    .baseUrl(metaBaseUrl)
     .build()
 
 @Qualifier
@@ -98,3 +101,12 @@ annotation class Sha256
 @Single
 @Sha256
 internal fun provideSha256Hasher(): Hasher = CryptographyProvider.Default.get(SHA256).hasher()
+
+fun KoinApplication.commonDataProperties() {
+    properties(
+        mapOf(
+            "MICROSOFT_CLIENT_ID" to MICROSOFT_CLIENT_ID,
+            "META_BASE_URL" to META_BASE_URL
+        )
+    )
+}

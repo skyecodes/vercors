@@ -1,6 +1,5 @@
 package app.vercors.shared.domain
 
-import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
@@ -8,8 +7,6 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-
-private val logger = KotlinLogging.logger {}
 
 typealias MutableResourceStateFlow<T> = MutableStateFlow<Resource<T>>
 
@@ -37,7 +34,6 @@ suspend fun <T> MutableResourceStateFlow<T>.load(
     mutex.withLock {
         emit(Resource.Loading)
         supervisorScope {
-            logger.debug { "Loading state" }
             val result = try {
                 val data = loader()
                 currentCoroutineContext().ensureActive()
@@ -51,7 +47,6 @@ suspend fun <T> MutableResourceStateFlow<T>.load(
                 }
             }
             emit(Resource.Loaded(result))
-            logger.debug { "State loaded" }
         }
     }
 }

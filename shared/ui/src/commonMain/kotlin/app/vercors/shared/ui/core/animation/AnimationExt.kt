@@ -14,6 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.derivedStateOf
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
@@ -85,6 +86,19 @@ fun InfiniteTransition.appAnimateFloat(
 ) else derivedStateOf { targetValue }
 
 @Composable
+fun AppAnimatedVisibility(
+    visible: Boolean,
+    modifier: Modifier = Modifier,
+    enter: EnterTransition = fadeIn() + expandIn(),
+    exit: ExitTransition = shrinkOut() + fadeOut(),
+    label: String = "AnimatedVisibility",
+    content: @Composable() () -> Unit,
+) {
+    if (shouldAnimate()) AnimatedVisibility(visible, modifier, enter, exit, label) { content() }
+    else if (visible) content()
+}
+
+@Composable
 fun RowScope.AppAnimatedVisibility(
     visible: Boolean,
     modifier: Modifier = Modifier,
@@ -108,6 +122,31 @@ fun ColumnScope.AppAnimatedVisibility(
 ) {
     if (shouldAnimate()) AnimatedVisibility(visible, modifier, enter, exit, label) { content() }
     else if (visible) content()
+}
+
+@Composable
+fun <S> AppAnimatedContent(
+    targetState: S,
+    modifier: Modifier = Modifier,
+    transitionSpec: AnimatedContentTransitionScope<S>.() -> ContentTransform = {
+        (fadeIn(animationSpec = tween(220, delayMillis = 90)) +
+                scaleIn(initialScale = 0.92f, animationSpec = tween(220, delayMillis = 90)))
+            .togetherWith(fadeOut(animationSpec = tween(90)))
+    },
+    contentAlignment: Alignment = Alignment.TopStart,
+    label: String = "AnimatedContent",
+    contentKey: (targetState: S) -> Any? = { it },
+    content: @Composable() (targetState: S) -> Unit,
+) {
+    if (shouldAnimate()) AnimatedContent(
+        targetState,
+        modifier,
+        transitionSpec,
+        contentAlignment,
+        label,
+        contentKey
+    ) { content(targetState) }
+    else content(targetState)
 }
 
 @Composable

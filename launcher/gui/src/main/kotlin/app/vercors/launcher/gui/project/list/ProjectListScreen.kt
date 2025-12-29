@@ -51,7 +51,6 @@ import com.composables.icons.fontawesome.FontAwesome
 import com.composables.icons.fontawesome.brands.Twitch
 import com.composables.icons.lucide.*
 import com.composeunstyled.theme.Theme
-import nl.jacobras.humanreadable.HumanReadable
 import org.jetbrains.compose.resources.decodeToSvgPainter
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.resources.vectorResource
@@ -211,7 +210,8 @@ private fun ProjectLoaderFilter(selectedLoaders: List<ModLoaderType>) {
                     imageVector = loader.icon,
                     text = loader.name,
                     backgroundColor = Theme[colors][surface2],
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    contentPadding = ThinButtonContentPadding
                 )
             }
         }
@@ -226,7 +226,8 @@ private fun ProjectLoaderFilter(selectedLoaders: List<ModLoaderType>) {
                     text = it.name,
                     backgroundColor = if (it in selectedLoaders) Theme[colors][surface2] else Color.Unspecified,
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    contentPadding = ThinButtonContentPadding
                 )
             }
         }
@@ -246,7 +247,8 @@ private fun ProjectVersionFilter(state: ProjectListState) {
                     imageVector = null,
                     backgroundColor = Theme[colors][surface2],
                     text = it.id,
-                    horizontalArrangement = Arrangement.aligned(Alignment.Start)
+                    horizontalArrangement = Arrangement.aligned(Alignment.Start),
+                    contentPadding = ThinButtonContentPadding
                 )
             }
         }
@@ -279,7 +281,8 @@ private fun ProjectVersionFilter(state: ProjectListState) {
                         backgroundColor = if (version in state.filter.selectedGameVersions) Theme[colors][surface2] else Color.Unspecified,
                         modifier = Modifier.fillMaxWidth(),
                         text = version.id,
-                        horizontalArrangement = Arrangement.aligned(Alignment.Start)
+                        horizontalArrangement = Arrangement.aligned(Alignment.Start),
+                        contentPadding = ThinButtonContentPadding
                     )
                 }
             }
@@ -316,7 +319,8 @@ private fun ProjectCategoryFilter(
                     painter = it.iconView?.painter,
                     text = translateCategory(it),
                     backgroundColor = Theme[colors][surface2],
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    contentPadding = ThinButtonContentPadding
                 )
             }
         }
@@ -328,7 +332,8 @@ private fun ProjectCategoryFilter(
                 text = translateCategory(it),
                 backgroundColor = if (it in selectedCategories) Theme[colors][surface2] else Color.Unspecified,
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                contentPadding = ThinButtonContentPadding
             )
         }
     }
@@ -459,6 +464,7 @@ private fun ProjectListPagination(filter: ProjectListFilter, totalElements: Int?
                         imageVector = Lucide.X,
                         text = loader.name,
                         backgroundColor = Theme[colors][surface2],
+                        contentPadding = ThinButtonContentPadding
                     )
                 }
                 filter.selectedGameVersions.forEach { version ->
@@ -467,6 +473,7 @@ private fun ProjectListPagination(filter: ProjectListFilter, totalElements: Int?
                         imageVector = Lucide.X,
                         text = version.id,
                         backgroundColor = Theme[colors][surface2],
+                        contentPadding = ThinButtonContentPadding
                     )
                 }
                 filter.selectedCategories.forEach { category ->
@@ -475,6 +482,7 @@ private fun ProjectListPagination(filter: ProjectListFilter, totalElements: Int?
                         imageVector = Lucide.X,
                         text = translateCategory(category),
                         backgroundColor = Theme[colors][surface2],
+                        contentPadding = ThinButtonContentPadding
                     )
                 }
             }
@@ -492,7 +500,7 @@ private fun ColumnScope.ProjectList(projects: Resource<List<BriefProjectView>>) 
     val listState = rememberLazyListState()
 
     LaunchedEffect(projects) {
-        listState.scrollToItem(0)
+        listState.animateScrollToItem(0)
     }
 
     LazyColumn(
@@ -514,7 +522,7 @@ private fun ColumnScope.ProjectList(projects: Resource<List<BriefProjectView>>) 
             }
 
             Resource.Loading -> repeat(20) {
-                item {
+                item(it) {
                     ProjectListItemCard(null, it == 19)
                 }
             }
@@ -525,7 +533,6 @@ private fun ColumnScope.ProjectList(projects: Resource<List<BriefProjectView>>) 
 }
 
 @Composable
-context(store: IntentReceiver<ProjectListIntent>)
 fun NoProjectsFound() {
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically),
@@ -604,10 +611,7 @@ private fun LazyItemScope.ProjectListItemCard(
                         modifier = Modifier.size(16.dp)
                     )
                     AppText(
-                        text = stringResource(
-                            Res.string.downloadCount,
-                            HumanReadable.abbreviation(project.downloads, decimals = 1)
-                        ),
+                        text = stringResource(Res.string.downloadCount, project.downloadsReadable),
                         singleLine = true,
                         overflow = TextOverflow.Ellipsis,
                     )
@@ -624,7 +628,7 @@ private fun LazyItemScope.ProjectListItemCard(
                         modifier = Modifier.size(12.dp)
                     )
                     AppText(
-                        text = stringResource(Res.string.lastUpdated, HumanReadable.timeAgo(project.lastUpdated)),
+                        text = stringResource(Res.string.lastUpdated, project.lastUpdatedReadable),
                         fontSize = 12.sp,
                         singleLine = true,
                         overflow = TextOverflow.Ellipsis,
