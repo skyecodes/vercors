@@ -10,4 +10,4 @@ enum class CurseForgeHashAlgo(override val value: Int) : IntEnumerable {
     Md5(2)
 }
 
-private class CurseForgeHashAlgoSerializer : IntEnumerableSerializer<CurseForgeHashAlgo>(CurseForgeHashAlgo.entries)
+internal class CurseForgeHashAlgoSerializer : IntEnumerableSerializer<CurseForgeHashAlgo>(CurseForgeHashAlgo.entries)

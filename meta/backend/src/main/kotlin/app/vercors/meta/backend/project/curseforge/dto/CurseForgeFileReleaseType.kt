@@ -11,5 +11,5 @@ enum class CurseForgeFileReleaseType(override val value: Int) : IntEnumerable {
     Alpha(3)
 }
 
-private class CurseForgeFileReleaseTypeSerializer :
+internal class CurseForgeFileReleaseTypeSerializer :
     IntEnumerableSerializer<CurseForgeFileReleaseType>(CurseForgeFileReleaseType.entries)

@@ -2,11 +2,13 @@ package app.vercors.launcher.gui.instance.details
 
 import app.vercors.launcher.common.domain.instance.model.Instance
 import app.vercors.launcher.common.domain.instance.model.InstanceId
+import app.vercors.launcher.common.domain.instance.usecase.LaunchInstanceUseCase
 import app.vercors.launcher.common.domain.instance.usecase.ObserveInstanceListUseCase
 import app.vercors.shared.domain.Resource
 import app.vercors.shared.domain.map
 import app.vercors.shared.ui.core.configureWithLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.map
 import pro.respawn.flowmvi.api.Container
 import pro.respawn.flowmvi.api.MVIAction
@@ -20,19 +22,21 @@ private val logger = KotlinLogging.logger {}
 
 class InstanceDetailsContainer(
     private val instanceId: InstanceId,
-    private val observeInstanceListUseCase: ObserveInstanceListUseCase
+    private val observeInstanceList: ObserveInstanceListUseCase,
+    private val launchInstance: LaunchInstanceUseCase,
 ) : Container<InstanceDetailsState, InstanceDetailsIntent, InstanceDetailsAction> {
     override val store = store(initial = InstanceDetailsState()) {
         configureWithLogger(logger)
 
         reduce { intent ->
             when (intent) {
-                else -> {}
+                InstanceDetailsIntent.LaunchInstance -> launchInstance(instanceId).collect() // TODO
+                InstanceDetailsIntent.DeleteInstance -> Unit // TODO
             }
         }
 
         whileSubscribed {
-            observeInstanceListUseCase()
+            observeInstanceList()
                 .map { instances -> instances.map { list -> list.first { it.id == instanceId }.toView() } }
                 .collect { instance ->
                     updateState { copy(instance = instance) }

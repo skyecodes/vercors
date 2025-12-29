@@ -20,5 +20,5 @@ enum class CurseForgeProjectSearchSortField(override val value: Int) : IntEnumer
     Rating(12)
 }
 
-private class CurseForgeProjectSearchSortFieldSerializer :
+internal class CurseForgeProjectSearchSortFieldSerializer :
     IntEnumerableSerializer<CurseForgeProjectSearchSortField>(CurseForgeProjectSearchSortField.entries)

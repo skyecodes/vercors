@@ -3,6 +3,7 @@ package app.vercors.launcher.cli
 import app.vercors.launcher.common.data.CommonDataModule
 import app.vercors.launcher.common.data.commonDataProperties
 import app.vercors.launcher.common.domain.CommonDomainModule
+import app.vercors.launcher.common.domain.system.SystemService
 import com.github.ajalt.clikt.command.SuspendingCliktCommand
 import com.github.ajalt.clikt.command.main
 import com.github.ajalt.clikt.core.subcommands
@@ -30,7 +31,8 @@ fun main(args: Array<String>) {
                 DeleteCommand(),
                 AccountsCommand(),
                 LoginCommand(),
-                LogoutCommand()
+                LogoutCommand(),
+                SystemCommand()
             )
             .main(args)
     }
@@ -59,4 +61,12 @@ class MainCommand(private val koin: Koin) : SuspendingCliktCommand("vercors-cli"
 @KoinApplication(modules = [CommonDomainModule::class, CommonDataModule::class])
 object CLIApplication
 
-expect fun configureLogging()
+internal expect fun configureLogging()
+
+private class SystemCommand : VercorsCommandBase("system") {
+    override suspend fun execute() {
+        koin.get<SystemService>().let {
+            echo("${it.osType} ${it.osVersion} (${it.osArch})")
+        }
+    }
+}

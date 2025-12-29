@@ -4,6 +4,8 @@ import app.vercors.meta.client.ApiResponseConverter
 import ca.gosyer.appdirs.AppDirs
 import de.jensklingenberg.ktorfit.Ktorfit
 import dev.whyoleg.cryptography.CryptographyProvider
+import dev.whyoleg.cryptography.DelicateCryptographyApi
+import dev.whyoleg.cryptography.algorithms.SHA1
 import dev.whyoleg.cryptography.algorithms.SHA256
 import dev.whyoleg.cryptography.operations.Hasher
 import io.github.irgaly.kfswatch.KfsDirectoryWatcher
@@ -72,15 +74,11 @@ internal fun provideDirectoryWatcher(
 
 @Single
 internal fun provideHttpClient(
-    json: Json,
-    @AppPath appPath: Path
+    json: Json
 ): HttpClient = HttpClient(platformHttpClientEngineFactory) {
     expectSuccess = true
     install(ContentNegotiation) {
         json(json)
-    }
-    install(HttpCache) {
-        platformHttpCache(appPath)
     }
     install(HttpRequestRetry)
 }
@@ -88,12 +86,25 @@ internal fun provideHttpClient(
 @Single
 internal fun provideKtorfit(
     httpClient: HttpClient,
+    @AppPath appPath: Path,
     @Property("META_BASE_URL") metaBaseUrl: String
 ): Ktorfit = Ktorfit.Builder()
-    .httpClient(httpClient)
+    .httpClient(httpClient.config {
+        install(HttpCache) {
+            platformHttpCache(appPath)
+        }
+    })
     .converterFactories(ApiResponseConverter())
     .baseUrl(metaBaseUrl)
     .build()
+
+@Qualifier
+annotation class Sha1
+
+@OptIn(DelicateCryptographyApi::class)
+@Single
+@Sha1
+internal fun provideSha1Hasher(): Hasher = CryptographyProvider.Default.get(SHA1).hasher()
 
 @Qualifier
 annotation class Sha256

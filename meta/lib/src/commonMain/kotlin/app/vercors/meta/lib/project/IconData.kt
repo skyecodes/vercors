@@ -19,7 +19,7 @@ value class IconSvgData(val svgString: String) : IconData
 @JvmInline
 value class IconNameData(val name: String) : IconData
 
-private class IconDataSerializer : KSerializer<IconData> {
+internal class IconDataSerializer : KSerializer<IconData> {
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("IconData") {
         element<String>("name", isOptional = true)
         element<String>("data", isOptional = true)

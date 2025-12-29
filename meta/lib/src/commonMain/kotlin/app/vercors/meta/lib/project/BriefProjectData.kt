@@ -13,6 +13,6 @@ data class BriefProjectData(
     val url: String,
     val downloads: Long,
     val lastUpdated: Instant,
-    val logoUrl: String?,
-    val imageUrl: String?
+    val logoUrl: String? = null,
+    val imageUrl: String? = null
 )

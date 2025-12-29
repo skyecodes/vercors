@@ -32,8 +32,8 @@ data class MojangVersionInfo(
     data class AssetIndex(
         val id: String,
         override val sha1: String,
-        override val size: Int,
-        val totalSize: Int,
+        override val size: Long,
+        val totalSize: Long,
         override val url: String
     ) : MojangFile
 
@@ -51,7 +51,7 @@ data class MojangVersionInfo(
         @Serializable
         data class Download(
             override val sha1: String,
-            override val size: Int,
+            override val size: Long,
             override val url: String
         ) : MojangFile
     }
@@ -79,7 +79,7 @@ data class MojangVersionInfo(
             data class Artifact(
                 val path: String,
                 override val sha1: String,
-                override val size: Int,
+                override val size: Long,
                 override val url: String
             ) : MojangFile
         }
@@ -110,7 +110,7 @@ data class MojangVersionInfo(
         data class File(
             val id: String,
             override val sha1: String,
-            override val size: Int,
+            override val size: Long,
             override val url: String
         ) : MojangFile
     }

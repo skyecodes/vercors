@@ -1,4 +1,4 @@
-package app.vercors.launcher.common.data.util
+package app.vercors.launcher.common.data.system
 
 import org.koin.core.annotation.Factory
 
@@ -7,7 +7,7 @@ class CopyToClipboardUseCase {
     operator fun invoke(text: String): CopyToClipboardResult = copyToClipboard(text)
 }
 
-expect fun copyToClipboard(text: String): CopyToClipboardResult
+internal expect fun copyToClipboard(text: String): CopyToClipboardResult
 
 sealed interface CopyToClipboardResult {
     data object Unsupported : CopyToClipboardResult

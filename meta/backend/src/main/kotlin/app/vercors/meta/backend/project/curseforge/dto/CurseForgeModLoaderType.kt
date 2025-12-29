@@ -15,5 +15,5 @@ enum class CurseForgeModLoaderType(override val value: Int) : IntEnumerable {
     NeoForge(6)
 }
 
-private class CurseForgeModLoaderTypeSerializer :
+internal class CurseForgeModLoaderTypeSerializer :
     IntEnumerableSerializer<CurseForgeModLoaderType>(CurseForgeModLoaderType.entries)

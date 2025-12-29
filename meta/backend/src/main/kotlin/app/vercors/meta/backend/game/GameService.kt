@@ -1,6 +1,7 @@
 package app.vercors.meta.backend.game
 
 import app.vercors.meta.backend.game.mojang.MojangApi
+import app.vercors.meta.backend.game.mojang.dto.MojangAssetIndex
 import app.vercors.meta.backend.game.mojang.dto.MojangVersionInfo
 import app.vercors.meta.lib.game.GameVersionDetailsData
 import app.vercors.meta.lib.game.GameVersionListData
@@ -26,6 +27,8 @@ class GameService(
     suspend fun getVersionDetails(id: String): GameVersionDetailsData {
         if (urlCache == null) getVersionList()
         val url = urlCache!![id] ?: throw NotFoundException("Version $id not found")
-        return httpClient.get(url).body<MojangVersionInfo>().convert()
+        val info = httpClient.get(url).body<MojangVersionInfo>()
+        val assets = httpClient.get(info.assetIndex.url).body<MojangAssetIndex>()
+        return info.convert(assets)
     }
 }

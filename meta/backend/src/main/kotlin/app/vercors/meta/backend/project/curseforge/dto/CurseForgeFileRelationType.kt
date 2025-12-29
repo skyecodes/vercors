@@ -14,5 +14,5 @@ enum class CurseForgeFileRelationType(override val value: Int) : IntEnumerable {
     Include(6)
 }
 
-private class CurseForgeFileRelationTypeSerializer :
+internal class CurseForgeFileRelationTypeSerializer :
     IntEnumerableSerializer<CurseForgeFileRelationType>(CurseForgeFileRelationType.entries)

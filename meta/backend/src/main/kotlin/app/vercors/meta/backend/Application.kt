@@ -21,6 +21,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.serialization.json.Json
 import org.koin.dsl.module
 import org.koin.environmentProperties
 import org.koin.ksp.generated.module
@@ -47,7 +48,9 @@ fun Application.module(scope: CoroutineScope) {
     }
 
     install(ContentNegotiation) {
-        json()
+        json(Json {
+            explicitNulls = false
+        })
     }
 
     install(SimpleCache) {

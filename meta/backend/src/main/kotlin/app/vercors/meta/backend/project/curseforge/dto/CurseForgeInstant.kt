@@ -11,7 +11,7 @@ import kotlin.time.Instant
 
 typealias CurseForgeInstant = @Serializable(CurseforgeInstantSerializer::class) Instant
 
-private class CurseforgeInstantSerializer : KSerializer<CurseForgeInstant> {
+internal class CurseforgeInstantSerializer : KSerializer<CurseForgeInstant> {
     override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("CurseforgeInstant", PrimitiveKind.STRING)
 
     override fun deserialize(decoder: Decoder): CurseForgeInstant = Instant.parse(decoder.decodeString())

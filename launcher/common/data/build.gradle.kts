@@ -30,6 +30,7 @@ kotlin {
             implementation(libs.ktorfit.lib)
             implementation(libs.kfswatch)
             implementation(libs.appdirs)
+            implementation(libs.kzip)
             implementation(project.dependencies.platform(libs.koin.bom))
             implementation(libs.koin.core)
             implementation(libs.koin.annotations)
@@ -44,6 +45,7 @@ kotlin {
         }
         jvmMain.dependencies {
             implementation(libs.ktor.client.cio)
+            implementation(libs.oshi)
         }
         jvmTest.dependencies {
             implementation(libs.mockk)

@@ -11,7 +11,7 @@ import java.time.Instant
 
 typealias MojangInstant = @Serializable(MojangInstantSerializer::class) Instant
 
-private class MojangInstantSerializer : KSerializer<MojangInstant> {
+internal class MojangInstantSerializer : KSerializer<MojangInstant> {
     override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("MojangInstant", PrimitiveKind.STRING)
 
     override fun deserialize(decoder: Decoder): MojangInstant = Instant.parse(decoder.decodeString())

@@ -1,7 +1,9 @@
 package app.vercors.launcher.common.data.instance
 
+import app.vercors.launcher.common.domain.instance.InstanceNotFoundException
 import app.vercors.launcher.common.domain.instance.InstanceRepository
 import app.vercors.launcher.common.domain.instance.model.Instance
+import app.vercors.launcher.common.domain.instance.model.InstanceId
 import app.vercors.shared.domain.*
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
@@ -45,4 +47,7 @@ internal class InstanceRepositoryImpl(
         dataSource.delete(instance.id)
         _instances.removeFromList(instance) { a, b -> a.id == b.id }
     }
+
+    override suspend fun findInstance(id: InstanceId): Instance =
+        _instances.awaitValueOrThrow().find { it.id == id } ?: throw InstanceNotFoundException(id)
 }

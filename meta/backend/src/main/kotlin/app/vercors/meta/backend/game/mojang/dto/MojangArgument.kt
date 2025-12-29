@@ -8,21 +8,21 @@ import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.*
 
 @Serializable(ArgumentSerializer::class)
-sealed class MojangArgument
+sealed interface MojangArgument
 
 @Serializable
 data class BasicArgument(
     val value: String
-) : MojangArgument()
+) : MojangArgument
 
 @Serializable
 data class ConditionalArgument(
     val rules: List<MojangVersionInfo.Rule>,
     val value: List<String>
-) : MojangArgument()
+) : MojangArgument
 
-private class ArgumentSerializer : KSerializer<MojangArgument> {
-    override val descriptor = buildClassSerialDescriptor("Argument")
+internal class ArgumentSerializer : KSerializer<MojangArgument> {
+    override val descriptor = buildClassSerialDescriptor("MojangArgument")
 
     override fun deserialize(decoder: Decoder): MojangArgument {
         val jsonDecoder = decoder as JsonDecoder

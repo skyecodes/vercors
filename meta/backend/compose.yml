@@ -1,5 +1,5 @@
 services:
-  backend:
+  meta-backend:
     image: vercors/meta-backend
     ports:
       - "8080:8080"

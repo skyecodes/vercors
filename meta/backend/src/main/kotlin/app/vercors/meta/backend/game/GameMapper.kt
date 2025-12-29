@@ -25,11 +25,11 @@ private fun MojangReleaseType.convert(): GameVersionTypeData = when (this) {
     MojangReleaseType.Alpha -> GameVersionTypeData.Alpha
 }
 
-internal fun MojangVersionInfo.convert(): GameVersionDetailsData = GameVersionDetailsData(
+internal fun MojangVersionInfo.convert(assetIndexData: MojangAssetIndex): GameVersionDetailsData =
+    GameVersionDetailsData(
     id = id,
     gameArgs = arguments?.game?.map { it.convert() },
     jvmArgs = arguments?.jvm?.map { it.convert() },
-    assetIndex = assetIndex.convert(),
     clientDownload = downloads.client.convert(),
     serverDownload = downloads.server?.convert(),
     javaVersion = javaVersion?.convert(),
@@ -38,7 +38,9 @@ internal fun MojangVersionInfo.convert(): GameVersionDetailsData = GameVersionDe
     mainClass = mainClass,
     minimumLauncherVersion = minimumLauncherVersion,
     releaseTime = releaseTime.toKotlinInstant(),
-    type = type.convert()
+        type = type.convert(),
+        assetsId = assets,
+        assets = assetIndexData.objects.map { it.value.convert() }
 )
 
 private fun MojangVersionInfo.Logging.File.convert(): GameVersionDetailsData.Logging.File =
@@ -63,6 +65,9 @@ private fun MojangVersionInfo.Library.convert(): GameVersionDetailsData.Library 
     GameVersionDetailsData.Library(
         name = name,
         artifact = downloads.artifact?.convert(),
+        classifiers = downloads.classifiers?.mapValues { (_, value) -> value.convert() },
+        natives = natives,
+        extractExclude = extract?.exclude,
         rules = rules?.map { it.convert() }
     )
 
@@ -87,19 +92,10 @@ private fun MojangVersionInfo.Downloads.Download.convert(): GameVersionDetailsDa
     url = url
 )
 
-private fun MojangVersionInfo.AssetIndex.convert(): GameVersionDetailsData.AssetIndex =
-    GameVersionDetailsData.AssetIndex(
-    id = id,
-    sha1 = sha1,
-    size = size,
-    totalSize = totalSize,
-    url = url
-)
-
 private fun MojangArgument.convert(): GameVersionDetailsData.Argument =
     when (this) {
-        is BasicArgument -> GameVersionDetailsData.BasicArgument(value)
-        is ConditionalArgument -> GameVersionDetailsData.ConditionalArgument(rules.map { it.convert() }, value)
+        is BasicArgument -> GameVersionDetailsData.Argument.Basic(value)
+        is ConditionalArgument -> GameVersionDetailsData.Argument.Conditional(rules.map { it.convert() }, value)
     }
 
 private fun MojangVersionInfo.Rule.convert(): GameVersionDetailsData.Rule =
@@ -119,3 +115,8 @@ private fun MojangVersionInfo.Rule.Action.convert(): GameVersionDetailsData.Rule
     MojangVersionInfo.Rule.Action.Allow -> GameVersionDetailsData.Rule.Action.Allow
     MojangVersionInfo.Rule.Action.Disallow -> GameVersionDetailsData.Rule.Action.Disallow
 }
+
+private fun MojangAssetIndex.Asset.convert(): GameVersionDetailsData.Asset = GameVersionDetailsData.Asset(
+    hash = hash,
+    size = size
+)

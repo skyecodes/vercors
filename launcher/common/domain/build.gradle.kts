@@ -61,7 +61,12 @@ buildConfig {
     }
     buildConfigField(
         type = "String",
+        name = "LAUNCHER_NAME",
+        expression = """"vercors""""
+    )
+    buildConfigField(
+        type = "String",
         name = "LAUNCHER_VERSION",
-        expression = "\"${project.version}\""
+        expression = """"${project.version}""""
     )
 }

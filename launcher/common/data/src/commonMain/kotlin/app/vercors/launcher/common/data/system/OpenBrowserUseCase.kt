@@ -1,4 +1,4 @@
-package app.vercors.launcher.common.data.util
+package app.vercors.launcher.common.data.system
 
 import app.vercors.launcher.common.data.IODispatcher
 import kotlinx.coroutines.CoroutineDispatcher
@@ -17,4 +17,4 @@ sealed interface OpenBrowserResult {
     data class Failure(val exception: Exception) : OpenBrowserResult
 }
 
-expect suspend fun openUrlInBrowser(url: String, ioDispatcher: CoroutineDispatcher): OpenBrowserResult
+internal expect suspend fun openUrlInBrowser(url: String, ioDispatcher: CoroutineDispatcher): OpenBrowserResult

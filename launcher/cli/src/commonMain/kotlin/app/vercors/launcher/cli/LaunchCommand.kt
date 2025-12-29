@@ -12,7 +12,8 @@ class LaunchCommand : VercorsCommandBase("launch") {
 
     override suspend fun execute() {
         val launchInstance = koin.get<LaunchInstanceUseCase>()
-        launchInstance(id)
+        launchInstance(id).collect {
+        }
     }
 
     override fun help(context: Context): String = "Launch an instance"

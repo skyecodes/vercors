@@ -2,7 +2,6 @@ package app.vercors.meta.lib.game
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlin.jvm.JvmInline
 import kotlin.time.Instant
 
 @Serializable
@@ -13,23 +12,23 @@ data class GameVersionDetailsData(
     val minimumLauncherVersion: Int,
     val clientDownload: Download,
     val serverDownload: Download?,
-    val assetIndex: AssetIndex,
     val libraries: List<Library>,
     val javaVersion: JavaVersion?,
     val gameArgs: List<Argument>?,
     val jvmArgs: List<Argument>?,
     val clientLogging: Logging?,
     val mainClass: String,
+    val assetsId: String,
+    val assets: List<Asset>
 ) {
     @Serializable
-    sealed interface Argument
+    sealed interface Argument {
+        @Serializable
+        data class Basic(val value: String) : Argument
 
-    @JvmInline
-    @Serializable
-    value class BasicArgument(val value: String) : Argument
-
-    @Serializable
-    data class ConditionalArgument(val rules: List<Rule>, val value: List<String>) : Argument
+        @Serializable
+        data class Conditional(val rules: List<Rule>, val value: List<String>) : Argument
+    }
 
     @Serializable
     data class Rule(
@@ -55,18 +54,9 @@ data class GameVersionDetailsData(
     }
 
     @Serializable
-    data class AssetIndex(
-        val id: String,
-        val sha1: String,
-        val size: Int,
-        val totalSize: Int,
-        val url: String
-    )
-
-    @Serializable
     data class Download(
         val sha1: String,
-        val size: Int,
+        val size: Long,
         val url: String
     )
 
@@ -80,13 +70,16 @@ data class GameVersionDetailsData(
     data class Library(
         val name: String,
         val artifact: Artifact? = null,
+        val classifiers: Map<String, Artifact>? = null,
+        val natives: Map<String, String>? = null,
+        val extractExclude: List<String>? = null,
         val rules: List<Rule>? = null
     ) {
         @Serializable
         data class Artifact(
             val path: String,
             val sha1: String,
-            val size: Int,
+            val size: Long,
             val url: String
         )
     }
@@ -107,8 +100,14 @@ data class GameVersionDetailsData(
         data class File(
             val id: String,
             val sha1: String,
-            val size: Int,
+            val size: Long,
             val url: String
         )
     }
+
+    @Serializable
+    data class Asset(
+        val hash: String,
+        val size: Long
+    )
 }

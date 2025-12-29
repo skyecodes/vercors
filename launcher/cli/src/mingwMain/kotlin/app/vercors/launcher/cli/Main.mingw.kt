@@ -4,7 +4,7 @@ import io.github.oshai.kotlinlogging.KotlinLoggingConfiguration
 import io.github.oshai.kotlinlogging.Level
 import platform.posix.putenv
 
-actual fun configureLogging() {
+internal actual fun configureLogging() {
     KotlinLoggingConfiguration.logLevel = Level.ERROR
     putenv("KTOR_LOG_LEVEL=ERROR")
 }

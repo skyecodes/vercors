@@ -1,8 +1,8 @@
 package app.vercors.launcher.gui.account
 
 import androidx.compose.runtime.Immutable
-import app.vercors.launcher.common.data.util.CopyToClipboardUseCase
-import app.vercors.launcher.common.data.util.OpenBrowserUseCase
+import app.vercors.launcher.common.data.system.CopyToClipboardUseCase
+import app.vercors.launcher.common.data.system.OpenBrowserUseCase
 import app.vercors.launcher.common.domain.account.model.AccountId
 import app.vercors.launcher.common.domain.account.model.AccountSkin
 import app.vercors.launcher.common.domain.account.model.LoginState

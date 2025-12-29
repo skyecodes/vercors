@@ -18,5 +18,5 @@ enum class CurseForgeProjectStatus(override val value: Int) : IntEnumerable {
     UnderReview(10)
 }
 
-private class CurseForgeModStatusSerializer :
+internal class CurseForgeModStatusSerializer :
     IntEnumerableSerializer<CurseForgeProjectStatus>(CurseForgeProjectStatus.entries)

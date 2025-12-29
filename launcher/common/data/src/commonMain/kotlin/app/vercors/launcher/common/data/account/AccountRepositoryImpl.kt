@@ -1,12 +1,13 @@
 package app.vercors.launcher.common.data.account
 
+import app.vercors.launcher.common.domain.account.AccountNotFoundException
 import app.vercors.launcher.common.domain.account.AccountRepository
 import app.vercors.launcher.common.domain.account.model.Account
+import app.vercors.launcher.common.domain.account.model.AccountId
 import app.vercors.launcher.common.domain.account.model.AccountList
 import app.vercors.shared.domain.*
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -25,7 +26,7 @@ internal class AccountRepositoryImpl(
         coroutineScope = coroutineScope,
         onStart = {
             coroutineScope.launch {
-                dataSource.updates.filterNotNull().collect { data ->
+                dataSource.updates.collect { data ->
                     _state.update { Resource.Success(data.toDomain()) }
                 }
             }
@@ -79,4 +80,10 @@ internal class AccountRepositoryImpl(
                 ).toData())
         }
     }
+
+    override suspend fun findAccount(id: AccountId): Account =
+        state.awaitValueOrThrow().accounts.find { it.id == id } ?: throw AccountNotFoundException(id)
+
+    override suspend fun getSelectedAccount(): Account? =
+        state.awaitValueOrThrow().let { it.accounts.firstOrNull { acc -> acc.id == it.selected } }
 }

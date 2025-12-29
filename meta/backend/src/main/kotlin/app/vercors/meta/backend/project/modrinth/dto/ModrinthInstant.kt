@@ -11,7 +11,7 @@ import kotlin.time.Instant
 
 typealias ModrinthInstant = @Serializable(ModrinthInstantSerializer::class) Instant
 
-private class ModrinthInstantSerializer : KSerializer<ModrinthInstant> {
+internal class ModrinthInstantSerializer : KSerializer<ModrinthInstant> {
     override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ModrinthInstant", PrimitiveKind.STRING)
 
     override fun deserialize(decoder: Decoder): ModrinthInstant = Instant.parse(decoder.decodeString())

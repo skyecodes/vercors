@@ -5,10 +5,13 @@ import app.vercors.launcher.common.data.IODispatcher
 import app.vercors.launcher.common.data.deleteRecursively
 import io.github.irgaly.kfswatch.KfsDirectoryWatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.mapNotNull
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.io.buffered
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
@@ -30,8 +33,8 @@ internal class AccountDataSource(
     private val watcher: KfsDirectoryWatcher
 ) {
     internal val accountsFile = Path(appPath, ACCOUNT_LIST_FILE_NAME)
-    val updates: Flow<AccountListData?> =
-        watcher.onEventFlow.filter { it.path == ACCOUNT_LIST_FILE_NAME }.map { loadFromFile() }
+    val updates: Flow<AccountListData> =
+        watcher.onEventFlow.filter { it.path == ACCOUNT_LIST_FILE_NAME }.mapNotNull { loadFromFile() }
 
     init {
         coroutineScope.launch {
@@ -40,7 +43,7 @@ internal class AccountDataSource(
     }
 
     suspend fun loadFromFile(): AccountListData? = withContext(ioDispatcher) {
-        try {
+        runCatching {
             if (SystemFileSystem.exists(accountsFile)) {
                 if (SystemFileSystem.metadataOrNull(accountsFile)?.isRegularFile == true) {
                     logger.debug { "Loading account list file $accountsFile" }
@@ -52,10 +55,7 @@ internal class AccountDataSource(
                     SystemFileSystem.deleteRecursively(accountsFile)
                 }
             }
-        } catch (e: Exception) {
-            currentCoroutineContext().ensureActive()
-            logger.error(e) { "Error loading account list file $accountsFile" }
-        }
+        }.onFailure { logger.error(it) { "Error loading account list file $accountsFile" } }
         return@withContext null
     }
 

@@ -23,5 +23,5 @@ enum class CurseForgeFileStatus(override val value: Int) : IntEnumerable {
     FailedPublishing(15)
 }
 
-private class CurseForgeFileStatusSerializer :
+internal class CurseForgeFileStatusSerializer :
     IntEnumerableSerializer<CurseForgeFileStatus>(CurseForgeFileStatus.entries)

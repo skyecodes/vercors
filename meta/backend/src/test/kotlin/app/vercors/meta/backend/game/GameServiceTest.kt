@@ -8,7 +8,6 @@ import io.ktor.client.plugins.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
 import io.ktor.serialization.kotlinx.json.*
-import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -23,7 +22,6 @@ import kotlinx.serialization.json.io.encodeToSink
 import kotlin.test.Test
 
 class GameServiceTest {
-    @OptIn(DelicateCoroutinesApi::class)
     @Test
     fun extractAllVersions() = runTest {
         val httpClient = HttpClient {
@@ -62,7 +60,7 @@ class GameServiceTest {
                         version.logging?.client?.argument
             }
             .distinct().filterNotNull().filter { '$' in it }
-        val regex = Regex("\\$\\{(.*?)\\}")
+        val regex = Regex("\\$\\{(.*?)}")
         strings.flatMap { regex.findAll(it).flatMap { it.groupValues.drop(1) } }.distinct().sorted()
             .forEach { println(it) }
     }
@@ -84,4 +82,51 @@ class GameServiceTest {
             is ConditionalArgument -> arg.value
         } as List<String?>
     } ?: emptyList()
+
+    @Test
+    fun extractRules() = runTest {
+        val allVersionData: List<MojangVersionInfo> =
+            SystemFileSystem.source(Path("all_versions.json")).buffered().use { Json.decodeFromSource(it) }
+        allVersionData.flatMap {
+            it.libraries.mapNotNull { it.rules } +
+                    it.arguments?.game?.filterIsInstance<ConditionalArgument>()?.map { it.rules } +
+                    it.arguments?.jvm?.filterIsInstance<ConditionalArgument>()?.map { it.rules }
+        }.filterNotNull().flatten().distinct().forEach { println(it) }
+    }
+
+    @Test
+    fun extractWindowsRule() = runTest {
+        val allVersionData: List<MojangVersionInfo> =
+            SystemFileSystem.source(Path("all_versions.json")).buffered().use { Json.decodeFromSource(it) }
+        allVersionData.flatMap {
+            it.libraries.filter { it.rules?.any { it.os != null && it.os.name == "windows" && it.os.version != null } == true } +
+                    it.arguments?.game?.filterIsInstance<ConditionalArgument>()
+                        ?.filter { it.rules.any { it.os != null && it.os.name == "windows" && it.os.version != null } } +
+                    it.arguments?.jvm?.filterIsInstance<ConditionalArgument>()
+                        ?.filter { it.rules.any { it.os != null && it.os.name == "windows" && it.os.version != null } }
+        }.filterNotNull().distinct().forEach { println(it) }
+    }
+
+    @Test
+    fun extractLibsWithoutArtifact() = runTest {
+        val allVersionData: List<MojangVersionInfo> =
+            SystemFileSystem.source(Path("all_versions.json")).buffered().use { Json.decodeFromSource(it) }
+        allVersionData.flatMap {
+            it.libraries.mapNotNull {
+                it.downloads.classifiers
+            }
+        }.distinct().forEach { println(it) }
+    }
+
+
+    @Test
+    fun extractNativeExcludes() = runTest {
+        val allVersionData: List<MojangVersionInfo> =
+            SystemFileSystem.source(Path("all_versions.json")).buffered().use { Json.decodeFromSource(it) }
+        allVersionData.flatMap {
+            it.libraries.flatMap {
+                it.extract?.exclude ?: emptyList()
+            }
+        }.distinct().forEach { println(it) }
+    }
 }
