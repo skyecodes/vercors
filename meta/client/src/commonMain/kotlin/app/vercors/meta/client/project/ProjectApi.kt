@@ -1,10 +1,12 @@
 package app.vercors.meta.client.project
 
-import app.vercors.meta.lib.ApiResponse
+import app.vercors.meta.client.ApiResponse
 import app.vercors.meta.lib.project.*
+import de.jensklingenberg.ktorfit.Ktorfit
 import de.jensklingenberg.ktorfit.http.GET
 import de.jensklingenberg.ktorfit.http.Path
 import de.jensklingenberg.ktorfit.http.Query
+import org.koin.core.annotation.Single
 
 interface ProjectApi {
     @GET("platform")
@@ -39,3 +41,6 @@ interface ProjectApi {
         @Path("projectId") projectId: String
     ): ApiResponse<ProjectData>
 }
+
+@Single
+internal fun provideProjectApi(ktorfit: Ktorfit): ProjectApi = ktorfit.createProjectApi()

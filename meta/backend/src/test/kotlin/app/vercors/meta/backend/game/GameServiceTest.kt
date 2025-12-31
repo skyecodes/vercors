@@ -1,7 +1,8 @@
 package app.vercors.meta.backend.game
 
-import app.vercors.meta.backend.game.mojang.MojangApi
-import app.vercors.meta.backend.game.mojang.dto.*
+import app.vercors.meta.lib.game.MojangReleaseType
+import app.vercors.meta.lib.game.MojangVersionInfo
+import app.vercors.meta.lib.game.MojangVersionManifest
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.plugins.*
@@ -17,6 +18,7 @@ import kotlinx.io.buffered
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.io.decodeFromSource
 import kotlinx.serialization.json.io.encodeToSink
 import kotlin.test.Test
@@ -33,14 +35,13 @@ class GameServiceTest {
                 exponentialDelay()
             }
         }
-        val api = MojangApi(httpClient)
-
+        val manifest = httpClient.get("https://piston-meta.mojang.com/mc/game/version_manifest_v2.json")
+            .body<MojangVersionManifest>()
         val dispatcher = StandardTestDispatcher(testScheduler).limitedParallelism(32)
-        val versions = api.getVersionManifest()
-        val allVersionData = versions.versions.map {
+        val allVersionData = manifest.versions.map {
             withContext(dispatcher) {
                 async {
-                    httpClient.get(it.url).body<MojangVersionInfo>()
+                    httpClient.get(it.url).body<JsonObject>()
                 }
             }
         }.awaitAll()
@@ -76,10 +77,10 @@ class GameServiceTest {
             .forEach { (key, value) -> println("Java $key: $value") }
     }
 
-    private fun extractArguments(args: List<MojangArgument>?): Iterable<String?> = args?.flatMap { arg ->
+    private fun extractArguments(args: List<MojangVersionInfo.Argument>?): Iterable<String?> = args?.flatMap { arg ->
         when (arg) {
-            is BasicArgument -> listOf(arg.value)
-            is ConditionalArgument -> arg.value
+            is MojangVersionInfo.Argument.Basic -> listOf(arg.value)
+            is MojangVersionInfo.Argument.Conditional -> arg.value
         } as List<String?>
     } ?: emptyList()
 
@@ -89,8 +90,8 @@ class GameServiceTest {
             SystemFileSystem.source(Path("all_versions.json")).buffered().use { Json.decodeFromSource(it) }
         allVersionData.flatMap {
             it.libraries.mapNotNull { it.rules } +
-                    it.arguments?.game?.filterIsInstance<ConditionalArgument>()?.map { it.rules } +
-                    it.arguments?.jvm?.filterIsInstance<ConditionalArgument>()?.map { it.rules }
+                    it.arguments?.game?.filterIsInstance<MojangVersionInfo.Argument.Conditional>()?.map { it.rules } +
+                    it.arguments?.jvm?.filterIsInstance<MojangVersionInfo.Argument.Conditional>()?.map { it.rules }
         }.filterNotNull().flatten().distinct().forEach { println(it) }
     }
 
@@ -99,11 +100,11 @@ class GameServiceTest {
         val allVersionData: List<MojangVersionInfo> =
             SystemFileSystem.source(Path("all_versions.json")).buffered().use { Json.decodeFromSource(it) }
         allVersionData.flatMap {
-            it.libraries.filter { it.rules?.any { it.os != null && it.os.name == "windows" && it.os.version != null } == true } +
-                    it.arguments?.game?.filterIsInstance<ConditionalArgument>()
-                        ?.filter { it.rules.any { it.os != null && it.os.name == "windows" && it.os.version != null } } +
-                    it.arguments?.jvm?.filterIsInstance<ConditionalArgument>()
-                        ?.filter { it.rules.any { it.os != null && it.os.name == "windows" && it.os.version != null } }
+            it.libraries.filter { it.rules?.any { it.os != null && it.os!!.name == "windows" && it.os!!.version != null } == true } +
+                    it.arguments?.game?.filterIsInstance<MojangVersionInfo.Argument.Conditional>()
+                        ?.filter { it.rules.any { it.os != null && it.os!!.name == "windows" && it.os!!.version != null } } +
+                    it.arguments?.jvm?.filterIsInstance<MojangVersionInfo.Argument.Conditional>()
+                        ?.filter { it.rules.any { it.os != null && it.os!!.name == "windows" && it.os!!.version != null } }
         }.filterNotNull().distinct().forEach { println(it) }
     }
 

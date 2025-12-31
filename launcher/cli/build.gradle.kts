@@ -1,40 +1,38 @@
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 
 plugins {
-    alias(libs.plugins.kotlin.multiplatform)
-    alias(libs.plugins.ksp)
+    id("app.vercors.multiplatform.koin")
+}
+
+dependencies {
+    commonMainImplementation(projects.shared.data)
+    commonMainImplementation(projects.shared.domain)
+    commonMainImplementation(projects.feature.account.domain)
+    commonMainImplementation(projects.feature.account.data)
+    commonMainImplementation(projects.feature.config.domain)
+    commonMainImplementation(projects.feature.config.data)
+    commonMainImplementation(projects.feature.game.domain)
+    commonMainImplementation(projects.feature.game.data)
+    commonMainImplementation(projects.feature.instance.domain)
+    commonMainImplementation(projects.feature.instance.data)
+    commonMainImplementation(projects.feature.launcher.domain)
+    commonMainImplementation(projects.feature.launcher.data)
+    commonMainImplementation(projects.feature.project.domain)
+    commonMainImplementation(projects.feature.project.data)
+    commonMainImplementation(projects.meta.client)
+    commonMainImplementation(libs.clikt)
+    commonMainImplementation(libs.mordant.coroutines)
+    commonMainImplementation(libs.kotlinx.coroutines.core)
+    commonMainImplementation(libs.cryptography.provider.optimal)
+    jvmMainImplementation(libs.logback)
 }
 
 kotlin {
-    jvm()
-    linuxX64()
-    linuxArm64()
-    macosX64()
-    macosArm64()
-    mingwX64()
-
     sourceSets {
-        commonMain.dependencies {
-            implementation(projects.launcher.common.domain)
-            implementation(projects.launcher.common.data)
-            implementation(projects.shared.domain)
-            implementation(libs.clikt)
-            implementation(libs.mordant.coroutines)
-            implementation(libs.kotlinx.coroutines.core)
-            implementation(libs.ktor.client.core)
-            implementation(project.dependencies.platform(libs.koin.bom))
-            implementation(libs.koin.core)
-            implementation(libs.koin.annotations)
-        }
         commonMain.configure {
             kotlin.srcDir("build/generated/ksp/metadata/commonMain/kotlin")
         }
-        commonTest.dependencies {
-            implementation(libs.kotlin.test)
-        }
-        jvmMain.dependencies {
-            implementation(libs.logback)
-        }
+
         nativeMain.dependencies {
             implementation(libs.kotlin.logging)
         }
@@ -48,24 +46,4 @@ kotlin {
             }
         }
     }
-
-    compilerOptions.freeCompilerArgs.addAll(
-        "-opt-in=kotlin.time.ExperimentalTime",
-        "-opt-in=kotlinx.serialization.ExperimentalSerializationApi",
-        "-opt-in=kotlin.uuid.ExperimentalUuidApi"
-    )
-}
-
-dependencies {
-    add("kspCommonMainMetadata", libs.koin.ksp.compiler)
-    add("kspJvm", libs.koin.ksp.compiler)
-    add("kspLinuxX64", libs.koin.ksp.compiler)
-    add("kspLinuxArm64", libs.koin.ksp.compiler)
-    add("kspMacosX64", libs.koin.ksp.compiler)
-    add("kspMacosArm64", libs.koin.ksp.compiler)
-    add("kspMingwX64", libs.koin.ksp.compiler)
-}
-
-tasks.matching { it.name.startsWith("ksp") && it.name != "kspCommonMainKotlinMetadata" }.configureEach {
-    dependsOn("kspCommonMainKotlinMetadata")
 }

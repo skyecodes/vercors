@@ -1,13 +1,13 @@
 package app.vercors.launcher.gui
 
 import androidx.compose.runtime.Immutable
-import app.vercors.launcher.gui.config.model.GuiConfiguration
-import app.vercors.launcher.gui.config.usecase.ObserveGuiConfigurationUseCase
-import app.vercors.launcher.gui.config.usecase.UpdateGuiConfigurationUseCase
-import app.vercors.launcher.gui.home.HomeRoute
-import app.vercors.launcher.gui.navigation.Route
-import app.vercors.shared.domain.getOrNull
-import app.vercors.shared.ui.core.configureWithLogger
+import app.vercors.core.domain.orNull
+import app.vercors.feature.config.gui.domain.model.GuiConfiguration
+import app.vercors.feature.config.gui.domain.usecase.ObserveGuiConfigurationUseCase
+import app.vercors.feature.config.gui.domain.usecase.UpdateGuiConfigurationUseCase
+import app.vercors.feature.home.ui.HomeRoute
+import app.vercors.shared.ui.Route
+import app.vercors.shared.ui.configureWithLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
 import pro.respawn.flowmvi.api.Container
 import pro.respawn.flowmvi.api.MVIAction
@@ -49,7 +49,7 @@ class AppContainer(
 
         whileSubscribed {
             observeGuiConfiguration().collect {
-                updateState { copy(guiConfig = it.getOrNull()) }
+                updateState { copy(guiConfig = it.orNull()) }
             }
         }
     }

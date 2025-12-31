@@ -21,13 +21,15 @@ import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.WindowScope
-import app.vercors.launcher.gui.res.*
-import app.vercors.shared.ui.core.component.AppButton
-import app.vercors.shared.ui.core.component.AppIcon
-import app.vercors.shared.ui.core.component.AppText
-import app.vercors.shared.ui.core.theme.colors
-import app.vercors.shared.ui.core.theme.error
-import app.vercors.shared.ui.core.theme.onError
+import app.vercors.core.ui.component.AppButton
+import app.vercors.core.ui.component.AppIcon
+import app.vercors.core.ui.component.AppText
+import app.vercors.core.ui.theme.colors
+import app.vercors.core.ui.theme.error
+import app.vercors.core.ui.theme.onError
+import app.vercors.shared.ui.SharedRes
+import app.vercors.shared.ui.back
+import app.vercors.shared.ui.next
 import com.composables.icons.lucide.*
 import com.composeunstyled.LocalContentColor
 import com.composeunstyled.theme.Theme
@@ -67,13 +69,13 @@ fun AppTopBar(
                 AppText(stringResource(Res.string.appTitle))
                 AppNavButton(
                     imageVector = Lucide.ChevronLeft,
-                    contentDescription = stringResource(Res.string.back),
+                    contentDescription = stringResource(SharedRes.string.back),
                     enabled = canGoBack,
                     onClick = { store.intent(AppIntent.Back) }
                 )
                 AppNavButton(
                     imageVector = Lucide.ChevronRight,
-                    contentDescription = stringResource(Res.string.next),
+                    contentDescription = stringResource(SharedRes.string.next),
                     enabled = canGoNext,
                     onClick = { store.intent(AppIntent.Next) }
                 )

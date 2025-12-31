@@ -15,12 +15,36 @@ repositories {
 }
 
 dependencies {
-    implementation(projects.launcher.common.domain)
-    implementation(projects.launcher.common.data)
     implementation(projects.shared.domain)
     implementation(projects.shared.data)
     implementation(projects.shared.ui)
+    implementation(projects.feature.account.domain)
+    implementation(projects.feature.account.data)
+    implementation(projects.feature.account.ui)
+    implementation(projects.feature.config.domain)
+    implementation(projects.feature.config.data)
+    implementation(projects.feature.config.ui)
+    implementation(projects.feature.configGui.domain)
+    implementation(projects.feature.configGui.data)
+    implementation(projects.feature.configGui.ui)
+    implementation(projects.feature.game.domain)
+    implementation(projects.feature.game.data)
+    implementation(projects.feature.game.ui)
+    implementation(projects.feature.home.domain)
+    implementation(projects.feature.home.data)
+    implementation(projects.feature.home.ui)
+    implementation(projects.feature.instance.domain)
+    implementation(projects.feature.instance.data)
+    implementation(projects.feature.instance.ui)
+    implementation(projects.feature.launcher.domain)
+    implementation(projects.feature.launcher.data)
+    implementation(projects.feature.launcher.ui)
+    implementation(projects.feature.project.domain)
+    implementation(projects.feature.project.data)
+    implementation(projects.feature.project.ui)
+    implementation(projects.meta.client)
     implementation(compose.desktop.currentOs)
+    implementation(libs.cryptography.provider.optimal)
     implementation(libs.compose.components.resources)
     implementation(libs.kotlinx.coroutines.swing)
     implementation(libs.kotlinx.datetime)
@@ -85,5 +109,5 @@ compose.desktop {
 }
 
 compose.resources {
-    packageOfResClass = "app.vercors.launcher.gui.res"
+    packageOfResClass = "app.vercors.launcher.gui"
 }

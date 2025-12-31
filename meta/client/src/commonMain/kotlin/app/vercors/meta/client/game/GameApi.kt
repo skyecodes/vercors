@@ -1,15 +1,17 @@
 package app.vercors.meta.client.game
 
-import app.vercors.meta.lib.ApiResponse
-import app.vercors.meta.lib.game.GameVersionDetailsData
-import app.vercors.meta.lib.game.GameVersionListData
+import de.jensklingenberg.ktorfit.Ktorfit
 import de.jensklingenberg.ktorfit.http.GET
-import de.jensklingenberg.ktorfit.http.Path
+import io.ktor.utils.io.*
+import org.koin.core.annotation.Single
 
 interface GameApi {
     @GET("game/version")
-    suspend fun getGameVersionList(): ApiResponse<GameVersionListData>
+    suspend fun getVersionManifest(): ByteReadChannel
 
-    @GET("game/version/{id}")
-    suspend fun getGameVersionDetails(@Path id: String): ApiResponse<GameVersionDetailsData>
+    @GET("game/java")
+    suspend fun getJavaManifest(): ByteReadChannel
 }
+
+@Single
+internal fun provideGameApi(ktorfit: Ktorfit): GameApi = ktorfit.createGameApi()

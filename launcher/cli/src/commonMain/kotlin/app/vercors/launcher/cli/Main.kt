@@ -1,9 +1,21 @@
 package app.vercors.launcher.cli
 
-import app.vercors.launcher.common.data.CommonDataModule
-import app.vercors.launcher.common.data.commonDataProperties
-import app.vercors.launcher.common.domain.CommonDomainModule
-import app.vercors.launcher.common.domain.system.SystemService
+import app.vercors.feature.account.data.AccountDataModule
+import app.vercors.feature.account.domain.AccountDomainModule
+import app.vercors.feature.config.data.ConfigDataModule
+import app.vercors.feature.game.data.GameDataModule
+import app.vercors.feature.game.domain.GameDomainModule
+import app.vercors.feature.instance.data.InstanceDataModule
+import app.vercors.feature.instance.domain.InstanceDomainModule
+import app.vercors.feature.launcher.data.LauncherDataModule
+import app.vercors.feature.launcher.domain.LauncherDomainModule
+import app.vercors.feature.project.data.ProjectDataModule
+import app.vercors.feature.project.domain.ProjectDomainModule
+import app.vercors.meta.client.MetaClientModule
+import app.vercors.shared.data.SharedDataModule
+import app.vercors.shared.data.commonDataProperties
+import app.vercors.shared.domain.SharedDomainModule
+import app.vercors.shared.domain.service.SystemService
 import com.github.ajalt.clikt.command.SuspendingCliktCommand
 import com.github.ajalt.clikt.command.main
 import com.github.ajalt.clikt.core.subcommands
@@ -58,7 +70,18 @@ class MainCommand(private val koin: Koin) : SuspendingCliktCommand("vercors-cli"
     }
 }
 
-@KoinApplication(modules = [CommonDomainModule::class, CommonDataModule::class])
+@KoinApplication(
+    modules = [
+        MetaClientModule::class,
+        SharedDataModule::class, SharedDomainModule::class,
+        AccountDataModule::class, AccountDomainModule::class,
+        ConfigDataModule::class,
+        GameDataModule::class, GameDomainModule::class,
+        InstanceDataModule::class, InstanceDomainModule::class,
+        LauncherDataModule::class, LauncherDomainModule::class,
+        ProjectDataModule::class, ProjectDomainModule::class,
+    ]
+)
 object CLIApplication
 
 internal expect fun configureLogging()

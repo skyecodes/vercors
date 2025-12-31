@@ -1,42 +1,25 @@
 plugins {
-    alias(libs.plugins.kotlin.multiplatform)
-    alias(libs.plugins.compose.multiplatform)
-    alias(libs.plugins.compose.compiler)
+    id("app.vercors.jvm.koin")
+    id("app.vercors.jvm.compose")
 }
 
-kotlin {
-    jvm()
-
-    sourceSets {
-        commonMain.dependencies {
-            implementation(projects.shared.domain)
-            implementation(libs.compose.components.resources)
-            implementation(compose.desktop.currentOs)
-            implementation(libs.composables.composeunstyled)
-            implementation(libs.composables.ripple)
-            implementation(libs.composables.icons.lucide)
-            implementation(project.dependencies.platform(libs.koin.bom))
-            implementation(libs.koin.core)
-            implementation(libs.koin.compose)
-            implementation(libs.koin.compose.viewmodel)
-            implementation(libs.flowmvi.core)
-            implementation(libs.flowmvi.compose)
-            implementation(libs.flowmvi.android)
-            implementation(libs.flowmvi.metrics)
-            implementation(libs.kotlin.logging)
-        }
-        commonTest.dependencies {
-            implementation(libs.kotlin.test)
-        }
-    }
-
-    compilerOptions.freeCompilerArgs.addAll(
-        "-Xcontext-parameters",
-        "-opt-in=androidx.compose.animation.ExperimentalSharedTransitionApi",
-    )
+dependencies {
+    api(projects.core.ui)
+    api(libs.androidx.lifecycle.viewmodel)
+    api(libs.androidx.lifecycle.runtime)
+    api(libs.androidx.navigation3.ui)
+    api(libs.composables.icons.lucide)
+    api(libs.flowmvi.core)
+    api(libs.flowmvi.compose)
+    api(libs.flowmvi.android)
+    api(libs.kotlin.logging)
+    implementation(libs.koin.compose)
+    implementation(libs.koin.compose.viewmodel)
+    implementation(libs.koin.compose.navigation3)
 }
-
 
 compose.resources {
-    packageOfResClass = "app.vercors.shared.ui.res"
+    packageOfResClass = "app.vercors.shared.ui"
+    nameOfResClass = "SharedRes"
+    publicResClass = true
 }

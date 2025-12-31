@@ -1,50 +1,26 @@
 plugins {
-    alias(libs.plugins.kotlin.multiplatform)
-    alias(libs.plugins.serialization)
-    alias(libs.plugins.ksp)
-}
-
-kotlin {
-    jvm()
-    linuxX64()
-    linuxArm64()
-    macosX64()
-    macosArm64()
-    mingwX64()
-    sourceSets {
-        commonMain.dependencies {
-            implementation(libs.kotlinx.coroutines.core)
-            implementation(libs.kotlinx.serialization.core)
-            implementation(libs.kotlin.logging)
-            implementation(project.dependencies.platform(libs.koin.bom))
-            implementation(libs.koin.core)
-            implementation(libs.koin.annotations)
-        }
-        commonTest.dependencies {
-            implementation(libs.kotlin.test)
-            implementation(libs.kotlinx.coroutines.test)
-            implementation(libs.turbine)
-        }
-        jvmTest.dependencies {
-            implementation(libs.logback)
-        }
-    }
-    compilerOptions.freeCompilerArgs.addAll(
-        "-opt-in=kotlin.time.ExperimentalTime",
-        "-opt-in=kotlinx.coroutines.ExperimentalCoroutinesApi",
-    )
+    id("app.vercors.multiplatform.koin")
+    alias(libs.plugins.buildconfig)
 }
 
 dependencies {
-    add("kspCommonMainMetadata", libs.koin.ksp.compiler)
-    add("kspJvm", libs.koin.ksp.compiler)
-    add("kspLinuxX64", libs.koin.ksp.compiler)
-    add("kspLinuxArm64", libs.koin.ksp.compiler)
-    add("kspMacosX64", libs.koin.ksp.compiler)
-    add("kspMacosArm64", libs.koin.ksp.compiler)
-    add("kspMingwX64", libs.koin.ksp.compiler)
+    commonMainApi(projects.core.domain)
 }
 
-tasks.matching { it.name.startsWith("ksp") && it.name != "kspCommonMainKotlinMetadata" }.configureEach {
-    dependsOn("kspCommonMainKotlinMetadata")
+buildConfig {
+    packageName("app.vercors.shared.domain")
+    useKotlinOutput {
+        internalVisibility = false
+        topLevelConstants = true
+    }
+    buildConfigField(
+        type = "String",
+        name = "LAUNCHER_NAME",
+        expression = """"vercors""""
+    )
+    buildConfigField(
+        type = "String",
+        name = "LAUNCHER_VERSION",
+        expression = """"$version""""
+    )
 }

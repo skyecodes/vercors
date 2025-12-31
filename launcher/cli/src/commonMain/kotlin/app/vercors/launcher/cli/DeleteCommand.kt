@@ -1,6 +1,6 @@
 package app.vercors.launcher.cli
 
-import app.vercors.launcher.common.domain.instance.usecase.DeleteInstanceUseCase
+import app.vercors.feature.instance.domain.usecase.DeleteInstanceUseCase
 import com.github.ajalt.clikt.core.Context
 import com.github.ajalt.clikt.parameters.arguments.argument
 

@@ -1,56 +1,44 @@
 plugins {
-    alias(libs.plugins.kotlin.multiplatform)
+    id("app.vercors.multiplatform.koin")
     alias(libs.plugins.serialization)
-    alias(libs.plugins.ksp)
-}
-
-kotlin {
-    jvm()
-    linuxX64()
-    linuxArm64()
-    macosX64()
-    macosArm64()
-    mingwX64()
-    sourceSets {
-        commonMain.dependencies {
-            implementation(projects.shared.domain)
-            implementation(projects.meta.lib)
-            implementation(projects.meta.client)
-            implementation(libs.kotlinx.coroutines.core)
-            implementation(libs.kotlinx.serialization.json)
-            implementation(libs.kotlinx.io.core)
-            implementation(libs.kotlin.logging)
-            implementation(libs.kfswatch)
-            implementation(libs.appdirs)
-            implementation(libs.ktorfit.lib)
-            implementation(project.dependencies.platform(libs.koin.bom))
-            implementation(libs.koin.core)
-            implementation(libs.koin.annotations)
-        }
-        commonTest.dependencies {
-            implementation(libs.kotlin.test)
-            implementation(libs.kotlinx.coroutines.test)
-        }
-        jvmTest.dependencies {
-            implementation(libs.logback)
-        }
-    }
-    compilerOptions.freeCompilerArgs.addAll(
-        "-opt-in=kotlin.time.ExperimentalTime",
-        "-opt-in=kotlinx.serialization.ExperimentalSerializationApi"
-    )
+    alias(libs.plugins.buildconfig)
 }
 
 dependencies {
-    add("kspCommonMainMetadata", libs.koin.ksp.compiler)
-    add("kspJvm", libs.koin.ksp.compiler)
-    add("kspLinuxX64", libs.koin.ksp.compiler)
-    add("kspLinuxArm64", libs.koin.ksp.compiler)
-    add("kspMacosX64", libs.koin.ksp.compiler)
-    add("kspMacosArm64", libs.koin.ksp.compiler)
-    add("kspMingwX64", libs.koin.ksp.compiler)
+    commonMainApi(projects.core.data)
+    commonMainApi(projects.shared.domain)
+    commonMainImplementation(libs.kotlinx.serialization.json)
+    commonMainImplementation(libs.ktor.client.core)
+    commonMainImplementation(libs.ktor.client.content.negotiation)
+    commonMainImplementation(libs.ktor.serialization.kotlinx.json)
+    commonMainImplementation(libs.ktorfit.lib)
+    commonMainImplementation(libs.appdirs)
+    commonMainImplementation(libs.kfswatch)
+    commonMainImplementation(libs.cryptography.core)
+    jvmMainImplementation(libs.oshi)
+    jvmMainImplementation(libs.ktor.client.cio)
 }
 
-tasks.matching { it.name.startsWith("ksp") && it.name != "kspCommonMainKotlinMetadata" }.configureEach {
-    dependsOn("kspCommonMainKotlinMetadata")
+kotlin {
+    sourceSets.nativeMain.dependencies {
+        implementation(libs.ktor.client.curl)
+    }
+}
+
+buildConfig {
+    packageName("app.vercors.shared.data")
+    useKotlinOutput {
+        internalVisibility = false
+        topLevelConstants = true
+    }
+    buildConfigField(
+        type = "String",
+        name = "MICROSOFT_CLIENT_ID",
+        expression = "\"${properties["microsoftClientId"] ?: System.getenv("MICROSOFT_CLIENT_ID") ?: error("AUTH_CLIENT_ID not set")}\""
+    )
+    buildConfigField(
+        type = "String",
+        name = "META_BASE_URL",
+        expression = "\"${properties["metaBaseUrl"] ?: System.getenv("META_BASE_URL") ?: error("META_BASE_URL not set")}\""
+    )
 }

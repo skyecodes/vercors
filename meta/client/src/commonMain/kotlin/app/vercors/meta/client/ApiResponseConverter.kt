@@ -1,7 +1,6 @@
 package app.vercors.meta.client
 
 import app.vercors.meta.lib.ApiError
-import app.vercors.meta.lib.ApiResponse
 import de.jensklingenberg.ktorfit.Ktorfit
 import de.jensklingenberg.ktorfit.converter.Converter
 import de.jensklingenberg.ktorfit.converter.KtorfitResult
@@ -15,7 +14,7 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.io.IOException
 import kotlinx.serialization.SerializationException
 
-class ApiResponseConverter : Converter.Factory {
+internal class ApiResponseConverter : Converter.Factory {
     override fun suspendResponseConverter(
         typeData: TypeData,
         ktorfit: Ktorfit
@@ -27,24 +26,28 @@ class ApiResponseConverter : Converter.Factory {
                         ApiResponse.Success(result.response.body(typeData.typeArgs.first().typeInfo))
                     } catch (e: Exception) {
                         currentCoroutineContext().ensureActive()
-                        ApiResponse.Error.UnknownError(e)
+                        ApiResponse.Failure.UnknownError(e)
                     }
                     is KtorfitResult.Failure -> when (val e = result.throwable) {
-                        is IOException -> ApiResponse.Error.NetworkError(e)
-                        is ClientRequestException -> ApiResponse.Error.Http.ClientError(
+                        is IOException -> ApiResponse.Failure.NetworkError(e)
+                        is ClientRequestException -> ApiResponse.Failure.Http.ClientError(
                             e.response.status.value,
                             e.errorBody(),
                             e
                         )
 
-                        is ServerResponseException -> ApiResponse.Error.Http.ServerError(
+                        is ServerResponseException -> ApiResponse.Failure.Http.ServerError(
                             e.response.status.value,
                             e.errorBody(),
                             e
                         )
 
-                        is SerializationException, is ContentConvertException -> ApiResponse.Error.SerializationError(e)
-                        else -> ApiResponse.Error.UnknownError(e)
+                        is SerializationException, is ContentConvertException -> ApiResponse.Failure.SerializationError(
+                            e
+                        )
+
+                        is Exception -> ApiResponse.Failure.UnknownError(e)
+                        else -> throw e
                     }
                 }
             }

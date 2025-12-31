@@ -1,8 +1,8 @@
 package app.vercors.launcher.cli
 
-import app.vercors.launcher.common.domain.account.model.LoginState
-import app.vercors.launcher.common.domain.account.model.LoginStep
-import app.vercors.launcher.common.domain.account.usecase.LoginUseCase
+import app.vercors.feature.account.domain.service.LoginState
+import app.vercors.feature.account.domain.service.LoginStep
+import app.vercors.feature.account.domain.usecase.LoginUseCase
 import com.github.ajalt.clikt.core.CliktError
 import com.github.ajalt.clikt.core.Context
 import com.github.ajalt.clikt.core.terminal

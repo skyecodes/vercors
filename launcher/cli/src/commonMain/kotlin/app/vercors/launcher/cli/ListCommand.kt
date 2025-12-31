@@ -1,8 +1,8 @@
 package app.vercors.launcher.cli
 
-import app.vercors.launcher.common.domain.instance.usecase.ObserveInstanceListUseCase
-import app.vercors.launcher.common.domain.plural
-import app.vercors.shared.domain.awaitValueOrThrow
+import app.vercors.core.domain.await
+import app.vercors.core.domain.orThrow
+import app.vercors.feature.instance.domain.usecase.ObserveInstanceListUseCase
 import com.github.ajalt.clikt.core.Context
 import com.github.ajalt.mordant.rendering.BorderType
 import com.github.ajalt.mordant.table.table
@@ -10,7 +10,7 @@ import com.github.ajalt.mordant.table.table
 class ListCommand : VercorsCommandBase("list") {
     override suspend fun execute() {
         val observeInstanceList = koin.get<ObserveInstanceListUseCase>()
-        val instances = observeInstanceList().awaitValueOrThrow()
+        val instances = observeInstanceList().await().orThrow()
         if (instances.isEmpty()) {
             echo("No instance found. Create a new instance using 'vercors create'.")
         } else {

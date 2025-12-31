@@ -1,0 +1,36 @@
+package app.vercors.core.ui.layout
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import app.vercors.core.ui.component.AppIcon
+import app.vercors.core.ui.component.AppText
+import app.vercors.core.ui.theme.colors
+import app.vercors.core.ui.theme.error
+import com.composables.icons.lucide.CircleX
+import com.composables.icons.lucide.Lucide
+import com.composeunstyled.ProvideContentColor
+import com.composeunstyled.theme.Theme
+
+@Composable
+fun AppError(throwable: Throwable) {
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
+    ) {
+        ProvideContentColor(Theme[colors][error]) {
+            AppIcon(
+                imageVector = Lucide.CircleX,
+                contentDescription = throwable.message ?: "An error occurred",
+                modifier = Modifier.size(64.dp)
+            )
+            AppText(("Error: ${throwable.message ?: "An error occurred"}"))
+        }
+    }
+}

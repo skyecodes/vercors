@@ -8,17 +8,23 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import app.vercors.launcher.gui.navigation.Route
-import app.vercors.launcher.gui.navigation.TopLevelDestination
-import app.vercors.shared.ui.core.animation.AppAnimatedVisibility
-import app.vercors.shared.ui.core.animation.appAnimateColorAsState
-import app.vercors.shared.ui.core.animation.appAnimateDpAsState
-import app.vercors.shared.ui.core.component.AppButton
-import app.vercors.shared.ui.core.component.AppIcon
-import app.vercors.shared.ui.core.component.AppText
-import app.vercors.shared.ui.core.theme.background
-import app.vercors.shared.ui.core.theme.colors
-import app.vercors.shared.ui.core.theme.primary
+import app.vercors.core.ui.animation.AppAnimatedVisibility
+import app.vercors.core.ui.animation.appAnimateColorAsState
+import app.vercors.core.ui.animation.appAnimateDpAsState
+import app.vercors.core.ui.component.AppButton
+import app.vercors.core.ui.component.AppIcon
+import app.vercors.core.ui.component.AppText
+import app.vercors.core.ui.theme.background
+import app.vercors.core.ui.theme.colors
+import app.vercors.core.ui.theme.primary
+import app.vercors.feature.account.ui.list.AccountListRoute
+import app.vercors.feature.home.ui.HomeRoute
+import app.vercors.feature.instance.ui.details.InstanceDetailsRoute
+import app.vercors.feature.instance.ui.list.InstanceListRoute
+import app.vercors.feature.project.ui.details.ProjectDetailsRoute
+import app.vercors.feature.project.ui.list.ProjectListRoute
+import app.vercors.launcher.gui.config.ConfigurationRoute
+import app.vercors.shared.ui.Route
 import com.composables.icons.lucide.ChevronLeft
 import com.composables.icons.lucide.ChevronRight
 import com.composables.icons.lucide.Lucide
@@ -114,3 +120,13 @@ private fun ToggleDrawerButton(isDrawerOpen: Boolean) {
         )
     }
 }
+
+private val Route.topLevelDestination: TopLevelDestination?
+    get() = when (this) {
+        is HomeRoute -> TopLevelDestination.Home
+        is InstanceListRoute, is InstanceDetailsRoute -> TopLevelDestination.Instances
+        is ProjectListRoute, is ProjectDetailsRoute -> TopLevelDestination.Content
+        is AccountListRoute -> TopLevelDestination.Account
+        is ConfigurationRoute -> TopLevelDestination.Settings
+        else -> null
+    }

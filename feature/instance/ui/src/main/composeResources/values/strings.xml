@@ -1,0 +1,15 @@
+<resources>
+    <string name="noInstanceFound">No instance found</string>
+    <string name="launch">Launch</string>
+    <string name="createInstance">Create a new instance</string>
+    <string name="createCustomInstance">Custom instance</string>
+    <string name="createCustomInstanceDescription">Select your version, mod loader, and add all the mods you want; or play vanilla</string>
+    <string name="importModpack">From a modpack</string>
+    <string name="importModpackDescription">Select a pre-made modpack from platforms such as CurseForge or Modrinth</string>
+    <string name="importOtherLauncher">From another launcher</string>
+    <string name="importOtherLauncherDescription">Import an instance from another launcher such as PrismLauncher</string>
+    <string name="instanceName">Instance name</string>
+    <string name="anyType">Any type</string>
+    <string name="anyLoader">Any loader</string>
+    <string name="anyVersion">Any version</string>
+</resources>

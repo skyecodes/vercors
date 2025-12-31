@@ -1,11 +1,12 @@
 package app.vercors.launcher.cli
 
-import app.vercors.launcher.common.domain.instance.model.Instance
-import app.vercors.launcher.common.domain.instance.model.InstanceModLoader
-import app.vercors.launcher.common.domain.instance.usecase.CreateInstanceUseCase
-import app.vercors.shared.domain.game.usecase.GetGameVersionListUseCase
-import app.vercors.shared.domain.getOrThrow
-import app.vercors.shared.domain.loader.ModLoaderType
+import app.vercors.core.domain.await
+import app.vercors.core.domain.orThrow
+import app.vercors.feature.game.domain.model.ModLoaderType
+import app.vercors.feature.game.domain.usecase.ObserveGameVersionListUseCase
+import app.vercors.feature.instance.domain.model.Instance
+import app.vercors.feature.instance.domain.model.InstanceModLoader
+import app.vercors.feature.instance.domain.usecase.CreateInstanceUseCase
 import com.github.ajalt.clikt.core.BadParameterValue
 import com.github.ajalt.clikt.core.Context
 import com.github.ajalt.clikt.parameters.options.default
@@ -42,8 +43,8 @@ class CreateCommand : VercorsCommandBase("create") {
     override fun help(context: Context): String = "Create a new instance"
 
     private suspend fun resolveGameVersion(): String {
-        val getGameVersionList = koin.get<GetGameVersionListUseCase>()
-        val versionList = getGameVersionList().getOrThrow()
+        val observeGameVersionList = koin.get<ObserveGameVersionListUseCase>()
+        val versionList = observeGameVersionList().await().orThrow()
         val version = when (gameVersion) {
             LATEST_RELEASE -> versionList.latestRelease
             LATEST_SNAPSHOT -> versionList.latestSnapshot

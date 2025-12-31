@@ -1,6 +1,6 @@
 package app.vercors.launcher.cli
 
-import app.vercors.launcher.common.domain.account.usecase.LogoutUseCase
+import app.vercors.feature.account.domain.usecase.LogoutUseCase
 import com.github.ajalt.clikt.core.Context
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.arguments.validate

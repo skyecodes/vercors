@@ -1,0 +1,7 @@
+<resources>
+    <string name="recentlyPlayed">Recently played</string>
+    <string name="featuredModpacks">Featured modpacks</string>
+    <string name="featuredMods">Featured mods</string>
+    <string name="featuredResourcePacks">Featured resource packs</string>
+    <string name="featuredShaderPacks">Featured shader packs</string>
+</resources>

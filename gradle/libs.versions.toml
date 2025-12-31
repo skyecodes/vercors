@@ -76,6 +76,7 @@ appdirs = { module = "ca.gosyer:kotlin-multiplatform-appdirs", version.ref = "ap
 oshi = { module = "com.github.oshi:oshi-core", version.ref = "oshi" }
 kzip = { module = "de.jonasbroeckmann.kzip:kzip", version.ref = "kzip" }
 # GUI
+compose-foundation = { module = "org.jetbrains.compose.foundation:foundation", version.ref = "compose" }
 compose-components-resources = { module = "org.jetbrains.compose.components:components-resources", version.ref = "compose" }
 androidx-lifecycle-viewmodel = { module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycle" }
 androidx-lifecycle-runtime = { module = "org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycle" }
@@ -86,6 +87,7 @@ flowmvi-compose = { module = "pro.respawn.flowmvi:compose", version.ref = "flowm
 flowmvi-metrics = { module = "pro.respawn.flowmvi:metrics", version.ref = "flowmvi" }
 flowmvi-android = { module = "pro.respawn.flowmvi:android", version.ref = "flowmvi" }
 composables-composeunstyled = { module = "com.composables:core", version.ref = "unstyled" }
+composables-composeunstyled-theming = { module = "com.composables:composeunstyled-theming", version.ref = "unstyled" }
 composables-ripple = { module = "com.composables:ripple-indication", version.ref = "ripple" }
 composables-icons-lucide = { module = "com.composables:icons-lucide-cmp", version.ref = "icons" }
 composables-icons-fontawesome-brands = { module = "com.composables:icons-font-awesome-brands-cmp", version.ref = "icons" }
@@ -115,18 +117,47 @@ kotlin-testJunit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 turbine = { module = "app.cash.turbine:turbine", version.ref = "turbine" }
 
+# Plugins
+gradle-plugin-kotlin-jvm = { module = "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin", version.ref = "kotlin" }
+gradle-plugin-kotlin-multiplatform = { module = "org.jetbrains.kotlin.multiplatform:org.jetbrains.kotlin.multiplatform.gradle.plugin", version.ref = "kotlin" }
+gradle-plugin-ksp = { module = "com.google.devtools.ksp:com.google.devtools.ksp.gradle.plugin", version.ref = "ksp" }
+gradle-plugin-buildconfig = { module = "com.github.gmazzo.buildconfig:com.github.gmazzo.buildconfig.gradle.plugin", version.ref = "buildconfig" }
+# Data
+gradle-plugin-serialization = { module = "org.jetbrains.kotlin.plugin.serialization:org.jetbrains.kotlin.plugin.serialization.gradle.plugin", version.ref = "kotlin" }
+gradle-plugin-ktor = { module = "io.ktor.plugin:io.ktor.plugin.gradle.plugin", version.ref = "ktor" }
+gradle-plugin-ktorfit = { module = "de.jensklingenberg.ktorfit:de.jensklingenberg.ktorfit.gradle.plugin", version.ref = "ktorfit" }
+# GUI
+gradle-plugin-compose-multiplatform = { module = "org.jetbrains.compose:org.jetbrains.compose.gradle.plugin", version.ref = "compose" }
+gradle-plugin-compose-compiler = { module = "org.jetbrains.kotlin.plugin.compose:org.jetbrains.kotlin.plugin.compose.gradle.plugin", version.ref = "kotlin" }
+# CLI
+gradle-plugin-graalvm = { module = "org.graalvm.buildtools.native:org.graalvm.buildtools.native.gradle.plugin", version.ref = "graalvm" }
+
 [plugins]
 # General
-kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
-kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
-ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
-buildconfig = { id = "com.github.gmazzo.buildconfig", version.ref = "buildconfig" }
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm" }
+kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform" }
+ksp = { id = "com.google.devtools.ksp" }
+buildconfig = { id = "com.github.gmazzo.buildconfig" }
 # Data
-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
-ktor = { id = "io.ktor.plugin", version.ref = "ktor" }
-ktorfit = { id = "de.jensklingenberg.ktorfit", version.ref = "ktorfit" }
+serialization = { id = "org.jetbrains.kotlin.plugin.serialization" }
+ktor = { id = "io.ktor.plugin" }
+ktorfit = { id = "de.jensklingenberg.ktorfit" }
 # GUI
-compose-multiplatform = { id = "org.jetbrains.compose", version.ref = "compose" }
-compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+compose-multiplatform = { id = "org.jetbrains.compose" }
+compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose" }
 # CLI
-graalvm = { id = "org.graalvm.buildtools.native", version.ref = "graalvm" }
+graalvm = { id = "org.graalvm.buildtools.native" }
+
+[bundles]
+gradle-plugins = [
+    "gradle-plugin-kotlin-jvm",
+    "gradle-plugin-kotlin-multiplatform",
+    "gradle-plugin-ksp",
+    "gradle-plugin-buildconfig",
+    "gradle-plugin-serialization",
+    "gradle-plugin-ktor",
+    "gradle-plugin-ktorfit",
+    "gradle-plugin-compose-multiplatform",
+    "gradle-plugin-compose-compiler",
+    "gradle-plugin-graalvm"
+]
