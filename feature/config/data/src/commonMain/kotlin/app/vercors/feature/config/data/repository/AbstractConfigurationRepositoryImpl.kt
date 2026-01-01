@@ -5,7 +5,6 @@ import app.vercors.feature.config.data.datasource.AbstractConfigurationDataSourc
 import app.vercors.feature.config.domain.repository.AbstractConfigurationRepository
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -17,16 +16,14 @@ abstract class AbstractConfigurationRepositoryImpl<T : Any, U : Any>(
     private val dataSource: AbstractConfigurationDataSource<U>,
     private val toDomain: U.() -> T,
     private val toData: T.() -> U,
-    private val default: () -> T
 ) : AbstractConfigurationRepository<T> {
     private val _state: MutableResourceStateFlow<T> = MutableResourceStateFlow()
     override val state: ResourceStateFlow<T> = _state.asResourceStateFlow(
         coroutineScope = coroutineScope,
         onStart = {
-            coroutineScope.launch { load() }
             coroutineScope.launch {
-                dataSource.updates.filterNotNull().collect { data ->
-                    _state.update { Resource.Success(data.toDomain()) }
+                dataSource.configState.collect { data ->
+                    _state.update { data.map { it.toDomain() } }
                 }
             }
         },
@@ -34,18 +31,12 @@ abstract class AbstractConfigurationRepositoryImpl<T : Any, U : Any>(
     )
     private val mutex = Mutex()
 
-    override suspend fun load() {
-        _state.load(mutex) {
-            dataSource.loadFromFile()?.toDomain() ?: default()
-        }
-    }
-
     override suspend fun save(commonConfiguration: T) {
         dataSource.saveToFile(commonConfiguration.toData())
     }
 
     override suspend fun update(block: (T) -> T) {
-        _state.update(mutex) {
+        _state.read(mutex) {
             dataSource.saveToFile(block(it).toData())
         }
     }

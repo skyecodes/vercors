@@ -173,7 +173,7 @@ class ProjectListContainer(
     suspend fun PipelineContext<ProjectListState, ProjectListIntent, ProjectListAction>.searchProjects() {
         withState {
             if (filter.selectedPlatform != null || filter.selectedType != null) {
-                ResourceFlow {
+                ResourceFlowResult {
                     getProjectList(
                         platformId = filter.selectedPlatform!!.id,
                         type = filter.selectedType!!,

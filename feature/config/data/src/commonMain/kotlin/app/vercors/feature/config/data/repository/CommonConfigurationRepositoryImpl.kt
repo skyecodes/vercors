@@ -17,6 +17,5 @@ internal class CommonConfigurationRepositoryImpl(
     coroutineScope = coroutineScope,
     dataSource = dataSource,
     toDomain = CommonConfigurationData::toDomain,
-    toData = CommonConfiguration::toData,
-    default = ::CommonConfiguration
+    toData = CommonConfiguration::toData
 )

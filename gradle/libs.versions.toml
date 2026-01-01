@@ -19,6 +19,7 @@ oshi = "6.9.2"
 kzip = "1.1.1"
 # GUI
 compose = "1.10.0-rc02"
+compose-hot-reload = "1.1.0-alpha03"
 lifecycle = "2.10.0-alpha06"
 navigation3 = "1.0.0-alpha06"
 flowmvi = "3.3.0-alpha02"
@@ -37,7 +38,7 @@ koin = "4.2.0-alpha3"
 koin-annotations = "2.3.2-Beta1"
 # Logging
 logback = "1.5.22"
-kotlin-logging = "7.0.13"
+kotlin-logging = "7.0.14"
 # Test
 mockk = "1.14.7"
 turbine = "1.2.1"
@@ -106,6 +107,7 @@ koin-compose = { module = "io.insert-koin:koin-compose" }
 koin-compose-viewmodel = { module = "io.insert-koin:koin-compose-viewmodel" }
 koin-compose-navigation3 = { module = "io.insert-koin:koin-compose-navigation3" }
 koin-ktor = { module = "io.insert-koin:koin-ktor" }
+koin-logger-slf4j = { module = "io.insert-koin:koin-logger-slf4j" }
 koin-annotations = { module = "io.insert-koin:koin-annotations", version.ref = "koin-annotations" }
 koin-ksp-compiler = { module = "io.insert-koin:koin-ksp-compiler", version.ref = "koin-annotations" }
 # Logging
@@ -129,6 +131,7 @@ gradle-plugin-ktorfit = { module = "de.jensklingenberg.ktorfit:de.jensklingenber
 # GUI
 gradle-plugin-compose-multiplatform = { module = "org.jetbrains.compose:org.jetbrains.compose.gradle.plugin", version.ref = "compose" }
 gradle-plugin-compose-compiler = { module = "org.jetbrains.kotlin.plugin.compose:org.jetbrains.kotlin.plugin.compose.gradle.plugin", version.ref = "kotlin" }
+gradle-plugin-compose-hot-reload = { module = "org.jetbrains.compose.hot-reload:org.jetbrains.compose.hot-reload.gradle.plugin", version.ref = "compose-hot-reload" }
 # CLI
 gradle-plugin-graalvm = { module = "org.graalvm.buildtools.native:org.graalvm.buildtools.native.gradle.plugin", version.ref = "graalvm" }
 
@@ -145,6 +148,7 @@ ktorfit = { id = "de.jensklingenberg.ktorfit" }
 # GUI
 compose-multiplatform = { id = "org.jetbrains.compose" }
 compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose" }
+compose-hot-reload = { id = "org.jetbrains.compose.hot-reload" }
 # CLI
 graalvm = { id = "org.graalvm.buildtools.native" }
 
@@ -159,5 +163,6 @@ gradle-plugins = [
     "gradle-plugin-ktorfit",
     "gradle-plugin-compose-multiplatform",
     "gradle-plugin-compose-compiler",
+    "gradle-plugin-compose-hot-reload",
     "gradle-plugin-graalvm"
 ]

@@ -15,8 +15,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import app.vercors.core.domain.Resource
 import app.vercors.core.domain.Result
+import app.vercors.core.domain.resultOrNull
 import app.vercors.core.ui.animation.AppAnimatedContent
 import app.vercors.core.ui.animation.AppAnimatedVisibility
 import app.vercors.core.ui.animation.appAnimateContentSize
@@ -58,8 +58,8 @@ context(
     _: SharedTransitionScope
 )
 private fun AccountListScreen(state: AccountListState) {
-    when (val accountList = state.accountList) {
-        is Resource.Loaded -> when (val res = accountList.result) {
+    state.accountList.resultOrNull()?.let { res ->
+        when (res) {
             is Result.Failure -> AppError(res.error)
             is Result.Success -> {
                 AppAnimatedContent(res.data, contentKey = { it.accounts.isEmpty() }) {
@@ -68,9 +68,7 @@ private fun AccountListScreen(state: AccountListState) {
                 }
             }
         }
-
-        else -> AppLoading()
-    }
+    } ?: AppLoading()
 }
 
 @Composable

@@ -33,7 +33,7 @@ internal class InstanceRepositoryDataSource(
                 }.awaitAll().filterNotNull()
             } else {
                 logger.warn { "Illegal file found at location $instancesDir" }
-                SystemFileSystem.deleteRecursively(instancesDir)
+                instancesDir.deleteRecursively(dispatcher = ioDispatcher)
             }
         }
         emptyList()
@@ -48,7 +48,7 @@ internal class InstanceRepositoryDataSource(
                     return@withContext directory.name to instanceFile.readJson<InstanceData>(json, ioDispatcher)
                 } else {
                     logger.warn { "Unknown file found in instance directory $instanceFile" }
-                    SystemFileSystem.deleteRecursively(instanceFile)
+                    instanceFile.deleteRecursively(dispatcher = ioDispatcher)
                 }
             }
         } catch (e: Exception) {
@@ -63,7 +63,7 @@ internal class InstanceRepositoryDataSource(
         val instanceFile = Path(instanceDir, INSTANCE_FILE_NAME)
         if (SystemFileSystem.exists(instanceFile) && SystemFileSystem.metadataOrNull(instanceFile)?.isRegularFile != true) {
             logger.warn { "Illegal file found at location $instanceFile" }
-            SystemFileSystem.deleteRecursively(instanceFile)
+            instanceFile.deleteRecursively(dispatcher = ioDispatcher)
         }
         logger.info { "Saving instance file $instanceFile" }
         instanceFile.writeJson(instanceData, json, ioDispatcher)
@@ -72,6 +72,6 @@ internal class InstanceRepositoryDataSource(
     suspend fun delete(id: String) = withContext(ioDispatcher) {
         val instanceDir = Path(instancesDir, id)
         logger.debug { "Deleting instance directory: $instanceDir" }
-        SystemFileSystem.deleteRecursively(instanceDir)
+        instanceDir.deleteRecursively(dispatcher = ioDispatcher)
     }
 }

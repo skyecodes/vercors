@@ -2,27 +2,20 @@ package app.vercors.feature.config.gui.data.datasource
 
 import app.vercors.feature.config.data.datasource.AbstractConfigurationDataSource
 import app.vercors.feature.config.gui.data.dto.GuiConfigurationData
-import app.vercors.shared.data.IODispatcher
-import io.github.irgaly.kfswatch.KfsDirectoryWatcher
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineScope
+import app.vercors.feature.config.gui.data.dto.toData
+import app.vercors.feature.config.gui.domain.model.GuiConfiguration
+import app.vercors.shared.data.JsonFileStateFactory
 import kotlinx.io.files.Path
-import kotlinx.serialization.json.Json
 import org.koin.core.annotation.Single
 
 @Single
 internal class GuiConfigurationDataSource(
-    coroutineScope: CoroutineScope,
     appPath: Path,
-    @IODispatcher ioDispatcher: CoroutineDispatcher,
-    json: Json,
-    watcher: KfsDirectoryWatcher
+    jsonFileStateFactory: JsonFileStateFactory,
 ) : AbstractConfigurationDataSource<GuiConfigurationData>(
     configFileName = "config-gui.json",
-    coroutineScope = coroutineScope,
     appPath = appPath,
-    ioDispatcher = ioDispatcher,
-    json = json,
-    watcher = watcher,
-    serializer = GuiConfigurationData.serializer()
+    serializer = GuiConfigurationData.serializer(),
+    default = { GuiConfiguration().toData() },
+    jsonFileStateFactory = jsonFileStateFactory
 )

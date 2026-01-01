@@ -38,8 +38,8 @@ suspend inline fun <T> MutableResourceStateFlow<T>.loadUnsafe(supplier: suspend 
     emit(Resource.Loaded(Result(supplier)))
 }
 
-suspend inline fun <T> MutableResourceStateFlow<T>.update(mutex: Mutex, updater: suspend (T) -> Unit) = mutex.withLock {
-    updater(value.orThrow())
+suspend inline fun <T> MutableResourceStateFlow<T>.read(mutex: Mutex, consumer: suspend (T) -> Unit) = mutex.withLock {
+    consumer(value.orThrow())
 }
 
 suspend inline fun <T> ResourceFlow<T>.await(): Result<T> = filterIsInstance<Resource.Loaded<T>>().first().result

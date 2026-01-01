@@ -15,7 +15,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
-import kotlinx.io.RawSource
+import kotlinx.io.Source
 import kotlinx.io.files.Path
 import kotlinx.serialization.json.Json
 import org.koin.core.annotation.Single
@@ -45,5 +45,5 @@ internal class GameLocalDataSource(
 
     suspend fun loadVersionManifest() = _manifestData.load(_manifestMutex) { manifestPath.readJson(json, ioDispatcher) }
 
-    suspend fun writeVersionManifest(source: RawSource) = manifestPath.writeFromSource(source, ioDispatcher)
+    suspend fun writeVersionManifest(source: Source) = manifestPath.writeFromSource(source, ioDispatcher)
 }

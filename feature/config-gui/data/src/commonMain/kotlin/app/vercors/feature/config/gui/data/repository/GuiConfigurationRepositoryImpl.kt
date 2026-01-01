@@ -18,6 +18,5 @@ internal class GuiConfigurationRepositoryImpl(
     coroutineScope = coroutineScope,
     dataSource = dataSource,
     toDomain = GuiConfigurationData::toDomain,
-    toData = GuiConfiguration::toData,
-    default = ::GuiConfiguration
+    toData = GuiConfiguration::toData
 )

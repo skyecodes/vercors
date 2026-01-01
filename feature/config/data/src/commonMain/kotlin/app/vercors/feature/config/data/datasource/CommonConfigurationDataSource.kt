@@ -1,27 +1,20 @@
 package app.vercors.feature.config.data.datasource
 
 import app.vercors.feature.config.data.dto.CommonConfigurationData
-import app.vercors.shared.data.IODispatcher
-import io.github.irgaly.kfswatch.KfsDirectoryWatcher
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineScope
+import app.vercors.feature.config.data.dto.toData
+import app.vercors.feature.config.domain.model.CommonConfiguration
+import app.vercors.shared.data.JsonFileStateFactory
 import kotlinx.io.files.Path
-import kotlinx.serialization.json.Json
 import org.koin.core.annotation.Single
 
 @Single
 internal class CommonConfigurationDataSource(
-    coroutineScope: CoroutineScope,
     appPath: Path,
-    @IODispatcher ioDispatcher: CoroutineDispatcher,
-    json: Json,
-    watcher: KfsDirectoryWatcher
+    jsonFileStateFactory: JsonFileStateFactory,
 ) : AbstractConfigurationDataSource<CommonConfigurationData>(
     configFileName = "config-common.json",
-    coroutineScope = coroutineScope,
     appPath = appPath,
-    ioDispatcher = ioDispatcher,
-    json = json,
-    watcher = watcher,
-    serializer = CommonConfigurationData.serializer()
+    serializer = CommonConfigurationData.serializer(),
+    default = { CommonConfiguration().toData() },
+    jsonFileStateFactory = jsonFileStateFactory
 )

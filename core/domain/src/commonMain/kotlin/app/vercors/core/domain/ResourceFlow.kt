@@ -3,7 +3,6 @@ package app.vercors.core.domain
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.*
-import kotlin.jvm.JvmName
 
 typealias ResourceFlow<T> = Flow<Resource<T>>
 
@@ -12,8 +11,7 @@ fun <T> ResourceFlow(supplier: suspend () -> T): ResourceFlow<T> = flow {
     emit(Resource.Loaded(Result(supplier)))
 }
 
-@JvmName("ResourceFlowResult")
-fun <T> ResourceFlow(supplier: suspend () -> Result<T>): ResourceFlow<T> = flow {
+fun <T> ResourceFlowResult(supplier: suspend () -> Result<T>): ResourceFlow<T> = flow {
     emit(Resource.Loading())
     emit(Resource.Loaded(supplier()))
 }

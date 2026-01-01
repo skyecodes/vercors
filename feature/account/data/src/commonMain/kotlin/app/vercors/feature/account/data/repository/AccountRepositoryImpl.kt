@@ -29,8 +29,8 @@ internal class AccountRepositoryImpl(
         coroutineScope = coroutineScope,
         onStart = {
             coroutineScope.launch {
-                dataSource.updates.collect { data ->
-                    _state.update { Resource.Success(data.toDomain()) }
+                dataSource.accountState.collect { data ->
+                    _state.update { data.map { it.toDomain() } }
                 }
             }
         },
@@ -38,18 +38,8 @@ internal class AccountRepositoryImpl(
     )
     private val mutex = Mutex()
 
-    init {
-        coroutineScope.launch { load() }
-    }
-
-    override suspend fun load() {
-        _state.load(mutex) {
-            dataSource.loadFromFile()?.toDomain() ?: AccountList()
-        }
-    }
-
     override suspend fun addAccount(account: Account) {
-        _state.update(mutex) {
+        _state.read(mutex) {
             val newAccounts = it.accounts.filter { acc -> acc.id != account.id } + account
             dataSource.saveToFile(
                 it.copy(
@@ -61,7 +51,7 @@ internal class AccountRepositoryImpl(
     }
 
     override suspend fun removeAccount(account: Account) {
-        _state.update(mutex) {
+        _state.read(mutex) {
             val newAccounts = it.accounts.filter { acc -> acc.id != account.id }
             dataSource.saveToFile(
                 it.copy(
@@ -73,7 +63,7 @@ internal class AccountRepositoryImpl(
     }
 
     override suspend fun selectAccount(account: Account) {
-        _state.update(mutex) {
+        _state.read(mutex) {
             dataSource.saveToFile(
                 it.copy(
                     selected = account.id,

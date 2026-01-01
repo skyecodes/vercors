@@ -44,17 +44,18 @@ import org.koin.core.Koin
 import org.koin.core.annotation.ComponentScan
 import org.koin.core.annotation.KoinApplication
 import org.koin.core.annotation.Module
-import org.koin.core.logger.PrintLogger
+import org.koin.core.logger.Level
 import org.koin.core.module.dsl.new
 import org.koin.dsl.module
 import org.koin.ksp.generated.startKoin
+import org.koin.logger.SLF4JLogger
 import java.awt.Dimension
 
 @OptIn(ExperimentalComposeUiApi::class)
 fun main() {
     val coroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     val koinApplication = GUIApplication.startKoin {
-        logger(PrintLogger()) // TODO why SLF4J not available??
+        logger(SLF4JLogger(Level.DEBUG))
         commonDataProperties()
         modules(AppModule, module { single { coroutineScope } })
     }

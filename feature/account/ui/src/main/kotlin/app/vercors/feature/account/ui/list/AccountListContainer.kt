@@ -48,7 +48,7 @@ class AccountListContainer(
                                 is LoginState.RequireLogin -> {
                                     openBrowser(it.url)
                                     updateState {
-                                        AccountListState(
+                                        copy(
                                             loginState = loginState.copy(
                                                 isLoggingIn = true,
                                                 url = it.url,
@@ -58,7 +58,7 @@ class AccountListContainer(
                                 }
 
                                 is LoginState.Progress -> updateState {
-                                    AccountListState(
+                                    copy(
                                         loginState = loginState.copy(
                                             isLoggingIn = true,
                                             url = null,
@@ -68,7 +68,7 @@ class AccountListContainer(
                                 }
 
                                 is LoginState.Success -> updateState {
-                                    AccountListState(
+                                    copy(
                                         loginState = loginState.copy(
                                             isLoggingIn = false,
                                             url = null,
@@ -78,7 +78,7 @@ class AccountListContainer(
                                 }
 
                                 is LoginState.Error -> updateState {
-                                    AccountListState(
+                                    copy(
                                         loginState = loginState.copy(
                                             isLoggingIn = false,
                                             url = null,
@@ -95,7 +95,7 @@ class AccountListContainer(
                             logger.error(it) { "Login failed" }
                             launch {
                                 updateState {
-                                    AccountListState(
+                                    copy(
                                         loginState = loginState.copy(
                                             isLoggingIn = false,
                                             url = null,
@@ -120,7 +120,7 @@ class AccountListContainer(
         whileSubscribed {
             observeAccountList().collect { resource ->
                 updateState {
-                    AccountListState(accountList = resource.map { list ->
+                    copy(accountList = resource.map { list ->
                         AccountListView(
                             selected = list.selected,
                             accounts = list.accounts.map { account ->
