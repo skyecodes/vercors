@@ -9,8 +9,8 @@ typealias ResourceStateFlow<T> = StateFlow<Resource<T>>
 
 typealias MutableResourceStateFlow<T> = MutableStateFlow<Resource<T>>
 
-fun <T> MutableResourceStateFlow(initialValue: T? = null): MutableResourceStateFlow<T> =
-    MutableStateFlow(initialValue?.let { Resource.Success(it) } ?: Resource.Unloaded)
+fun <T> MutableResourceStateFlow(initialValue: Resource<T> = Resource.Unloaded): MutableResourceStateFlow<T> =
+    MutableStateFlow(initialValue)
 
 fun <T> MutableResourceStateFlow<T>.asResourceStateFlow(
     coroutineScope: CoroutineScope,

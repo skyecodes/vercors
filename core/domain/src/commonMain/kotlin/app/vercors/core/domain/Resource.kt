@@ -8,7 +8,7 @@ sealed interface Resource<out T> {
     data object Unloaded : Resource<Nothing>
 
     @JvmInline
-    value class Loading<out T>(val result: Result<T>? = null) : Resource<T>
+    value class Loading<out T>(val partial: Result<T>? = null) : Resource<T>
 
     @JvmInline
     value class Loaded<out T>(val result: Result<T>) : Resource<T>
@@ -37,32 +37,38 @@ inline val Resource<*>.isFailure get() = this is Resource.Loaded && this.result.
 
 fun <T> Resource<T>.orNull(): T? = when (this) {
     is Resource.Loaded -> result.orNull()
-    is Resource.Loading -> result?.orNull()
+    is Resource.Loading -> partial?.orNull()
     Resource.Unloaded -> null
 }
 
 fun <T> Resource<T>.orThrow(): T = when (this) {
     is Resource.Loaded -> result.orThrow()
-    is Resource.Loading -> result?.orThrow() ?: throw NotFinishedLoadingException()
+    is Resource.Loading -> partial?.orThrow() ?: throw NotFinishedLoadingException()
     Resource.Unloaded -> throw NotLoadedException()
 }
 
 fun <T> Resource<T>.orElse(defaultValue: T): T = when (this) {
     is Resource.Loaded -> result.orElse(defaultValue)
-    is Resource.Loading -> result?.orElse(defaultValue) ?: defaultValue
+    is Resource.Loading -> partial?.orElse(defaultValue) ?: defaultValue
     Resource.Unloaded -> defaultValue
 }
 
 inline fun <T> Resource<T>.orElse(supplier: () -> T): T = when (this) {
     is Resource.Loaded -> result.orElse(supplier)
-    is Resource.Loading -> result?.orElse(supplier) ?: supplier()
+    is Resource.Loading -> partial?.orElse(supplier) ?: supplier()
     Resource.Unloaded -> supplier()
 }
 
 fun <T> Resource<T>.resultOrNull(): Result<T>? = when (this) {
     is Resource.Loaded -> result
-    is Resource.Loading -> result
+    is Resource.Loading -> partial
     Resource.Unloaded -> null
+}
+
+fun <T> Resource<T>.resultOrThrow(): Result<T> = when (this) {
+    is Resource.Loaded -> result
+    is Resource.Loading -> partial ?: throw NotFinishedLoadingException()
+    Resource.Unloaded -> throw NotLoadedException()
 }
 
 inline fun <T> Resource<T>.onSuccess(block: (T) -> Unit): Resource<T> = apply {
@@ -75,7 +81,7 @@ inline fun <T> Resource<T>.onFailure(block: (Exception) -> Unit): Resource<T> = 
 
 inline fun <T, U> Resource<T>.map(transform: (T) -> U): Resource<U> = when (this) {
     is Resource.Loaded -> Resource.Loaded(result.map(transform))
-    is Resource.Loading -> Resource.Loading(result?.map(transform))
+    is Resource.Loading -> Resource.Loading(partial?.map(transform))
     Resource.Unloaded -> Resource.Unloaded
 }
 

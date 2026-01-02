@@ -28,7 +28,7 @@ internal class GameLocalDataSource(
     appPath: Path,
     coroutineScope: CoroutineScope
 ) {
-    private val versionsPath = Path(appPath, "versions")
+    private val versionsPath = Path(appPath, "data", "versions")
     private val manifestPath = Path(versionsPath, "manifest.json")
 
     private val _manifestData = MutableResourceStateFlow<MojangVersionManifest>()

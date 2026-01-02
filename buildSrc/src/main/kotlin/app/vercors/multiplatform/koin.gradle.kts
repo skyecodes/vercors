@@ -1,4 +1,4 @@
-package app.vercors.multiplatform
+ package app.vercors.multiplatform
 
 import org.gradle.accessors.dm.LibrariesForLibs
 
@@ -24,4 +24,8 @@ dependencies {
 
 tasks.matching { it.name.startsWith("ksp") && it.name != "kspCommonMainKotlinMetadata" }.configureEach {
     dependsOn("kspCommonMainKotlinMetadata")
+}
+
+ksp {
+    arg("KOIN_EXPORT_DEFINITIONS", "false")
 }

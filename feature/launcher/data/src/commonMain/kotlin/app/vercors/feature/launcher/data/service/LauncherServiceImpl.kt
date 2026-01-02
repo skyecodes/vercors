@@ -133,14 +133,15 @@ class LauncherServiceImpl(
     }
 
     private fun Instance.buildPaths(appPath: Path): InstanceLaunchPaths {
-        val instancePath = Path(appPath, "instances", id)
+        val dataPath = Path(appPath, "data")
+        val instancePath = Path(dataPath, "instances", id)
         return InstanceLaunchPaths(
             game = instancePath,
-            versions = Path(appPath, "versions"),
-            libraries = Path(appPath, "libraries"),
-            assets = Path(appPath, "assets"),
+            versions = Path(dataPath, "versions"),
+            libraries = Path(dataPath, "libraries"),
+            assets = Path(dataPath, "assets"),
             natives = Path(instancePath, "natives"),
-            logging = Path(appPath, "logging")
+            logging = Path(dataPath, "logging")
         )
     }
 

@@ -16,6 +16,12 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.io.decodeFromSource
 import kotlinx.serialization.json.io.encodeToSink
 
+suspend inline fun Path.exists(
+    dispatcher: CoroutineDispatcher = Dispatchers.IO
+): Boolean = withContext(dispatcher) {
+    SystemFileSystem.exists(this@exists)
+}
+
 suspend inline fun Path.isRegularFile(
     dispatcher: CoroutineDispatcher = Dispatchers.IO
 ) = withContext(dispatcher) {

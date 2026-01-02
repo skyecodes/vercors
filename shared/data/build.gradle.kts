@@ -15,6 +15,7 @@ dependencies {
     commonMainImplementation(libs.appdirs)
     commonMainImplementation(libs.kfswatch)
     commonMainImplementation(libs.cryptography.core)
+    commonMainImplementation(libs.kotlin.logging)
     jvmMainImplementation(libs.oshi)
     jvmMainImplementation(libs.ktor.client.cio)
 }

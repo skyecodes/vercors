@@ -1,7 +1,7 @@
 package app.vercors.feature.instance.ui.details
 
 import app.vercors.core.domain.Resource
-import app.vercors.core.domain.map
+import app.vercors.core.domain.orNull
 import app.vercors.feature.instance.domain.model.Instance
 import app.vercors.feature.instance.domain.model.InstanceId
 import app.vercors.feature.instance.domain.usecase.ObserveInstanceListUseCase
@@ -10,6 +10,7 @@ import app.vercors.shared.ui.configureWithLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.mapNotNull
 import pro.respawn.flowmvi.api.Container
 import pro.respawn.flowmvi.api.MVIAction
 import pro.respawn.flowmvi.api.MVIIntent
@@ -37,7 +38,8 @@ class InstanceDetailsContainer(
 
         whileSubscribed {
             observeInstanceList()
-                .map { instances -> instances.map { list -> list.first { it.id == instanceId }.toView() } }
+                .mapNotNull { instances -> instances.orNull()?.find { it.id == instanceId } }
+                .map { Resource.Success(it.toView()) }
                 .collect { instance ->
                     updateState { copy(instance = instance) }
                 }

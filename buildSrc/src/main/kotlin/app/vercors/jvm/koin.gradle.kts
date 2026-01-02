@@ -13,3 +13,7 @@ dependencies {
     implementation(project.dependencies.platform(libs.koin.bom))
     implementation(libs.koin.core)
 }
+
+ksp {
+    arg("KOIN_EXPORT_DEFINITIONS", "false")
+}

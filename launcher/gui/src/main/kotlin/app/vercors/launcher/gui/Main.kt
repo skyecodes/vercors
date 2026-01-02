@@ -44,7 +44,6 @@ import org.koin.core.Koin
 import org.koin.core.annotation.ComponentScan
 import org.koin.core.annotation.KoinApplication
 import org.koin.core.annotation.Module
-import org.koin.core.logger.Level
 import org.koin.core.module.dsl.new
 import org.koin.dsl.module
 import org.koin.ksp.generated.startKoin
@@ -55,7 +54,7 @@ import java.awt.Dimension
 fun main() {
     val coroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     val koinApplication = GUIApplication.startKoin {
-        logger(SLF4JLogger(Level.DEBUG))
+        logger(SLF4JLogger())
         commonDataProperties()
         modules(AppModule, module { single { coroutineScope } })
     }

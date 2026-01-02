@@ -6,6 +6,8 @@ import app.vercors.core.data.readJson
 import app.vercors.core.data.writeJson
 import app.vercors.core.domain.*
 import io.github.irgaly.kfswatch.KfsDirectoryWatcher
+import io.github.oshai.kotlinlogging.KMarkerFactory
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.filter
@@ -13,18 +15,20 @@ import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.io.files.FileNotFoundException
 import kotlinx.io.files.Path
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.Json
-import org.koin.core.annotation.Single
+import org.koin.core.annotation.Factory
 
-interface JsonFileState<T> {
+private val logger = KotlinLogging.logger {}
+
+interface JsonFileStore<T> {
     val state: ResourceStateFlow<T>
     suspend fun write(value: T)
 }
 
-private class JsonFileStateImpl<T>(
+private class JsonFileStoreImpl<T>(
+    private val name: String,
     private val path: Path,
     private val serializer: KSerializer<T>,
     private val defaultProvider: () -> T,
@@ -32,7 +36,8 @@ private class JsonFileStateImpl<T>(
     private val ioDispatcher: CoroutineDispatcher,
     coroutineScope: CoroutineScope,
     watcher: KfsDirectoryWatcher
-) : JsonFileState<T> {
+) : JsonFileStore<T> {
+    private val marker = KMarkerFactory.getMarker(name)
     private val mutex = Mutex()
     private val _state = MutableResourceStateFlow<T>()
     override val state: ResourceStateFlow<T> = _state.asResourceStateFlow(coroutineScope)
@@ -40,6 +45,7 @@ private class JsonFileStateImpl<T>(
     init {
         coroutineScope.launch {
             watcher.add(path.parent!!.toString())
+            logger.debug(throwable = null, marker = marker) { "Watching $path for changes" }
             watcher.onEventFlow
                 .filter { it.path == path.name }
                 .onStart { load() }
@@ -51,15 +57,15 @@ private class JsonFileStateImpl<T>(
         if (mutex.isLocked) return
         mutex.withLock {
             if (!path.isRegularFile(ioDispatcher)) {
+                logger.debug(throwable = null, marker = marker) { "No file found at $path - writing default data" }
+                path.deleteRecursively(dispatcher = ioDispatcher)
                 write(defaultProvider())
-                awaitCancellation() // Wait for the update to get picked up by the watcher
+                return
             }
             _state.update { Resource.Loading(it.resultOrNull()) }
+            logger.debug(throwable = null, marker = marker) { "Reading data at $path" }
             val result = try {
                 Resource.Success(path.readJson(serializer, json, ioDispatcher))
-            } catch (_: FileNotFoundException) {
-                write(defaultProvider())
-                Resource.Unloaded
             } catch (e: Exception) {
                 currentCoroutineContext().ensureActive()
                 delay(1000) // If another update happens within 1 second, the failure will be canceled
@@ -72,21 +78,32 @@ private class JsonFileStateImpl<T>(
     override suspend fun write(value: T) {
         if (!path.isRegularFile(ioDispatcher))
             path.deleteRecursively(dispatcher = ioDispatcher)
+        logger.debug(throwable = null, marker = marker) { "Writing data at $path" }
         path.writeJson(serializer, value, json, ioDispatcher)
     }
 }
 
-interface JsonFileStateFactory {
-    operator fun <T> invoke(path: Path, serializer: KSerializer<T>, defaultProvider: () -> T): JsonFileState<T>
+interface JsonFileStoreFactory {
+    operator fun <T> invoke(
+        name: String,
+        path: Path,
+        serializer: KSerializer<T>,
+        defaultProvider: () -> T
+    ): JsonFileStore<T>
 }
 
-@Single
-fun provideJsonFileStateFactory(
+@Factory
+fun provideJsonFileStoreFactory(
     json: Json,
     @IODispatcher ioDispatcher: CoroutineDispatcher,
     coroutineScope: CoroutineScope,
     watcher: KfsDirectoryWatcher
-): JsonFileStateFactory = object : JsonFileStateFactory {
-    override fun <T> invoke(path: Path, serializer: KSerializer<T>, defaultProvider: () -> T): JsonFileState<T> =
-        JsonFileStateImpl(path, serializer, defaultProvider, json, ioDispatcher, coroutineScope, watcher)
+): JsonFileStoreFactory = object : JsonFileStoreFactory {
+    override fun <T> invoke(
+        name: String,
+        path: Path,
+        serializer: KSerializer<T>,
+        defaultProvider: () -> T
+    ): JsonFileStore<T> =
+        JsonFileStoreImpl(name, path, serializer, defaultProvider, json, ioDispatcher, coroutineScope, watcher)
 }

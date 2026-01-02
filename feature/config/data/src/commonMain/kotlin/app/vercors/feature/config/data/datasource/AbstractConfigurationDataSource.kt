@@ -1,20 +1,21 @@
 package app.vercors.feature.config.data.datasource
 
-import app.vercors.shared.data.JsonFileStateFactory
+import app.vercors.shared.data.JsonFileStoreFactory
 import kotlinx.io.files.Path
 import kotlinx.serialization.KSerializer
 
 abstract class AbstractConfigurationDataSource<T : Any>(
+    storeName: String,
     configFileName: String,
     appPath: Path,
     serializer: KSerializer<T>,
     default: () -> T,
-    jsonFileStateFactory: JsonFileStateFactory
+    jsonFileStoreFactory: JsonFileStoreFactory
 ) {
     private val configFile = Path(appPath, configFileName)
-    private val jsonFileState = jsonFileStateFactory(configFile, serializer, default)
+    private val store = jsonFileStoreFactory(storeName, configFile, serializer, default)
 
-    val configState = jsonFileState.state
+    val configState = store.state
 
-    suspend fun saveToFile(value: T) = jsonFileState.write(value)
+    suspend fun saveToFile(value: T) = store.write(value)
 }
