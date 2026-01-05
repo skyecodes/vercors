@@ -12,7 +12,6 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.io.files.Path
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.Json
-import org.koin.core.annotation.Factory
 
 private val logger = KotlinLogging.logger {}
 
@@ -22,7 +21,7 @@ interface JsonFileListStore<T> {
     suspend fun delete(id: String)
 }
 
-private class JsonFileListStoreImpl<T>(
+internal class JsonFileListStoreImpl<T>(
     private val name: String,
     private val path: Path,
     private val serializer: KSerializer<T>,
@@ -113,15 +112,4 @@ private class JsonFileListStoreImpl<T>(
 
 interface JsonFileListStoreFactory {
     operator fun <T> invoke(name: String, path: Path, serializer: KSerializer<T>): JsonFileListStore<T>
-}
-
-@Factory
-fun provideJsonFileListStoreFactory(
-    json: Json,
-    @IODispatcher ioDispatcher: CoroutineDispatcher,
-    coroutineScope: CoroutineScope,
-    watcher: KfsDirectoryWatcher
-): JsonFileListStoreFactory = object : JsonFileListStoreFactory {
-    override fun <T> invoke(name: String, path: Path, serializer: KSerializer<T>): JsonFileListStore<T> =
-        JsonFileListStoreImpl(name, path, serializer, json, ioDispatcher, coroutineScope, watcher)
 }

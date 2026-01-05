@@ -3,9 +3,9 @@ plugins {
 }
 
 dependencies {
-    api(projects.feature.home.domain)
-    api(projects.feature.project.ui)
-    api(projects.feature.instance.ui)
+    commonMainApi(projects.feature.home.domain)
+    commonMainApi(projects.feature.project.ui)
+    commonMainApi(projects.feature.instance.ui)
 }
 
 compose.resources {

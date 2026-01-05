@@ -3,10 +3,10 @@ plugins {
 }
 
 dependencies {
-    api(projects.feature.instance.domain)
-    implementation(projects.feature.launcher.domain)
-    implementation(projects.feature.game.domain)
-    implementation(projects.feature.game.ui)
+    commonMainApi(projects.feature.instance.domain)
+    commonMainImplementation(projects.feature.launcher.domain)
+    commonMainImplementation(projects.feature.game.domain)
+    commonMainImplementation(projects.feature.game.ui)
 }
 
 compose.resources {

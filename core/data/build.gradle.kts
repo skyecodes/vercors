@@ -1,5 +1,5 @@
 plugins {
-    id("app.vercors.multiplatform")
+    id("app.vercors.shared")
     alias(libs.plugins.serialization)
 }
 

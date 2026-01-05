@@ -3,7 +3,7 @@ plugins {
 }
 
 dependencies {
-    api(projects.feature.configGui.domain)
+    commonMainApi(projects.feature.configGui.domain)
 }
 
 compose.resources {

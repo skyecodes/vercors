@@ -14,9 +14,8 @@ import com.github.ajalt.mordant.widgets.progress.text
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
-class LoginCommand : VercorsCommandBase("login") {
+class LoginCommand(private val login: LoginUseCase) : VercorsCommandBase("login") {
     override suspend fun execute() = coroutineScope {
-        val login = koin.get<LoginUseCase>()
         val progress = progressBarContextLayout {
             text { context }
             progressBar()

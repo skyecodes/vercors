@@ -8,6 +8,9 @@ import app.vercors.core.domain.asResourceStateFlow
 import app.vercors.core.domain.load
 import app.vercors.meta.lib.game.MojangVersionManifest
 import app.vercors.shared.data.IODispatcher
+import dev.zacsweers.metro.AppScope
+import dev.zacsweers.metro.Inject
+import dev.zacsweers.metro.SingleIn
 import io.github.irgaly.kfswatch.KfsDirectoryWatcher
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -18,10 +21,10 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.io.Source
 import kotlinx.io.files.Path
 import kotlinx.serialization.json.Json
-import org.koin.core.annotation.Single
 
-@Single
-internal class GameLocalDataSource(
+@SingleIn(AppScope::class)
+@Inject
+class GameLocalDataSource(
     private val json: Json,
     private val watcher: KfsDirectoryWatcher,
     @IODispatcher private val ioDispatcher: CoroutineDispatcher,

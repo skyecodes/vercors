@@ -22,7 +22,7 @@ compose = "1.10.0-rc02"
 compose-hot-reload = "1.1.0-alpha03"
 lifecycle = "2.10.0-alpha06"
 navigation3 = "1.0.0-alpha06"
-flowmvi = "3.3.0-alpha02"
+circuit = "0.31.0"
 unstyled = "1.49.3"
 icons = "2.2.1"
 ripple = "1.1.0"
@@ -36,6 +36,7 @@ graalvm = "0.11.3"
 # DI
 koin = "4.2.0-alpha3"
 koin-annotations = "2.3.2-Beta1"
+metro = "0.9.3"
 # Logging
 logback = "1.5.22"
 kotlin-logging = "7.0.14"
@@ -82,11 +83,9 @@ compose-components-resources = { module = "org.jetbrains.compose.components:comp
 androidx-lifecycle-viewmodel = { module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycle" }
 androidx-lifecycle-runtime = { module = "org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycle" }
 androidx-navigation3-ui = { module = "org.jetbrains.androidx.navigation3:navigation3-ui", version.ref = "navigation3" }
-flowmvi-core = { module = "pro.respawn.flowmvi:core", version.ref = "flowmvi" }
-flowmvi-test = { module = "pro.respawn.flowmvi:test", version.ref = "flowmvi" }
-flowmvi-compose = { module = "pro.respawn.flowmvi:compose", version.ref = "flowmvi" }
-flowmvi-metrics = { module = "pro.respawn.flowmvi:metrics", version.ref = "flowmvi" }
-flowmvi-android = { module = "pro.respawn.flowmvi:android", version.ref = "flowmvi" }
+circuit-foundation = { module = "com.slack.circuit:circuit-foundation", version.ref = "circuit" }
+circuit-codegen = { module = "com.slack.circuit:circuit-codegen", version.ref = "circuit" }
+circuit-codegen-annotations = { module = "com.slack.circuit:circuit-codegen-annotations", version.ref = "circuit" }
 composables-composeunstyled = { module = "com.composables:core", version.ref = "unstyled" }
 composables-composeunstyled-theming = { module = "com.composables:composeunstyled-theming", version.ref = "unstyled" }
 composables-ripple = { module = "com.composables:ripple-indication", version.ref = "ripple" }
@@ -103,13 +102,10 @@ mordant-coroutines = { module = "com.github.ajalt.mordant:mordant-coroutines", v
 # DI
 koin-bom = { module = "io.insert-koin:koin-bom", version.ref = "koin" }
 koin-core = { module = "io.insert-koin:koin-core" }
-koin-compose = { module = "io.insert-koin:koin-compose" }
-koin-compose-viewmodel = { module = "io.insert-koin:koin-compose-viewmodel" }
-koin-compose-navigation3 = { module = "io.insert-koin:koin-compose-navigation3" }
 koin-ktor = { module = "io.insert-koin:koin-ktor" }
-koin-logger-slf4j = { module = "io.insert-koin:koin-logger-slf4j" }
 koin-annotations = { module = "io.insert-koin:koin-annotations", version.ref = "koin-annotations" }
 koin-ksp-compiler = { module = "io.insert-koin:koin-ksp-compiler", version.ref = "koin-annotations" }
+metrox-viewmodel-compose = { module = "dev.zacsweers.metro:metrox-viewmodel-compose", version.ref = "metro" }
 # Logging
 logback = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
 kotlin-logging = { module = "io.github.oshai:kotlin-logging", version.ref = "kotlin-logging" }
@@ -134,6 +130,8 @@ gradle-plugin-compose-compiler = { module = "org.jetbrains.kotlin.plugin.compose
 gradle-plugin-compose-hot-reload = { module = "org.jetbrains.compose.hot-reload:org.jetbrains.compose.hot-reload.gradle.plugin", version.ref = "compose-hot-reload" }
 # CLI
 gradle-plugin-graalvm = { module = "org.graalvm.buildtools.native:org.graalvm.buildtools.native.gradle.plugin", version.ref = "graalvm" }
+# DI
+gradle-plugin-metro = { module = "dev.zacsweers.metro:dev.zacsweers.metro.gradle.plugin", version.ref = "metro" }
 
 [plugins]
 # General
@@ -151,6 +149,8 @@ compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose" }
 compose-hot-reload = { id = "org.jetbrains.compose.hot-reload" }
 # CLI
 graalvm = { id = "org.graalvm.buildtools.native" }
+# DI
+metro = { id = "dev.zacsweers.metro" }
 
 [bundles]
 gradle-plugins = [
@@ -164,5 +164,6 @@ gradle-plugins = [
     "gradle-plugin-compose-multiplatform",
     "gradle-plugin-compose-compiler",
     "gradle-plugin-compose-hot-reload",
-    "gradle-plugin-graalvm"
+    "gradle-plugin-graalvm",
+    "gradle-plugin-metro"
 ]

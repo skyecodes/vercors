@@ -1,7 +1,7 @@
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 
 plugins {
-    id("app.vercors.multiplatform.koin")
+    id("app.vercors.launcher.cli")
 }
 
 dependencies {

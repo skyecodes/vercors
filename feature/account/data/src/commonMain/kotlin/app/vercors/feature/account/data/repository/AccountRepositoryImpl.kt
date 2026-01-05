@@ -9,18 +9,23 @@ import app.vercors.feature.account.domain.model.AccountId
 import app.vercors.feature.account.domain.model.AccountList
 import app.vercors.feature.account.domain.repository.AccountNotFoundException
 import app.vercors.feature.account.domain.repository.AccountRepository
+import dev.zacsweers.metro.AppScope
+import dev.zacsweers.metro.ContributesBinding
+import dev.zacsweers.metro.Inject
+import dev.zacsweers.metro.SingleIn
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
-import org.koin.core.annotation.Single
 import kotlin.time.Clock
 
 private val logger = KotlinLogging.logger {}
 
-@Single
-internal class AccountRepositoryImpl(
+@SingleIn(AppScope::class)
+@ContributesBinding(AppScope::class)
+@Inject
+class AccountRepositoryImpl(
     coroutineScope: CoroutineScope,
     private val dataSource: AccountDataSource,
 ) : AccountRepository {

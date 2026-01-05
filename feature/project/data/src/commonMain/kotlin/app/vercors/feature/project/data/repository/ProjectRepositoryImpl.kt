@@ -9,14 +9,19 @@ import app.vercors.feature.project.domain.model.*
 import app.vercors.feature.project.domain.repository.ProjectRepository
 import app.vercors.meta.client.project.ProjectApi
 import app.vercors.meta.lib.project.ProjectLoaderData
+import dev.zacsweers.metro.AppScope
+import dev.zacsweers.metro.ContributesBinding
+import dev.zacsweers.metro.Inject
+import dev.zacsweers.metro.SingleIn
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonPrimitive
-import org.koin.core.annotation.Single
 
-@Single
-internal class ProjectRepositoryImpl(
+@SingleIn(AppScope::class)
+@ContributesBinding(AppScope::class)
+@Inject
+class ProjectRepositoryImpl(
     private val projectApi: ProjectApi,
     private val json: Json
 ) : ProjectRepository {

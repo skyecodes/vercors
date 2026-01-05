@@ -5,9 +5,9 @@ import app.vercors.feature.project.domain.model.BriefProject
 import app.vercors.feature.project.domain.model.PlatformId
 import app.vercors.feature.project.domain.model.ProjectType
 import app.vercors.feature.project.domain.repository.ProjectRepository
-import org.koin.core.annotation.Factory
+import dev.zacsweers.metro.Inject
 
-@Factory
+@Inject
 class GetFeaturedProjectListUseCase(
     private val projectRepository: ProjectRepository
 ) {

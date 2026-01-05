@@ -8,6 +8,7 @@ import app.vercors.feature.account.domain.service.LoginStep
 import app.vercors.shared.data.Sha256
 import dev.whyoleg.cryptography.operations.Hasher
 import dev.whyoleg.cryptography.random.CryptographyRandom
+import dev.zacsweers.metro.*
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.*
 import io.ktor.client.call.*
@@ -24,17 +25,17 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.*
 import kotlinx.serialization.json.*
-import org.koin.core.annotation.Property
-import org.koin.core.annotation.Single
 import kotlin.io.encoding.Base64
 import kotlin.uuid.Uuid
 
 private val logger = KotlinLogging.logger {}
 
-@Single
-internal class AuthenticationServiceImpl(
+@SingleIn(AppScope::class)
+@ContributesBinding(AppScope::class)
+@Inject
+class AuthenticationServiceImpl(
     private val httpClient: HttpClient,
-    @Property("MICROSOFT_CLIENT_ID") private val clientId: String,
+    @Named("microsoftClientId") private val clientId: String,
     @Sha256 private val sha256Hasher: Hasher,
 ) : AuthenticationService {
     override fun login(): Flow<LoginState> = flow {

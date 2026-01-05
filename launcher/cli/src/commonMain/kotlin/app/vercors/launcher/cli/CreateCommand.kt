@@ -17,7 +17,10 @@ import com.github.ajalt.clikt.parameters.options.validate
 private const val LATEST_RELEASE = "latest-release"
 private const val LATEST_SNAPSHOT = "latest-release"
 
-class CreateCommand : VercorsCommandBase("create") {
+class CreateCommand(
+    private val observeGameVersionList: ObserveGameVersionListUseCase,
+    private val createInstance: CreateInstanceUseCase
+) : VercorsCommandBase("create") {
     private val gameVersion by option(help = "Minecraft version")
         .default(LATEST_RELEASE)
         .validate {
@@ -43,7 +46,6 @@ class CreateCommand : VercorsCommandBase("create") {
     override fun help(context: Context): String = "Create a new instance"
 
     private suspend fun resolveGameVersion(): String {
-        val observeGameVersionList = koin.get<ObserveGameVersionListUseCase>()
         val versionList = observeGameVersionList().await().orThrow()
         val version = when (gameVersion) {
             LATEST_RELEASE -> versionList.latestRelease
@@ -57,7 +59,6 @@ class CreateCommand : VercorsCommandBase("create") {
     }
 
     private suspend fun createInstance(resolvedGameVersion: String): Instance {
-        val createInstance = koin.get<CreateInstanceUseCase>()
         val instance = Instance(
             name = name,
             gameVersion = resolvedGameVersion,

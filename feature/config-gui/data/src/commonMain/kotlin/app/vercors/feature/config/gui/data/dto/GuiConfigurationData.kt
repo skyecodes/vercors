@@ -6,7 +6,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-internal data class GuiConfigurationData(
+data class GuiConfigurationData(
     val menuDrawerOpen: Boolean,
     val animations: Boolean,
     val preferredPlatform: String,
@@ -28,7 +28,7 @@ internal fun GuiConfiguration.toData(): GuiConfigurationData = GuiConfigurationD
 )
 
 @Serializable
-internal enum class HomeCategoryConfigData {
+enum class HomeCategoryConfigData {
     @SerialName("instances")
     Instances,
 

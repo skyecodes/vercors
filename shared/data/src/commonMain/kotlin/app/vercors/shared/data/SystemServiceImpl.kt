@@ -1,10 +1,15 @@
 package app.vercors.shared.data
 
 import app.vercors.shared.domain.service.*
+import dev.zacsweers.metro.AppScope
+import dev.zacsweers.metro.ContributesBinding
+import dev.zacsweers.metro.Inject
+import dev.zacsweers.metro.SingleIn
 import kotlinx.coroutines.CoroutineDispatcher
-import org.koin.core.annotation.Single
 
-@Single
+@SingleIn(AppScope::class)
+@ContributesBinding(AppScope::class)
+@Inject
 class SystemServiceImpl(
     @IODispatcher private val ioDispatcher: CoroutineDispatcher
 ) : SystemService {

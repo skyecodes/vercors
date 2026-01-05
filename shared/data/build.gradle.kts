@@ -1,5 +1,6 @@
 plugins {
-    id("app.vercors.multiplatform.koin")
+    id("app.vercors.shared")
+    id("app.vercors.di")
     alias(libs.plugins.serialization)
     alias(libs.plugins.buildconfig)
 }
@@ -32,11 +33,6 @@ buildConfig {
         internalVisibility = false
         topLevelConstants = true
     }
-    buildConfigField(
-        type = "String",
-        name = "MICROSOFT_CLIENT_ID",
-        expression = "\"${properties["microsoftClientId"] ?: System.getenv("MICROSOFT_CLIENT_ID") ?: error("AUTH_CLIENT_ID not set")}\""
-    )
     buildConfigField(
         type = "String",
         name = "META_BASE_URL",

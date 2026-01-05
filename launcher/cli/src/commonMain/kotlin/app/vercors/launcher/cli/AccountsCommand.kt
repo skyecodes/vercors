@@ -7,9 +7,8 @@ import com.github.ajalt.clikt.core.Context
 import com.github.ajalt.mordant.rendering.BorderType
 import com.github.ajalt.mordant.table.table
 
-class AccountsCommand : VercorsCommandBase("accounts") {
+class AccountsCommand(private val observeAccountList: ObserveAccountListUseCase) : VercorsCommandBase("accounts") {
     override suspend fun execute() {
-        val observeAccountList = koin.get<ObserveAccountListUseCase>()
         val accountList = observeAccountList().await().orThrow()
         if (accountList.accounts.isEmpty()) {
             echo("No account found. Login to your Microsoft account using 'vercors login'.")

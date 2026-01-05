@@ -6,7 +6,7 @@ import kotlin.time.Instant
 import kotlin.uuid.Uuid
 
 @Serializable
-internal data class AccountData(
+data class AccountData(
     val id: Uuid,
     val username: String,
     val accessToken: String,

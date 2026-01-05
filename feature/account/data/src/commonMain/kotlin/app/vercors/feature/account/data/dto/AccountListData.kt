@@ -5,7 +5,7 @@ import kotlinx.serialization.Serializable
 import kotlin.uuid.Uuid
 
 @Serializable
-internal data class AccountListData(
+data class AccountListData(
     val selected: Uuid?,
     val accounts: List<AccountData>
 )

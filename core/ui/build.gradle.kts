@@ -1,15 +1,15 @@
 plugins {
-    id("app.vercors.jvm.compose")
+    id("app.vercors.compose")
 }
 
 dependencies {
-    api(projects.core.domain)
-    api(libs.composables.composeunstyled.theming)
-    implementation(libs.composables.composeunstyled)
-    implementation(libs.composables.ripple)
-    implementation(libs.composables.icons.lucide)
+    commonMainApi(projects.core.domain)
+    commonMainApi(libs.composables.composeunstyled.theming)
+    commonMainImplementation(libs.composables.composeunstyled)
+    commonMainImplementation(libs.composables.ripple)
+    commonMainImplementation(libs.composables.icons.lucide)
+    commonMainImplementation(libs.androidx.lifecycle.runtime)
 }
-
 
 compose.resources {
     packageOfResClass = "app.vercors.core.ui"

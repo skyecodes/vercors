@@ -3,12 +3,13 @@ package app.vercors.feature.account.data.service
 import app.vercors.feature.account.domain.model.AccountId
 import app.vercors.feature.account.domain.model.AccountSkin
 import app.vercors.feature.account.domain.service.AccountSkinService
-import org.koin.core.annotation.Property
-import org.koin.core.annotation.Single
+import dev.zacsweers.metro.*
 
-@Single
+@SingleIn(AppScope::class)
+@ContributesBinding(AppScope::class)
+@Inject
 class AccountSkinServiceImpl(
-    @Property("META_BASE_URL") private val metaBaseUrl: String
+    @Named("metaBaseUrl") private val metaBaseUrl: String
 ) : AccountSkinService {
     override fun getAccountSkin(accountId: AccountId): AccountSkin = accountId.toHexString().let {
         AccountSkin(

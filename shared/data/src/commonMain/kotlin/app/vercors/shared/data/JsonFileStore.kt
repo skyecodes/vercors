@@ -18,7 +18,6 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.io.files.Path
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.Json
-import org.koin.core.annotation.Factory
 
 private val logger = KotlinLogging.logger {}
 
@@ -27,7 +26,7 @@ interface JsonFileStore<T> {
     suspend fun write(value: T)
 }
 
-private class JsonFileStoreImpl<T>(
+internal class JsonFileStoreImpl<T>(
     private val name: String,
     private val path: Path,
     private val serializer: KSerializer<T>,
@@ -90,20 +89,4 @@ interface JsonFileStoreFactory {
         serializer: KSerializer<T>,
         defaultProvider: () -> T
     ): JsonFileStore<T>
-}
-
-@Factory
-fun provideJsonFileStoreFactory(
-    json: Json,
-    @IODispatcher ioDispatcher: CoroutineDispatcher,
-    coroutineScope: CoroutineScope,
-    watcher: KfsDirectoryWatcher
-): JsonFileStoreFactory = object : JsonFileStoreFactory {
-    override fun <T> invoke(
-        name: String,
-        path: Path,
-        serializer: KSerializer<T>,
-        defaultProvider: () -> T
-    ): JsonFileStore<T> =
-        JsonFileStoreImpl(name, path, serializer, defaultProvider, json, ioDispatcher, coroutineScope, watcher)
 }

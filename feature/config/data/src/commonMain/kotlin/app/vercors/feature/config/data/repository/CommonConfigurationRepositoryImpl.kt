@@ -6,10 +6,15 @@ import app.vercors.feature.config.data.dto.toData
 import app.vercors.feature.config.data.dto.toDomain
 import app.vercors.feature.config.domain.model.CommonConfiguration
 import app.vercors.feature.config.domain.repository.CommonConfigurationRepository
+import dev.zacsweers.metro.*
 import kotlinx.coroutines.CoroutineScope
-import org.koin.core.annotation.Single
 
-@Single
+@SingleIn(AppScope::class)
+@ContributesBinding(
+    scope = AppScope::class,
+    binding = binding<CommonConfigurationRepository>()
+)
+@Inject
 internal class CommonConfigurationRepositoryImpl(
     coroutineScope: CoroutineScope,
     dataSource: CommonConfigurationDataSource

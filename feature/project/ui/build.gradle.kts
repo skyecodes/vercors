@@ -3,12 +3,12 @@ plugins {
 }
 
 dependencies {
-    api(projects.feature.project.domain)
-    implementation(projects.feature.game.domain)
-    implementation(projects.feature.game.ui)
-    implementation(projects.feature.configGui.domain)
-    implementation(libs.human.readable)
-    implementation(libs.composables.icons.fontawesome.brands)
+    commonMainApi(projects.feature.project.domain)
+    commonMainImplementation(projects.feature.game.domain)
+    commonMainImplementation(projects.feature.game.ui)
+    commonMainImplementation(projects.feature.configGui.domain)
+    commonMainImplementation(libs.human.readable)
+    commonMainImplementation(libs.composables.icons.fontawesome.brands)
 }
 
 compose.resources {

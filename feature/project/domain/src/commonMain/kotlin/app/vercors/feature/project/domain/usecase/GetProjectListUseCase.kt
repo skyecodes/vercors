@@ -8,9 +8,9 @@ import app.vercors.feature.project.domain.model.PlatformId
 import app.vercors.feature.project.domain.model.ProjectSortBy
 import app.vercors.feature.project.domain.model.ProjectType
 import app.vercors.feature.project.domain.repository.ProjectRepository
-import org.koin.core.annotation.Factory
+import dev.zacsweers.metro.Inject
 
-@Factory
+@Inject
 class GetProjectListUseCase(
     private val projectRepository: ProjectRepository
 ) {

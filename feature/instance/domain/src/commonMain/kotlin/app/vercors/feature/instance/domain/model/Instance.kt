@@ -15,12 +15,6 @@ data class Instance(
     val updatedAt: Instant = Clock.System.now(),
     val lastPlayedAt: Instant? = null,
     val playTime: Duration = Duration.ZERO,
-) {
-    @Deprecated("Move to UI")
-    val loaderName: String get() = modLoader?.type?.name ?: "Vanilla"
-
-    @Deprecated("Move to UI")
-    val typeName: String get() = if (modpackInfo != null) "Modpack" else "Custom"
-}
+)
 
 typealias InstanceId = String

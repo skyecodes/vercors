@@ -7,11 +7,18 @@ import app.vercors.feature.config.gui.data.dto.toData
 import app.vercors.feature.config.gui.data.dto.toDomain
 import app.vercors.feature.config.gui.domain.model.GuiConfiguration
 import app.vercors.feature.config.gui.domain.repository.GuiConfigurationRepository
+import dev.zacsweers.metro.AppScope
+import dev.zacsweers.metro.ContributesBinding
+import dev.zacsweers.metro.SingleIn
+import dev.zacsweers.metro.binding
 import kotlinx.coroutines.CoroutineScope
-import org.koin.core.annotation.Single
 
-@Single
-internal class GuiConfigurationRepositoryImpl(
+@SingleIn(AppScope::class)
+@ContributesBinding(
+    scope = AppScope::class,
+    binding = binding<GuiConfigurationRepository>()
+)
+class GuiConfigurationRepositoryImpl(
     coroutineScope: CoroutineScope,
     dataSource: GuiConfigurationDataSource
 ) : GuiConfigurationRepository, AbstractConfigurationRepositoryImpl<GuiConfiguration, GuiConfigurationData>(

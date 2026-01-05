@@ -2,12 +2,12 @@ package app.vercors.feature.instance.domain.usecase
 
 import app.vercors.feature.instance.domain.instance.InstanceRepository
 import app.vercors.feature.instance.domain.model.Instance
+import dev.zacsweers.metro.Inject
 import io.github.oshai.kotlinlogging.KotlinLogging
-import org.koin.core.annotation.Factory
 
 private val logger = KotlinLogging.logger {}
 
-@Factory
+@Inject
 class CreateInstanceUseCase(
     private val instanceRepository: InstanceRepository
 ) {

@@ -8,16 +8,21 @@ import app.vercors.feature.instance.domain.instance.InstanceNotFoundException
 import app.vercors.feature.instance.domain.instance.InstanceRepository
 import app.vercors.feature.instance.domain.model.Instance
 import app.vercors.feature.instance.domain.model.InstanceId
+import dev.zacsweers.metro.AppScope
+import dev.zacsweers.metro.ContributesBinding
+import dev.zacsweers.metro.Inject
+import dev.zacsweers.metro.SingleIn
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import org.koin.core.annotation.Single
 
 private val logger = KotlinLogging.logger {}
 
-@Single
-internal class InstanceRepositoryImpl(
+@SingleIn(AppScope::class)
+@ContributesBinding(AppScope::class)
+@Inject
+class InstanceRepositoryImpl(
     coroutineScope: CoroutineScope,
     private val dataSource: InstanceDataSource,
 ) : InstanceRepository {

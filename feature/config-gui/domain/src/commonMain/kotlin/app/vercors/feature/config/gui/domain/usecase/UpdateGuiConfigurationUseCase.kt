@@ -2,9 +2,9 @@ package app.vercors.feature.config.gui.domain.usecase
 
 import app.vercors.feature.config.gui.domain.model.GuiConfiguration
 import app.vercors.feature.config.gui.domain.repository.GuiConfigurationRepository
-import org.koin.core.annotation.Factory
+import dev.zacsweers.metro.Inject
 
-@Factory
+@Inject
 class UpdateGuiConfigurationUseCase(
     private val repository: GuiConfigurationRepository
 ) {

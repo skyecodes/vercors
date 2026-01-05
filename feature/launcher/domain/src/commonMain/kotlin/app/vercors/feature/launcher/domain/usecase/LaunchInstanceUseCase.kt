@@ -6,12 +6,12 @@ import app.vercors.feature.instance.domain.instance.InstanceRepository
 import app.vercors.feature.instance.domain.model.InstanceId
 import app.vercors.feature.launcher.domain.model.InstanceLaunchState
 import app.vercors.feature.launcher.domain.service.LauncherService
+import dev.zacsweers.metro.Inject
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flow
-import org.koin.core.annotation.Factory
 
-@Factory
+@Inject
 class LaunchInstanceUseCase(
     private val instanceRepository: InstanceRepository,
     private val accountRepository: AccountRepository,

@@ -13,24 +13,31 @@ import app.vercors.feature.project.domain.model.BriefProject
 import app.vercors.feature.project.domain.model.PlatformId
 import app.vercors.feature.project.domain.model.ProjectType
 import app.vercors.feature.project.domain.usecase.GetFeaturedProjectListUseCase
+import dev.zacsweers.metro.Inject
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.transform
-import org.koin.core.annotation.Factory
 
-@Factory
+private val logger = KotlinLogging.logger {}
+
+@Inject
 class ObserveHomeSectionListUseCase(
     private val observeGuiConfiguration: ObserveGuiConfigurationUseCase,
     private val observeInstanceList: ObserveInstanceListUseCase,
     private val getFeaturedProjectList: GetFeaturedProjectListUseCase,
 ) {
     operator fun invoke(): Flow<Resource<List<HomeSection<*>>>> {
-        val configFlow = observeGuiConfiguration().map { res -> res.map { it.preferredPlatform to it.homeCategories } }
+        logger.debug { "Observing home section list" }
+        val configFlow = observeGuiConfiguration()
+            .map { res -> res.map { it.preferredPlatform to it.homeCategories } }
             .distinctUntilChanged()
-        val instanceFlow = observeInstanceList().map { res -> res.map { list -> list.sortedBy { it.lastPlayedAt } } }
+        val instanceFlow = observeInstanceList()
+            .map { res -> res.map { list -> list.sortedBy { it.lastPlayedAt }.take(10) } }
             .distinctUntilChanged()
         return configFlow.combineResource(instanceFlow).transform { resources ->
+            logger.debug { "Resources: $resources" }
             emit(resources.map { (config, instances) ->
                 val (_, categories) = config
                 categories.map { it.toSection(instances, null) }

@@ -20,6 +20,10 @@ import de.jonasbroeckmann.kzip.extractTo
 import de.jonasbroeckmann.kzip.open
 import dev.whyoleg.cryptography.DelicateCryptographyApi
 import dev.whyoleg.cryptography.operations.Hasher
+import dev.zacsweers.metro.AppScope
+import dev.zacsweers.metro.ContributesBinding
+import dev.zacsweers.metro.Inject
+import dev.zacsweers.metro.SingleIn
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.*
 import io.ktor.client.request.*
@@ -33,13 +37,14 @@ import kotlinx.io.buffered
 import kotlinx.io.bytestring.toHexString
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
-import org.koin.core.annotation.Single
 
 private const val GAME_ASSET_DOWNLOAD_URL = "https://resources.download.minecraft.net"
 
 private val logger = KotlinLogging.logger {}
 
-@Single
+@SingleIn(AppScope::class)
+@ContributesBinding(AppScope::class)
+@Inject
 class LauncherServiceImpl(
     private val gameRepository: GameRepository,
     private val systemService: SystemService,

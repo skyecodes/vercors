@@ -7,9 +7,8 @@ import com.github.ajalt.clikt.core.Context
 import com.github.ajalt.mordant.rendering.BorderType
 import com.github.ajalt.mordant.table.table
 
-class ListCommand : VercorsCommandBase("list") {
+class ListCommand(private val observeInstanceList: ObserveInstanceListUseCase) : VercorsCommandBase("list") {
     override suspend fun execute() {
-        val observeInstanceList = koin.get<ObserveInstanceListUseCase>()
         val instances = observeInstanceList().await().orThrow()
         if (instances.isEmpty()) {
             echo("No instance found. Create a new instance using 'vercors create'.")
@@ -19,7 +18,14 @@ class ListCommand : VercorsCommandBase("list") {
                 borderType = BorderType.SQUARE_DOUBLE_SECTION_SEPARATOR
                 header { row("ID", "Name", "Version", "Loader", "Type") }
                 body {
-                    instances.forEach { row(it.id, it.name, it.gameVersion, it.loaderName, it.typeName) }
+                    instances.forEach {
+                        row(
+                            it.id,
+                            it.name,
+                            it.gameVersion,
+                            it.modLoader?.type?.name ?: "Vanilla",
+                            it.modpackInfo?.let { "Modpack" } ?: "Custom")
+                    }
                 }
             })
         }

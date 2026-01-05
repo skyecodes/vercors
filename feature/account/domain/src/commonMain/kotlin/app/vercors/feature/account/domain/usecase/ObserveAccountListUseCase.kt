@@ -3,9 +3,9 @@ package app.vercors.feature.account.domain.usecase
 import app.vercors.core.domain.ResourceStateFlow
 import app.vercors.feature.account.domain.model.AccountList
 import app.vercors.feature.account.domain.repository.AccountRepository
-import org.koin.core.annotation.Factory
+import dev.zacsweers.metro.Inject
 
-@Factory
+@Inject
 class ObserveAccountListUseCase(
     private val accountRepository: AccountRepository
 ) {

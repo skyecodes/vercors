@@ -1,5 +1,7 @@
 plugins {
-    id("app.vercors.multiplatform.koin")
+    id("app.vercors.shared")
+    id("app.vercors.di")
+    alias(libs.plugins.ksp)
     alias(libs.plugins.serialization)
     alias(libs.plugins.ktorfit)
 }

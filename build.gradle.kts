@@ -10,6 +10,7 @@ plugins {
     alias(libs.plugins.ktorfit) apply false
     alias(libs.plugins.graalvm) apply false
     alias(libs.plugins.buildconfig) apply false
+    alias(libs.plugins.metro) apply false
 }
 
 group = "app.vercors"

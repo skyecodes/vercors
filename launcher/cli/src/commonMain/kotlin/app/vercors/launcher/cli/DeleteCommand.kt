@@ -4,11 +4,10 @@ import app.vercors.feature.instance.domain.usecase.DeleteInstanceUseCase
 import com.github.ajalt.clikt.core.Context
 import com.github.ajalt.clikt.parameters.arguments.argument
 
-class DeleteCommand : VercorsCommandBase("delete") {
+class DeleteCommand(private val deleteInstance: DeleteInstanceUseCase) : VercorsCommandBase("delete") {
     private val id by argument(help = "Instance ID")
 
     override suspend fun execute() {
-        val deleteInstance = koin.get<DeleteInstanceUseCase>()
         val deletedInstance = deleteInstance(id)
         echo("Instance ${deletedInstance.name} deleted")
     }

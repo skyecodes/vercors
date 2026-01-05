@@ -1,0 +1,126 @@
+package app.vercors.feature.account.ui.list
+
+import androidx.compose.runtime.*
+import app.vercors.core.domain.map
+import app.vercors.core.ui.state.collectResourceAsStateWithLifecycle
+import app.vercors.core.ui.state.update
+import app.vercors.feature.account.domain.service.LoginState
+import app.vercors.feature.account.domain.service.LoginStep
+import app.vercors.feature.account.domain.usecase.*
+import app.vercors.shared.domain.usecase.CopyToClipboardUseCase
+import app.vercors.shared.domain.usecase.OpenBrowserUseCase
+import app.vercors.shared.ui.Presenter
+import app.vercors.shared.ui.Store
+import app.vercors.shared.ui.plus
+import com.slack.circuit.codegen.annotations.CircuitInject
+import dev.zacsweers.metro.AppScope
+import dev.zacsweers.metro.Inject
+import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
+
+private val logger = KotlinLogging.logger {}
+
+@CircuitInject(AccountListScreen::class, AppScope::class)
+@Inject
+class AccountListPresenter(
+    private val observeAccountList: ObserveAccountListUseCase,
+    private val login: LoginUseCase,
+    private val logout: LogoutUseCase,
+    private val selectAccount: SelectAccountUseCase,
+    private val getAccountSkin: GetAccountSkinUseCase,
+    private val openBrowser: OpenBrowserUseCase,
+    private val copyToClipboard: CopyToClipboardUseCase
+) : Presenter<AccountListState, AccountListEvent> {
+    @Composable
+    override fun present(): Store<AccountListState, AccountListEvent> {
+        val presenterScope = rememberCoroutineScope()
+        val accountList by observeAccountList().collectResourceAsStateWithLifecycle()
+        val mappedAccountList = remember(accountList) {
+            accountList.map { list ->
+                AccountListView(
+                    selected = list.selected,
+                    accounts = list.accounts.map { account ->
+                        AccountView(
+                            username = account.username,
+                            id = account.id,
+                            skin = getAccountSkin(account.id)
+                        )
+                    }
+                )
+            }
+        }
+        var loginJob by remember { mutableStateOf<Job?>(null) }
+        val loginState = remember { mutableStateOf(LoginStateView()) }
+
+        return AccountListState(
+            accountList = mappedAccountList,
+            loginState = loginState.value
+        ) + { event ->
+            when (event) {
+                AccountListEvent.CancelLogin -> loginJob?.cancel(CancellationException("Login cancelled by user"))
+                is AccountListEvent.CopyToClipboard -> copyToClipboard(event.data)
+                AccountListEvent.Login -> loginJob = presenterScope.launch { collectLoginState(loginState) }.apply {
+                    invokeOnCompletion {
+                        if (it != null) onFailure(it, loginState)
+                    }
+                }
+
+                is AccountListEvent.Logout -> presenterScope.launch { logout(event.accountId) }
+                is AccountListEvent.SelectAccount -> presenterScope.launch { selectAccount(event.accountId) }
+            }
+        }
+    }
+
+    private suspend fun collectLoginState(state: MutableState<LoginStateView>) = login().collect {
+        when (it) {
+            is LoginState.RequireLogin -> {
+                openBrowser(it.url)
+                state.update {
+                    copy(
+                        isLoggingIn = true,
+                        url = it.url
+                    )
+                }
+            }
+
+            is LoginState.Progress -> state.update {
+                copy(
+                    isLoggingIn = true,
+                    url = null,
+                    progress = it.step.number.toFloat() / LoginStep.entries.size
+                )
+            }
+
+            is LoginState.Success -> state.update {
+                copy(
+                    isLoggingIn = false,
+                    url = null,
+                    progress = null,
+                )
+            }
+
+            is LoginState.Error -> state.update {
+                copy(
+                    isLoggingIn = false,
+                    url = null,
+                    progress = null,
+                    error = it.error,
+                )
+            }
+        }
+    }
+
+    private fun onFailure(error: Throwable, loginState: MutableState<LoginStateView>) {
+        logger.error(error) { "Login failed" }
+        loginState.update {
+            copy(
+                isLoggingIn = false,
+                url = null,
+                progress = null,
+                error = error
+            )
+        }
+    }
+}

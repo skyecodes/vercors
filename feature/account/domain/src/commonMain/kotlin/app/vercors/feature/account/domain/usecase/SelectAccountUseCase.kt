@@ -2,12 +2,12 @@ package app.vercors.feature.account.domain.usecase
 
 import app.vercors.feature.account.domain.model.AccountId
 import app.vercors.feature.account.domain.repository.AccountRepository
+import dev.zacsweers.metro.Inject
 import io.github.oshai.kotlinlogging.KotlinLogging
-import org.koin.core.annotation.Factory
 
 private val logger = KotlinLogging.logger {}
 
-@Factory
+@Inject
 class SelectAccountUseCase(
     private val accountRepository: AccountRepository
 ) {
