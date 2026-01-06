@@ -8,4 +8,5 @@ dependencies {
     commonMainImplementation(projects.meta.client)
     commonMainImplementation(libs.kotlin.logging)
     commonMainImplementation(libs.ktorfit.lib)
+    commonMainImplementation(libs.cryptography.core)
 }

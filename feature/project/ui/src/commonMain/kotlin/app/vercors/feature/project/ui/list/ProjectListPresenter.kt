@@ -41,15 +41,18 @@ class ProjectListPresenter(
     @Composable
     override fun present(): Store<ProjectListState, ProjectListEvent> {
         val presenterScope = rememberCoroutineScope()
-        val preferredPlatform by observeGuiConfiguration()
-            .map { res -> res.map { it.preferredPlatform } }
-            .collectResourceAsStateWithLifecycle()
-        val platformListFlow =
-            remember { ResourceFlowResult { getPlatformList().map { list -> list.map { it.toView() } } } }
-        val platformList by platformListFlow.collectResourceAsStateWithLifecycle()
+        val preferredPlatform by remember(observeGuiConfiguration) {
+            observeGuiConfiguration()
+                .map { res -> res.map { it.preferredPlatform } }
+        }.collectResourceAsStateWithLifecycle()
 
-        val gameVersionListFlow = remember { getGameVersionList().map { res -> res.map { it.toView() } } }
-        val gameVersionList by gameVersionListFlow.collectResourceAsStateWithLifecycle()
+        val platformList by remember(getPlatformList) {
+            ResourceFlowResult { getPlatformList().map { list -> list.map { it.toView() } } }
+        }.collectResourceAsStateWithLifecycle()
+
+        val gameVersionList by remember(getGameVersionList) {
+            getGameVersionList().map { res -> res.map { it.toView() } }
+        }.collectResourceAsStateWithLifecycle()
 
         var gameVersionSearchQuery by remember { mutableStateOf("") }
         var showSnapshot by remember { mutableStateOf(false) }

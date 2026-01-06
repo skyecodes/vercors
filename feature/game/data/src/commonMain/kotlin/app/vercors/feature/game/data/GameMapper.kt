@@ -1,9 +1,10 @@
 package app.vercors.feature.game.data
 
-import app.vercors.feature.game.domain.model.BriefGameVersion
+import app.vercors.feature.game.domain.model.GameAssetIndex
 import app.vercors.feature.game.domain.model.GameVersionDetails
 import app.vercors.feature.game.domain.model.GameVersionList
 import app.vercors.feature.game.domain.model.GameVersionType
+import app.vercors.meta.lib.game.MojangAssetIndex
 import app.vercors.meta.lib.game.MojangReleaseType
 import app.vercors.meta.lib.game.MojangVersionInfo
 import app.vercors.meta.lib.game.MojangVersionManifest
@@ -12,9 +13,11 @@ internal fun MojangVersionManifest.toDomain(): GameVersionList = GameVersionList
     latestRelease = latest.release,
     latestSnapshot = latest.snapshot,
     versions = versions.map {
-        BriefGameVersion(
+        GameVersionList.Version(
             id = it.id,
-            type = it.type.toDomain()
+            type = it.type.toDomain(),
+            url = it.url,
+            sha1 = it.sha1
         )
     }
 )
@@ -119,4 +122,13 @@ internal fun MojangVersionInfo.AssetIndex.toDomain(): GameVersionDetails.AssetIn
     size = size,
     totalSize = totalSize,
     url = url
+)
+
+internal fun MojangAssetIndex.toDomain(): GameAssetIndex = GameAssetIndex(
+    objects = objects.mapValues { it.value.toDomain() }
+)
+
+internal fun MojangAssetIndex.AssetObject.toDomain(): GameAssetIndex.AssetObject = GameAssetIndex.AssetObject(
+    hash = hash,
+    size = size
 )

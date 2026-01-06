@@ -1,6 +1,9 @@
 package app.vercors.feature.launcher.data.service
 
+import app.vercors.core.data.createDirectories
+import app.vercors.core.data.writeText
 import app.vercors.feature.account.domain.model.Account
+import app.vercors.feature.game.domain.model.GameAssetIndex
 import app.vercors.feature.game.domain.model.GameVersionDetails
 import app.vercors.feature.game.domain.model.GameVersionType
 import app.vercors.feature.game.domain.repository.GameRepository
@@ -29,11 +32,9 @@ import io.ktor.client.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.utils.io.*
-import io.ktor.utils.io.core.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
-import kotlinx.io.buffered
 import kotlinx.io.bytestring.toHexString
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
@@ -60,15 +61,133 @@ class LauncherServiceImpl(
         features: List<InstanceLaunchFeature>
     ): Flow<InstanceLaunchState> = flow {
         logger.info { "Launching instance ${instance.name}..." }
-        /*val version = gameRepository.getVersionDetails().getOrThrow() // TODO save it to disk
+        val version = gameRepository.getVersionDetails(instance.gameVersion)
+        val assetIndex = gameRepository.getAssetIndex(version.assetIndex)
         val effectiveVersion = version.getEffectiveVersion(features)
         val paths = instance.buildPaths(appPath)
-        val dependencyList = effectiveVersion.buildDependencyList(paths)
+        val dependencyList = buildDependencyList(paths, effectiveVersion, assetIndex)
         dependencyList.validate()
         dependencyList.natives.extract()
         val command = buildCommand(dependencyList, account, instance, effectiveVersion, paths)
+        paths.game.createDirectories()
         runCommand(command, paths.game, defaultDispatcher)
-        logger.info { "Instance ${instance.name} finished" }*/
+        logger.info { "Instance ${instance.name} finished" }
+    }
+
+    private fun GameVersionDetails.getEffectiveVersion(features: List<InstanceLaunchFeature>): GameVersionDetails {
+        val enabledFeatures = features.map { it.id }
+        return copy(
+            libraries = libraries.filter { it.rules.isRuleValid(enabledFeatures) },
+            jvmArgs = jvmArgs?.filter { it.isRuleValid(enabledFeatures) },
+            gameArgs = gameArgs?.filter { it.isRuleValid(enabledFeatures) }
+        )
+    }
+
+    private fun Instance.buildPaths(appPath: Path): InstanceLaunchPaths {
+        val dataPath = Path(appPath, "data")
+        val instancePath = Path(dataPath, "instances", id)
+        return InstanceLaunchPaths(
+            game = instancePath,
+            versions = Path(dataPath, "versions"),
+            libraries = Path(dataPath, "libraries"),
+            assets = Path(dataPath, "assets"),
+            natives = Path(instancePath, "natives"),
+            logging = Path(dataPath, "logging")
+        )
+    }
+
+    private data class InstanceLaunchPaths(
+        val game: Path,
+        val versions: Path,
+        val libraries: Path,
+        val assets: Path,
+        val natives: Path,
+        val logging: Path
+    )
+
+    private fun buildDependencyList(
+        paths: InstanceLaunchPaths,
+        details: GameVersionDetails,
+        assetIndex: GameAssetIndex
+    ): InstanceDependencyList =
+        InstanceDependencyList(
+            client = DependencyFile.Basic(
+                url = details.clientDownload.url,
+                path = Path(paths.versions, details.id, "${details.id}.jar"),
+                sha1 = details.clientDownload.sha1,
+                size = details.clientDownload.size,
+            ),
+            libraries = details.libraries.mapNotNull { it.artifact }.map {
+                DependencyFile.Basic(
+                    url = it.url,
+                    path = Path(paths.libraries, *it.path.splitPath()),
+                    sha1 = it.sha1,
+                    size = it.size,
+                )
+            },
+            natives = details.libraries.mapNotNull { lib ->
+                lib.classifiers?.get(lib.natives?.get(systemService.osType.id))?.let {
+                    DependencyFile.Native(
+                        url = it.url,
+                        path = Path(paths.libraries, *it.path.splitPath()),
+                        sha1 = it.sha1,
+                        size = it.size,
+                        extractDest = paths.natives,
+                        extractExclude = lib.extractExclude
+                    )
+                }
+            },
+            assets = assetIndex.objects.values.map {
+                DependencyFile.Basic(
+                    url = "$GAME_ASSET_DOWNLOAD_URL/${it.hash.take(2)}/${it.hash}",
+                    path = Path(paths.assets, "objects", it.hash.take(2), it.hash),
+                    sha1 = it.hash,
+                    size = it.size,
+                )
+            },
+            logging = details.clientLogging?.file?.let {
+                DependencyFile.Basic(
+                    url = it.url,
+                    path = Path(paths.logging, details.clientLogging!!.type.path, it.id),
+                    sha1 = it.sha1,
+                    size = it.size,
+                )
+            },
+        )
+
+    private suspend fun InstanceDependencyList.validate() {
+        logger.info { "Validating dependencies..." }
+        var attempts = 0
+        var invalidFiles = allDependencies.getInvalidFiles()
+        while (attempts++ < 3 && invalidFiles.isNotEmpty()) {
+            logger.info { "${invalidFiles.size} invalid or missing dependencies to be downloaded, attempt $attempts" }
+            invalidFiles.downloadFiles()
+            invalidFiles = invalidFiles.getInvalidFiles()
+        }
+        check(invalidFiles.isEmpty()) { "Failed to validate dependencies" }
+        logger.info { "Dependencies validated" }
+    }
+
+    private suspend fun List<DependencyFile.Native>.extract() = coroutineScope {
+        if (isEmpty()) return@coroutineScope
+        logger.info { "Extracting natives..." }
+        val extractDispatcher = defaultDispatcher + SupervisorJob()
+        map { file ->
+            launch(extractDispatcher) {
+                logger.debug { "Extracting ${file.path} to ${file.extractDest}..." }
+                Zip.open(file.path).use { zip ->
+                    zip.extractTo(file.extractDest)
+                    /*zip.forEachEntry { entry -> // TODO only compatible JDK 22+
+                        val entryPath = entry.path.toString()
+                        if (file.extractExclude?.any { entryPath.startsWith(it) } ?: false) {
+                            SystemFileSystem.delete(Path(file.extractDest, entryPath))
+                        }
+                    }*/
+                }
+                logger.debug { "Extracted ${file.path} to ${file.extractDest}" }
+            }
+        }.joinAll()
+        logger.info { "Natives extracted" }
     }
 
     private suspend fun buildCommand(
@@ -117,128 +236,10 @@ class LauncherServiceImpl(
             // For some reason, the command cannot be executed on Linux, so we have to use a temporary script file instead
             val tmpDir = Path(appPath, "tmp")
             val file = Path(tmpDir, "run-${instance.id}.sh")
-            withContext(ioDispatcher) {
-                SystemFileSystem.createDirectories(tmpDir)
-                SystemFileSystem.sink(file).buffered().use {
-                    it.writeText(args.joinToString(" "))
-                }
-            }
+            file.writeText(args.joinToString(" "), ioDispatcher)
             args = listOf("/bin/sh", SystemFileSystem.resolve(file).toString())
         }
         return args
-    }
-
-    private fun GameVersionDetails.getEffectiveVersion(features: List<InstanceLaunchFeature>): GameVersionDetails {
-        val enabledFeatures = features.map { it.id }
-        return copy(
-            libraries = libraries.filter { it.rules.isRuleValid(enabledFeatures) },
-            jvmArgs = jvmArgs?.filter { it.isRuleValid(enabledFeatures) },
-            gameArgs = gameArgs?.filter { it.isRuleValid(enabledFeatures) }
-        )
-    }
-
-    private fun Instance.buildPaths(appPath: Path): InstanceLaunchPaths {
-        val dataPath = Path(appPath, "data")
-        val instancePath = Path(dataPath, "instances", id)
-        return InstanceLaunchPaths(
-            game = instancePath,
-            versions = Path(dataPath, "versions"),
-            libraries = Path(dataPath, "libraries"),
-            assets = Path(dataPath, "assets"),
-            natives = Path(instancePath, "natives"),
-            logging = Path(dataPath, "logging")
-        )
-    }
-
-    private data class InstanceLaunchPaths(
-        val game: Path,
-        val versions: Path,
-        val libraries: Path,
-        val assets: Path,
-        val natives: Path,
-        val logging: Path
-    )
-
-    private fun GameVersionDetails.buildDependencyList(paths: InstanceLaunchPaths): InstanceDependencyList =
-        InstanceDependencyList(
-            client = DependencyFile.Basic(
-                url = clientDownload.url,
-                path = Path(paths.versions, "${id}.jar"),
-                sha1 = clientDownload.sha1,
-                size = clientDownload.size,
-            ),
-            libraries = libraries.mapNotNull { it.artifact }.map {
-                DependencyFile.Basic(
-                    url = it.url,
-                    path = Path(paths.libraries, *it.path.splitPath()),
-                    sha1 = it.sha1,
-                    size = it.size,
-                )
-            },
-            natives = libraries.mapNotNull { lib ->
-                lib.classifiers?.get(lib.natives?.get(systemService.osType.id))?.let {
-                    DependencyFile.Native(
-                        url = it.url,
-                        path = Path(paths.libraries, *it.path.splitPath()),
-                        sha1 = it.sha1,
-                        size = it.size,
-                        extractDest = paths.natives,
-                        extractExclude = lib.extractExclude
-                    )
-                }
-            },
-            assets = emptyList(),
-            /*assets.map { TODO remake
-                            DependencyFile.Basic(
-                                url = "$GAME_ASSET_DOWNLOAD_URL/${it.hash.take(2)}/${it.hash}",
-                                path = Path(paths.assets, "objects", it.hash.take(2), it.hash),
-                                sha1 = it.hash,
-                                size = it.size,
-                            )
-                        }*/
-            logging = clientLogging?.file?.let {
-                DependencyFile.Basic(
-                    url = it.url,
-                    path = Path(paths.logging, clientLogging!!.type.path, it.id),
-                    sha1 = it.sha1,
-                    size = it.size,
-                )
-            },
-        )
-
-    private suspend fun InstanceDependencyList.validate() {
-        logger.info { "Validating dependencies..." }
-        var attempts = 0
-        var invalidFiles = allDependencies.getInvalidFiles()
-        while (attempts++ < 3 && invalidFiles.isNotEmpty()) {
-            logger.info { "${invalidFiles.size} invalid or missing dependencies to be downloaded, attempt $attempts" }
-            invalidFiles.downloadFiles()
-            invalidFiles = invalidFiles.getInvalidFiles()
-        }
-        check(invalidFiles.isEmpty()) { "Failed to validate dependencies" }
-        logger.info { "Dependencies validated" }
-    }
-
-    private suspend fun List<DependencyFile.Native>.extract() = coroutineScope {
-        if (isEmpty()) return@coroutineScope
-        logger.info { "Extracting natives..." }
-        val extractDispatcher = defaultDispatcher + SupervisorJob()
-        map { file ->
-            launch(extractDispatcher) {
-                logger.debug { "Extracting ${file.path} to ${file.extractDest}..." }
-                Zip.open(file.path).use { zip ->
-                    zip.extractTo(file.extractDest)
-                    /*zip.forEachEntry { entry -> // TODO only compatible JDK 22+
-                        val entryPath = entry.path.toString()
-                        if (file.extractExclude?.any { entryPath.startsWith(it) } ?: false) {
-                            SystemFileSystem.delete(Path(file.extractDest, entryPath))
-                        }
-                    }*/
-                }
-                logger.debug { "Extracted ${file.path} to ${file.extractDest}" }
-            }
-        }.joinAll()
-        logger.info { "Natives extracted" }
     }
 
     private data class InstanceDependencyList(

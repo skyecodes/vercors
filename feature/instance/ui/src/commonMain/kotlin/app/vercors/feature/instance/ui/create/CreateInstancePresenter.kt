@@ -19,6 +19,7 @@ import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedFactory
 import dev.zacsweers.metro.AssistedInject
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 @AssistedInject
@@ -30,8 +31,9 @@ class CreateInstancePresenter(
 ) : Presenter<CreateInstanceState, CreateInstanceEvent> {
     @Composable
     override fun present(): Store<CreateInstanceState, CreateInstanceEvent> {
-        val gameVersionList by observeGameVersionList().collectResourceAsStateWithLifecycle()
-        val mappedGameVersionList = remember(gameVersionList) { gameVersionList.map { it.toView() } }
+        val gameVersionList by remember(observeGameVersionList) {
+            observeGameVersionList().map { res -> res.map { it.toView() } }
+        }.collectResourceAsStateWithLifecycle()
         var selectedTab by remember { mutableStateOf(CreateInstanceTab.Custom) }
         var instanceName by remember { mutableStateOf("") }
         var selectedGameVersion by remember { mutableStateOf<GameVersionView?>(null) }
@@ -39,7 +41,7 @@ class CreateInstancePresenter(
         var gameVersionFilter by remember { mutableStateOf("") }
 
         return CreateInstanceState(
-            gameVersionList = mappedGameVersionList,
+            gameVersionList = gameVersionList,
             selectedTab = selectedTab,
             instanceName = instanceName,
             selectedGameVersion = selectedGameVersion,

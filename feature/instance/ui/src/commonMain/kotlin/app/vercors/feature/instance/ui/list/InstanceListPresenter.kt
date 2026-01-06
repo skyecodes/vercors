@@ -25,9 +25,10 @@ class InstanceListPresenter(
 ) : Presenter<InstanceListState, InstanceListEvent> {
     @Composable
     override fun present(): Store<InstanceListState, InstanceListEvent> {
-        val instances by observeInstanceList()
-            .map { res -> res.map { list -> list.map { it.toBriefView() } } }
-            .collectResourceAsStateWithLifecycle()
+        val instances by remember(observeInstanceList) {
+            observeInstanceList()
+                .map { res -> res.map { list -> list.map { it.toBriefView() } } }
+        }.collectResourceAsStateWithLifecycle()
         var nameFilter by remember { mutableStateOf("") }
         var versionFilter by remember { mutableStateOf("") }
         var loaderFilter by remember { mutableStateOf("") }

@@ -85,6 +85,7 @@ interface SharedDataProviders {
     @Sha256
     fun provideSha256Hasher(): Hasher = CryptographyProvider.Default.get(SHA256).hasher()
 
+    @SingleIn(AppScope::class)
     @Provides
     fun provideJsonFileListStoreFactory(
         json: Json,
@@ -96,6 +97,7 @@ interface SharedDataProviders {
             JsonFileListStoreImpl(name, path, serializer, json, ioDispatcher, coroutineScope, watcher)
     }
 
+    @SingleIn(AppScope::class)
     @Provides
     fun provideJsonFileStoreFactory(
         json: Json,

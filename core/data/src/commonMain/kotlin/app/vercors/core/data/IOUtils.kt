@@ -9,6 +9,7 @@ import kotlinx.io.Source
 import kotlinx.io.buffered
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
+import kotlinx.io.writeString
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerializationStrategy
@@ -139,12 +140,24 @@ suspend inline fun Path.writeFromSource(
     source: Source,
     dispatcher: CoroutineDispatcher = Dispatchers.IO
 ) {
-    createParentDirectories()
+    createParentDirectories(dispatcher = dispatcher)
     sink { sink ->
         source.use {
             withContext(dispatcher) {
                 it.transferTo(sink)
             }
+        }
+    }
+}
+
+suspend inline fun Path.writeText(
+    text: String,
+    dispatcher: CoroutineDispatcher = Dispatchers.IO
+) {
+    createParentDirectories(dispatcher = dispatcher)
+    sink {
+        withContext(dispatcher) {
+            it.writeString(text)
         }
     }
 }

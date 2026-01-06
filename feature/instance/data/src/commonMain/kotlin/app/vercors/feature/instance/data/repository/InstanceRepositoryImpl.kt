@@ -14,8 +14,7 @@ import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.map
 
 private val logger = KotlinLogging.logger {}
 
@@ -26,25 +25,13 @@ class InstanceRepositoryImpl(
     coroutineScope: CoroutineScope,
     private val dataSource: InstanceDataSource,
 ) : InstanceRepository {
-    private val _instances: MutableResourceStateFlow<List<Instance>> = MutableResourceStateFlow()
-    override val instances: ResourceStateFlow<List<Instance>> = _instances
-        .asResourceStateFlow(
-            coroutineScope = coroutineScope,
-            onStart = {
-                coroutineScope.launch {
-                    dataSource.instancesState.collect { data ->
-                        _instances.update {
-                            data.map {
-                                it.mapNotNull { (key, value) ->
-                                    value.orNull()?.toDomain(key)
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            onEach = { logger.debug { "Instances state updated: $it" } },
-        )
+    override val instances: ResourceStateFlow<List<Instance>> = dataSource.instancesState.map { data ->
+        data.map {
+            it.mapNotNull { (key, value) ->
+                value.orNull()?.toDomain(key)
+            }
+        }
+    }.resourceStateIn(coroutineScope)
 
     override suspend fun saveInstance(instance: Instance) {
         require(instance.id.isNotEmpty()) { "Instance ID cannot be empty" }
@@ -57,5 +44,5 @@ class InstanceRepositoryImpl(
     }
 
     override suspend fun findInstance(id: InstanceId): Instance =
-        _instances.await().orThrow().find { it.id == id } ?: throw InstanceNotFoundException(id)
+        instances.await().orThrow().find { it.id == id } ?: throw InstanceNotFoundException(id)
 }

@@ -2,8 +2,8 @@ package app.vercors.feature.instance.ui.details
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import app.vercors.core.domain.Resource
-import app.vercors.core.domain.orNull
+import androidx.compose.runtime.remember
+import app.vercors.core.domain.map
 import app.vercors.core.ui.state.collectResourceAsStateWithLifecycle
 import app.vercors.feature.instance.domain.usecase.DeleteInstanceUseCase
 import app.vercors.feature.instance.domain.usecase.ObserveInstanceListUseCase
@@ -19,7 +19,6 @@ import dev.zacsweers.metro.AssistedInject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.launch
 
 @AssistedInject
@@ -32,10 +31,10 @@ class InstanceDetailsPresenter(
 ) : Presenter<InstanceDetailsState, InstanceDetailsEvent> {
     @Composable
     override fun present(): Store<InstanceDetailsState, InstanceDetailsEvent> {
-        val instance by observeInstanceList()
-            .mapNotNull { instances -> instances.orNull()?.find { it.id == screen.instanceId } }
-            .map { Resource.Success(it.toView()) }
-            .collectResourceAsStateWithLifecycle()
+        val instance by remember(observeInstanceList) {
+            observeInstanceList()
+                .map { res -> res.map { list -> list.first { it.id == screen.instanceId }.toView() } }
+        }.collectResourceAsStateWithLifecycle()
         return InstanceDetailsState(
             instance = instance
         ) + {

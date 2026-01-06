@@ -1,5 +1,6 @@
 package app.vercors.core.domain
 
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.*
@@ -21,6 +22,14 @@ fun <T> ResourceFlow(supplier: Flow<Result<T>>): ResourceFlow<T> = flow {
     supplier.onEach { emit(Resource.Loading(it)) }
         .last().let { emit(Resource.Loaded(it)) }
 }
+
+fun <T> ResourceFlow<T>.resourceStateIn(
+    coroutineScope: CoroutineScope
+): StateFlow<Resource<T>> = stateIn(
+    scope = coroutineScope,
+    started = SharingStarted.WhileSubscribed(5_000),
+    initialValue = Resource.Unloaded
+)
 
 @Deprecated("Doesn't support partial loads")
 fun <T, U> ResourceFlow<T>.combineResource(other: ResourceFlow<U>): ResourceFlow<Pair<T, U>> =

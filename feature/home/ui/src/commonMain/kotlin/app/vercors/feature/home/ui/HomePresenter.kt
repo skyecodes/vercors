@@ -33,7 +33,7 @@ class HomePresenter(
 ) : Presenter<HomeState, HomeEvent> {
     @Composable
     override fun present(): Store<HomeState, HomeEvent> {
-        val sectionListFlow = remember {
+        val sections by remember(observeHomeSectionList) {
             observeHomeSectionList().mapNotNull { res ->
                 res.orNull()?.map {
                     when (it) {
@@ -49,8 +49,7 @@ class HomePresenter(
                     }
                 }
             }
-        }
-        val sections by sectionListFlow.collectAsStateWithLifecycle(emptyList())
+        }.collectAsStateWithLifecycle(emptyList())
 
         return HomeState(
             sections = sections
