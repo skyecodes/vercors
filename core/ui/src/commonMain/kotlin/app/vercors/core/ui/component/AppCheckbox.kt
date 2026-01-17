@@ -18,7 +18,7 @@ import app.vercors.core.ui.theme.onBackground
 import app.vercors.core.ui.theme.surface
 import com.composables.icons.lucide.Check
 import com.composables.icons.lucide.Lucide
-import com.composeunstyled.Checkbox
+import com.composeunstyled.UnstyledCheckbox
 import com.composeunstyled.theme.Theme
 
 @Composable
@@ -42,7 +42,7 @@ fun AppCheckbox(
         )
     ) {
         if (!invert) AppText(label)
-        Checkbox(
+        UnstyledCheckbox(
             checked = checked,
             onCheckedChange = onCheckedChange,
             shape = RoundedCornerShape(4.dp),

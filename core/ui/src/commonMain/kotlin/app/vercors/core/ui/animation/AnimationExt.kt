@@ -52,6 +52,21 @@ fun appAnimateColorAsState(
 ) else derivedStateOf { targetValue }
 
 @Composable
+fun appAnimateFloatAsState(
+    targetValue: Float,
+    animationSpec: AnimationSpec<Float> = defaultAnimation,
+    visibilityThreshold: Float = 0.01f,
+    label: String = "FloatAnimation",
+    finishedListener: ((Float) -> Unit)? = null,
+): State<Float> = if (shouldAnimate()) animateFloatAsState(
+    targetValue,
+    animationSpec,
+    visibilityThreshold,
+    label,
+    finishedListener
+) else derivedStateOf { targetValue }
+
+@Composable
 fun Modifier.appAnimateContentSize(
     animationSpec: FiniteAnimationSpec<IntSize> =
         spring(
@@ -161,7 +176,7 @@ fun Modifier.appSharedElement(
     renderInOverlayDuringTransition: Boolean = true,
     zIndexInOverlay: Float = 0f,
     clipInOverlayDuringTransition: OverlayClip = ParentClip,
-): Modifier = /*if (shouldAnimate()) with(scope) {
+): Modifier = if (shouldAnimate()) with(scope) {
     sharedElement(
         sharedContentState,
         animatedVisibilityScope,
@@ -171,8 +186,8 @@ fun Modifier.appSharedElement(
         zIndexInOverlay,
         clipInOverlayDuringTransition
     )
-} else*/
-    this // TODO: uncomment when Circuit is released for Compose 1.10.0 (https://github.com/slackhq/circuit/pull/2379)
+} else
+    this
 
 @Composable
 context(scope: SharedTransitionScope)
@@ -187,7 +202,7 @@ fun Modifier.appSharedBounds(
     renderInOverlayDuringTransition: Boolean = true,
     zIndexInOverlay: Float = 0f,
     clipInOverlayDuringTransition: OverlayClip = ParentClip,
-): Modifier = /*if (shouldAnimate()) with(scope) {
+): Modifier = if (shouldAnimate()) with(scope) {
     sharedBounds(
         sharedContentState,
         animatedVisibilityScope,
@@ -200,7 +215,7 @@ fun Modifier.appSharedBounds(
         zIndexInOverlay,
         clipInOverlayDuringTransition
     )
-} else*/ this
+} else this
 
 @Composable
 context(scope: LazyGridItemScope)
@@ -245,6 +260,8 @@ private val DefaultBoundsTransform = BoundsTransform { _, _ -> DefaultSpring }
 
 private val DefaultSpring =
     spring(stiffness = StiffnessMediumLow, visibilityThreshold = Rect.VisibilityThreshold)
+
+private val defaultAnimation = spring<Float>()
 
 private val dpDefaultSpring = spring(visibilityThreshold = Dp.VisibilityThreshold)
 

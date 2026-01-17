@@ -4,7 +4,6 @@ import app.vercors.shared.domain.service.CopyToClipboardResult
 import app.vercors.shared.domain.service.OpenBrowserResult
 import app.vercors.shared.domain.service.OsArch
 import app.vercors.shared.domain.service.OsType
-import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import oshi.PlatformEnum
 import oshi.SystemInfo
@@ -12,6 +11,7 @@ import java.awt.Desktop
 import java.awt.Toolkit
 import java.awt.datatransfer.StringSelection
 import java.net.URI
+import kotlin.coroutines.CoroutineContext
 
 private val systemInfo = SystemInfo()
 
@@ -38,11 +38,12 @@ internal actual fun platformCopyToClipboard(text: String): CopyToClipboardResult
 }
 
 internal actual suspend fun platformOpenUrlInBrowser(
-    url: String, ioDispatcher: CoroutineDispatcher
+    url: String,
+    context: CoroutineContext
 ): OpenBrowserResult {
     if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
         try {
-            withContext(ioDispatcher) {
+            withContext(context) {
                 Desktop.getDesktop().browse(URI(url))
                 OpenBrowserResult.Success
             }

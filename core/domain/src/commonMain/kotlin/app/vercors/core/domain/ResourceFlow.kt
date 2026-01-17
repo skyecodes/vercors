@@ -31,6 +31,12 @@ fun <T> ResourceFlow<T>.resourceStateIn(
     initialValue = Resource.Unloaded
 )
 
+fun <T> ResourceFlow<T>.catchFailures() = catch {
+    currentCoroutineContext().ensureActive()
+    if (it is Exception) emit(Resource.Failure(it))
+    else throw it
+}
+
 @Deprecated("Doesn't support partial loads")
 fun <T, U> ResourceFlow<T>.combineResource(other: ResourceFlow<U>): ResourceFlow<Pair<T, U>> =
     combine(other) { a, b ->

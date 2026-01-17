@@ -2,9 +2,15 @@ package app.vercors.feature.instance.ui.details
 
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -15,13 +21,9 @@ import app.vercors.core.ui.layout.AppError
 import app.vercors.core.ui.layout.AppLoading
 import app.vercors.core.ui.modifier.appCard
 import app.vercors.core.ui.theme.*
-import app.vercors.feature.instance.ui.InstanceRes
-import app.vercors.feature.instance.ui.instanceSharedElement
-import app.vercors.feature.instance.ui.launch
-import app.vercors.shared.ui.EventSink
-import app.vercors.shared.ui.SharedRes
-import app.vercors.shared.ui.Store
-import app.vercors.shared.ui.delete
+import app.vercors.feature.instance.domain.model.InstanceStatus
+import app.vercors.feature.instance.ui.*
+import app.vercors.shared.ui.*
 import com.composables.icons.lucide.*
 import com.composeunstyled.theme.Theme
 import com.slack.circuit.codegen.annotations.CircuitInject
@@ -41,7 +43,7 @@ fun InstanceDetails(
         when (state.instance) {
             is Resource.Loaded -> when (val res = state.instance.result) {
                 is Result.Failure -> AppError(res.error)
-                is Result.Success -> InstanceDetails(res.data, modifier)
+                is Result.Success -> InstanceDetails(res.data, state.logs, modifier)
             }
 
             else -> AppLoading()
@@ -54,10 +56,12 @@ fun InstanceDetails(
 context(eventSink: EventSink<InstanceDetailsEvent>)
 fun InstanceDetails(
     instance: InstanceView,
+    logs: List<InstanceLogEventView>?,
     modifier: Modifier = Modifier
 ) = SharedElementTransitionScope {
     Column(
-        modifier = modifier.padding(8.dp)
+        modifier = modifier.padding(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Row(
             modifier = Modifier.appCard().padding(horizontal = 16.dp, vertical = 8.dp).fillMaxWidth()
@@ -102,19 +106,55 @@ fun InstanceDetails(
                 }
             }
 
-            AppIconTextButton(
-                onClick = { eventSink(InstanceDetailsEvent.Launch) },
-                text = stringResource(InstanceRes.string.launch),
-                backgroundColor = Theme[colors][success],
-                contentColor = Theme[colors][onSuccess],
-                imageVector = Lucide.Play,
-            )
+            if (instance.status is InstanceStatus.Launching) {
+                Column(
+                    modifier = Modifier.width(200.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterVertically)
+                ) {
+                    AppText(
+                        text = instance.status.text
+                    )
+                    instance.status.progress?.let {
+                        AppProgressIndicator(
+                            progress = it,
+                            backgroundColor = Theme[colors][surface2],
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
+            }
+
+            when (instance.status) {
+                is InstanceStatus.Idle, is InstanceStatus.Failed -> AppIconTextButton(
+                    onClick = { eventSink(InstanceDetailsEvent.Launch) },
+                    text = stringResource(InstanceRes.string.launch),
+                    backgroundColor = Theme[colors][success],
+                    contentColor = Theme[colors][onSuccess],
+                    imageVector = Lucide.Play,
+                )
+
+                is InstanceStatus.Launching -> AppIconTextButton(
+                    onClick = { eventSink(InstanceDetailsEvent.Cancel) },
+                    text = stringResource(SharedRes.string.cancel),
+                    backgroundColor = Theme[colors][error],
+                    contentColor = Theme[colors][onError],
+                    imageVector = Lucide.Square,
+                )
+
+                is InstanceStatus.Running -> AppIconTextButton(
+                    onClick = { eventSink(InstanceDetailsEvent.Cancel) },
+                    text = stringResource(InstanceRes.string.stop),
+                    backgroundColor = Theme[colors][error],
+                    contentColor = Theme[colors][onError],
+                    imageVector = Lucide.Square,
+                )
+            }
 
             AppMenuButton(
                 imageVector = Lucide.EllipsisVertical,
                 backgroundColor = Theme[colors][surface2],
                 menuModifier = Modifier.offset(y = 4.dp),
-                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 4.dp),
                 anchor = AppDropdownPanelAnchor.BottomEnd,
                 menuContent = {
                     AppMenuItem(
@@ -126,5 +166,48 @@ fun InstanceDetails(
                 }
             )
         }
+
+        logs?.let { logs ->
+            val scrollState = rememberScrollState()
+            SelectionContainer(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                Column(
+                    modifier = Modifier.fillMaxSize().appCard().padding(horizontal = 8.dp).verticalScroll(scrollState),
+                ) {
+                    logs.forEachIndexed { index, it ->
+                        AppText(
+                            text = it.message,
+                            fontFamily = FontFamily.Monospace,
+                            fontSize = 12.sp,
+                            color = if (it.isLauncher) Theme[colors][primary] else when (it.level) {
+                                InstanceLogEventView.Level.TRACE, InstanceLogEventView.Level.DEBUG, InstanceLogEventView.Level.INFO -> Color.Unspecified
+                                InstanceLogEventView.Level.WARN -> Theme[colors][warn]
+                                InstanceLogEventView.Level.ERROR, InstanceLogEventView.Level.FATAL -> Theme[colors][error]
+                            },
+                            modifier = when (index) {
+                                0 -> Modifier.padding(top = 8.dp)
+                                logs.lastIndex -> Modifier.padding(bottom = 8.dp)
+                                else -> Modifier
+                            },
+                        )
+                    }
+                }
+
+                LaunchedEffect(logs) {
+                    scrollState.scrollTo(scrollState.maxValue)
+                }
+            }
+        }
     }
 }
+
+private val InstanceStatus.text: String
+    @Composable get() = when (this) {
+        InstanceStatus.Idle -> stringResource(InstanceRes.string.idle)
+        is InstanceStatus.Launching.ValidatingToken -> stringResource(InstanceRes.string.validatingToken)
+        is InstanceStatus.Launching.RefreshingToken -> stringResource(InstanceRes.string.refreshingToken)
+        is InstanceStatus.Launching.LoadingMetadata -> stringResource(InstanceRes.string.loadingMetadata)
+        is InstanceStatus.Launching.ValidatingFiles -> stringResource(InstanceRes.string.validatingFiles)
+        is InstanceStatus.Launching.DownloadingFiles -> stringResource(InstanceRes.string.downloadingFiles)
+        is InstanceStatus.Running -> stringResource(InstanceRes.string.running)
+        is InstanceStatus.Failed -> stringResource(InstanceRes.string.failed)
+    }

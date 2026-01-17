@@ -18,9 +18,13 @@ import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedFactory
 import dev.zacsweers.metro.AssistedInject
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+
+private val logger = KotlinLogging.logger {}
 
 @AssistedInject
 class CreateInstancePresenter(
@@ -33,6 +37,7 @@ class CreateInstancePresenter(
     override fun present(): Store<CreateInstanceState, CreateInstanceEvent> {
         val gameVersionList by remember(observeGameVersionList) {
             observeGameVersionList().map { res -> res.map { it.toView() } }
+                .onEach { logger.debug { "gameVersionList: $it" } }
         }.collectResourceAsStateWithLifecycle()
         var selectedTab by remember { mutableStateOf(CreateInstanceTab.Custom) }
         var instanceName by remember { mutableStateOf("") }

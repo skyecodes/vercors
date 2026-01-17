@@ -18,20 +18,21 @@ import com.slack.circuit.runtime.ExperimentalCircuitApi
 import com.slack.circuit.runtime.presenter.Presenter
 import com.slack.circuit.runtime.ui.Ui
 import dev.zacsweers.metro.*
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.supervisorScope
 import kotlinx.io.files.Path
 import okio.Path.Companion.toPath
 import java.awt.Dimension
 
 @OptIn(ExperimentalComposeUiApi::class)
-fun main() {
-    val coroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-    val appGraph = createGraphFactory<AppGraph.Factory>().create(coroutineScope)
-
-    initializeLauncher(appGraph.appPath)
+suspend fun main(): Unit = supervisorScope {
+    val appGraph = createGraphFactory<AppGraph.Factory>().create(this)
+    val logDir = Path(appGraph.appPath, "logs")
+    System.setProperty("app.vercors.logDir", logDir.toString())
+    val logger = KotlinLogging.logger {}
+    logger.info { "Hello World!" }
 
     application(exitProcessOnExit = false) {
         val windowState = rememberWindowState()
@@ -78,7 +79,8 @@ fun main() {
             }
         }
     }
-    coroutineScope.cancel()
+    logger.info { "Goodbye World!" }
+    cancel()
 }
 
 @DependencyGraph(AppScope::class)
@@ -108,9 +110,4 @@ internal interface AppGraph {
     fun interface Factory {
         fun create(@Provides coroutineScope: CoroutineScope): AppGraph
     }
-}
-
-internal fun initializeLauncher(appPath: Path) {
-    val logDir = Path(appPath, "logs")
-    System.setProperty("app.vercors.logDir", logDir.toString())
 }

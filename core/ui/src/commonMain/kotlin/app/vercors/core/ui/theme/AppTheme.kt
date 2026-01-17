@@ -25,6 +25,7 @@ val error = ThemeToken<Color>("error")
 val onError = ThemeToken<Color>("on_error")
 val success = ThemeToken<Color>("success")
 val onSuccess = ThemeToken<Color>("on_success")
+val warn = ThemeToken<Color>("warn")
 val surface = ThemeToken<Color>("surface")
 val surface2 = ThemeToken<Color>("surface2")
 
@@ -75,6 +76,7 @@ val AppTheme = buildTheme {
         onError to Color(0xff11111b),
         success to Color(0xffa6e3a1),
         onSuccess to Color(0xff11111b),
+        warn to Color(0xfffab387),
         surface to Color(0xff313244),
         surface2 to Color(0xff45475a),
     )

@@ -46,7 +46,7 @@ fun <T> AppSelectField(
     var expanded by remember { mutableStateOf(false) }
 
     BoxWithConstraints(modifier = modifier) {
-        DropdownMenu(
+        UnstyledDropdownMenu(
             onExpandRequest = { expanded = true },
         ) {
             Column(
@@ -75,7 +75,7 @@ fun <T> AppSelectField(
             }
         }
 
-        DropdownMenuPanel(
+        UnstyledDropdownMenuPanel(
             expanded = expanded,
             onDismissRequest = { expanded = false },
             modifier = Modifier.appCard(backgroundColor = Theme[colors][surface2])

@@ -5,7 +5,6 @@ import app.vercors.feature.account.domain.service.AuthenticationException
 import app.vercors.feature.account.domain.service.AuthenticationService
 import app.vercors.feature.account.domain.service.LoginState
 import app.vercors.feature.account.domain.service.LoginStep
-import app.vercors.shared.data.Sha256
 import dev.whyoleg.cryptography.operations.Hasher
 import dev.whyoleg.cryptography.random.CryptographyRandom
 import dev.zacsweers.metro.*
@@ -36,7 +35,7 @@ private val logger = KotlinLogging.logger {}
 class AuthenticationServiceImpl(
     private val httpClient: HttpClient,
     @Named("microsoftClientId") private val clientId: String,
-    @Sha256 private val sha256Hasher: Hasher,
+    @Named("sha256") private val sha256Hasher: Hasher,
 ) : AuthenticationService {
     override fun login(): Flow<LoginState> = flow {
         val encoder = Base64.UrlSafe.withPadding(Base64.PaddingOption.ABSENT)

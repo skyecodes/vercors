@@ -35,9 +35,9 @@ abstract class AbstractConfigurationRepositoryImpl<T : Any, U : Any>(
         dataSource.saveToFile(commonConfiguration.toData())
     }
 
-    override suspend fun update(block: (T) -> T) {
+    override suspend fun update(block: T.() -> T) {
         _state.read(mutex) {
-            dataSource.saveToFile(block(it).toData())
+            dataSource.saveToFile(it.block().toData())
         }
     }
 }

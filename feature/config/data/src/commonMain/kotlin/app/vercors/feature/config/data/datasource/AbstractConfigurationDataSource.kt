@@ -1,6 +1,6 @@
 package app.vercors.feature.config.data.datasource
 
-import app.vercors.shared.data.JsonFileStoreFactory
+import app.vercors.shared.data.JsonFileStore
 import kotlinx.io.files.Path
 import kotlinx.serialization.KSerializer
 
@@ -10,10 +10,10 @@ abstract class AbstractConfigurationDataSource<T : Any>(
     appPath: Path,
     serializer: KSerializer<T>,
     default: () -> T,
-    jsonFileStoreFactory: JsonFileStoreFactory
+    jsonFileStoreFactory: JsonFileStore.Factory<T>
 ) {
     private val configFile = Path(appPath, configFileName)
-    private val store = jsonFileStoreFactory(storeName, configFile, serializer, default)
+    private val store = jsonFileStoreFactory.create(storeName, configFile, serializer, default)
 
     val configState = store.state
 

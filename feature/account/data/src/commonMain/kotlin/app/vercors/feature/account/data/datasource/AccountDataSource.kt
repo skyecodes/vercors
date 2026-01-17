@@ -3,7 +3,7 @@ package app.vercors.feature.account.data.datasource
 import app.vercors.feature.account.data.dto.AccountListData
 import app.vercors.feature.account.data.dto.toData
 import app.vercors.feature.account.domain.model.AccountList
-import app.vercors.shared.data.JsonFileStoreFactory
+import app.vercors.shared.data.JsonFileStore
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
@@ -18,11 +18,11 @@ internal const val ACCOUNT_LIST_FILE_NAME = "accounts.json"
 @Inject
 class AccountDataSource(
     appPath: Path,
-    jsonFileStoreFactory: JsonFileStoreFactory
+    jsonFileStoreFactory: JsonFileStore.Factory<AccountListData>
 ) {
     private val accountsFile = Path(appPath, ACCOUNT_LIST_FILE_NAME)
     private val store =
-        jsonFileStoreFactory("accounts", accountsFile, AccountListData.serializer()) { AccountList().toData() }
+        jsonFileStoreFactory.create("accounts", accountsFile, AccountListData.serializer()) { AccountList().toData() }
 
     val accountState = store.state
 

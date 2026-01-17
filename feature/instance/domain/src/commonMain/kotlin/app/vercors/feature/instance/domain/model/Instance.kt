@@ -14,7 +14,7 @@ data class Instance(
     val createdAt: Instant = Clock.System.now(),
     val updatedAt: Instant = Clock.System.now(),
     val lastPlayedAt: Instant? = null,
-    val playTime: Duration = Duration.ZERO,
+    val playTime: Duration = Duration.ZERO
 )
 
 typealias InstanceId = String

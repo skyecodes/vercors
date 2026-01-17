@@ -2,7 +2,7 @@ package app.vercors.feature.instance.ui
 
 import androidx.compose.runtime.Immutable
 import app.vercors.feature.game.ui.displayName
-import app.vercors.feature.instance.domain.model.Instance
+import app.vercors.feature.instance.domain.model.InstanceAndStatus
 import app.vercors.feature.instance.domain.model.InstanceId
 import app.vercors.feature.instance.ui.details.displayType
 
@@ -15,10 +15,10 @@ data class BriefInstanceView(
     val type: String
 )
 
-fun Instance.toBriefView(): BriefInstanceView = BriefInstanceView(
-    id = id,
-    name = name,
-    version = gameVersion,
-    loader = modLoader?.type.displayName,
-    type = displayType
+fun InstanceAndStatus.toBriefView(): BriefInstanceView = BriefInstanceView(
+    id = instance.id,
+    name = instance.name,
+    version = instance.gameVersion,
+    loader = instance.modLoader?.type.displayName,
+    type = instance.displayType
 )

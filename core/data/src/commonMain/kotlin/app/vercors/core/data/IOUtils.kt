@@ -1,6 +1,5 @@
 package app.vercors.core.data
 
-import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.withContext
@@ -16,60 +15,57 @@ import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.io.decodeFromSource
 import kotlinx.serialization.json.io.encodeToSink
+import kotlin.coroutines.CoroutineContext
 
 suspend inline fun Path.exists(
-    dispatcher: CoroutineDispatcher = Dispatchers.IO
-): Boolean = withContext(dispatcher) {
+    context: CoroutineContext = Dispatchers.IO
+): Boolean = withContext(context) {
     SystemFileSystem.exists(this@exists)
 }
 
 suspend inline fun Path.isRegularFile(
-    dispatcher: CoroutineDispatcher = Dispatchers.IO
-) = withContext(dispatcher) {
+    context: CoroutineContext = Dispatchers.IO
+) = withContext(context) {
     SystemFileSystem.metadataOrNull(this@isRegularFile)?.isRegularFile == true
 }
 
 suspend inline fun Path.isDirectory(
-    dispatcher: CoroutineDispatcher = Dispatchers.IO
-) = withContext(dispatcher) {
+    context: CoroutineContext = Dispatchers.IO
+) = withContext(context) {
     SystemFileSystem.metadataOrNull(this@isDirectory)?.isDirectory == true
 }
 
 suspend inline fun Path.list(
-    dispatcher: CoroutineDispatcher = Dispatchers.IO
-): Collection<Path> = withContext(dispatcher) {
+    context: CoroutineContext = Dispatchers.IO
+): Collection<Path> = withContext(context) {
     SystemFileSystem.list(this@list)
 }
 
 suspend inline fun Path.createDirectories(
-    mustCreate: Boolean = false,
-    dispatcher: CoroutineDispatcher = Dispatchers.IO
-) = withContext(dispatcher) {
-    SystemFileSystem.createDirectories(this@createDirectories, mustCreate)
+    context: CoroutineContext = Dispatchers.IO
+) = withContext(context) {
+    SystemFileSystem.createDirectories(this@createDirectories)
 }
 
 suspend inline fun Path.createParentDirectories(
-    mustCreate: Boolean = false,
-    dispatcher: CoroutineDispatcher = Dispatchers.IO
-) = parent?.createDirectories(mustCreate, dispatcher)
+    context: CoroutineContext = Dispatchers.IO
+) = parent?.createDirectories(context)
 
 suspend inline fun Path.delete(
-    mustExist: Boolean = false,
-    dispatcher: CoroutineDispatcher = Dispatchers.IO
-) = withContext(dispatcher) {
-    SystemFileSystem.delete(this@delete, mustExist)
+    context: CoroutineContext = Dispatchers.IO
+) = withContext(context) {
+    SystemFileSystem.delete(this@delete)
 }
 
 suspend fun Path.deleteRecursively(
-    mustExist: Boolean = false,
-    dispatcher: CoroutineDispatcher = Dispatchers.IO
+    context: CoroutineContext = Dispatchers.IO
 ) {
-    if (isDirectory(dispatcher)) {
-        for (child in list(dispatcher)) {
-            child.deleteRecursively(mustExist, dispatcher)
+    if (isDirectory(context)) {
+        for (child in list(context)) {
+            child.deleteRecursively(context)
         }
     }
-    delete(mustExist, dispatcher)
+    delete(context)
 }
 
 inline fun <T> Path.source(
@@ -84,9 +80,9 @@ inline fun <T> Path.sink(
 @OptIn(ExperimentalSerializationApi::class)
 suspend inline fun <reified T> Path.readJson(
     json: Json,
-    dispatcher: CoroutineDispatcher = Dispatchers.IO
+    context: CoroutineContext = Dispatchers.IO
 ): T = source {
-    withContext(dispatcher) {
+    withContext(context) {
         json.decodeFromSource<T>(it)
     }
 }
@@ -95,9 +91,9 @@ suspend inline fun <reified T> Path.readJson(
 suspend inline fun <T> Path.readJson(
     deserializer: DeserializationStrategy<T>,
     json: Json,
-    dispatcher: CoroutineDispatcher = Dispatchers.IO
+    context: CoroutineContext = Dispatchers.IO
 ): T = source {
-    withContext(dispatcher) {
+    withContext(context) {
         json.decodeFromSource(deserializer, it)
     }
 }
@@ -106,11 +102,11 @@ suspend inline fun <T> Path.readJson(
 suspend inline fun <reified T> Path.writeJson(
     value: T,
     json: Json,
-    dispatcher: CoroutineDispatcher = Dispatchers.IO
+    context: CoroutineContext = Dispatchers.IO
 ) {
     createParentDirectories()
     sink {
-        withContext(dispatcher) {
+        withContext(context) {
             json.encodeToSink<T>(value, it)
         }
     }
@@ -121,11 +117,11 @@ suspend inline fun <T> Path.writeJson(
     serializer: SerializationStrategy<T>,
     value: T,
     json: Json,
-    dispatcher: CoroutineDispatcher = Dispatchers.IO
+    context: CoroutineContext = Dispatchers.IO
 ) {
-    createParentDirectories(dispatcher = dispatcher)
+    createParentDirectories(context)
     sink {
-        withContext(dispatcher) {
+        withContext(context) {
             json.encodeToSink(serializer, value, it)
         }
     }
@@ -133,17 +129,17 @@ suspend inline fun <T> Path.writeJson(
 
 suspend inline fun Path.copyTo(
     target: Path,
-    dispatcher: CoroutineDispatcher = Dispatchers.IO
-) = source { target.writeFromSource(it, dispatcher) }
+    context: CoroutineContext = Dispatchers.IO
+) = source { target.writeFromSource(it, context) }
 
 suspend inline fun Path.writeFromSource(
     source: Source,
-    dispatcher: CoroutineDispatcher = Dispatchers.IO
+    context: CoroutineContext = Dispatchers.IO
 ) {
-    createParentDirectories(dispatcher = dispatcher)
+    createParentDirectories(context)
     sink { sink ->
         source.use {
-            withContext(dispatcher) {
+            withContext(context) {
                 it.transferTo(sink)
             }
         }
@@ -152,11 +148,11 @@ suspend inline fun Path.writeFromSource(
 
 suspend inline fun Path.writeText(
     text: String,
-    dispatcher: CoroutineDispatcher = Dispatchers.IO
+    context: CoroutineContext = Dispatchers.IO
 ) {
-    createParentDirectories(dispatcher = dispatcher)
+    createParentDirectories(context)
     sink {
-        withContext(dispatcher) {
+        withContext(context) {
             it.writeString(text)
         }
     }

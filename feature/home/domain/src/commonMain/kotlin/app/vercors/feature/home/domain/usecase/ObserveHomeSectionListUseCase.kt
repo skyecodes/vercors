@@ -7,7 +7,7 @@ import app.vercors.core.domain.orThrow
 import app.vercors.feature.config.gui.domain.model.HomeCategoryConfig
 import app.vercors.feature.config.gui.domain.usecase.ObserveGuiConfigurationUseCase
 import app.vercors.feature.home.domain.model.HomeSectionType
-import app.vercors.feature.instance.domain.model.Instance
+import app.vercors.feature.instance.domain.model.InstanceAndStatus
 import app.vercors.feature.instance.domain.usecase.ObserveInstanceListUseCase
 import app.vercors.feature.project.domain.model.BriefProject
 import app.vercors.feature.project.domain.model.PlatformId
@@ -34,7 +34,7 @@ class ObserveHomeSectionListUseCase(
             .map { res -> res.map { it.preferredPlatform to it.homeCategories } }
             .distinctUntilChanged()
         val instanceFlow = observeInstanceList()
-            .map { res -> res.map { list -> list.sortedBy { it.lastPlayedAt }.take(10) } }
+            .map { res -> res.map { list -> list.sortedBy { it.instance.lastPlayedAt }.take(10) } }
             .distinctUntilChanged()
         return configFlow.combineResource(instanceFlow).transform { resources ->
             logger.debug { "Resources: $resources" }
@@ -59,7 +59,7 @@ class ObserveHomeSectionListUseCase(
         else emptyMap()
 
     private fun HomeCategoryConfig.toSection(
-        instances: List<Instance>,
+        instances: List<InstanceAndStatus>,
         featuredProjectList: Map<ProjectType, List<BriefProject>>?
     ): HomeSection<*> = when (this) {
         HomeCategoryConfig.Instances -> HomeSection.InstanceListSection(
@@ -95,8 +95,8 @@ sealed interface HomeSection<T : Any> {
 
     data class InstanceListSection(
         override val type: HomeSectionType,
-        override val data: List<Instance>?
-    ) : HomeSection<Instance>
+        override val data: List<InstanceAndStatus>?
+    ) : HomeSection<InstanceAndStatus>
 
     data class ProjectListSection(
         override val type: HomeSectionType,

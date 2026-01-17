@@ -85,6 +85,12 @@ inline fun <T, U> Resource<T>.map(transform: (T) -> U): Resource<U> = when (this
     Resource.Unloaded -> Resource.Unloaded
 }
 
+inline fun <T, U> Resource<T>.mapNullable(transform: (T) -> U?): Resource<U> = when (this) {
+    is Resource.Loaded -> result.mapNullable(transform)?.let { Resource.Loaded(it) } ?: Resource.Loading()
+    is Resource.Loading -> Resource.Loading(partial?.mapNullable(transform))
+    Resource.Unloaded -> Resource.Unloaded
+}
+
 sealed class ResourceException(message: String) : Exception(message)
 
 class NotFinishedLoadingException : ResourceException("Resource is not finished loading")

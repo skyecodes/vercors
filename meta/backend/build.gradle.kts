@@ -43,7 +43,7 @@ dependencies {
 }
 
 kotlin {
-    jvmToolchain(21)
+    jvmToolchain(25)
     compilerOptions.freeCompilerArgs.addAll(
         "-Xannotation-default-target=param-property",
         "-opt-in=kotlin.time.ExperimentalTime",
@@ -54,7 +54,7 @@ kotlin {
 
 ktor {
     docker {
-        jreVersion.set(JavaVersion.VERSION_21)
+        jreVersion.set(JavaVersion.VERSION_25)
         localImageName.set("vercors/meta-backend")
         imageTag.set("$version")
     }

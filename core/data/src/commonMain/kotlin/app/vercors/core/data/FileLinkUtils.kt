@@ -1,14 +1,16 @@
 package app.vercors.core.data
 
-import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.io.files.Path
+import kotlin.coroutines.CoroutineContext
 
-suspend fun Path.linkOrCopyTo(target: Path, ioDispatcher: CoroutineDispatcher) =
-    tryOrFalse { createLink(target, ioDispatcher) } ||
-            tryOrFalse { createLink(target, ioDispatcher, true) } ||
-            tryOrFalse { copyTo(target, ioDispatcher); true }
+suspend fun Path.linkOrCopyTo(target: Path, context: CoroutineContext = Dispatchers.IO) =
+    tryOrFalse { createLink(target, context) } ||
+            tryOrFalse { createLink(target, context, true) } ||
+            tryOrFalse { copyTo(target, context); true }
 
 private suspend fun tryOrFalse(block: suspend () -> Boolean) = try {
     block()
@@ -19,6 +21,6 @@ private suspend fun tryOrFalse(block: suspend () -> Boolean) = try {
 
 expect suspend fun Path.createLink(
     target: Path,
-    ioDispatcher: CoroutineDispatcher,
+    context: CoroutineContext = Dispatchers.IO,
     isSymbolic: Boolean = false
 ): Boolean

@@ -4,7 +4,7 @@ import app.vercors.feature.config.data.datasource.AbstractConfigurationDataSourc
 import app.vercors.feature.config.gui.data.dto.GuiConfigurationData
 import app.vercors.feature.config.gui.data.dto.toData
 import app.vercors.feature.config.gui.domain.model.GuiConfiguration
-import app.vercors.shared.data.JsonFileStoreFactory
+import app.vercors.shared.data.JsonFileStore
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
 import dev.zacsweers.metro.Inject
@@ -16,7 +16,7 @@ import kotlinx.io.files.Path
 @Inject
 class GuiConfigurationDataSource(
     appPath: Path,
-    jsonFileStoreFactory: JsonFileStoreFactory,
+    jsonFileStoreFactory: JsonFileStore.Factory<GuiConfigurationData>,
 ) : AbstractConfigurationDataSource<GuiConfigurationData>(
     storeName = "config-gui",
     configFileName = "config-gui.json",

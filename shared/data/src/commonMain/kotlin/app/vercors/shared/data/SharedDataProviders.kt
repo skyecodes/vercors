@@ -13,31 +13,14 @@ import io.ktor.client.engine.*
 import io.ktor.client.plugins.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.serialization.kotlinx.json.*
-import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.io.files.Path
-import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.Json
 
 @ContributesTo(AppScope::class)
 interface SharedDataProviders {
-    @SingleIn(AppScope::class)
-    @Provides
-    @IODispatcher
-    fun provideIODispatcher(): CoroutineDispatcher = Dispatchers.IO
-
-    @SingleIn(AppScope::class)
-    @Provides
-    @DefaultDispatcher
-    fun provideDefaultDispatcher(): CoroutineDispatcher = Dispatchers.Default
-
-    @SingleIn(AppScope::class)
-    @Provides
-    @MainDispatcher
-    fun provideMainDispatcher(): CoroutineDispatcher = Dispatchers.Main
-
     @SingleIn(AppScope::class)
     @Provides
     fun provideJson(): Json = Json {
@@ -57,10 +40,10 @@ interface SharedDataProviders {
 
     @SingleIn(AppScope::class)
     @Provides
-    fun provideDirectoryWatcher(
-        coroutineScope: CoroutineScope,
-        @IODispatcher ioDispatcher: CoroutineDispatcher
-    ): KfsDirectoryWatcher = KfsDirectoryWatcher(coroutineScope, ioDispatcher)
+    fun provideDirectoryWatcher(coroutineScope: CoroutineScope): KfsDirectoryWatcher = KfsDirectoryWatcher(
+        scope = coroutineScope,
+        dispatcher = Dispatchers.IO
+    )
 
     @SingleIn(AppScope::class)
     @Provides
@@ -76,63 +59,19 @@ interface SharedDataProviders {
 
     @OptIn(DelicateCryptographyApi::class)
     @SingleIn(AppScope::class)
+    @Named("sha1")
     @Provides
-    @Sha1
     fun provideSha1Hasher(): Hasher = CryptographyProvider.Default.get(SHA1).hasher()
 
     @SingleIn(AppScope::class)
+    @Named("sha256")
     @Provides
-    @Sha256
     fun provideSha256Hasher(): Hasher = CryptographyProvider.Default.get(SHA256).hasher()
-
-    @SingleIn(AppScope::class)
-    @Provides
-    fun provideJsonFileListStoreFactory(
-        json: Json,
-        @IODispatcher ioDispatcher: CoroutineDispatcher,
-        coroutineScope: CoroutineScope,
-        watcher: KfsDirectoryWatcher
-    ): JsonFileListStoreFactory = object : JsonFileListStoreFactory {
-        override fun <T> invoke(name: String, path: Path, serializer: KSerializer<T>): JsonFileListStore<T> =
-            JsonFileListStoreImpl(name, path, serializer, json, ioDispatcher, coroutineScope, watcher)
-    }
-
-    @SingleIn(AppScope::class)
-    @Provides
-    fun provideJsonFileStoreFactory(
-        json: Json,
-        @IODispatcher ioDispatcher: CoroutineDispatcher,
-        coroutineScope: CoroutineScope,
-        watcher: KfsDirectoryWatcher
-    ): JsonFileStoreFactory = object : JsonFileStoreFactory {
-        override fun <T> invoke(
-            name: String,
-            path: Path,
-            serializer: KSerializer<T>,
-            defaultProvider: () -> T
-        ): JsonFileStore<T> =
-            JsonFileStoreImpl(name, path, serializer, defaultProvider, json, ioDispatcher, coroutineScope, watcher)
-    }
 
     @SingleIn(AppScope::class)
     @Named("metaBaseUrl")
     @Provides
     fun provideMetaBaseUrl(): String = META_BASE_URL
 }
-
-@Qualifier
-annotation class IODispatcher
-
-@Qualifier
-annotation class DefaultDispatcher
-
-@Qualifier
-annotation class MainDispatcher
-
-@Qualifier
-annotation class Sha1
-
-@Qualifier
-annotation class Sha256
 
 internal expect val platformHttpClientEngineFactory: HttpClientEngineFactory<*>

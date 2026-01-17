@@ -9,15 +9,13 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import app.vercors.core.domain.Result
 import app.vercors.core.domain.resultOrNull
-import app.vercors.core.ui.animation.AppAnimatedContent
-import app.vercors.core.ui.animation.AppAnimatedVisibility
-import app.vercors.core.ui.animation.appAnimateContentSize
-import app.vercors.core.ui.animation.appAnimateItem
+import app.vercors.core.ui.animation.*
 import app.vercors.core.ui.component.*
 import app.vercors.core.ui.layout.AppError
 import app.vercors.core.ui.layout.AppLoading
@@ -269,8 +267,10 @@ fun LoginDisplay(
         }
 
         loginState.progress?.let {
+            val progress by appAnimateFloatAsState(it)
+
             AppProgressIndicator(
-                progress = it,
+                progress = progress,
                 modifier = Modifier.width(500.dp),
             )
         }

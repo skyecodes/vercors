@@ -13,10 +13,10 @@ import androidx.compose.ui.unit.dp
 import app.vercors.core.ui.modifier.appCard
 import app.vercors.core.ui.theme.colors
 import app.vercors.core.ui.theme.surface2
-import com.composeunstyled.DropdownMenu
-import com.composeunstyled.DropdownMenuPanel
 import com.composeunstyled.DropdownPanelAnchor
 import com.composeunstyled.LocalContentColor
+import com.composeunstyled.UnstyledDropdownMenu
+import com.composeunstyled.UnstyledDropdownMenuPanel
 import com.composeunstyled.theme.Theme
 
 @Composable
@@ -25,7 +25,7 @@ fun AppMenuButton(
     imageVector: ImageVector? = null,
     backgroundColor: Color = Color.Unspecified,
     menuContent: @Composable AppMenuScope.() -> Unit,
-    contentPadding: PaddingValues = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
+    contentPadding: PaddingValues = NormalButtonContentPadding,
     modifier: Modifier = Modifier,
     menuModifier: Modifier = Modifier,
     anchor: AppDropdownPanelAnchor = AppDropdownPanelAnchor.BottomStart
@@ -33,7 +33,7 @@ fun AppMenuButton(
     override var expanded by remember { mutableStateOf(false) }
 }) {
     BoxWithConstraints(modifier = modifier) {
-        DropdownMenu(
+        UnstyledDropdownMenu(
             onExpandRequest = { expanded = true }
         ) {
             AppIconTextButton(
@@ -45,7 +45,7 @@ fun AppMenuButton(
             )
         }
 
-        DropdownMenuPanel(
+        UnstyledDropdownMenuPanel(
             expanded = expanded,
             onDismissRequest = { expanded = false },
             modifier = menuModifier.appCard(backgroundColor = Theme[colors][surface2])

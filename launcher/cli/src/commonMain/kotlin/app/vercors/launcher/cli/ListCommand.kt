@@ -20,11 +20,11 @@ class ListCommand(private val observeInstanceList: ObserveInstanceListUseCase) :
                 body {
                     instances.forEach {
                         row(
-                            it.id,
-                            it.name,
-                            it.gameVersion,
-                            it.modLoader?.type?.name ?: "Vanilla",
-                            it.modpackInfo?.let { "Modpack" } ?: "Custom")
+                            it.instance.id,
+                            it.instance.name,
+                            it.instance.gameVersion,
+                            it.instance.modLoader?.type?.name ?: "Vanilla",
+                            it.instance.modpackInfo?.let { "Modpack" } ?: "Custom")
                     }
                 }
             })

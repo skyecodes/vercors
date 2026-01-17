@@ -22,7 +22,9 @@ enum class LoginStep(val number: Int, val description: String) {
     XSTSToken(3, "Getting XSTS token"),
     MinecraftToken(4, "Getting Minecraft access token"),
     MinecraftProfile(5, "Getting Minecraft profile"),
-    Success(6, "Login successful"),
+    Success(6, "Login successful");
+
+    val progress get() = number.toFloat() / entries.size
 }
 
 open class AuthenticationException(

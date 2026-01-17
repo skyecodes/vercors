@@ -8,5 +8,5 @@ import dev.zacsweers.metro.Inject
 class UpdateGuiConfigurationUseCase(
     private val repository: GuiConfigurationRepository
 ) {
-    suspend operator fun invoke(block: (GuiConfiguration) -> GuiConfiguration) = repository.update(block)
+    suspend operator fun invoke(block: GuiConfiguration.() -> GuiConfiguration) = repository.update(block)
 }

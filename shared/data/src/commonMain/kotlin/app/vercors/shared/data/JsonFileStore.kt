@@ -1,10 +1,8 @@
 package app.vercors.shared.data
 
-import app.vercors.core.data.deleteRecursively
-import app.vercors.core.data.isRegularFile
-import app.vercors.core.data.readJson
-import app.vercors.core.data.writeJson
+import app.vercors.core.data.*
 import app.vercors.core.domain.*
+import dev.zacsweers.metro.*
 import io.github.irgaly.kfswatch.KfsDirectoryWatcher
 import io.github.oshai.kotlinlogging.KMarkerFactory
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -21,25 +19,20 @@ import kotlinx.serialization.json.Json
 
 private val logger = KotlinLogging.logger {}
 
-interface JsonFileStore<T> {
-    val state: ResourceStateFlow<T>
-    suspend fun write(value: T)
-}
-
-internal class JsonFileStoreImpl<T>(
-    private val name: String,
-    private val path: Path,
-    private val serializer: KSerializer<T>,
-    private val defaultProvider: () -> T,
+@AssistedInject
+class JsonFileStore<T>(
+    @Assisted private val name: String,
+    @Assisted private val path: Path,
+    @Assisted private val serializer: KSerializer<T>,
+    @Assisted private val defaultProvider: () -> T,
     private val json: Json,
-    private val ioDispatcher: CoroutineDispatcher,
     coroutineScope: CoroutineScope,
     watcher: KfsDirectoryWatcher
-) : JsonFileStore<T> {
+) {
     private val marker = KMarkerFactory.getMarker(name)
     private val mutex = Mutex()
     private val _state = MutableResourceStateFlow<T>()
-    override val state: ResourceStateFlow<T> = _state.asResourceStateFlow(coroutineScope)
+    val state: ResourceStateFlow<T> = _state.asResourceStateFlow(coroutineScope)
 
     init {
         coroutineScope.launch {
@@ -55,16 +48,16 @@ internal class JsonFileStoreImpl<T>(
     private suspend fun load() {
         if (mutex.isLocked) return
         mutex.withLock {
-            if (!path.isRegularFile(ioDispatcher)) {
+            if (!path.isRegularFile()) {
                 logger.debug(throwable = null, marker = marker) { "No file found at $path - writing default data" }
-                path.deleteRecursively(dispatcher = ioDispatcher)
+                path.deleteRecursively()
                 write(defaultProvider())
                 return
             }
             _state.update { Resource.Loading(it.resultOrNull()) }
             logger.debug(throwable = null, marker = marker) { "Reading data at $path" }
             val result = try {
-                Resource.Success(path.readJson(serializer, json, ioDispatcher))
+                Resource.Success(path.readJson(serializer, json))
             } catch (e: Exception) {
                 currentCoroutineContext().ensureActive()
                 delay(1000) // If another update happens within 1 second, the failure will be canceled
@@ -74,19 +67,21 @@ internal class JsonFileStoreImpl<T>(
         }
     }
 
-    override suspend fun write(value: T) {
-        if (!path.isRegularFile(ioDispatcher))
-            path.deleteRecursively(dispatcher = ioDispatcher)
+    suspend fun write(value: T) {
+        if (path.exists() && !path.isRegularFile())
+            path.deleteRecursively()
         logger.debug(throwable = null, marker = marker) { "Writing data at $path" }
-        path.writeJson(serializer, value, json, ioDispatcher)
+        path.writeJson(serializer, value, json)
     }
-}
 
-interface JsonFileStoreFactory {
-    operator fun <T> invoke(
-        name: String,
-        path: Path,
-        serializer: KSerializer<T>,
-        defaultProvider: () -> T
-    ): JsonFileStore<T>
+    @SingleIn(AppScope::class)
+    @AssistedFactory
+    fun interface Factory<T> {
+        fun create(
+            name: String,
+            path: Path,
+            serializer: KSerializer<T>,
+            defaultProvider: () -> T
+        ): JsonFileStore<T>
+    }
 }

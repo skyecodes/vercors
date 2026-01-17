@@ -1,7 +1,7 @@
 package app.vercors.feature.instance.data.datasource
 
 import app.vercors.feature.instance.data.dto.InstanceData
-import app.vercors.shared.data.JsonFileListStoreFactory
+import app.vercors.shared.data.JsonFileListStore
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
@@ -13,10 +13,10 @@ internal const val INSTANCES_DIR_NAME = "instances"
 @Inject
 class InstanceDataSource(
     appPath: Path,
-    jsonFileListStoreFactory: JsonFileListStoreFactory
+    jsonFileListStoreFactory: JsonFileListStore.Factory<InstanceData>
 ) {
     private val instancesDir = Path(appPath, INSTANCES_DIR_NAME)
-    private val store = jsonFileListStoreFactory("instances", instancesDir, InstanceData.serializer())
+    private val store = jsonFileListStoreFactory.create("instances", instancesDir, InstanceData.serializer())
 
     val instancesState = store.state
 

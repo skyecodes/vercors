@@ -60,6 +60,11 @@ inline fun <T, U> Result<T>.map(transform: (T) -> U): Result<U> = when (this) {
     is Failure -> this
 }
 
+inline fun <T, U> Result<T>.mapNullable(transform: (T) -> U?): Result<U>? = when (this) {
+    is Success -> transform(data)?.let { Success(it) }
+    is Failure -> this
+}
+
 inline fun <T, U> Result<T>.flatMap(transform: (T) -> Result<U>): Result<U> = when (this) {
     is Success -> transform(data)
     is Failure -> this

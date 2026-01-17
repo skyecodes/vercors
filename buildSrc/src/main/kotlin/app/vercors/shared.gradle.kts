@@ -11,4 +11,6 @@ kotlin {
     macosX64()
     macosArm64()
     mingwX64()
+
+    jvmToolchain(25)
 }

@@ -11,8 +11,7 @@ class LaunchCommand(private val launchInstance: LaunchInstanceUseCase) : Vercors
     }
 
     override suspend fun execute() {
-        launchInstance(id).collect {
-        }
+        launchInstance(id).collect {}
     }
 
     override fun help(context: Context): String = "Launch an instance"

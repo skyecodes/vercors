@@ -45,6 +45,12 @@ dependencies {
     commonMainImplementation(libs.kotlin.logging)
 }
 
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
+}
+
 compose.desktop {
     application {
         mainClass = "app.vercors.launcher.gui.MainKt"

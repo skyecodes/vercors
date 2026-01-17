@@ -5,7 +5,6 @@ import app.vercors.core.domain.map
 import app.vercors.core.ui.state.collectResourceAsStateWithLifecycle
 import app.vercors.core.ui.state.update
 import app.vercors.feature.account.domain.service.LoginState
-import app.vercors.feature.account.domain.service.LoginStep
 import app.vercors.feature.account.domain.usecase.*
 import app.vercors.shared.domain.usecase.CopyToClipboardUseCase
 import app.vercors.shared.domain.usecase.OpenBrowserUseCase
@@ -89,7 +88,7 @@ class AccountListPresenter(
                 copy(
                     isLoggingIn = true,
                     url = null,
-                    progress = it.step.number.toFloat() / LoginStep.entries.size
+                    progress = it.step.progress
                 )
             }
 

@@ -1,9 +1,6 @@
 package app.vercors.feature.game.data.repository
 
-import app.vercors.core.domain.ResourceFlow
-import app.vercors.core.domain.await
-import app.vercors.core.domain.map
-import app.vercors.core.domain.orThrow
+import app.vercors.core.domain.*
 import app.vercors.feature.game.data.datasource.GameLocalDataSource
 import app.vercors.feature.game.data.toDomain
 import app.vercors.feature.game.domain.model.GameAssetIndex
@@ -15,6 +12,7 @@ import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
@@ -24,6 +22,8 @@ import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.io.buffered
+
+private val logger = KotlinLogging.logger {}
 
 @SingleIn(AppScope::class)
 @ContributesBinding(AppScope::class)
@@ -39,12 +39,13 @@ class GameRepositoryImpl(
         return local.manifestData
             .map { res -> res.map { it.toDomain() } }
             .onStart { syncVersionManifest() }
+            .catchFailures()
     }
 
     private suspend fun syncVersionManifest() {
         if (mutex.isLocked) return
         mutex.withLock {
-            api.getVersionManifest().asSource().buffered().use { local.writeVersionManifest(it) }
+            api.getVersionManifest().toResult().orThrow().asSource().buffered().use { local.writeVersionManifest(it) }
         }
     }
 

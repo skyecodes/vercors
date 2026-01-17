@@ -1,8 +1,8 @@
 package app.vercors.feature.instance.domain.usecase
 
-import app.vercors.feature.instance.domain.instance.InstanceRepository
 import app.vercors.feature.instance.domain.model.Instance
 import app.vercors.feature.instance.domain.model.InstanceId
+import app.vercors.feature.instance.domain.repository.InstanceRepository
 import dev.zacsweers.metro.Inject
 
 @Inject

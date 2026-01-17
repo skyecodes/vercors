@@ -26,9 +26,9 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import app.vercors.core.ui.theme.button
 import app.vercors.core.ui.theme.textStyles
-import com.composeunstyled.Button
 import com.composeunstyled.LocalContentColor
 import com.composeunstyled.ProvideTextStyle
+import com.composeunstyled.UnstyledButton
 import com.composeunstyled.theme.Theme
 
 @Composable
@@ -53,7 +53,7 @@ fun AppButton(
     val hovered by interactionSource.collectIsHoveredAsState()
 
     ProvideTextStyle(textStyle) {
-        Button(
+        UnstyledButton(
             onClick = onClick,
             enabled = enabled,
             shape = shape,

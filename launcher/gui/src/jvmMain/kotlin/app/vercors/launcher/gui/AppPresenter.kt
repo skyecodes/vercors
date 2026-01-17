@@ -38,7 +38,7 @@ class AppPresenter(
         ) + {
             when (it) {
                 AppEvent.ToggleDrawer -> backgroundScope.launch {
-                    updateGuiConfiguration { it.copy(menuDrawerOpen = !it.menuDrawerOpen) }
+                    updateGuiConfiguration { copy(menuDrawerOpen = !menuDrawerOpen) }
                 }
             }
         }
