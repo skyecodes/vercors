@@ -1,25 +1,29 @@
 package app.vercors.feature.instance.domain.usecase
 
-import app.vercors.core.domain.ResourceFlow
-import app.vercors.core.domain.map
 import app.vercors.feature.instance.domain.model.InstanceAndStatus
+import app.vercors.feature.instance.domain.model.InstanceLoadingError
 import app.vercors.feature.instance.domain.model.InstanceStatus
 import app.vercors.feature.instance.domain.repository.InstanceRepository
+import arrow.core.Either
 import dev.zacsweers.metro.Inject
 import kotlinx.coroutines.flow.combine
+import opensavvy.state.coroutines.ProgressiveFlow
+import opensavvy.state.progressive.map
 
 @Inject
 class ObserveInstanceListUseCase(
     private val instanceRepository: InstanceRepository
 ) {
-    operator fun invoke(): ResourceFlow<List<InstanceAndStatus>> =
+    operator fun invoke(): ProgressiveFlow<Nothing, List<Either<InstanceLoadingError, InstanceAndStatus>>> =
         instanceRepository.instances.combine(instanceRepository.statuses) { instances, statuses ->
-            instances.map { list ->
-                list.map {
-                    InstanceAndStatus(
-                        instance = it,
-                        status = statuses[it.id] ?: InstanceStatus.Idle
-                    )
+            instances.map { map ->
+                map.map { (instanceId, either) ->
+                    either.map { instance ->
+                        InstanceAndStatus(
+                            instance = instance,
+                            status = statuses[instanceId] ?: InstanceStatus.Idle
+                        )
+                    }
                 }
             }
         }

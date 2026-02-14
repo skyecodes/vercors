@@ -5,4 +5,7 @@ data class Page<T>(
     val total: Int
 )
 
-fun <T, U> Page<T>.map(transform: (T) -> U): Page<U> = Page(items.map(transform), total)
+fun <T, U> Page<T>.map(transform: (T) -> U): Page<U> = Page(
+    items = items.map(transform),
+    total = total
+)

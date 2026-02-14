@@ -1,15 +1,14 @@
 package app.vercors.feature.instance.ui.list
 
 import androidx.compose.runtime.*
-import app.vercors.core.domain.map
-import app.vercors.core.ui.state.collectResourceAsStateWithLifecycle
+import app.vercors.core.domain.filterIsRight
+import app.vercors.core.ui.state.collectProgressiveAsState
 import app.vercors.feature.instance.domain.usecase.ObserveInstanceListUseCase
 import app.vercors.feature.instance.ui.create.CreateInstanceScreen
 import app.vercors.feature.instance.ui.details.InstanceDetailsScreen
 import app.vercors.feature.instance.ui.toBriefView
 import app.vercors.shared.ui.Presenter
 import app.vercors.shared.ui.Store
-import app.vercors.shared.ui.plus
 import com.slack.circuit.codegen.annotations.CircuitInject
 import com.slack.circuit.runtime.Navigator
 import dev.zacsweers.metro.AppScope
@@ -17,6 +16,7 @@ import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedFactory
 import dev.zacsweers.metro.AssistedInject
 import kotlinx.coroutines.flow.map
+import opensavvy.state.progressive.map
 
 @AssistedInject
 class InstanceListPresenter(
@@ -27,8 +27,8 @@ class InstanceListPresenter(
     override fun present(): Store<InstanceListState, InstanceListEvent> {
         val instances by remember(observeInstanceList) {
             observeInstanceList()
-                .map { res -> res.map { list -> list.map { it.toBriefView() } } }
-        }.collectResourceAsStateWithLifecycle()
+                .map { res -> res.map { list -> list.filterIsRight().map { it.toBriefView() } } }
+        }.collectProgressiveAsState()
         var nameFilter by remember { mutableStateOf("") }
         var versionFilter by remember { mutableStateOf("") }
         var loaderFilter by remember { mutableStateOf("") }

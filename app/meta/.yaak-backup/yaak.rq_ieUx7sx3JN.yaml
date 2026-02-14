@@ -1,0 +1,35 @@
+type: http_request
+model: http_request
+id: rq_ieUx7sx3JN
+createdAt: 2025-12-20T16:15:52.375823818
+updatedAt: 2025-12-27T15:59:13.606774070
+workspaceId: wk_uV8pr3UgNc
+folderId: fl_WCMTRxpozQ
+authentication: { }
+authenticationType: null
+body:
+  text: ''
+bodyType: other
+description: ''
+headers:
+  - enabled: true
+    name: Content-Type
+    value: ''
+    id: null
+method: GET
+name: Search mods
+sortPriority: 3000.0
+url: ${[BASE_URL]}/v2/search
+urlParameters:
+  - enabled: true
+    name: limit
+    value: '20'
+    id: JCNjUzBstG
+  - enabled: true
+    name: facets
+    value: '[["project_type:resourcepack"],["categories:512x+"]]'
+    id: 6FaaaBHBBq
+  - enabled: true
+    name: ''
+    value: ''
+    id: sgpKEeF7mz

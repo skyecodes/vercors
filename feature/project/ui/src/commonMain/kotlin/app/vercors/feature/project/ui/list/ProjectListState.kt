@@ -2,26 +2,24 @@ package app.vercors.feature.project.ui.list
 
 import androidx.compose.runtime.Immutable
 import app.vercors.core.domain.Page
-import app.vercors.core.domain.Resource
-import app.vercors.core.domain.orNull
+import app.vercors.feature.game.domain.model.GameVersionError
 import app.vercors.feature.game.domain.model.ModLoaderType
 import app.vercors.feature.game.ui.GameVersionView
-import app.vercors.feature.project.domain.model.ProjectCategory
-import app.vercors.feature.project.domain.model.ProjectPlatform
-import app.vercors.feature.project.domain.model.ProjectSortBy
-import app.vercors.feature.project.domain.model.ProjectType
+import app.vercors.feature.project.domain.model.*
 import app.vercors.feature.project.ui.BriefProjectView
+import opensavvy.state.progressive.ProgressiveOutcome
+import opensavvy.state.progressive.valueOrNull
 
 @Immutable
 data class ProjectListState(
-    val platformList: Resource<List<ProjectPlatformView>> = Resource.Unloaded,
-    val gameVersionList: Resource<List<GameVersionView>> = Resource.Unloaded,
-    val gameVersionSearchQuery: String = "",
-    val showSnapshot: Boolean = false,
-    val filter: ProjectListFilter = ProjectListFilter(),
-    val projects: Resource<Page<BriefProjectView>> = Resource.Unloaded
+    val platformList: ProgressiveOutcome<PlatformError, List<ProjectPlatformView>>,
+    val gameVersionList: ProgressiveOutcome<GameVersionError.InvalidManifest, List<GameVersionView>>,
+    val gameVersionSearchQuery: String,
+    val showSnapshot: Boolean,
+    val filter: ProjectListFilter,
+    val projects: ProgressiveOutcome<ProjectSearchError, Page<BriefProjectView>>
 ) {
-    val filteredGameVersionList: List<GameVersionView> = gameVersionList.orNull()?.filter {
+    val filteredGameVersionList: List<GameVersionView> = gameVersionList.valueOrNull?.filter {
         (gameVersionSearchQuery.isBlank() || it.id.contains(
             gameVersionSearchQuery,
             ignoreCase = true

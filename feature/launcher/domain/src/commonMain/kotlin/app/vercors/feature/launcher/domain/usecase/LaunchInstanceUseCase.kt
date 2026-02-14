@@ -10,8 +10,11 @@ import app.vercors.feature.instance.domain.model.InstanceId
 import app.vercors.feature.instance.domain.model.InstanceLogEvent
 import app.vercors.feature.instance.domain.model.InstanceStatus
 import app.vercors.feature.instance.domain.repository.InstanceRepository
+import app.vercors.feature.launcher.domain.model.InstanceLaunchError
 import app.vercors.feature.launcher.domain.model.InstanceLaunchEvent
 import app.vercors.feature.launcher.domain.service.LauncherService
+import arrow.core.raise.Raise
+import arrow.core.raise.context.withError
 import dev.zacsweers.metro.Inject
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.*
@@ -31,6 +34,7 @@ class LaunchInstanceUseCase(
     private val launcherService: LauncherService,
     private val coroutineScope: CoroutineScope,
 ) {
+    context(_: Raise<InstanceLaunchError>)
     suspend operator fun invoke(instanceId: InstanceId) {
         val job = coroutineScope.launch {
             launchInstance(instanceId)
@@ -39,12 +43,17 @@ class LaunchInstanceUseCase(
         job.join()
     }
 
+    context(_: Raise<InstanceLaunchError>)
     private suspend fun launchInstance(instanceId: InstanceId) {
         logger.info { "Launching instance: $instanceId" }
-        val instance = instanceRepository.findInstance(instanceId)
+        val instance = withError({ InstanceLaunchError.InstanceNotFound(it.id) }) {
+            instanceRepository.findInstance(instanceId)
+        }
         instanceRepository.clearInstanceLogs(instanceId)
 
-        val account = accountRepository.getSelectedAccount()
+        val account = withError({ InstanceLaunchError.AccountLoading(it.cause) }) {
+            accountRepository.getSelectedAccount()
+        }
         if (account == null) {
             logger.warn { "No account selected, login required" }
             instanceRepository.addInstanceLog(
@@ -122,8 +131,12 @@ class LaunchInstanceUseCase(
 
         logger.info { "Loading instance metadata" }
         instanceRepository.updateInstanceStatus(instanceId, InstanceStatus.Launching.LoadingMetadata)
-        val version = gameRepository.getVersionDetails(instance.gameVersion)
-        val assetIndex = gameRepository.getAssetIndex(version.assetIndex)
+        val version = withError({ InstanceLaunchError.GameVersion(it) }) {
+            gameRepository.getVersionDetails(instance.gameVersion)
+        }
+        val assetIndex = withError({ InstanceLaunchError.GameVersion(it) }) {
+            gameRepository.getAssetIndex(version.assetIndex)
+        }
 
         launcherService.launch(
             instance = instance,

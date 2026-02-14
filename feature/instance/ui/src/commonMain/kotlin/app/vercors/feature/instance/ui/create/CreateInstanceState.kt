@@ -2,26 +2,29 @@ package app.vercors.feature.instance.ui.create
 
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.vector.ImageVector
-import app.vercors.core.domain.Resource
-import app.vercors.core.domain.orNull
+import app.vercors.feature.game.domain.model.GameVersionError
 import app.vercors.feature.game.ui.GameVersionView
+import app.vercors.feature.instance.domain.model.InstanceValidationError
 import app.vercors.feature.instance.ui.*
 import com.composables.icons.lucide.Import
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.PackagePlus
 import com.composables.icons.lucide.SquarePlus
+import opensavvy.state.progressive.ProgressiveOutcome
+import opensavvy.state.progressive.valueOrNull
 import org.jetbrains.compose.resources.StringResource
 
 @Immutable
 data class CreateInstanceState(
-    val selectedTab: CreateInstanceTab = CreateInstanceTab.Custom,
-    val instanceName: String = "",
-    val selectedGameVersion: GameVersionView? = null,
-    val gameVersionList: Resource<List<GameVersionView>> = Resource.Unloaded,
-    val showSnapshot: Boolean = false,
-    val gameVersionFilter: String = "",
+    val selectedTab: CreateInstanceTab,
+    val instanceName: String,
+    val selectedGameVersion: GameVersionView?,
+    val gameVersionList: ProgressiveOutcome<GameVersionError.InvalidManifest, List<GameVersionView>>,
+    val showSnapshot: Boolean,
+    val gameVersionFilter: String,
+    val validationErrors: List<InstanceValidationError>,
 ) {
-    val filteredGameVersionList: List<GameVersionView> = gameVersionList.orNull()?.filter {
+    val filteredGameVersionList: List<GameVersionView> = gameVersionList.valueOrNull?.filter {
         (gameVersionFilter.isBlank() || it.id.contains(
             gameVersionFilter,
             ignoreCase = true

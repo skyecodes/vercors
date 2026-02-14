@@ -8,5 +8,3 @@ data class Store<S, E : Event>(
     val state: S,
     val eventSink: EventSink<E>
 ) : CircuitUiState
-
-typealias EventSink<E> = (E) -> Unit

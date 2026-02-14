@@ -3,6 +3,7 @@ package app.vercors.feature.launcher.data.service
 import app.vercors.feature.game.domain.model.GameVersionDetails
 import app.vercors.feature.instance.domain.model.InstanceLogEvent
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import kotlinx.io.files.Path
 import kotlin.coroutines.CoroutineContext
 
@@ -12,6 +13,6 @@ internal actual fun runCommand(
     workingDir: Path,
     loggingType: GameVersionDetails.Logging.Type?,
     context: CoroutineContext
-): Flow<InstanceLogEvent> {
+): Flow<InstanceLogEvent> = flow {
     // TODO implement
 }

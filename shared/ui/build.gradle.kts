@@ -1,5 +1,6 @@
 plugins {
     id("app.vercors.compose")
+    id("app.vercors.di")
 }
 
 dependencies {
@@ -8,7 +9,6 @@ dependencies {
     commonMainApi(libs.androidx.lifecycle.runtime)
     commonMainApi(libs.androidx.navigation3.ui)
     commonMainApi(libs.composables.icons.lucide)
-    commonMainApi(libs.kotlin.logging)
     commonMainApi(libs.metrox.viewmodel.compose)
 }
 

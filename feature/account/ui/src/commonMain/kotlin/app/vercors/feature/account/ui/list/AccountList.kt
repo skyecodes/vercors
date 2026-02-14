@@ -13,8 +13,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import app.vercors.core.domain.Result
-import app.vercors.core.domain.resultOrNull
 import app.vercors.core.ui.animation.*
 import app.vercors.core.ui.component.*
 import app.vercors.core.ui.layout.AppError
@@ -31,6 +29,7 @@ import com.composeunstyled.theme.Theme
 import com.slack.circuit.codegen.annotations.CircuitInject
 import dev.zacsweers.metro.AppScope
 import kotlinx.coroutines.CancellationException
+import opensavvy.state.progressive.ProgressiveOutcome
 import org.jetbrains.compose.resources.stringResource
 
 @CircuitInject(AccountListScreen::class, AppScope::class)
@@ -41,24 +40,22 @@ fun AccountList(
 ) {
     val (state, eventSink) = store
     with(eventSink) {
-        state.accountList.resultOrNull()?.let { res ->
-            when (res) {
-                is Result.Failure -> AppError(res.error)
-                is Result.Success -> {
-                    AppAnimatedContent(res.data, contentKey = { it.accounts.isEmpty() }) {
-                        if (it.accounts.isEmpty()) NoAccountsFoundDisplay(
-                            loginState = state.loginState,
-                            modifier = modifier
-                        )
-                        else AccountList(
-                            accountList = it,
-                            loginState = state.loginState,
-                            modifier = modifier
-                        )
-                    }
-                }
+        when (val outcome = state.accountList) {
+            is ProgressiveOutcome.Success -> AppAnimatedContent(outcome.value, contentKey = { it.accounts.isEmpty() }) {
+                if (it.accounts.isEmpty()) NoAccountsFoundDisplay(
+                    loginState = state.loginState,
+                    modifier = modifier
+                )
+                else AccountList(
+                    accountList = it,
+                    loginState = state.loginState,
+                    modifier = modifier
+                )
             }
-        } ?: AppLoading()
+
+            is ProgressiveOutcome.Failure -> AppError(outcome.failure.message)
+            is ProgressiveOutcome.Incomplete -> AppLoading()
+        }
     }
 }
 
@@ -96,7 +93,7 @@ private fun AccountList(
     ) {
         val listState = rememberLazyListState()
 
-        LaunchedEffect(accountList.selected) {
+        LaunchedEffect(accountList.selectedAccount) {
             listState.animateScrollToItem(0)
         }
 

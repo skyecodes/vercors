@@ -3,19 +3,21 @@ package app.vercors.feature.account.data.service
 import app.vercors.feature.account.domain.model.AccountId
 import app.vercors.feature.account.domain.model.AccountSkin
 import app.vercors.feature.account.domain.service.AccountSkinService
-import dev.zacsweers.metro.*
+import dev.zacsweers.metro.AppScope
+import dev.zacsweers.metro.ContributesBinding
+import dev.zacsweers.metro.Named
+import dev.zacsweers.metro.SingleIn
 
 @SingleIn(AppScope::class)
 @ContributesBinding(AppScope::class)
-@Inject
 class AccountSkinServiceImpl(
-    @Named("metaBaseUrl") private val metaBaseUrl: String
+    @Named("metaApiUrl") private val metaApiUrl: String
 ) : AccountSkinService {
     override fun getAccountSkin(accountId: AccountId): AccountSkin = accountId.toHexString().let {
         AccountSkin(
-            avatarUrl = "${metaBaseUrl}account/${it}/avatar",
-            headUrl = "${metaBaseUrl}account/${it}/head",
-            bodyUrl = "${metaBaseUrl}account/${it}/body"
+            avatarUrl = "${metaApiUrl}account/${it}/avatar",
+            headUrl = "${metaApiUrl}account/${it}/head",
+            bodyUrl = "${metaApiUrl}account/${it}/body"
         )
     }
 }

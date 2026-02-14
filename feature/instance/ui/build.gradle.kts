@@ -7,6 +7,7 @@ dependencies {
     commonMainImplementation(projects.feature.launcher.domain)
     commonMainImplementation(projects.feature.game.domain)
     commonMainImplementation(projects.feature.game.ui)
+    commonMainImplementation(libs.kotlinx.datetime)
 }
 
 compose.resources {

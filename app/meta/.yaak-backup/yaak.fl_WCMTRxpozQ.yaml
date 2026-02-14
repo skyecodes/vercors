@@ -1,0 +1,13 @@
+type: folder
+model: folder
+id: fl_WCMTRxpozQ
+createdAt: 2025-12-20T15:37:39.103090904
+updatedAt: 2025-12-20T15:37:51.124437070
+workspaceId: wk_uV8pr3UgNc
+folderId: null
+authentication: { }
+authenticationType: null
+description: ''
+headers: [ ]
+name: Modrinth
+sortPriority: 2000.0

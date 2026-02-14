@@ -27,3 +27,5 @@ data class ProjectId(
     val id: String,
     val platform: PlatformId
 )
+
+infix fun String.from(platform: PlatformId) = ProjectId(this, platform)

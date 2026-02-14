@@ -1,29 +1,33 @@
 [versions]
 # General
-kotlin = "2.3.0"
-ksp = "2.3.4"
+kotlin = "2.3.20-Beta2"
+ksp = "2.3.5"
 coroutines = "1.10.2"
+arrow = "2.2.1.1"
+pedestal = "3.2.0"
 datetime = "0.7.1"
 cryptography = "0.5.0"
 human-readable = "1.12.0"
 buildconfig = "6.0.7"
+gradle-versions = "0.53.0"
 # Data
-serialization = "1.9.0"
+serialization = "1.10.0"
 io = "0.8.2"
-ktor = "3.3.3"
-ktor-simple-cache = "0.55.3"
+ktor = "3.4.0"
+ktor-simple-cache = "0.57.7"
+spine = "0.9.1"
 ktorfit = "2.7.2"
 kfswatch = "1.4.0"
 appdirs = "2.0.0"
-oshi = "6.9.2"
+oshi = "6.9.3"
 kzip = "1.1.1"
-xmlutil = "1.0.0-rc1"
+xmlutil = "1.0.0-rc2"
 # GUI
-compose = "1.10.0"
-compose-hot-reload = "1.1.0-alpha04"
-lifecycle = "2.10.0-alpha06"
-navigation3 = "1.0.0-alpha06"
-circuit = "0.32.0"
+compose = "1.11.0-alpha02"
+compose-hot-reload = "1.1.0-alpha05"
+lifecycle = "2.10.0-alpha08"
+navigation3 = "1.1.0-alpha02"
+circuit = "0.33.0"
 unstyled = "1.49.6"
 icons = "2.2.1"
 ripple = "1.1.0"
@@ -33,16 +37,14 @@ webview = "2.0.3"
 # CLI
 clikt = "5.1.0"
 mordant = "3.0.2"
-graalvm = "0.11.3"
+graalvm = "0.11.4"
 # DI
-koin = "4.2.0-alpha3"
-koin-annotations = "2.3.2-Beta1"
-metro = "0.9.4"
+metro = "0.10.4"
 # Logging
-logback = "1.5.22"
-kotlin-logging = "7.0.14"
+logback = "1.5.29"
+kotlin-logging = "8.0.00-beta-04"
 # Test
-mockk = "1.14.7"
+mokkery = "3.2.0"
 turbine = "1.2.1"
 
 [libraries]
@@ -52,9 +54,15 @@ kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-t
 kotlinx-coroutines-swing = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-swing", version.ref = "coroutines" }
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "datetime" }
 cryptography-core = { module = "dev.whyoleg.cryptography:cryptography-core", version.ref = "cryptography" }
-cryptography-random = { module = "dev.whyoleg.cryptography:cryptography-random", version.ref = "cryptography" }
 cryptography-provider-optimal = { module = "dev.whyoleg.cryptography:cryptography-provider-optimal", version.ref = "cryptography" }
 human-readable = { module = "nl.jacobras:Human-Readable", version.ref = "human-readable" }
+arrow-core = { module = "io.arrow-kt:arrow-core", version.ref = "arrow" }
+arrow-fx-coroutines = { module = "io.arrow-kt:arrow-fx-coroutines", version.ref = "arrow" }
+arrow-resilience = { module = "io.arrow-kt:arrow-resilience", version.ref = "arrow" }
+pedestal-progress = { module = "dev.opensavvy.pedestal:progress", version.ref = "pedestal" }
+pedestal-progress-coroutines = { module = "dev.opensavvy.pedestal:progress-coroutines", version.ref = "pedestal" }
+pedestal-state = { module = "dev.opensavvy.pedestal:state", version.ref = "pedestal" }
+pedestal-state-coroutines = { module = "dev.opensavvy.pedestal:state-coroutines", version.ref = "pedestal" }
 # Data
 kotlinx-serialization-core = { module = "org.jetbrains.kotlinx:kotlinx-serialization-core", version.ref = "serialization" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json-io", version.ref = "serialization" }
@@ -73,6 +81,11 @@ ktor-client-cio = { module = "io.ktor:ktor-client-cio", version.ref = "ktor" }
 ktor-client-curl = { module = "io.ktor:ktor-client-curl", version.ref = "ktor" }
 ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }
 ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }
+spine-api = { module = "dev.opensavvy.spine:api", version.ref = "spine" }
+spine-server = { module = "dev.opensavvy.spine:server", version.ref = "spine" }
+spine-server-arrow = { module = "dev.opensavvy.spine:server-arrow", version.ref = "spine" }
+spine-client = { module = "dev.opensavvy.spine:client", version.ref = "spine" }
+spine-client-arrow = { module = "dev.opensavvy.spine:client-arrow", version.ref = "spine" }
 ktorfit-lib = { module = "de.jensklingenberg.ktorfit:ktorfit-lib-light", version.ref = "ktorfit" }
 kfswatch = { module = "io.github.irgaly.kfswatch:kfswatch", version.ref = "kfswatch" }
 appdirs = { module = "ca.gosyer:kotlin-multiplatform-appdirs", version.ref = "appdirs" }
@@ -87,6 +100,7 @@ androidx-lifecycle-viewmodel = { module = "org.jetbrains.androidx.lifecycle:life
 androidx-lifecycle-runtime = { module = "org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycle" }
 androidx-navigation3-ui = { module = "org.jetbrains.androidx.navigation3:navigation3-ui", version.ref = "navigation3" }
 circuit-foundation = { module = "com.slack.circuit:circuit-foundation", version.ref = "circuit" }
+circuit-overlay = { module = "com.slack.circuit:circuit-overlay", version.ref = "circuit" }
 circuit-codegen = { module = "com.slack.circuit:circuit-codegen", version.ref = "circuit" }
 circuit-codegen-annotations = { module = "com.slack.circuit:circuit-codegen-annotations", version.ref = "circuit" }
 composables-composeunstyled = { module = "com.composables:core", version.ref = "unstyled" }
@@ -103,19 +117,12 @@ webview = { module = "io.github.kevinnzou:compose-webview-multiplatform", versio
 clikt = { module = "com.github.ajalt.clikt:clikt", version.ref = "clikt" }
 mordant-coroutines = { module = "com.github.ajalt.mordant:mordant-coroutines", version.ref = "mordant" }
 # DI
-koin-bom = { module = "io.insert-koin:koin-bom", version.ref = "koin" }
-koin-core = { module = "io.insert-koin:koin-core" }
-koin-ktor = { module = "io.insert-koin:koin-ktor" }
-koin-annotations = { module = "io.insert-koin:koin-annotations", version.ref = "koin-annotations" }
-koin-ksp-compiler = { module = "io.insert-koin:koin-ksp-compiler", version.ref = "koin-annotations" }
 metrox-viewmodel-compose = { module = "dev.zacsweers.metro:metrox-viewmodel-compose", version.ref = "metro" }
 # Logging
 logback = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
 kotlin-logging = { module = "io.github.oshai:kotlin-logging", version.ref = "kotlin-logging" }
 # Test
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
-kotlin-testJunit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
-mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 turbine = { module = "app.cash.turbine:turbine", version.ref = "turbine" }
 
 # Plugins
@@ -135,6 +142,8 @@ gradle-plugin-compose-hot-reload = { module = "org.jetbrains.compose.hot-reload:
 gradle-plugin-graalvm = { module = "org.graalvm.buildtools.native:org.graalvm.buildtools.native.gradle.plugin", version.ref = "graalvm" }
 # DI
 gradle-plugin-metro = { module = "dev.zacsweers.metro:dev.zacsweers.metro.gradle.plugin", version.ref = "metro" }
+# Test
+gradle-plugin-mokkery = { module = "dev.mokkery:dev.mokkery.gradle.plugin", version.ref = "mokkery" }
 
 [plugins]
 # General
@@ -142,6 +151,7 @@ kotlin-jvm = { id = "org.jetbrains.kotlin.jvm" }
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform" }
 ksp = { id = "com.google.devtools.ksp" }
 buildconfig = { id = "com.github.gmazzo.buildconfig" }
+gradle-versions = { id = "com.github.ben-manes.versions", version.ref = "gradle-versions" }
 # Data
 serialization = { id = "org.jetbrains.kotlin.plugin.serialization" }
 ktor = { id = "io.ktor.plugin" }
@@ -154,6 +164,8 @@ compose-hot-reload = { id = "org.jetbrains.compose.hot-reload" }
 graalvm = { id = "org.graalvm.buildtools.native" }
 # DI
 metro = { id = "dev.zacsweers.metro" }
+# Test
+mokkery = { id = "dev.mokkery" }
 
 [bundles]
 gradle-plugins = [
@@ -168,5 +180,6 @@ gradle-plugins = [
     "gradle-plugin-compose-compiler",
     "gradle-plugin-compose-hot-reload",
     "gradle-plugin-graalvm",
-    "gradle-plugin-metro"
+    "gradle-plugin-metro",
+    "gradle-plugin-mokkery"
 ]

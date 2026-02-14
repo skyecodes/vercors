@@ -1,13 +1,16 @@
 package app.vercors.feature.account.data.service
 
+import app.vercors.core.cryptography.CryptographyService
+import app.vercors.feature.account.data.MICROSOFT_CLIENT_ID
 import app.vercors.feature.account.domain.model.Account
 import app.vercors.feature.account.domain.service.AuthenticationException
 import app.vercors.feature.account.domain.service.AuthenticationService
 import app.vercors.feature.account.domain.service.LoginState
 import app.vercors.feature.account.domain.service.LoginStep
-import dev.whyoleg.cryptography.operations.Hasher
-import dev.whyoleg.cryptography.random.CryptographyRandom
-import dev.zacsweers.metro.*
+import dev.zacsweers.metro.AppScope
+import dev.zacsweers.metro.ContributesBinding
+import dev.zacsweers.metro.Inject
+import dev.zacsweers.metro.SingleIn
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.*
 import io.ktor.client.call.*
@@ -34,14 +37,13 @@ private val logger = KotlinLogging.logger {}
 @Inject
 class AuthenticationServiceImpl(
     private val httpClient: HttpClient,
-    @Named("microsoftClientId") private val clientId: String,
-    @Named("sha256") private val sha256Hasher: Hasher,
+    private val cryptographyService: CryptographyService
 ) : AuthenticationService {
     override fun login(): Flow<LoginState> = flow {
         val encoder = Base64.UrlSafe.withPadding(Base64.PaddingOption.ABSENT)
         val state = Uuid.random().toString()
-        val codeVerifier = encoder.encode(CryptographyRandom.nextBytes(64))
-        val codeChallenge = encoder.encode(sha256Hasher.hash(codeVerifier.encodeToByteArray()))
+        val codeVerifier = encoder.encode(cryptographyService.randomBytes(64))
+        val codeChallenge = encoder.encode(cryptographyService.sha256(codeVerifier.encodeToByteArray()))
         val (authCode, port, reponseState) =
             getAuthorizationCode(state, codeChallenge).transform {
                 when (it) {
@@ -126,7 +128,7 @@ class AuthenticationServiceImpl(
         server.startSuspend()
         val port = server.engine.port()
         val url = "https://login.microsoftonline.com/consumers/oauth2/v2.0/authorize?" +
-                "client_id=$clientId" +
+                "client_id=$MICROSOFT_CLIENT_ID" +
                 "&response_type=code" +
                 "&redirect_uri=http%3A%2F%2Flocalhost%3A$port" +
                 "&response_mode=query" +
@@ -166,7 +168,7 @@ class AuthenticationServiceImpl(
         val tokenResult = httpClient.submitForm(
             url = "https://login.microsoftonline.com/consumers/oauth2/v2.0/token",
             formParameters = parameters {
-                set("client_id", clientId)
+                set("client_id", MICROSOFT_CLIENT_ID)
                 set("scope", "XboxLive.signin offline_access")
                 params.forEach { (a, b) -> set(a, b) }
             }

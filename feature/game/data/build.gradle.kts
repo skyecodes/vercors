@@ -4,9 +4,5 @@ plugins {
 
 dependencies {
     commonMainApi(projects.feature.game.domain)
-    commonMainImplementation(libs.kfswatch)
-    commonMainImplementation(projects.meta.client)
-    commonMainImplementation(libs.kotlin.logging)
-    commonMainImplementation(libs.ktorfit.lib)
-    commonMainImplementation(libs.cryptography.core)
+    commonMainApi(projects.feature.game.api)
 }

@@ -1,13 +1,14 @@
 package app.vercors.feature.account.domain.usecase
 
-import app.vercors.core.domain.ResourceStateFlow
-import app.vercors.feature.account.domain.model.AccountList
+import app.vercors.feature.account.domain.model.Account
+import app.vercors.feature.account.domain.model.AccountLoadingError
 import app.vercors.feature.account.domain.repository.AccountRepository
 import dev.zacsweers.metro.Inject
+import opensavvy.state.coroutines.ProgressiveFlow
 
 @Inject
 class ObserveAccountListUseCase(
     private val accountRepository: AccountRepository
 ) {
-    operator fun invoke(): ResourceStateFlow<AccountList> = accountRepository.state
+    operator fun invoke(): ProgressiveFlow<AccountLoadingError, List<Account>> = accountRepository.state
 }

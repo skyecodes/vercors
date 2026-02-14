@@ -6,7 +6,7 @@ dependencies {
     commonMainApi(projects.feature.project.domain)
     commonMainImplementation(projects.feature.game.domain)
     commonMainImplementation(projects.feature.game.ui)
-    commonMainImplementation(projects.feature.configGui.domain)
+    commonMainImplementation(projects.feature.config.domain)
     commonMainImplementation(libs.human.readable)
     commonMainImplementation(libs.composables.icons.fontawesome.brands)
 }

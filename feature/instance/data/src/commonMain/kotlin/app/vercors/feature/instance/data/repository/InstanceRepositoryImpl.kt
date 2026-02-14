@@ -1,15 +1,17 @@
 package app.vercors.feature.instance.data.repository
 
-import app.vercors.core.domain.*
+import app.vercors.core.domain.ProgressiveStateFlow
+import app.vercors.core.domain.progressiveStateIn
 import app.vercors.feature.instance.data.datasource.InstanceDataSource
 import app.vercors.feature.instance.data.dto.toData
 import app.vercors.feature.instance.data.dto.toDomain
-import app.vercors.feature.instance.domain.model.Instance
-import app.vercors.feature.instance.domain.model.InstanceId
-import app.vercors.feature.instance.domain.model.InstanceLogEvent
-import app.vercors.feature.instance.domain.model.InstanceStatus
-import app.vercors.feature.instance.domain.repository.InstanceNotFoundException
+import app.vercors.feature.instance.domain.model.*
 import app.vercors.feature.instance.domain.repository.InstanceRepository
+import arrow.core.Either
+import arrow.core.raise.Raise
+import arrow.core.raise.context.bind
+import arrow.core.raise.context.ensure
+import arrow.core.raise.context.ensureNotNull
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
 import dev.zacsweers.metro.Inject
@@ -21,6 +23,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
+import opensavvy.state.coroutines.now
+import opensavvy.state.outcome.value
+import opensavvy.state.progressive.map
 import kotlin.coroutines.cancellation.CancellationException
 
 private val logger = KotlinLogging.logger {}
@@ -32,13 +37,14 @@ class InstanceRepositoryImpl(
     coroutineScope: CoroutineScope,
     private val dataSource: InstanceDataSource,
 ) : InstanceRepository {
-    override val instances: ResourceStateFlow<List<Instance>> = dataSource.instancesState.map { data ->
-        data.map {
-            it.mapNotNull { (key, value) ->
-                value.orNull()?.toDomain(key)
+    override val instances: ProgressiveStateFlow<Nothing, Map<InstanceId, Either<InstanceLoadingError, Instance>>> =
+        dataSource.flow.map { outcome ->
+            outcome.map { map ->
+                map.mapValues { (id, either) ->
+                    either.mapLeft { InstanceLoadingError(id, it) }.map { it.toDomain(id) }
+                }
             }
-        }
-    }.resourceStateIn(coroutineScope)
+        }.progressiveStateIn(coroutineScope)
 
     private val _statuses = MutableStateFlow<Map<InstanceId, InstanceStatus>>(emptyMap())
     override val statuses = _statuses.asStateFlow()
@@ -48,10 +54,12 @@ class InstanceRepositoryImpl(
     private val _logs = MutableStateFlow<Map<InstanceId, List<InstanceLogEvent>>>(emptyMap())
     override val logs = _logs.asStateFlow()
 
+    context(_: Raise<InstanceValidationError>)
     override suspend fun saveInstance(instance: Instance) {
-        require(instance.id.isNotEmpty()) { "Instance ID cannot be empty" }
+        ensure(instance.id.isNotEmpty()) { InstanceValidationError.EmptyInstanceId }
+        ensure(instance.name.length >= 3) { InstanceValidationError.NameTooShort }
         val instanceData = instance.toData()
-        dataSource.saveToFile(instanceData, instance.id)
+        dataSource.write(instance.id, instanceData)
         logger.info { "Saved instance ${instance.id}" }
     }
 
@@ -60,8 +68,9 @@ class InstanceRepositoryImpl(
         logger.info { "Deleted instance ${instance.id}" }
     }
 
+    context(_: Raise<InstanceError>)
     override suspend fun findInstance(id: InstanceId): Instance =
-        instances.await().orThrow().find { it.id == id } ?: throw InstanceNotFoundException(id)
+        ensureNotNull(instances.now().value[id]?.bind()) { InstanceNotFound(id) }
 
     override fun updateInstanceStatus(id: InstanceId, status: InstanceStatus) {
         _statuses.update { it + (id to status) }

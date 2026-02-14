@@ -1,0 +1,23 @@
+type: http_request
+model: http_request
+id: rq_kBkyrDQ7ok
+createdAt: 2025-12-20T15:37:39.102839325
+updatedAt: 2025-12-20T15:51:08.455871408
+workspaceId: wk_uV8pr3UgNc
+folderId: fl_EmvvN59Gks
+authentication: { }
+authenticationType: null
+body:
+  text: ''
+bodyType: other
+description: ''
+headers:
+  - enabled: true
+    name: Content-Type
+    value: ''
+    id: null
+method: GET
+name: Featured project list
+sortPriority: 8.0
+url: ${[BASE_URL]}/platform/${[ platformId ]}/featured-project
+urlParameters: [ ]

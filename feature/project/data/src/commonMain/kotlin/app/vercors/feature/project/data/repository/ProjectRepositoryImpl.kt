@@ -1,42 +1,68 @@
 package app.vercors.feature.project.data.repository
 
 import app.vercors.core.domain.Page
-import app.vercors.core.domain.Result
 import app.vercors.feature.game.domain.model.ModLoaderType
+import app.vercors.feature.project.api.Platforms
+import app.vercors.feature.project.api.Projects
+import app.vercors.feature.project.api.dto.PlatformNotFoundData
+import app.vercors.feature.project.api.dto.ProjectLoaderData
+import app.vercors.feature.project.api.dto.ProjectNotFoundData
 import app.vercors.feature.project.data.toData
 import app.vercors.feature.project.data.toDomain
 import app.vercors.feature.project.domain.model.*
 import app.vercors.feature.project.domain.repository.ProjectRepository
-import app.vercors.meta.client.project.ProjectApi
-import app.vercors.meta.lib.project.ProjectLoaderData
+import app.vercors.shared.api.ApiV1
+import arrow.core.raise.Raise
+import arrow.core.raise.context.raise
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
+import io.ktor.client.*
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonPrimitive
+import opensavvy.spine.api.div
+import opensavvy.spine.api.invoke
+import opensavvy.spine.client.handle
+import opensavvy.spine.client.request
 
 @SingleIn(AppScope::class)
 @ContributesBinding(AppScope::class)
 @Inject
 class ProjectRepositoryImpl(
-    private val projectApi: ProjectApi,
+    private val httpClient: HttpClient,
     private val json: Json
 ) : ProjectRepository {
-    override suspend fun getPlatformList(): Result<List<ProjectPlatform>> =
-        projectApi.getPlatformList().map { it.map { it.toDomain() } }.toResult()
 
+    context(_: Raise<PlatformError>)
+    override suspend fun getPlatformList(): List<ProjectPlatform> =
+        httpClient.request(
+            endpoint = ApiV1 / Platforms / Platforms.list
+        ).handle(
+            handle1 = { raise(it.toDomain()) },
+            transform = { list -> list.map { it.toDomain() } }
+        )
+
+    context(_: Raise<PlatformNotFound>, _: Raise<PlatformError>)
     override suspend fun getFeaturedProjectList(
         platformId: PlatformId
-    ): Result<Map<ProjectType, List<BriefProject>>> = projectApi.getFeaturedProjectList(platformId).map { res ->
-        res.entries.associate { (key, value) ->
-            key.toDomain() to value.map { it.toDomain() }
-        }
-    }.toResult()
+    ): FeaturedProjectList =
+        httpClient.request(
+            endpoint = ApiV1 / Platforms / Platforms.PlatformId(platformId) / Platforms.PlatformId.featuredProjects
+        ).handle(
+            handle1 = { raise(it.toDomain()) },
+            handle2 = { raise(it.toDomain()) },
+            transform = { map ->
+                map.entries.associate { (key, value) ->
+                    key.toDomain() to value.map { it.toDomain() }
+                }
+            }
+        )
 
-    override suspend fun getProjectList(
+    context(_: Raise<ProjectSearchError>)
+    override suspend fun searchProjects(
         platformId: PlatformId,
         type: ProjectType,
         loaders: List<ModLoaderType>?,
@@ -46,21 +72,45 @@ class ProjectRepositoryImpl(
         sortBy: ProjectSortBy?,
         pageSize: Int?,
         offset: Int?
-    ): Result<Page<BriefProject>> = projectApi.getProjectList(
-        platformId = platformId,
-        projectType = json.encodeToJsonElement(type.toData()).jsonPrimitive.content,
-        loaders = loaders?.let { loaders -> json.encodeToJsonElement(loaders.map { it.toMetaData() }).jsonArray.map { it.jsonPrimitive.content } },
-        gameVersions = gameVersions,
-        categories = categories,
-        query = query,
-        sortBy = sortBy?.let { json.encodeToJsonElement(it.toData()).jsonPrimitive.content },
-        pageSize = pageSize,
-        offset = offset
-    ).map { list -> Page(items = list.results.map { it.toDomain() }, total = list.total) }.toResult()
+    ): Page<BriefProject> = httpClient.request(
+        endpoint = ApiV1 / Platforms / Platforms.PlatformId(platformId) / Projects / Projects.search,
+        parameters = {
+            this.type = json.encodeToJsonElement(type.toData()).jsonPrimitive.content
+            loaders?.let { loaders ->
+                this.loaders =
+                    json.encodeToJsonElement(loaders.map { it.toMetaData() }).jsonArray.joinToString(",") { it.jsonPrimitive.content }
+            }
+            gameVersions?.joinToString(",")?.let { this.gameVersions = it }
+            categories?.joinToString(",")?.let { this.categories = it }
+            query?.let { this.query = it }
+            sortBy?.let { this.sortBy = json.encodeToJsonElement(it.toData()).jsonPrimitive.content }
+            pageSize?.let { this.pageSize = it }
+            offset?.let { this.offset = it }
+        }
+    ).handle(
+        handle1 = { raise(it.toDomain()) },
+        handle2 = { raise(it.toDomain()) },
+        handle3 = { raise(it.toDomain()) },
+        transform = { data -> Page(items = data.results.map { it.toDomain() }, total = data.total) }
+    )
 
+    context(_: Raise<ProjectNotFound>, _: Raise<PlatformNotFound>, _: Raise<PlatformError>)
     override suspend fun getProject(
         projectId: ProjectId
-    ): Result<Project> = projectApi.getProject(projectId.platform, projectId.id).map { it.toDomain() }.toResult()
+    ): Project = httpClient.request(
+        endpoint = ApiV1 / Platforms / Platforms.PlatformId(projectId.platform) / Projects / Projects.ProjectId(
+            projectId.id
+        ) / Projects.ProjectId.get
+    ).handle(
+        handle1 = {
+            when (it) {
+                is ProjectNotFoundData -> raise(it.toDomain())
+                is PlatformNotFoundData -> raise(it.toDomain())
+            }
+        },
+        handle2 = { raise(it.toDomain()) },
+        transform = { it.toDomain() }
+    )
 }
 
 private fun ModLoaderType.toMetaData() = when (this) {

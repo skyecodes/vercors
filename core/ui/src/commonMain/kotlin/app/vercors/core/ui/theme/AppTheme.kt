@@ -39,6 +39,7 @@ val button = ThemeToken<TextStyle>("button")
 val title = ThemeToken<TextStyle>("title")
 val subtitle = ThemeToken<TextStyle>("subtitle")
 val label = ThemeToken<TextStyle>("label")
+val console = ThemeToken<TextStyle>("console")
 
 
 val AppTheme = buildTheme {
@@ -106,5 +107,9 @@ val AppTheme = buildTheme {
             fontFamily = fontFamily,
             fontSize = 12.sp
         ),
+        console to TextStyle(
+            fontFamily = FontFamily.Monospace,
+            fontSize = 12.sp
+        )
     )
 }

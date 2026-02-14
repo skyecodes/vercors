@@ -1,0 +1,23 @@
+type: http_request
+model: http_request
+id: rq_8BfLvkpmHL
+createdAt: 2025-12-20T15:37:39.102762095
+updatedAt: 2025-12-23T08:05:30.541093668
+workspaceId: wk_uV8pr3UgNc
+folderId: fl_EmvvN59Gks
+authentication: { }
+authenticationType: null
+body:
+  text: ''
+bodyType: other
+description: ''
+headers:
+  - enabled: true
+    name: Content-Type
+    value: ''
+    id: null
+method: GET
+name: Platform list
+sortPriority: 2.6666666666666665
+url: ${[BASE_URL]}/platform
+urlParameters: [ ]

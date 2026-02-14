@@ -11,5 +11,4 @@ val libs = the<LibrariesForLibs>()
 
 dependencies {
     commonMainApi(project(":shared:domain"))
-    commonMainImplementation(libs.kotlin.logging)
 }

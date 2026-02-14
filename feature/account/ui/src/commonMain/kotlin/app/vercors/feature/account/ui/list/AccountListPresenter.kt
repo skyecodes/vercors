@@ -1,16 +1,19 @@
 package app.vercors.feature.account.ui.list
 
 import androidx.compose.runtime.*
-import app.vercors.core.domain.map
-import app.vercors.core.ui.state.collectResourceAsStateWithLifecycle
+import app.vercors.core.ui.state.collectProgressiveAsState
 import app.vercors.core.ui.state.update
+import app.vercors.feature.account.domain.model.AccountError
+import app.vercors.feature.account.domain.model.AccountLoadingError
+import app.vercors.feature.account.domain.model.AccountNotFound
 import app.vercors.feature.account.domain.service.LoginState
 import app.vercors.feature.account.domain.usecase.*
 import app.vercors.shared.domain.usecase.CopyToClipboardUseCase
 import app.vercors.shared.domain.usecase.OpenBrowserUseCase
 import app.vercors.shared.ui.Presenter
 import app.vercors.shared.ui.Store
-import app.vercors.shared.ui.plus
+import arrow.core.raise.Raise
+import arrow.core.raise.either
 import com.slack.circuit.codegen.annotations.CircuitInject
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Inject
@@ -18,6 +21,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import opensavvy.state.progressive.map
 
 private val logger = KotlinLogging.logger {}
 
@@ -35,19 +39,16 @@ class AccountListPresenter(
     @Composable
     override fun present(): Store<AccountListState, AccountListEvent> {
         val presenterScope = rememberCoroutineScope()
-        val accountList by observeAccountList().collectResourceAsStateWithLifecycle()
+        val accountList by observeAccountList().collectProgressiveAsState()
         val mappedAccountList = remember(accountList) {
             accountList.map { list ->
-                AccountListView(
-                    selected = list.selected,
-                    accounts = list.accounts.map { account ->
-                        AccountView(
-                            username = account.username,
-                            id = account.id,
-                            skin = getAccountSkin(account.id)
-                        )
-                    }
-                )
+                AccountListView(list.map { account ->
+                    AccountView(
+                        username = account.username,
+                        id = account.id,
+                        skin = getAccountSkin(account.id)
+                    )
+                })
             }
         }
         var loginJob by remember { mutableStateOf<Job?>(null) }
@@ -66,8 +67,17 @@ class AccountListPresenter(
                     }
                 }
 
-                is AccountListEvent.Logout -> presenterScope.launch { logout(event.accountId) }
-                is AccountListEvent.SelectAccount -> presenterScope.launch { selectAccount(event.accountId) }
+                is AccountListEvent.Logout -> presenterScope.launch { handleAccountError { logout(event.accountId) } }
+                is AccountListEvent.SelectAccount -> presenterScope.launch { handleAccountError { selectAccount(event.accountId) } }
+            }
+        }
+    }
+
+    private suspend fun handleAccountError(block: suspend Raise<AccountError>.() -> Unit) {
+        either { block() }.onLeft {
+            when (it) {
+                is AccountLoadingError -> logger.error { "Failed to load account list" }
+                is AccountNotFound -> logger.error { "Account not found" }
             }
         }
     }

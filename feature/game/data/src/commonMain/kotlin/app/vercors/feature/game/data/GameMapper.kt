@@ -1,13 +1,13 @@
 package app.vercors.feature.game.data
 
+import app.vercors.feature.game.data.dto.MojangAssetIndex
+import app.vercors.feature.game.data.dto.MojangReleaseType
+import app.vercors.feature.game.data.dto.MojangVersionInfo
+import app.vercors.feature.game.data.dto.MojangVersionManifest
 import app.vercors.feature.game.domain.model.GameAssetIndex
 import app.vercors.feature.game.domain.model.GameVersionDetails
 import app.vercors.feature.game.domain.model.GameVersionList
 import app.vercors.feature.game.domain.model.GameVersionType
-import app.vercors.meta.lib.game.MojangAssetIndex
-import app.vercors.meta.lib.game.MojangReleaseType
-import app.vercors.meta.lib.game.MojangVersionInfo
-import app.vercors.meta.lib.game.MojangVersionManifest
 
 internal fun MojangVersionManifest.toDomain(): GameVersionList = GameVersionList(
     latestRelease = latest.release,

@@ -15,20 +15,20 @@ data class AccountData(
     val dateSelected: Instant
 )
 
-internal fun AccountData.toDomain(): Account = Account(
+internal suspend fun AccountData.toDomain(decrypt: suspend (String) -> String): Account = Account(
     id = id,
     username = username,
-    accessToken = accessToken,
-    refreshToken = refreshToken,
+    accessToken = decrypt(accessToken),
+    refreshToken = decrypt(refreshToken),
     dateAdded = dateAdded,
     dateSelected = dateSelected
 )
 
-internal fun Account.toData(): AccountData = AccountData(
+internal suspend fun Account.toData(encrypt: suspend (String) -> String): AccountData = AccountData(
     id = id,
     username = username,
-    accessToken = accessToken,
-    refreshToken = refreshToken,
+    accessToken = encrypt(accessToken),
+    refreshToken = encrypt(refreshToken),
     dateAdded = dateAdded,
     dateSelected = dateSelected
 )

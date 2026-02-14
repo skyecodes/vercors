@@ -11,7 +11,7 @@ sealed interface InstanceLogEvent {
         override fun toString() = text
     }
 
-    object Empty : Plain(" ")
+    object Empty : Plain("")
 
     class Launcher(text: String) : Plain(text)
 
@@ -27,6 +27,6 @@ sealed interface InstanceLogEvent {
         private val message: String
     ) : InstanceLogEvent {
         override val inst: Instant = Instant.fromEpochMilliseconds(timestamp)
-        override fun toString(): String = "$inst [$thread] $level $message"
+        override fun toString(): String = message
     }
 }

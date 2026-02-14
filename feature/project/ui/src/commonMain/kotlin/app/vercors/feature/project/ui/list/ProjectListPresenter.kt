@@ -1,22 +1,25 @@
 package app.vercors.feature.project.ui.list
 
 import androidx.compose.runtime.*
-import app.vercors.core.domain.*
-import app.vercors.core.ui.state.collectResourceAsStateWithLifecycle
-import app.vercors.core.ui.state.mutableResourceStateOf
+import app.vercors.core.domain.Page
+import app.vercors.core.domain.map
+import app.vercors.core.domain.toggle
+import app.vercors.core.ui.state.collectProgressiveAsState
+import app.vercors.core.ui.state.mutableProgressiveStateOf
+import app.vercors.core.ui.state.produceProgressiveState
 import app.vercors.core.ui.state.update
-import app.vercors.feature.config.gui.domain.usecase.ObserveGuiConfigurationUseCase
+import app.vercors.feature.config.domain.usecase.ObserveConfigurationUseCase
 import app.vercors.feature.game.domain.usecase.ObserveGameVersionListUseCase
 import app.vercors.feature.game.ui.toView
+import app.vercors.feature.project.domain.model.ProjectSearchError
 import app.vercors.feature.project.domain.model.ProjectType
 import app.vercors.feature.project.domain.usecase.GetPlatformListUseCase
-import app.vercors.feature.project.domain.usecase.GetProjectListUseCase
+import app.vercors.feature.project.domain.usecase.SearchProjectsUseCase
 import app.vercors.feature.project.ui.BriefProjectView
 import app.vercors.feature.project.ui.details.ProjectDetailsScreen
 import app.vercors.feature.project.ui.toView
 import app.vercors.shared.ui.Presenter
 import app.vercors.shared.ui.Store
-import app.vercors.shared.ui.plus
 import com.slack.circuit.codegen.annotations.CircuitInject
 import com.slack.circuit.runtime.Navigator
 import dev.zacsweers.metro.AppScope
@@ -24,9 +27,13 @@ import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedFactory
 import dev.zacsweers.metro.AssistedInject
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import opensavvy.state.ExperimentalProgressiveRaiseApi
+import opensavvy.state.arrow.progressive
+import opensavvy.state.progressive.ProgressiveOutcome
+import opensavvy.state.progressive.map
+import opensavvy.state.progressive.valueOrNull
 
 private val logger = KotlinLogging.logger {}
 
@@ -34,34 +41,34 @@ private val logger = KotlinLogging.logger {}
 class ProjectListPresenter(
     @Assisted private val navigator: Navigator,
     private val getPlatformList: GetPlatformListUseCase,
-    private val getProjectList: GetProjectListUseCase,
+    private val searchProjects: SearchProjectsUseCase,
     private val getGameVersionList: ObserveGameVersionListUseCase,
-    private val observeGuiConfiguration: ObserveGuiConfigurationUseCase
+    private val observeConfiguration: ObserveConfigurationUseCase
 ) : Presenter<ProjectListState, ProjectListEvent> {
+    @OptIn(ExperimentalProgressiveRaiseApi::class)
     @Composable
     override fun present(): Store<ProjectListState, ProjectListEvent> {
         val presenterScope = rememberCoroutineScope()
-        val preferredPlatform by remember(observeGuiConfiguration) {
-            observeGuiConfiguration()
-                .map { res -> res.map { it.preferredPlatform } }
-        }.collectResourceAsStateWithLifecycle()
+        val preferredPlatform by remember(observeConfiguration) {
+            observeConfiguration().map { res -> res.map { it.preferredPlatform } }
+        }.collectProgressiveAsState()
 
-        val platformList by remember(getPlatformList) {
-            ResourceFlowResult { getPlatformList().map { list -> list.map { it.toView() } } }
-        }.collectResourceAsStateWithLifecycle()
+        val platformList by produceProgressiveState(getPlatformList) {
+            value = progressive { getPlatformList().map { it.toView() } }
+        }
 
         val gameVersionList by remember(getGameVersionList) {
             getGameVersionList().map { res -> res.map { it.toView() } }
-        }.collectResourceAsStateWithLifecycle()
+        }.collectProgressiveAsState()
 
         var gameVersionSearchQuery by remember { mutableStateOf("") }
         var showSnapshot by remember { mutableStateOf(false) }
         val filter = remember { mutableStateOf(ProjectListFilter()) }
-        val projects = remember { mutableResourceStateOf<Page<BriefProjectView>>() }
+        val projects = remember { mutableProgressiveStateOf<ProjectSearchError, Page<BriefProjectView>>() }
 
-        LaunchedEffect(platformList) {
+        LaunchedEffect(platformList, preferredPlatform) {
             val defaultPlatform =
-                platformList.orNull()?.find { it.id == preferredPlatform.orNull() } ?: platformList.orNull()
+                platformList.valueOrNull?.find { it.id == preferredPlatform.valueOrNull } ?: platformList.valueOrNull
                     ?.firstOrNull()
             filter.update {
                 copy(
@@ -118,13 +125,15 @@ class ProjectListPresenter(
         }
     }
 
+    @OptIn(ExperimentalProgressiveRaiseApi::class)
     private suspend fun searchProjects(
         filter: ProjectListFilter,
-        projects: MutableState<Resource<Page<BriefProjectView>>>
+        projects: MutableState<ProgressiveOutcome<ProjectSearchError, Page<BriefProjectView>>>
     ) {
         if (filter.selectedPlatform != null || filter.selectedType != null) {
-            ResourceFlowResult {
-                getProjectList(
+            projects.value = ProgressiveOutcome.Incomplete()
+            projects.value = progressive {
+                searchProjects(
                     platformId = filter.selectedPlatform!!.id,
                     type = filter.selectedType!!,
                     loaders = if (filter.selectedType.requiresLoader) filter.selectedLoaders.ifEmpty { null } else null,
@@ -134,8 +143,8 @@ class ProjectListPresenter(
                     sortBy = filter.sortBy,
                     pageSize = filter.pageSize,
                     offset = filter.offset
-                ).map { list -> list.map { it.toView() } }
-            }.collectLatest { projects.value = it }
+                ).map { it.toView() }
+            }
         }
     }
 

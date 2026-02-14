@@ -1,7 +1,7 @@
 package app.vercors.feature.project.data
 
+import app.vercors.feature.project.api.dto.*
 import app.vercors.feature.project.domain.model.*
-import app.vercors.meta.lib.project.*
 
 internal fun ProjectTypeData.toDomain(): ProjectType = when (this) {
     ProjectTypeData.Mod -> ProjectType.Mod
@@ -29,7 +29,7 @@ internal fun ProjectSortBy.toData(): ProjectSortByData = when (this) {
 }
 
 internal fun BriefProjectData.toDomain(): BriefProject = BriefProject(
-    id = ProjectId(id, platform),
+    id = id from platform,
     name = name,
     description = description,
     author = author,
@@ -41,7 +41,7 @@ internal fun BriefProjectData.toDomain(): BriefProject = BriefProject(
 )
 
 internal fun ProjectData.toDomain(): Project = Project(
-    id = ProjectId(id, platform),
+    id = id from platform,
     name = name,
     description = description,
     body = body,
@@ -69,3 +69,12 @@ internal fun IconData.toDomain(): ProjectCategory.Icon = when (this) {
     is IconNameData -> ProjectCategory.Icon.Named(name)
     is IconSvgData -> ProjectCategory.Icon.Data(svgString)
 }
+
+internal fun UnsupportedProjectTypeData.toDomain(): UnsupportedProjectType =
+    UnsupportedProjectType(projectType.toDomain())
+
+internal fun PlatformErrorData.toDomain(): PlatformError = PlatformError(error, description)
+
+internal fun PlatformNotFoundData.toDomain(): PlatformNotFound = PlatformNotFound(platformId)
+
+internal fun ProjectNotFoundData.toDomain(): ProjectNotFound = ProjectNotFound(projectId from platformId)

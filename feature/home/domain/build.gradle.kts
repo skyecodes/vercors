@@ -5,5 +5,5 @@ plugins {
 dependencies {
     commonMainImplementation(projects.feature.project.domain)
     commonMainImplementation(projects.feature.instance.domain)
-    commonMainImplementation(projects.feature.configGui.domain)
+    commonMainImplementation(projects.feature.config.domain)
 }

@@ -1,7 +1,8 @@
 package app.vercors.feature.instance.data.datasource
 
+import app.vercors.core.filesystem.FileListStore
+import app.vercors.core.filesystem.FileListStoreFactory
 import app.vercors.feature.instance.data.dto.InstanceData
-import app.vercors.shared.data.JsonFileListStore
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
@@ -13,14 +14,8 @@ internal const val INSTANCES_DIR_NAME = "instances"
 @Inject
 class InstanceDataSource(
     appPath: Path,
-    jsonFileListStoreFactory: JsonFileListStore.Factory<InstanceData>
-) {
-    private val instancesDir = Path(appPath, INSTANCES_DIR_NAME)
-    private val store = jsonFileListStoreFactory.create("instances", instancesDir, InstanceData.serializer())
-
-    val instancesState = store.state
-
-    suspend fun saveToFile(value: InstanceData, id: String) = store.write(id, value)
-
-    suspend fun delete(id: String) = store.delete(id)
-}
+    fileListStoreFactory: FileListStoreFactory
+) : FileListStore<InstanceData> by fileListStoreFactory(
+    directoryPath = Path(appPath, INSTANCES_DIR_NAME),
+    serializer = InstanceData.serializer()
+)

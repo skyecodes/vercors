@@ -25,9 +25,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.vercors.core.domain.Page
-import app.vercors.core.domain.Resource
-import app.vercors.core.domain.Result
-import app.vercors.core.domain.orNull
 import app.vercors.core.ui.CoreRes
 import app.vercors.core.ui.animation.AppAnimatedVisibility
 import app.vercors.core.ui.animation.appAnimateItem
@@ -41,6 +38,7 @@ import app.vercors.core.ui.theme.colors
 import app.vercors.core.ui.theme.surface2
 import app.vercors.feature.game.domain.model.ModLoaderType
 import app.vercors.feature.game.ui.*
+import app.vercors.feature.project.domain.model.ProjectSearchError
 import app.vercors.feature.project.domain.model.ProjectSortBy
 import app.vercors.feature.project.domain.model.ProjectType
 import app.vercors.feature.project.ui.*
@@ -56,6 +54,7 @@ import com.composeunstyled.theme.Theme
 import com.slack.circuit.codegen.annotations.CircuitInject
 import com.slack.circuit.sharedelements.SharedElementTransitionScope
 import dev.zacsweers.metro.AppScope
+import opensavvy.state.progressive.*
 import org.jetbrains.compose.resources.decodeToSvgPainter
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.resources.vectorResource
@@ -76,7 +75,7 @@ fun ProjectList(
         ) {
             ProjectListHeader(
                 filter = state.filter,
-                providerList = state.platformList.orNull()
+                providerList = state.platformList.valueOrNull
             )
             Row(
                 modifier = Modifier.weight(1f).fillMaxWidth(),
@@ -87,7 +86,7 @@ fun ProjectList(
                     modifier = Modifier.weight(1f).fillMaxHeight(),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    ProjectListPagination(state.filter, state.projects.orNull()?.total)
+                    ProjectListPagination(state.filter, state.projects.valueOrNull?.total)
                     ProjectList(state.projects)
                 }
             }
@@ -480,7 +479,7 @@ private fun ProjectListPagination(filter: ProjectListFilter, totalElements: Int?
 
 @Composable
 context(_: EventSink<ProjectListEvent>)
-private fun ColumnScope.ProjectList(projects: Resource<Page<BriefProjectView>>) {
+private fun ColumnScope.ProjectList(projects: ProgressiveOutcome<ProjectSearchError, Page<BriefProjectView>>) {
     val listState = rememberLazyListState()
 
     LaunchedEffect(projects) {
@@ -492,26 +491,23 @@ private fun ColumnScope.ProjectList(projects: Resource<Page<BriefProjectView>>) 
         modifier = Modifier.weight(1f),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        when (projects) {
-            is Resource.Loaded -> when (val result = projects.result) {
-                is Result.Failure -> item(result) { AppError(result.error) }
-                is Result.Success -> {
-                    if (result.data.items.isEmpty()) {
-                        item { NoProjectsFound() }
-                    }
-                    itemsIndexed(result.data.items, key = { _, it -> it.id }) { index, it ->
-                        ProjectListItemCard(it, index == result.data.items.lastIndex)
-                    }
-                }
-            }
-
-            is Resource.Loading -> repeat(20) {
+        projects.onLoading {
+            repeat(20) {
                 item(it) {
                     ProjectListItemCard(null, it == 19)
                 }
             }
-
-            Resource.Unloaded -> Unit
+        }
+        projects.onSuccess { result ->
+            if (result.items.isEmpty()) {
+                item { NoProjectsFound() }
+            }
+            itemsIndexed(result.items, key = { _, it -> it.id }) { index, it ->
+                ProjectListItemCard(it, index == result.items.lastIndex)
+            }
+        }
+        projects.onFailure {
+            item(it) { AppError(it.message) }
         }
     }
 }

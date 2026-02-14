@@ -1,98 +1,71 @@
 package app.vercors.feature.game.data.datasource
 
-import app.vercors.core.data.exists
-import app.vercors.core.data.readJson
-import app.vercors.core.data.source
-import app.vercors.core.data.writeFromSource
-import app.vercors.core.domain.MutableResourceStateFlow
-import app.vercors.core.domain.ResourceStateFlow
-import app.vercors.core.domain.asResourceStateFlow
-import app.vercors.core.domain.load
+import app.vercors.core.filesystem.FileStore
+import app.vercors.core.filesystem.FileStoreFactory
+import app.vercors.core.filesystem.writeFromSource
+import app.vercors.feature.game.data.dto.MojangAssetIndex
+import app.vercors.feature.game.data.dto.MojangVersionInfo
+import app.vercors.feature.game.data.dto.MojangVersionManifest
 import app.vercors.feature.game.domain.model.GameVersionDetails
 import app.vercors.feature.game.domain.model.GameVersionList
-import app.vercors.meta.lib.game.MojangAssetIndex
-import app.vercors.meta.lib.game.MojangVersionInfo
-import app.vercors.meta.lib.game.MojangVersionManifest
-import dev.whyoleg.cryptography.operations.Hasher
+import app.vercors.shared.data.FileValidationFailure
+import app.vercors.shared.data.FileValidationRequest
+import app.vercors.shared.data.FileValidationService
+import arrow.core.raise.Raise
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Inject
-import dev.zacsweers.metro.Named
 import dev.zacsweers.metro.SingleIn
-import io.github.irgaly.kfswatch.KfsDirectoryWatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Mutex
 import kotlinx.io.Source
-import kotlinx.io.bytestring.toHexString
 import kotlinx.io.files.Path
-import kotlinx.serialization.json.Json
 
 private val logger = KotlinLogging.logger {}
 
 @SingleIn(AppScope::class)
 @Inject
 class GameLocalDataSource(
-    private val json: Json,
-    @Named("sha1") private val sha1Hasher: Hasher,
-    watcher: KfsDirectoryWatcher,
     appPath: Path,
-    coroutineScope: CoroutineScope
+    private val fileStoreFactory: FileStoreFactory,
+    private val fileValidationService: FileValidationService
+) : FileStore<MojangVersionManifest> by fileStoreFactory(
+    filePath = Path(appPath, "data", "versions", "manifest.json"),
+    serializer = MojangVersionManifest.serializer()
 ) {
     private val assetIndexesPath = Path(appPath, "data", "assets", "indexes")
     private val versionsPath = Path(appPath, "data", "versions")
-    private val manifestPath = Path(versionsPath, "manifest.json")
 
-    private val _manifestData = MutableResourceStateFlow<MojangVersionManifest>()
-    val manifestData: ResourceStateFlow<MojangVersionManifest> = _manifestData.asResourceStateFlow(coroutineScope)
-    private val _manifestWatcher = watcher.onEventFlow.filter { it.path == manifestPath.name }
-    private val _manifestMutex = Mutex()
-
-    init {
-        coroutineScope.launch {
-            watcher.add(versionsPath.toString())
-            _manifestWatcher.collectLatest { loadVersionManifest() }
-        }
-        coroutineScope.launch { loadVersionManifest() }
-    }
-
-    suspend fun loadVersionManifest() = _manifestData.load(_manifestMutex) { manifestPath.readJson(json) }
-
-    suspend fun writeVersionManifest(source: Source) = manifestPath.writeFromSource(source)
-
-    private fun getVersionPath(versionId: String) = Path(versionsPath, versionId, "${versionId}.json")
-
-    suspend fun checkAndLoadVersionDetails(version: GameVersionList.Version): MojangVersionInfo? {
-        val versionPath = getVersionPath(version.id)
-        if (versionPath.exists()) {
-            val hash = versionPath.source { sha1Hasher.hash(it) }.toHexString()
-            if (hash == version.sha1)
-                return versionPath.readJson(json)
-        }
-        return null
-    }
+    context(_: Raise<FileValidationFailure>)
+    suspend fun checkAndLoadVersionDetails(version: GameVersionList.Version): MojangVersionInfo =
+        fileValidationService.submitAndRead(version.toValidationRequest(), MojangVersionInfo.serializer())
 
     suspend fun writeVersionDetails(source: Source, versionId: String) {
         val versionPath = getVersionPath(versionId)
         versionPath.writeFromSource(source)
     }
 
-    private fun getAssetIndexPath(assetIndexId: String) = Path(assetIndexesPath, "${assetIndexId}.json")
-
-    suspend fun checkAndLoadAssetIndex(assetIndex: GameVersionDetails.AssetIndex): MojangAssetIndex? {
-        val assetIndexPath = getAssetIndexPath(assetIndex.id)
-        if (assetIndexPath.exists()) {
-            val hash = assetIndexPath.source { sha1Hasher.hash(it) }.toHexString()
-            if (hash == assetIndex.sha1)
-                return assetIndexPath.readJson(json)
-        }
-        return null
-    }
+    context(_: Raise<FileValidationFailure>)
+    suspend fun checkAndLoadAssetIndex(assetIndex: GameVersionDetails.AssetIndex): MojangAssetIndex =
+        fileValidationService.submitAndRead(assetIndex.toValidationRequest(), MojangAssetIndex.serializer())
 
     suspend fun writeAssetIndex(source: Source, assetIndexId: String) {
         val assetIndexPath = getAssetIndexPath(assetIndexId)
         assetIndexPath.writeFromSource(source)
     }
+
+    private fun getVersionPath(versionId: String) = Path(versionsPath, versionId, "${versionId}.json")
+
+    private fun getAssetIndexPath(assetIndexId: String) = Path(assetIndexesPath, "${assetIndexId}.json")
+
+    private fun GameVersionList.Version.toValidationRequest(): FileValidationRequest = FileValidationRequest.Url(
+        path = getVersionPath(id),
+        url = url,
+        sha1 = sha1
+    )
+
+    private fun GameVersionDetails.AssetIndex.toValidationRequest(): FileValidationRequest = FileValidationRequest.Url(
+        path = getAssetIndexPath(id),
+        url = url,
+        size = size,
+        sha1 = sha1
+    )
 }

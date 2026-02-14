@@ -18,7 +18,7 @@ import com.composeunstyled.ProvideContentColor
 import com.composeunstyled.theme.Theme
 
 @Composable
-fun AppError(throwable: Throwable) {
+fun AppError(message: String) {
     Column(
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -27,10 +27,15 @@ fun AppError(throwable: Throwable) {
         ProvideContentColor(Theme[colors][error]) {
             AppIcon(
                 imageVector = Lucide.CircleX,
-                contentDescription = throwable.message ?: "An error occurred",
+                contentDescription = message,
                 modifier = Modifier.size(64.dp)
             )
-            AppText(("Error: ${throwable.message ?: "An error occurred"}"))
+            AppText(("Error: $message"))
         }
     }
+}
+
+@Composable
+fun AppError(throwable: Throwable) {
+    AppError(throwable.message ?: "An error has occurred")
 }

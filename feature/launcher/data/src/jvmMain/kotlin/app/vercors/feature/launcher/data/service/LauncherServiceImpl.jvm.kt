@@ -9,11 +9,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.ProducerScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.launch
 import kotlinx.io.files.Path
-import nl.adaptivity.xmlutil.serialization.XML1_0
+import kotlinx.serialization.decodeFromString
+import nl.adaptivity.xmlutil.serialization.XML
 import java.io.File
 import kotlin.coroutines.CoroutineContext
 
@@ -26,7 +27,7 @@ internal actual fun runCommand(
     workingDir: Path,
     loggingType: GameVersionDetails.Logging.Type?,
     context: CoroutineContext
-): Flow<InstanceLogEvent> = callbackFlow {
+): Flow<InstanceLogEvent> = channelFlow {
     val processBuilder = ProcessBuilder(command).directory(File(workingDir.toString()))
     //.inheritIO()
     logger.info { "Starting instance run at $workingDir" }
@@ -71,7 +72,7 @@ private fun setupErrorParser(process: Process, context: CoroutineContext = Dispa
 context(flow: ProducerScope<InstanceLogEvent>)
 private fun setupLog4jParser(process: Process, context: CoroutineContext = Dispatchers.IO) =
     flow.launch(context) {
-        XML1_0.recommended {
+        val xml = XML.v1 {
             policy {
                 ignoreUnknownChildren()
             }
@@ -80,21 +81,21 @@ private fun setupLog4jParser(process: Process, context: CoroutineContext = Dispa
             var line = it.readLine()?.replace("log4j:", "")
             val currentStack = mutableListOf<String>()
             while (line != null && process.isAlive) {
-                processLog4jLog(currentStack, line)
+                processLog4jLog(currentStack, line, xml)
                 line = it.readLine()?.replace("log4j:", "")
             }
         }
     }
 
 context(flow: ProducerScope<InstanceLogEvent>)
-private suspend fun processLog4jLog(currentStack: MutableList<String>, line: String) {
+private suspend fun processLog4jLog(currentStack: MutableList<String>, line: String, xml: XML) {
     currentStack += line.replace("\t", "\n")
     if (line.endsWith("</Event>")) {
         try {
             val fullLog = currentStack.joinToString("").trim()
             val splitIndex = fullLog.indexOf("<Event")
             if (splitIndex > 0) flow.send(InstanceLogEvent.GamePlain(fullLog.substring(0, splitIndex)))
-            val logEvent: Log4jEvent = XML1_0.decodeFromString(fullLog.substring(splitIndex))
+            val logEvent: Log4jEvent = xml.decodeFromString(fullLog.substring(splitIndex))
             val message = logEvent.throwable?.let { "${logEvent.message}: $it" } ?: logEvent.message
             flow.send(
                 InstanceLogEvent.GameLog4j(

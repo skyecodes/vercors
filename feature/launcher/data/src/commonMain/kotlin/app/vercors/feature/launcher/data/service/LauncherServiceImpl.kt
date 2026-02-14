@@ -1,8 +1,6 @@
 package app.vercors.feature.launcher.data.service
 
-import app.vercors.core.data.createDirectories
-import app.vercors.core.data.createParentDirectories
-import app.vercors.core.data.sink
+import app.vercors.core.filesystem.createDirectories
 import app.vercors.feature.account.domain.model.Account
 import app.vercors.feature.game.domain.model.GameAssetIndex
 import app.vercors.feature.game.domain.model.GameVersionDetails
@@ -12,32 +10,31 @@ import app.vercors.feature.instance.domain.model.InstanceLogEvent
 import app.vercors.feature.launcher.domain.model.InstanceLaunchEvent
 import app.vercors.feature.launcher.domain.model.InstanceLaunchFeature
 import app.vercors.feature.launcher.domain.service.LauncherService
+import app.vercors.shared.data.FileValidationFailure
+import app.vercors.shared.data.FileValidationRequest
+import app.vercors.shared.data.FileValidationService
 import app.vercors.shared.domain.LAUNCHER_NAME
 import app.vercors.shared.domain.LAUNCHER_VERSION
-import app.vercors.shared.domain.service.SystemService
+import app.vercors.shared.system.SystemService
+import arrow.core.NonEmptyList
+import arrow.core.raise.Raise
+import arrow.core.raise.either
 import de.jonasbroeckmann.kzip.Zip
 import de.jonasbroeckmann.kzip.extractTo
 import de.jonasbroeckmann.kzip.forEachEntry
 import de.jonasbroeckmann.kzip.open
-import dev.whyoleg.cryptography.DelicateCryptographyApi
-import dev.whyoleg.cryptography.operations.Hasher
-import dev.zacsweers.metro.*
+import dev.zacsweers.metro.AppScope
+import dev.zacsweers.metro.ContributesBinding
+import dev.zacsweers.metro.Inject
+import dev.zacsweers.metro.SingleIn
 import io.github.oshai.kotlinlogging.KotlinLogging
-import io.ktor.client.*
-import io.ktor.client.request.*
-import io.ktor.client.statement.*
-import io.ktor.utils.io.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.ProducerScope
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.map
-import kotlinx.io.bytestring.toHexString
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
-import kotlin.concurrent.atomics.AtomicLong
-import kotlin.concurrent.atomics.ExperimentalAtomicApi
-import kotlin.concurrent.atomics.incrementAndFetch
 import kotlin.coroutines.CoroutineContext
 
 private const val GAME_ASSET_DOWNLOAD_URL = "https://resources.download.minecraft.net"
@@ -49,9 +46,8 @@ private val logger = KotlinLogging.logger {}
 @Inject
 class LauncherServiceImpl(
     private val systemService: SystemService,
-    private val httpClient: HttpClient,
     private val appPath: Path,
-    @Named("sha1") private val sha1Hasher: Hasher
+    private val fileValidationService: FileValidationService
 ) : LauncherService {
     override fun launch(
         instance: Instance,
@@ -59,12 +55,16 @@ class LauncherServiceImpl(
         version: GameVersionDetails,
         assetIndex: GameAssetIndex,
         features: List<InstanceLaunchFeature>
-    ): Flow<InstanceLaunchEvent> = callbackFlow {
+    ): Flow<InstanceLaunchEvent> = channelFlow {
         logger.info { "Launching instance ${instance.name}..." }
         val effectiveVersion = version.getEffectiveVersion(features)
         val paths = instance.buildPaths(appPath)
         val dependencyList = buildDependencyList(paths, effectiveVersion, assetIndex)
-        dependencyList.validate()
+        either { dependencyList.validate() }.onLeft {
+            logger.error { "Failed to validate dependencies for instance ${instance.name}: ${it.size} invalid files" }
+            logger.debug { "Invalid files: ${it.joinToString(", ") { it.toString() }}" }
+            return@channelFlow
+        }
         dependencyList.natives.extract()
         val command = buildCommand(dependencyList, account, instance, effectiveVersion, paths)
         paths.game.createDirectories()
@@ -115,15 +115,15 @@ class LauncherServiceImpl(
             client = DependencyFile.Basic(
                 url = details.clientDownload.url,
                 path = Path(paths.versions, details.id, "${details.id}.jar"),
-                sha1 = details.clientDownload.sha1,
                 size = details.clientDownload.size,
+                sha1 = details.clientDownload.sha1,
             ),
             libraries = details.libraries.mapNotNull { it.artifact }.map {
                 DependencyFile.Basic(
                     url = it.url,
                     path = Path(paths.libraries, *it.path.splitPath()),
-                    sha1 = it.sha1,
                     size = it.size,
+                    sha1 = it.sha1,
                 )
             },
             natives = details.libraries.mapNotNull { lib ->
@@ -131,8 +131,8 @@ class LauncherServiceImpl(
                     DependencyFile.Native(
                         url = it.url,
                         path = Path(paths.libraries, *it.path.splitPath()),
-                        sha1 = it.sha1,
                         size = it.size,
+                        sha1 = it.sha1,
                         extractDest = paths.natives,
                         extractExclude = lib.extractExclude
                     )
@@ -142,31 +142,24 @@ class LauncherServiceImpl(
                 DependencyFile.Basic(
                     url = "$GAME_ASSET_DOWNLOAD_URL/${it.hash.take(2)}/${it.hash}",
                     path = Path(paths.assets, "objects", it.hash.take(2), it.hash),
-                    sha1 = it.hash,
                     size = it.size,
+                    sha1 = it.hash,
                 )
             },
             logging = details.clientLogging?.file?.let {
                 DependencyFile.Basic(
                     url = it.url,
                     path = Path(paths.logging, details.clientLogging!!.type.path, it.id),
-                    sha1 = it.sha1,
                     size = it.size,
+                    sha1 = it.sha1,
                 )
             },
         )
 
-    context(_: ProducerScope<InstanceLaunchEvent>)
+    context(_: ProducerScope<InstanceLaunchEvent>, _: Raise<NonEmptyList<FileValidationFailure>>)
     private suspend fun InstanceDependencyList.validate() {
         logger.info { "Validating dependencies..." }
-        var attempts = 0
-        var invalidFiles = allDependencies.getInvalidFiles()
-        while (attempts++ < 3 && invalidFiles.isNotEmpty()) {
-            logger.info { "${invalidFiles.size} invalid or missing dependencies to be downloaded, attempt $attempts" }
-            invalidFiles.downloadFiles()
-            invalidFiles = invalidFiles.getInvalidFiles()
-        }
-        check(invalidFiles.isEmpty()) { "Failed to validate dependencies" }
+        fileValidationService.submit(allDependencies)
         logger.info { "Dependencies validated" }
     }
 
@@ -192,7 +185,7 @@ class LauncherServiceImpl(
         logger.info { "Natives extracted" }
     }
 
-    private suspend fun buildCommand(
+    private fun buildCommand(
         dependencyList: InstanceDependencyList,
         account: Account,
         instance: Instance,
@@ -250,27 +243,27 @@ class LauncherServiceImpl(
         }
     }
 
-    sealed interface DependencyFile {
-        val url: String
-        val path: Path
-        val sha1: String
-        val size: Long
+    sealed class DependencyFile(
+        url: String,
+        path: Path,
+        size: Long,
+        sha1: String
+    ) : FileValidationRequest.Url(url, path, size, sha1) {
+        class Basic(
+            url: String,
+            path: Path,
+            size: Long,
+            sha1: String
+        ) : DependencyFile(url, path, size, sha1)
 
-        data class Basic(
-            override val url: String,
-            override val path: Path,
-            override val sha1: String,
-            override val size: Long
-        ) : DependencyFile
-
-        data class Native(
-            override val url: String,
-            override val path: Path,
-            override val sha1: String,
-            override val size: Long,
+        class Native(
+            url: String,
+            path: Path,
+            size: Long,
+            sha1: String,
             val extractDest: Path,
             val extractExclude: List<String>?
-        ) : DependencyFile
+        ) : DependencyFile(url, path, size, sha1)
     }
 
     private fun List<GameVersionDetails.Rule>?.isRuleValid(features: List<String>): Boolean =
@@ -310,65 +303,6 @@ class LauncherServiceImpl(
         get() = when (this) {
             GameVersionDetails.Logging.Type.LOG4J2_XML -> "log4j2-xml"
         }
-
-    @OptIn(ExperimentalAtomicApi::class)
-    context(flow: ProducerScope<InstanceLaunchEvent>)
-    private suspend fun List<DependencyFile>.getInvalidFiles() = coroutineScope {
-        val validateDispatcher = Dispatchers.Default + SupervisorJob()
-        val validated = AtomicLong(0)
-        flow.send(InstanceLaunchEvent.Validating(0f))
-        map {
-            async(validateDispatcher) {
-                it to it.validate().also {
-                    flow.send(InstanceLaunchEvent.Validating(validated.incrementAndFetch() / size.toFloat()))
-                }
-            }
-        }.awaitAll()
-            .filter { (_, result) -> result != null }
-            .map { (file, _) -> file }
-    }
-
-    @OptIn(ExperimentalAtomicApi::class)
-    context(flow: ProducerScope<InstanceLaunchEvent>)
-    private suspend fun List<DependencyFile>.downloadFiles() = coroutineScope {
-        val downloadDispatcher = Dispatchers.IO.limitedParallelism(10) + SupervisorJob()
-        val downloaded = AtomicLong(0)
-        flow.send(InstanceLaunchEvent.Downloading(0f))
-        map {
-            launch(downloadDispatcher) {
-                logger.trace { "Downloading ${it.path}..." }
-                runBlocking {
-                    it.path.createParentDirectories(coroutineContext)
-                    it.path.sink { sink ->
-                        httpClient.get(it.url)
-                            .bodyAsChannel()
-                            .copyAndClose(sink.asByteWriteChannel())
-                    }
-                }
-                flow.send(InstanceLaunchEvent.Downloading(downloaded.incrementAndFetch() / size.toFloat()))
-                logger.trace { "Downloaded ${it.path}" }
-            }
-        }.joinAll()
-    }
-
-    @OptIn(DelicateCryptographyApi::class)
-    private suspend fun DependencyFile.validate(): DependencyCheckError? {
-        logger.trace { "Validating $path..." }
-        val metadata = SystemFileSystem.metadataOrNull(path)
-            ?: return DependencyCheckError.Missing
-        if (size != metadata.size)
-            return DependencyCheckError.SizeMismatch
-        if (sha1 != SystemFileSystem.source(path).use { sha1Hasher.hash(it) }.toHexString())
-            return DependencyCheckError.HashMismatch
-        logger.trace { "Validated $path" }
-        return null
-    }
-
-    private enum class DependencyCheckError {
-        Missing,
-        SizeMismatch,
-        HashMismatch
-    }
 
     private fun buildArgVariables(
         account: Account,

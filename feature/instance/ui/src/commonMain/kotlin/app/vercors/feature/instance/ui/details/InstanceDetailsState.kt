@@ -1,14 +1,15 @@
 package app.vercors.feature.instance.ui.details
 
 import androidx.compose.runtime.Immutable
-import app.vercors.core.domain.Resource
 import app.vercors.feature.game.ui.displayName
 import app.vercors.feature.instance.domain.model.*
+import opensavvy.state.progressive.ProgressiveOutcome
+import kotlin.time.Instant
 
 @Immutable
 data class InstanceDetailsState(
-    val instance: Resource<InstanceView> = Resource.Unloaded,
-    val logs: List<InstanceLogEventView>? = null,
+    val instance: ProgressiveOutcome<InstanceError, InstanceView>,
+    val logs: List<InstanceLogEventView>?,
 )
 
 @Immutable
@@ -23,6 +24,7 @@ data class InstanceView(
 
 @Immutable
 data class InstanceLogEventView(
+    val timestamp: Instant,
     val level: Level,
     val message: String,
     val isLauncher: Boolean,
@@ -45,12 +47,14 @@ val Instance.displayType: String get() = if (modpackInfo != null) "Modpack" else
 
 fun InstanceLogEvent.toView(): InstanceLogEventView = when (this) {
     is InstanceLogEvent.GameLog4j -> InstanceLogEventView(
+        timestamp = inst,
         level = InstanceLogEventView.Level.valueOf(level.uppercase()),
         message = toString(),
         isLauncher = false
     )
 
     is InstanceLogEvent.Plain -> InstanceLogEventView(
+        timestamp = inst,
         level = if (this is InstanceLogEvent.Error) InstanceLogEventView.Level.ERROR else InstanceLogEventView.Level.INFO,
         message = toString(),
         isLauncher = this is InstanceLogEvent.Launcher

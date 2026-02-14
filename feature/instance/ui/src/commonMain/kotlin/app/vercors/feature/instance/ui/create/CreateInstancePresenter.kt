@@ -1,17 +1,20 @@
 package app.vercors.feature.instance.ui.create
 
 import androidx.compose.runtime.*
-import app.vercors.core.domain.map
-import app.vercors.core.ui.state.collectResourceAsStateWithLifecycle
+import app.vercors.core.ui.state.collectProgressiveAsState
 import app.vercors.feature.game.domain.usecase.ObserveGameVersionListUseCase
 import app.vercors.feature.game.ui.GameVersionView
 import app.vercors.feature.game.ui.toView
 import app.vercors.feature.instance.domain.model.Instance
+import app.vercors.feature.instance.domain.model.InstanceValidationError
 import app.vercors.feature.instance.domain.usecase.CreateInstanceUseCase
 import app.vercors.feature.instance.ui.details.InstanceDetailsScreen
+import app.vercors.feature.instance.ui.message
 import app.vercors.shared.ui.Presenter
+import app.vercors.shared.ui.SnackbarService
 import app.vercors.shared.ui.Store
-import app.vercors.shared.ui.plus
+import app.vercors.shared.ui.error
+import arrow.core.raise.recover
 import com.slack.circuit.codegen.annotations.CircuitInject
 import com.slack.circuit.runtime.Navigator
 import dev.zacsweers.metro.AppScope
@@ -23,6 +26,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import opensavvy.state.progressive.map
 
 private val logger = KotlinLogging.logger {}
 
@@ -31,19 +35,21 @@ class CreateInstancePresenter(
     @Assisted private val navigator: Navigator,
     private val globalScope: CoroutineScope,
     private val observeGameVersionList: ObserveGameVersionListUseCase,
-    private val createInstance: CreateInstanceUseCase
+    private val createInstance: CreateInstanceUseCase,
+    private val snackbarService: SnackbarService
 ) : Presenter<CreateInstanceState, CreateInstanceEvent> {
     @Composable
     override fun present(): Store<CreateInstanceState, CreateInstanceEvent> {
         val gameVersionList by remember(observeGameVersionList) {
             observeGameVersionList().map { res -> res.map { it.toView() } }
                 .onEach { logger.debug { "gameVersionList: $it" } }
-        }.collectResourceAsStateWithLifecycle()
+        }.collectProgressiveAsState()
         var selectedTab by remember { mutableStateOf(CreateInstanceTab.Custom) }
         var instanceName by remember { mutableStateOf("") }
         var selectedGameVersion by remember { mutableStateOf<GameVersionView?>(null) }
         var showSnapshot by remember { mutableStateOf(false) }
         var gameVersionFilter by remember { mutableStateOf("") }
+        val validationErrors = remember { mutableStateListOf<InstanceValidationError>() }
 
         return CreateInstanceState(
             gameVersionList = gameVersionList,
@@ -51,7 +57,8 @@ class CreateInstancePresenter(
             instanceName = instanceName,
             selectedGameVersion = selectedGameVersion,
             showSnapshot = showSnapshot,
-            gameVersionFilter = gameVersionFilter
+            gameVersionFilter = gameVersionFilter,
+            validationErrors = validationErrors
         ) + {
             when (it) {
                 is CreateInstanceEvent.OnTabClick -> selectedTab = it.tab
@@ -65,7 +72,7 @@ class CreateInstancePresenter(
                         gameVersion = selectedGameVersion!!.id,
                     )
                     globalScope.launch {
-                        createInstance(instance)
+                        recover({ createInstance(instance) }) { error -> snackbarService.error { error.message } }
                     }.invokeOnCompletion { error ->
                         if (error == null) navigator.goTo(InstanceDetailsScreen(instance.id))
                     }

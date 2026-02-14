@@ -2,32 +2,28 @@ package app.vercors.core.ui.state
 
 import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshots.StateFactoryMarker
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleOwner
-import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import app.vercors.core.domain.Resource
-import kotlinx.coroutines.flow.Flow
-import kotlin.coroutines.CoroutineContext
-import kotlin.coroutines.EmptyCoroutineContext
+import com.slack.circuit.retained.collectAsRetainedState
+import com.slack.circuit.retained.produceRetainedState
+import opensavvy.state.coroutines.ProgressiveFlow
+import opensavvy.state.progressive.ProgressiveOutcome
 
 inline fun <T> MutableState<T>.update(block: T.() -> T) {
     value = value.block()
 }
 
 @StateFactoryMarker
-fun <T> mutableResourceStateOf(
-    policy: SnapshotMutationPolicy<Resource<T>> = structuralEqualityPolicy(),
-): MutableState<Resource<T>> = mutableStateOf(Resource.Unloaded, policy)
+fun <Failure, Value> mutableProgressiveStateOf(
+    policy: SnapshotMutationPolicy<ProgressiveOutcome<Failure, Value>> = structuralEqualityPolicy(),
+): MutableState<ProgressiveOutcome<Failure, Value>> = mutableStateOf(ProgressiveOutcome.Incomplete(), policy)
 
 @Composable
-fun <T : R, R> Flow<Resource<T>>.collectResourceAsState(
-    context: CoroutineContext = EmptyCoroutineContext,
-): State<Resource<R>> = collectAsState(Resource.Unloaded, context)
+fun <Failure, Value> produceProgressiveState(
+    vararg keys: Any?,
+    initialValue: ProgressiveOutcome<Failure, Value> = ProgressiveOutcome.Incomplete(),
+    producer: suspend ProduceStateScope<ProgressiveOutcome<Failure, Value>>.() -> Unit,
+) = produceRetainedState(initialValue, keys = keys, producer)
 
 @Composable
-fun <T : R, R> Flow<Resource<T>>.collectResourceAsStateWithLifecycle(
-    lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current,
-    minActiveState: Lifecycle.State = Lifecycle.State.STARTED,
-    context: CoroutineContext = EmptyCoroutineContext,
-): State<Resource<R>> = collectAsStateWithLifecycle(Resource.Unloaded, lifecycleOwner, minActiveState, context)
+fun <Failure, Value> ProgressiveFlow<Failure, Value>.collectProgressiveAsState(
+    initial: ProgressiveOutcome<Failure, Value> = ProgressiveOutcome.Incomplete()
+): State<ProgressiveOutcome<Failure, Value>> = collectAsRetainedState(initial)

@@ -21,6 +21,7 @@ dependencies {
     commonMainImplementation(libs.compose.foundation)
     commonMainImplementation(libs.compose.components.resources)
     commonMainImplementation(libs.circuit.foundation)
+    commonMainImplementation(libs.circuit.overlay)
     commonMainApi(libs.circuit.codegen.annotations)
     add("kspCommonMainMetadata", libs.circuit.codegen)
     add("kspJvm", libs.circuit.codegen)

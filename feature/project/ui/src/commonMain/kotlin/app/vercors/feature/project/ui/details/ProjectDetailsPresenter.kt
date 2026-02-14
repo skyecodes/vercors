@@ -3,7 +3,6 @@ package app.vercors.feature.project.ui.details
 import androidx.compose.runtime.Composable
 import app.vercors.shared.ui.Presenter
 import app.vercors.shared.ui.Store
-import app.vercors.shared.ui.plus
 import com.slack.circuit.codegen.annotations.CircuitInject
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Assisted

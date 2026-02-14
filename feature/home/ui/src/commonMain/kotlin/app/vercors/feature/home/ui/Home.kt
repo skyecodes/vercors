@@ -34,6 +34,7 @@ import app.vercors.core.ui.animation.appAnimateContentSize
 import app.vercors.core.ui.animation.appAnimateDpAsState
 import app.vercors.core.ui.animation.shouldAnimate
 import app.vercors.core.ui.component.*
+import app.vercors.core.ui.layout.AppError
 import app.vercors.core.ui.modifier.appCard
 import app.vercors.core.ui.theme.*
 import app.vercors.feature.home.domain.model.HomeSectionType
@@ -48,6 +49,7 @@ import com.slack.circuit.codegen.annotations.CircuitInject
 import com.slack.circuit.sharedelements.SharedElementTransitionScope
 import dev.zacsweers.metro.AppScope
 import kotlinx.coroutines.launch
+import opensavvy.state.progressive.*
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.imageResource
 import org.jetbrains.compose.resources.stringResource
@@ -89,7 +91,7 @@ private fun <T> HomeSection(
             modifier = Modifier.padding(horizontal = 16.dp)
         )
 
-        if (section.type == HomeSectionType.RecentlyPlayed && section.data.isNullOrEmpty()) {
+        if (section.type == HomeSectionType.RecentlyPlayed && section.data.valueOrNull.isNullOrEmpty()) {
             NoInstanceFoundDisplay()
         } else {
             HomeSectionList(section)
@@ -108,40 +110,48 @@ private fun <T> HomeSectionList(
     val onScrollButtonClick: (Float) -> Unit = {
         coroutineScope.launch { if (shouldAnimate) listState.animateScrollBy(it) else listState.scrollBy(it) }
     }
+    section.data.onFailure {
+        AppError(it.message)
+    }
+    if (section.data !is ProgressiveOutcome.Failure) {
+        Box {
+            LazyRow(
+                state = listState,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                section.data.onSuccess {
+                    it.forEachIndexed { index, element ->
+                        homeCardItem(
+                            data = it,
+                            index = index,
+                            element = element
+                        )
+                    }
+                }
 
-    Box {
-        LazyRow(
-            state = listState,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier
-        ) {
-            val data = section.data
-            data?.forEachIndexed { index, element ->
-                homeCardItem(
-                    data = data,
-                    index = index,
-                    element = element
-                )
-            } ?: repeat(10) {
-                fakeCardItem(
-                    index = it,
-                    maxIndex = 9,
-                    sectionType = section.type
+                section.data.onLoading {
+                    repeat(10) { index ->
+                        fakeCardItem(
+                            index = index,
+                            maxIndex = 9,
+                            sectionType = section.type
+                        )
+                    }
+                }
+            }
+
+            if (listState.canScrollForward) {
+                HomeScrollButton(
+                    onClick = onScrollButtonClick,
+                    isRight = true
                 )
             }
-        }
-
-        if (listState.canScrollForward) {
-            HomeScrollButton(
-                onClick = onScrollButtonClick,
-                isRight = true
-            )
-        }
-        if (listState.canScrollBackward) {
-            HomeScrollButton(
-                onClick = onScrollButtonClick,
-                isRight = false
-            )
+            if (listState.canScrollBackward) {
+                HomeScrollButton(
+                    onClick = onScrollButtonClick,
+                    isRight = false
+                )
+            }
         }
     }
 }

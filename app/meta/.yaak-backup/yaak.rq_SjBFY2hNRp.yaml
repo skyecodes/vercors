@@ -1,0 +1,23 @@
+type: http_request
+model: http_request
+id: rq_SjBFY2hNRp
+createdAt: 2025-12-20T15:37:39.102698515
+updatedAt: 2025-12-23T07:56:23.807914225
+workspaceId: wk_uV8pr3UgNc
+folderId: fl_WCMTRxpozQ
+authentication: { }
+authenticationType: null
+body:
+  text: ''
+bodyType: other
+description: ''
+headers:
+  - enabled: true
+    name: Content-Type
+    value: ''
+    id: null
+method: GET
+name: Types
+sortPriority: 0.0
+url: ${[BASE_URL]}/v2/tag/project_type
+urlParameters: [ ]

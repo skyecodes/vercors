@@ -22,4 +22,12 @@
     <string name="downloadingFiles">Downloading files...</string>
     <string name="running">Running</string>
     <string name="failed">Failed</string>
+
+    <string name="errorEmptyInstanceId">Instance ID cannot be empty</string>
+    <string name="errorNameTooShort">Instance name is too short</string>
+    <string name="errorLaunch">Failed to launch instance: %1$s</string>
+    <string name="errorAccountLoading">Failed to log into account: %1$s</string>
+    <string name="errorGameVersion">Failed to load game version: %1$s</string>
+    <string name="errorNotFound">Instance with ID "%1$s" not found</string>
+    <string name="errorLoading">Instance with ID "%1$s" failed to load: %2$s</string>
 </resources>

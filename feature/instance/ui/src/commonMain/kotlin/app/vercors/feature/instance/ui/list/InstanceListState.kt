@@ -1,19 +1,19 @@
 package app.vercors.feature.instance.ui.list
 
 import androidx.compose.runtime.Immutable
-import app.vercors.core.domain.Resource
-import app.vercors.core.domain.orNull
 import app.vercors.feature.instance.ui.BriefInstanceView
+import opensavvy.state.progressive.ProgressiveOutcome
+import opensavvy.state.progressive.valueOrNull
 
 @Immutable
 data class InstanceListState(
-    val instances: Resource<List<BriefInstanceView>> = Resource.Unloaded,
-    val nameFilter: String = "",
-    val versionFilter: String = "",
-    val loaderFilter: String = "",
-    val typeFilter: String = ""
+    val instances: ProgressiveOutcome<Nothing, List<BriefInstanceView>>,
+    val nameFilter: String,
+    val versionFilter: String,
+    val loaderFilter: String,
+    val typeFilter: String
 ) {
-    val loadedInstances = instances.orNull() ?: emptyList()
+    private val loadedInstances = instances.valueOrNull ?: emptyList()
     val filteredInstances = loadedInstances.filter {
         it.name.contains(nameFilter, ignoreCase = true) &&
                 (versionFilter.isBlank() || it.version == versionFilter) &&

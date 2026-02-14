@@ -4,7 +4,5 @@ plugins {
 
 dependencies {
     commonMainApi(projects.feature.project.domain)
-    commonMainImplementation(projects.meta.client)
-    commonMainImplementation(libs.kotlin.logging)
-    commonMainImplementation(libs.ktorfit.lib)
+    commonMainApi(projects.feature.project.api)
 }

@@ -1,23 +1,23 @@
 package app.vercors.feature.account.ui.list
 
 import androidx.compose.runtime.Immutable
-import app.vercors.core.domain.Resource
 import app.vercors.feature.account.domain.model.AccountId
+import app.vercors.feature.account.domain.model.AccountLoadingError
 import app.vercors.feature.account.domain.model.AccountSkin
+import opensavvy.state.progressive.ProgressiveOutcome
 
 @Immutable
 data class AccountListState(
-    val accountList: Resource<AccountListView> = Resource.Unloaded,
+    val accountList: ProgressiveOutcome<AccountLoadingError, AccountListView> = ProgressiveOutcome.Incomplete(),
     val loginState: LoginStateView = LoginStateView(),
 )
 
 @Immutable
 data class AccountListView(
-    val selected: AccountId?,
     val accounts: List<AccountView>,
 ) {
-    val selectedAccount: AccountView? = accounts.firstOrNull { it.id == selected }
-    val otherAccounts: List<AccountView> = accounts.filter { it.id != selected }
+    val selectedAccount: AccountView? = accounts.firstOrNull()
+    val otherAccounts: List<AccountView> = accounts.drop(1)
 }
 
 @Immutable

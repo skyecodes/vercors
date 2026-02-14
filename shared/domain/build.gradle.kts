@@ -6,6 +6,7 @@ plugins {
 
 dependencies {
     commonMainApi(projects.core.domain)
+    commonMainApi(projects.core.system)
 }
 
 buildConfig {
