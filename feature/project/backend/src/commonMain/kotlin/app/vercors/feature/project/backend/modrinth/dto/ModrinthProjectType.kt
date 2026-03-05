@@ -1,22 +1,15 @@
 package app.vercors.feature.project.backend.modrinth.dto
 
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
+@JvmInline
 @Serializable
-enum class ModrinthProjectType {
-    @SerialName("mod")
-    Mod,
-
-    @SerialName("modpack")
-    Modpack,
-
-    @SerialName("resourcepack")
-    ResourcePack,
-
-    @SerialName("shader")
-    ShaderPack,
-
-    @SerialName("datapack")
-    DataPack
+value class ModrinthProjectType(val value: String) {
+    companion object {
+        const val MOD = "mod"
+        const val MODPACK = "modpack"
+        const val RESOURCEPACK = "resourcepack"
+        const val SHADERPACK = "shader"
+        const val DATAPACK = "datapack"
+    }
 }

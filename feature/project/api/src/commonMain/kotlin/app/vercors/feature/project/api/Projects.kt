@@ -15,9 +15,9 @@ object Projects : StaticResource<Platforms.PlatformId>("projects", Platforms.Pla
 
     class ProjectSearchParameters(data: ParameterStorage) : Parameters(data) {
         var type: String? by parameter()
-        var loaders: String? by parameter()
-        var gameVersions: String? by parameter()
-        var categories: String? by parameter()
+        var loaders: List<String> by listParameter()
+        var gameVersions: List<String> by listParameter()
+        var categories: List<String> by listParameter()
         var query: String? by parameter()
         var sortBy: String? by parameter()
         var pageSize: Int? by parameter()

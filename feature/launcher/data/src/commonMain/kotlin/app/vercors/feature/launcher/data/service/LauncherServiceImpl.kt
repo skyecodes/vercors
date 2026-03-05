@@ -6,7 +6,6 @@ import app.vercors.feature.game.domain.model.GameAssetIndex
 import app.vercors.feature.game.domain.model.GameVersionDetails
 import app.vercors.feature.game.domain.model.GameVersionType
 import app.vercors.feature.instance.domain.model.Instance
-import app.vercors.feature.instance.domain.model.InstanceLogEvent
 import app.vercors.feature.launcher.domain.model.InstanceLaunchEvent
 import app.vercors.feature.launcher.domain.model.InstanceLaunchFeature
 import app.vercors.feature.launcher.domain.service.LauncherService
@@ -32,7 +31,6 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.ProducerScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
-import kotlinx.coroutines.flow.map
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
 import kotlin.coroutines.CoroutineContext
@@ -54,24 +52,23 @@ class LauncherServiceImpl(
         account: Account,
         version: GameVersionDetails,
         assetIndex: GameAssetIndex,
-        features: List<InstanceLaunchFeature>
+        features: List<InstanceLaunchFeature>,
     ): Flow<InstanceLaunchEvent> = channelFlow {
         logger.info { "Launching instance ${instance.name}..." }
         val effectiveVersion = version.getEffectiveVersion(features)
         val paths = instance.buildPaths(appPath)
         val dependencyList = buildDependencyList(paths, effectiveVersion, assetIndex)
-        either { dependencyList.validate() }.onLeft {
-            logger.error { "Failed to validate dependencies for instance ${instance.name}: ${it.size} invalid files" }
-            logger.debug { "Invalid files: ${it.joinToString(", ") { it.toString() }}" }
+        either { dependencyList.validate() }.onLeft { failures ->
+            logger.error { "Failed to validate dependencies for instance ${instance.name}: ${failures.size} invalid files" }
+            logger.debug { "Invalid files: ${failures.joinToString(", ") { it.toString() }}" }
             return@channelFlow
         }
         dependencyList.natives.extract()
         val command = buildCommand(dependencyList, account, instance, effectiveVersion, paths)
         paths.game.createDirectories()
-        send(InstanceLaunchEvent.Running)
-        runCommand(command, paths.game, version.clientLogging?.type)
-            .map { InstanceLaunchEvent.Logging(it) }
-            .collect { send(it) }
+        val runJob = launch { runCommand(command, paths.game, effectiveVersion.clientLogging?.type) }
+        send(InstanceLaunchEvent.Running { runJob.cancel() })
+        runJob.join()
         logger.info { "Instance ${instance.name} finished" }
     }
 
@@ -159,7 +156,9 @@ class LauncherServiceImpl(
     context(_: ProducerScope<InstanceLaunchEvent>, _: Raise<NonEmptyList<FileValidationFailure>>)
     private suspend fun InstanceDependencyList.validate() {
         logger.info { "Validating dependencies..." }
-        fileValidationService.submit(allDependencies)
+        fileValidationService.submit(allDependencies) {
+
+        }
         logger.info { "Dependencies validated" }
     }
 
@@ -196,11 +195,7 @@ class LauncherServiceImpl(
             addAll(dependencyList.libraries.map { it.path.toString() })
             add(dependencyList.client.path.toString())
             add(".")
-        }.joinToString(
-            separator = platformPathSeparator,
-            prefix = "\"",
-            postfix = "\""
-        )
+        }.joinToString(separator = platformPathSeparator)
         val argVariables = buildArgVariables(
             account = account,
             instance = instance,
@@ -217,11 +212,12 @@ class LauncherServiceImpl(
         )
         return buildList {
             add("java")
-            add("-Djava.library.path=${paths.natives}")
             logConfigArg?.let { add(it) }
-            jvmArgs?.let { addAll(it) }
-            add("-cp")
-            add(classpath)
+            jvmArgs?.let { addAll(it) } ?: run {
+                add("-Djava.library.path=${paths.natives}")
+                add("-cp")
+                add(classpath)
+            }
             add(version.mainClass)
             gameArgs?.let { addAll(it) }
         }
@@ -358,9 +354,9 @@ class LauncherServiceImpl(
 
 internal expect val platformPathSeparator: String
 
-internal expect fun runCommand(
+internal expect suspend fun ProducerScope<InstanceLaunchEvent>.runCommand(
     command: List<String>,
     workingDir: Path,
     loggingType: GameVersionDetails.Logging.Type?,
     context: CoroutineContext = Dispatchers.IO
-): Flow<InstanceLogEvent>
+)

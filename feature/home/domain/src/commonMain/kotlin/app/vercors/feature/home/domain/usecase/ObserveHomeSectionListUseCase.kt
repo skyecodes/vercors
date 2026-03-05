@@ -33,7 +33,6 @@ class ObserveHomeSectionListUseCase(
     private val observeInstanceList: ObserveInstanceListUseCase,
     private val getFeaturedProjectList: GetFeaturedProjectListUseCase,
 ) {
-    @OptIn(ExperimentalProgressiveRaiseApi::class)
     context(_: Raise<HomeConfigurationError>)
     operator fun invoke(): Flow<List<HomeSection<*>>> {
         logger.debug { "Observing home section list" }

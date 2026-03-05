@@ -1,11 +1,15 @@
 package app.vercors.feature.launcher.domain.usecase
 
+import app.vercors.feature.account.domain.model.Account
 import app.vercors.feature.account.domain.repository.AccountRepository
 import app.vercors.feature.account.domain.service.LoginState
 import app.vercors.feature.account.domain.usecase.RefreshTokenUseCase
 import app.vercors.feature.account.domain.usecase.TokenValidationResult
 import app.vercors.feature.account.domain.usecase.ValidateTokenUseCase
+import app.vercors.feature.game.domain.model.GameAssetIndex
+import app.vercors.feature.game.domain.model.GameVersionDetails
 import app.vercors.feature.game.domain.repository.GameRepository
+import app.vercors.feature.instance.domain.model.Instance
 import app.vercors.feature.instance.domain.model.InstanceId
 import app.vercors.feature.instance.domain.model.InstanceLogEvent
 import app.vercors.feature.instance.domain.model.InstanceStatus
@@ -36,15 +40,38 @@ class LaunchInstanceUseCase(
 ) {
     context(_: Raise<InstanceLaunchError>)
     suspend operator fun invoke(instanceId: InstanceId) {
-        val job = coroutineScope.launch {
-            launchInstance(instanceId)
-        }
+        val job = coroutineScope.async { prepareInstance(instanceId) }
+        job.invokeOnCompletion { instanceRepository.updateInstanceJob(instanceId, null) }
         instanceRepository.updateInstanceJob(instanceId, job)
-        job.join()
+        val (instance, account, version, assetIndex) = job.await() ?: return
+
+        launcherService.launch(
+            instance = instance,
+            account = account,
+            version = version,
+            assetIndex = assetIndex,
+            features = emptyList()
+        ).catch {
+            when (it) {
+                is CancellationException -> {
+                    instanceRepository.updateInstanceStatus(instanceId, InstanceStatus.Idle)
+                    currentCoroutineContext().ensureActive()
+                }
+
+                is Exception -> {
+                    logger.error(it) { "Unknown error" }
+                    instanceRepository.updateInstanceStatus(instanceId, InstanceStatus.Failed.Unknown(it))
+                }
+
+                else -> throw it
+            }
+        }.collect { onLaunchEvent(it, instanceId) }
+
+        instanceRepository.updateInstanceStatus(instanceId, InstanceStatus.Idle)
     }
 
     context(_: Raise<InstanceLaunchError>)
-    private suspend fun launchInstance(instanceId: InstanceId) {
+    private suspend fun prepareInstance(instanceId: InstanceId): InstancePreparationResult? {
         logger.info { "Launching instance: $instanceId" }
         val instance = withError({ InstanceLaunchError.InstanceNotFound(it.id) }) {
             instanceRepository.findInstance(instanceId)
@@ -61,7 +88,7 @@ class LaunchInstanceUseCase(
                 InstanceLogEvent.Launcher("No account selected, login required")
             )
             instanceRepository.updateInstanceStatus(instanceId, InstanceStatus.Failed.LoginRequired)
-            return
+            return null
         }
 
         logger.info { "Selected account: ${account.username} (${account.id})" }
@@ -78,7 +105,7 @@ class LaunchInstanceUseCase(
                     instanceId,
                     InstanceStatus.Failed.TokenValidation(validateTokenResult.error)
                 )
-                return
+                return null
             }
 
             TokenValidationResult.Failure -> {
@@ -87,7 +114,7 @@ class LaunchInstanceUseCase(
                     instanceId,
                     InstanceLogEvent.Launcher("Token validation failure, refreshing token")
                 )
-                instanceRepository.updateInstanceStatus(instanceId, InstanceStatus.Launching.RefreshingToken())
+                instanceRepository.updateInstanceStatus(instanceId, InstanceStatus.Launching.RefreshingToken)
                 val refreshTokenResult = refreshTokenUseCase(account.refreshToken).onEach {
                     when (it) {
                         is LoginState.Error -> {
@@ -104,7 +131,7 @@ class LaunchInstanceUseCase(
 
                         is LoginState.Progress -> instanceRepository.updateInstanceStatus(
                             instanceId,
-                            InstanceStatus.Launching.RefreshingToken(it.step.progress)
+                            InstanceStatus.Launching.RefreshingToken
                         )
 
                         is LoginState.RequireLogin -> {
@@ -123,7 +150,7 @@ class LaunchInstanceUseCase(
                 if (refreshTokenResult is LoginState.Success)
                     refreshTokenResult.account
                 else
-                    return
+                    return null
             }
 
             is TokenValidationResult.Success -> account
@@ -138,45 +165,39 @@ class LaunchInstanceUseCase(
             gameRepository.getAssetIndex(version.assetIndex)
         }
 
-        launcherService.launch(
-            instance = instance,
-            account = finalAccount,
-            version = version,
-            assetIndex = assetIndex,
-            features = emptyList()
-        ).catch {
-            when (it) {
-                is CancellationException -> {
-                    instanceRepository.updateInstanceStatus(instanceId, InstanceStatus.Idle)
-                    currentCoroutineContext().ensureActive()
-                }
+        return InstancePreparationResult(instance, finalAccount, version, assetIndex)
+    }
 
-                is Exception -> {
-                    logger.error(it) { "Unknown error" }
-                    instanceRepository.updateInstanceStatus(instanceId, InstanceStatus.Failed.Unknown(it))
-                }
+    private fun onLaunchEvent(event: InstanceLaunchEvent, instanceId: InstanceId) {
+        when (event) {
+            is InstanceLaunchEvent.Validating -> instanceRepository.updateInstanceStatus(
+                instanceId,
+                InstanceStatus.Launching.ValidatingFiles
+            )
 
-                else -> throw it
-            }
-        }.collect {
-            when (it) {
-                is InstanceLaunchEvent.Validating -> instanceRepository.updateInstanceStatus(
-                    instanceId,
-                    InstanceStatus.Launching.ValidatingFiles(it.progress)
-                )
+            is InstanceLaunchEvent.Downloading -> instanceRepository.updateInstanceStatus(
+                instanceId,
+                InstanceStatus.Launching.DownloadingFiles
+            )
 
-                is InstanceLaunchEvent.Downloading -> instanceRepository.updateInstanceStatus(
-                    instanceId,
-                    InstanceStatus.Launching.DownloadingFiles(it.progress)
-                )
+            is InstanceLaunchEvent.Running -> instanceRepository.updateInstanceStatus(
+                instanceId,
+                InstanceStatus.Running(stop = event.stop)
+            )
 
-                InstanceLaunchEvent.Running -> instanceRepository.updateInstanceStatus(
-                    instanceId,
-                    InstanceStatus.Running
-                )
+            is InstanceLaunchEvent.Stopping -> instanceRepository.updateInstanceStatus(
+                instanceId,
+                InstanceStatus.Stopping(kill = event.kill)
+            )
 
-                is InstanceLaunchEvent.Logging -> instanceRepository.addInstanceLog(instanceId, it.logEvent)
-            }
+            is InstanceLaunchEvent.Logging -> instanceRepository.addInstanceLog(instanceId, event.logEvent)
         }
     }
+
+    private data class InstancePreparationResult(
+        val instance: Instance,
+        val account: Account,
+        val version: GameVersionDetails,
+        val assetIndex: GameAssetIndex,
+    )
 }

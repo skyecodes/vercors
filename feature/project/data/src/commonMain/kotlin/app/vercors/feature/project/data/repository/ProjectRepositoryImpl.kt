@@ -78,14 +78,14 @@ class ProjectRepositoryImpl(
             this.type = json.encodeToJsonElement(type.toData()).jsonPrimitive.content
             loaders?.let { loaders ->
                 this.loaders =
-                    json.encodeToJsonElement(loaders.map { it.toMetaData() }).jsonArray.joinToString(",") { it.jsonPrimitive.content }
+                    json.encodeToJsonElement(loaders.map { it.toMetaData() }).jsonArray.map { it.jsonPrimitive.content }
             }
-            gameVersions?.joinToString(",")?.let { this.gameVersions = it }
-            categories?.joinToString(",")?.let { this.categories = it }
-            query?.let { this.query = it }
-            sortBy?.let { this.sortBy = json.encodeToJsonElement(it.toData()).jsonPrimitive.content }
-            pageSize?.let { this.pageSize = it }
-            offset?.let { this.offset = it }
+            gameVersions?.let { this.gameVersions = it }
+            categories?.let { this.categories = it }
+            this.query = query
+            this.sortBy = sortBy?.let { json.encodeToJsonElement(it.toData()).jsonPrimitive.content }
+            this.pageSize = pageSize
+            this.offset = offset
         }
     ).handle(
         handle1 = { raise(it.toDomain()) },

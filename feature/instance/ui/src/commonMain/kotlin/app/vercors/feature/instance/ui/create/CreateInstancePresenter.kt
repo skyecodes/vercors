@@ -1,7 +1,8 @@
 package app.vercors.feature.instance.ui.create
 
 import androidx.compose.runtime.*
-import app.vercors.core.ui.state.collectProgressiveAsState
+import app.vercors.core.ui.state.produceAndCollectAsProgressiveState
+import app.vercors.feature.game.domain.model.GameVersionError
 import app.vercors.feature.game.domain.usecase.ObserveGameVersionListUseCase
 import app.vercors.feature.game.ui.GameVersionView
 import app.vercors.feature.game.ui.toView
@@ -21,14 +22,11 @@ import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedFactory
 import dev.zacsweers.metro.AssistedInject
-import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import opensavvy.state.progressive.ProgressiveOutcome
 import opensavvy.state.progressive.map
-
-private val logger = KotlinLogging.logger {}
 
 @AssistedInject
 class CreateInstancePresenter(
@@ -40,10 +38,7 @@ class CreateInstancePresenter(
 ) : Presenter<CreateInstanceState, CreateInstanceEvent> {
     @Composable
     override fun present(): Store<CreateInstanceState, CreateInstanceEvent> {
-        val gameVersionList by remember(observeGameVersionList) {
-            observeGameVersionList().map { res -> res.map { it.toView() } }
-                .onEach { logger.debug { "gameVersionList: $it" } }
-        }.collectProgressiveAsState()
+        val gameVersionList by observeGameVersionListView()
         var selectedTab by remember { mutableStateOf(CreateInstanceTab.Custom) }
         var instanceName by remember { mutableStateOf("") }
         var selectedGameVersion by remember { mutableStateOf<GameVersionView?>(null) }
@@ -66,18 +61,26 @@ class CreateInstancePresenter(
                 is CreateInstanceEvent.OnGameVersionChange -> selectedGameVersion = it.version
                 is CreateInstanceEvent.OnGameVersionSearchChange -> gameVersionFilter = it.search
                 CreateInstanceEvent.OnShowSnapshotClick -> showSnapshot = !showSnapshot
-                CreateInstanceEvent.OnCreateInstanceClick -> {
-                    val instance = Instance(
-                        name = instanceName,
-                        gameVersion = selectedGameVersion!!.id,
-                    )
-                    globalScope.launch {
-                        recover({ createInstance(instance) }) { error -> snackbarService.error { error.message } }
-                    }.invokeOnCompletion { error ->
-                        if (error == null) navigator.goTo(InstanceDetailsScreen(instance.id))
-                    }
-                }
+                CreateInstanceEvent.OnCreateInstanceClick -> createInstance(instanceName, selectedGameVersion)
             }
+        }
+    }
+
+    @Composable
+    private fun observeGameVersionListView(): State<ProgressiveOutcome<GameVersionError.InvalidManifest, List<GameVersionView>>> =
+        produceAndCollectAsProgressiveState {
+            observeGameVersionList().map { res -> res.map { it.toView() } }
+        }
+
+    private fun createInstance(instanceName: String, selectedGameVersion: GameVersionView?) {
+        val instance = Instance(
+            name = instanceName,
+            gameVersion = selectedGameVersion!!.id,
+        )
+        globalScope.launch {
+            recover({ createInstance(instance) }) { error -> snackbarService.error { error.message } }
+        }.invokeOnCompletion { error ->
+            if (error == null) navigator.goTo(InstanceDetailsScreen(instance.id))
         }
     }
 

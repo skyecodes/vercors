@@ -34,10 +34,10 @@ fun Route.projectRoutes(service: ProjectService, json: Json) {
                 service.search(
                     platformId = platformId,
                     projectType = parameters.type?.let { json.decodeFromString<ProjectTypeData>("\"$it\"") },
-                    loaders = parameters.loaders?.split(",")
-                        ?.map { json.decodeFromString<ProjectLoaderData>("\"$it\"") },
-                    gameVersions = parameters.gameVersions?.split(","),
-                    categories = parameters.categories?.split(","),
+                    loaders = parameters.loaders.map { json.decodeFromString<ProjectLoaderData>("\"$it\"") }
+                        .ifEmpty { null },
+                    gameVersions = parameters.gameVersions.ifEmpty { null },
+                    categories = parameters.categories.ifEmpty { null },
                     query = parameters.query,
                     sortBy = parameters.sortBy?.let { json.decodeFromString<ProjectSortByData>("\"$it\"") },
                     pageSize = parameters.pageSize,

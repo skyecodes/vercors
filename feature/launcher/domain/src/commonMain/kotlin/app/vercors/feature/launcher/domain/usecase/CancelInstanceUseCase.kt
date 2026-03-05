@@ -12,7 +12,7 @@ class CancelInstanceUseCase(
     private val instanceRepository: InstanceRepository,
 ) {
     operator fun invoke(instanceId: InstanceId) {
-        logger.info { "Cancelling instance $instanceId" }
+        logger.info { "Stopping instance $instanceId" }
         instanceRepository.cancelInstanceJob(instanceId)
     }
 }

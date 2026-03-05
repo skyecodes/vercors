@@ -2,8 +2,9 @@ package app.vercors.feature.instance.ui.list
 
 import androidx.compose.runtime.*
 import app.vercors.core.domain.filterIsRight
-import app.vercors.core.ui.state.collectProgressiveAsState
+import app.vercors.core.ui.state.produceAndCollectAsProgressiveState
 import app.vercors.feature.instance.domain.usecase.ObserveInstanceListUseCase
+import app.vercors.feature.instance.ui.BriefInstanceView
 import app.vercors.feature.instance.ui.create.CreateInstanceScreen
 import app.vercors.feature.instance.ui.details.InstanceDetailsScreen
 import app.vercors.feature.instance.ui.toBriefView
@@ -16,6 +17,7 @@ import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedFactory
 import dev.zacsweers.metro.AssistedInject
 import kotlinx.coroutines.flow.map
+import opensavvy.state.progressive.ProgressiveOutcome
 import opensavvy.state.progressive.map
 
 @AssistedInject
@@ -25,10 +27,7 @@ class InstanceListPresenter(
 ) : Presenter<InstanceListState, InstanceListEvent> {
     @Composable
     override fun present(): Store<InstanceListState, InstanceListEvent> {
-        val instances by remember(observeInstanceList) {
-            observeInstanceList()
-                .map { res -> res.map { list -> list.filterIsRight().map { it.toBriefView() } } }
-        }.collectProgressiveAsState()
+        val instances by observeInstanceListView()
         var nameFilter by remember { mutableStateOf("") }
         var versionFilter by remember { mutableStateOf("") }
         var loaderFilter by remember { mutableStateOf("") }
@@ -56,6 +55,14 @@ class InstanceListPresenter(
             }
         }
     }
+
+    @Composable
+    private fun observeInstanceListView(): State<ProgressiveOutcome<Nothing, List<BriefInstanceView>>> =
+        produceAndCollectAsProgressiveState {
+            observeInstanceList().map { res ->
+                res.map { list -> list.filterIsRight().map { it.toBriefView() } }
+            }
+        }
 
     @CircuitInject(InstanceListScreen::class, AppScope::class)
     @AssistedFactory

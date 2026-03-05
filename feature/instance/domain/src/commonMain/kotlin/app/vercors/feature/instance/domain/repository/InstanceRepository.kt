@@ -24,9 +24,13 @@ interface InstanceRepository {
 
     fun getInstanceStatus(id: InstanceId): InstanceStatus
 
-    fun updateInstanceJob(id: InstanceId, job: Job)
+    fun updateInstanceJob(id: InstanceId, job: Job?)
 
     fun cancelInstanceJob(id: InstanceId)
+
+    suspend fun stopInstance(id: InstanceId)
+
+    suspend fun killInstance(id: InstanceId)
 
     fun addInstanceLog(id: InstanceId, logEvent: InstanceLogEvent)
 

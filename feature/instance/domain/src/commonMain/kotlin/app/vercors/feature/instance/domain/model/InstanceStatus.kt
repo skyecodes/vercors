@@ -4,20 +4,11 @@ sealed interface InstanceStatus {
     data object Idle : InstanceStatus
 
     sealed interface Launching : InstanceStatus {
-        val progress: Float?
-
-        data object ValidatingToken : Launching {
-            override val progress: Float? = null
-        }
-
-        data class RefreshingToken(override val progress: Float? = null) : Launching
-
-        data object LoadingMetadata : Launching {
-            override val progress: Float? = null
-        }
-
-        data class ValidatingFiles(override val progress: Float?) : Launching
-        data class DownloadingFiles(override val progress: Float?) : Launching
+        data object ValidatingToken : Launching
+        data object RefreshingToken : Launching
+        data object LoadingMetadata : Launching
+        data object ValidatingFiles : Launching
+        data object DownloadingFiles : Launching
     }
 
     sealed interface Failed : InstanceStatus {
@@ -27,5 +18,7 @@ sealed interface InstanceStatus {
         data class Unknown(val error: Exception) : Failed
     }
 
-    data object Running : InstanceStatus
+    data class Running(val stop: suspend () -> Unit) : InstanceStatus
+
+    data class Stopping(val kill: suspend () -> Unit) : InstanceStatus
 }

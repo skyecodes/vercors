@@ -23,6 +23,6 @@ buildConfig {
     buildConfigField(
         type = "String",
         name = "LAUNCHER_VERSION",
-        expression = """"$version""""
+        expression = """"${rootProject.version}""""
     )
 }

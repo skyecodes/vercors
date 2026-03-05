@@ -1,17 +1,14 @@
 package app.vercors.feature.project.backend.modrinth
 
 import app.vercors.feature.project.backend.PlatformResponse
-import app.vercors.feature.project.backend.modrinth.dto.ModrinthCategory
-import app.vercors.feature.project.backend.modrinth.dto.ModrinthProject
-import app.vercors.feature.project.backend.modrinth.dto.ModrinthProjectMember
-import app.vercors.feature.project.backend.modrinth.dto.ModrinthProjectSearchResult
+import app.vercors.feature.project.backend.modrinth.dto.*
 import de.jensklingenberg.ktorfit.http.GET
 import de.jensklingenberg.ktorfit.http.Path
 import de.jensklingenberg.ktorfit.http.Query
 
 interface ModrinthApi {
     @GET("v2/tag/project_type")
-    suspend fun getProjectTypes(): PlatformResponse<List<String>>
+    suspend fun getProjectTypes(): PlatformResponse<List<ModrinthProjectType>>
 
     @GET("v2/tag/category")
     suspend fun getCategories(): PlatformResponse<List<ModrinthCategory>>

@@ -11,10 +11,11 @@ import kotlinx.io.Source
 import kotlinx.io.buffered
 import kotlinx.io.files.Path
 import kotlinx.serialization.DeserializationStrategy
+import opensavvy.progress.Progress
 
 interface FileValidationService {
     context(_: Raise<NonEmptyList<FileValidationFailure>>)
-    suspend fun submit(files: List<FileValidationRequest>)
+    suspend fun submit(files: List<FileValidationRequest>, onProgress: (Progress) -> Unit)
 
     context(_: Raise<FileValidationFailure>)
     suspend fun <T> submitAndRead(file: FileValidationRequest, serializer: DeserializationStrategy<T>): T

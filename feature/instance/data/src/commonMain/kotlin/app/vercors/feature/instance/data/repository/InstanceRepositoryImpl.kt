@@ -26,7 +26,6 @@ import kotlinx.coroutines.flow.update
 import opensavvy.state.coroutines.now
 import opensavvy.state.outcome.value
 import opensavvy.state.progressive.map
-import kotlin.coroutines.cancellation.CancellationException
 
 private val logger = KotlinLogging.logger {}
 
@@ -80,22 +79,26 @@ class InstanceRepositoryImpl(
         return _statuses.value.getOrElse(id) { InstanceStatus.Idle }
     }
 
-    override fun updateInstanceJob(id: InstanceId, job: Job) {
-        job.invokeOnCompletion { error ->
-            logger.debug { "Instance job completed with $error" }
-            _jobs.update { it - id }
-            if (error == null || error is CancellationException) {
-                updateInstanceStatus(id, InstanceStatus.Idle)
-            } else if (error is Exception) {
-                updateInstanceStatus(id, InstanceStatus.Failed.Unknown(error))
-            }
-        }
-        _jobs.update { it + (id to job) }
+    override fun updateInstanceJob(id: InstanceId, job: Job?) {
+        if (job != null) _jobs.update { it + (id to job) }
+        else _jobs.update { it - id }
         logger.debug { "Updated instance job $id" }
     }
 
     override fun cancelInstanceJob(id: InstanceId) {
         _jobs.value[id]?.cancel()
+    }
+
+    override suspend fun stopInstance(id: InstanceId) {
+        _statuses.value[id]?.let { status ->
+            if (status is InstanceStatus.Running) status.stop()
+        }
+    }
+
+    override suspend fun killInstance(id: InstanceId) {
+        _statuses.value[id]?.let { status ->
+            if (status is InstanceStatus.Stopping) status.kill()
+        }
     }
 
     override fun addInstanceLog(id: InstanceId, logEvent: InstanceLogEvent) {

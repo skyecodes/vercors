@@ -1,7 +1,7 @@
 package app.vercors.feature.account.ui.list
 
 import androidx.compose.runtime.*
-import app.vercors.core.ui.state.collectProgressiveAsState
+import app.vercors.core.ui.state.produceAndCollectAsProgressiveState
 import app.vercors.core.ui.state.update
 import app.vercors.feature.account.domain.model.AccountError
 import app.vercors.feature.account.domain.model.AccountLoadingError
@@ -20,7 +20,9 @@ import dev.zacsweers.metro.Inject
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import opensavvy.state.progressive.ProgressiveOutcome
 import opensavvy.state.progressive.map
 
 private val logger = KotlinLogging.logger {}
@@ -39,23 +41,12 @@ class AccountListPresenter(
     @Composable
     override fun present(): Store<AccountListState, AccountListEvent> {
         val presenterScope = rememberCoroutineScope()
-        val accountList by observeAccountList().collectProgressiveAsState()
-        val mappedAccountList = remember(accountList) {
-            accountList.map { list ->
-                AccountListView(list.map { account ->
-                    AccountView(
-                        username = account.username,
-                        id = account.id,
-                        skin = getAccountSkin(account.id)
-                    )
-                })
-            }
-        }
+        val accountList by observeAccountListView()
         var loginJob by remember { mutableStateOf<Job?>(null) }
         val loginState = remember { mutableStateOf(LoginStateView()) }
 
         return AccountListState(
-            accountList = mappedAccountList,
+            accountList = accountList,
             loginState = loginState.value
         ) + { event ->
             when (event) {
@@ -72,6 +63,22 @@ class AccountListPresenter(
             }
         }
     }
+
+    @Composable
+    private fun observeAccountListView(): State<ProgressiveOutcome<AccountLoadingError, AccountListView>> =
+        produceAndCollectAsProgressiveState {
+            observeAccountList().map { outcome ->
+                outcome.map { list ->
+                    AccountListView(list.map { account ->
+                        AccountView(
+                            username = account.username,
+                            id = account.id,
+                            skin = getAccountSkin(account.id)
+                        )
+                    })
+                }
+            }
+        }
 
     private suspend fun handleAccountError(block: suspend Raise<AccountError>.() -> Unit) {
         either { block() }.onLeft {

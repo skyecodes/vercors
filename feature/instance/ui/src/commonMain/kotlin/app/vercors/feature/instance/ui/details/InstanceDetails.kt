@@ -134,13 +134,13 @@ private fun InstanceHeader(instance: InstanceView) = SharedElementTransitionScop
                 AppText(
                     text = instance.status.text
                 )
-                instance.status.progress?.let {
+                /*instance.status.progress?.let {
                     AppProgressIndicator(
                         progress = it,
                         backgroundColor = Theme[colors][surface2],
                         modifier = Modifier.fillMaxWidth()
                     )
-                }
+                }*/
             }
         }
 
@@ -154,7 +154,7 @@ private fun InstanceHeader(instance: InstanceView) = SharedElementTransitionScop
             )
 
             is InstanceStatus.Launching -> AppIconTextButton(
-                onClick = { eventSink(InstanceDetailsEvent.Cancel) },
+                onClick = { eventSink(InstanceDetailsEvent.Stop) },
                 text = stringResource(SharedRes.string.cancel),
                 backgroundColor = Theme[colors][error],
                 contentColor = Theme[colors][onError],
@@ -162,11 +162,19 @@ private fun InstanceHeader(instance: InstanceView) = SharedElementTransitionScop
             )
 
             is InstanceStatus.Running -> AppIconTextButton(
-                onClick = { eventSink(InstanceDetailsEvent.Cancel) },
+                onClick = { eventSink(InstanceDetailsEvent.Stop) },
                 text = stringResource(InstanceRes.string.stop),
                 backgroundColor = Theme[colors][error],
                 contentColor = Theme[colors][onError],
                 imageVector = Lucide.Square,
+            )
+
+            is InstanceStatus.Stopping -> AppIconTextButton(
+                onClick = { eventSink(InstanceDetailsEvent.Kill) },
+                text = stringResource(InstanceRes.string.kill),
+                backgroundColor = Theme[colors][error],
+                contentColor = Theme[colors][onError],
+                imageVector = Lucide.X,
             )
         }
 
@@ -280,5 +288,6 @@ private val InstanceStatus.text: String
         is InstanceStatus.Launching.ValidatingFiles -> stringResource(InstanceRes.string.validatingFiles)
         is InstanceStatus.Launching.DownloadingFiles -> stringResource(InstanceRes.string.downloadingFiles)
         is InstanceStatus.Running -> stringResource(InstanceRes.string.running)
+        is InstanceStatus.Stopping -> stringResource(InstanceRes.string.stopping)
         is InstanceStatus.Failed -> stringResource(InstanceRes.string.failed)
     }

@@ -20,6 +20,14 @@ import io.ktor.client.*
 import kotlinx.io.bytestring.toHexString
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.json.Json
+import opensavvy.progress.Progress
+import opensavvy.progress.coroutines.report
+import opensavvy.progress.coroutines.reportProgress
+import opensavvy.progress.done
+import opensavvy.progress.loading
+import kotlin.concurrent.atomics.AtomicInt
+import kotlin.concurrent.atomics.ExperimentalAtomicApi
+import kotlin.concurrent.atomics.incrementAndFetch
 
 private const val MAX_ATTEMPTS = 3L
 private const val MAX_PARALLEL_DOWNLOADS = 10
@@ -33,17 +41,26 @@ class FileValidationServiceImpl(
     private val json: Json,
     private val httpClient: HttpClient,
 ) : FileValidationService {
-    @OptIn(ExperimentalRaiseAccumulateApi::class)
+    @OptIn(ExperimentalRaiseAccumulateApi::class, ExperimentalAtomicApi::class)
     context(_: Raise<NonEmptyList<FileValidationFailure>>)
     override suspend fun submit(
-        files: List<FileValidationRequest>
-    ) {
+        files: List<FileValidationRequest>,
+        onProgress: (Progress) -> Unit
+    ) = reportProgress(onProgress) {
         val remainingFiles = files.filter { either { it.validate() }.isLeft() }.toMutableList()
-        if (remainingFiles.isEmpty()) return
+        if (remainingFiles.isEmpty()) {
+            report(done())
+            return@reportProgress
+        }
 
+        report(loading(0.0))
         Schedule.recurs<NonEmptyList<FileValidationFailure>>(n = MAX_ATTEMPTS).retryRaise {
+            val total = remainingFiles.size.toDouble()
+            val progress = AtomicInt(0)
             val results = remainingFiles.parMap(concurrency = MAX_PARALLEL_DOWNLOADS) { request ->
-                either { request.apply { downloadAndValidate() } }
+                either { request.apply { downloadAndValidate() } }.also {
+                    report(loading(progress.incrementAndFetch() / total))
+                }
             }
 
             val successes = results.mapNotNull { it.getOrNull() }
@@ -51,6 +68,8 @@ class FileValidationServiceImpl(
 
             accumulate { results.bindAll() }
         }.bind()
+
+        report(done())
     }
 
     context(_: Raise<FileValidationFailure>)
@@ -58,7 +77,7 @@ class FileValidationServiceImpl(
         file: FileValidationRequest,
         serializer: DeserializationStrategy<T>
     ): T {
-        either { submit(listOf(file)) }.mapLeft { it.first() }.bind()
+        either { submit(listOf(file)) {} }.mapLeft { it.first() }.bind()
         return file.path.readJson(serializer, json)
     }
 

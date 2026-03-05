@@ -7,5 +7,7 @@ import app.vercors.shared.ui.Event
 sealed interface InstanceDetailsEvent : Event {
     data object Launch : InstanceDetailsEvent
     data object Cancel : InstanceDetailsEvent
+    data object Stop : InstanceDetailsEvent
+    data object Kill : InstanceDetailsEvent
     data object Delete : InstanceDetailsEvent
 }

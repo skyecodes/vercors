@@ -31,7 +31,7 @@ class ModrinthService(
     context(_: Raise<PlatformErrorData>)
     override suspend fun getCategories(): Map<ProjectTypeData, Map<String, List<ProjectCategoryData>>> =
         coroutineScope {
-            val types = async { api.getProjectTypes().bindResponse().mapNotNull { it.toModrinthProjectType() } }
+            val types = async { api.getProjectTypes().bindResponse().mapNotNull { it.convert() } }
             val categories = async { api.getCategories().bindResponse() }
 
             val result = categories.await()

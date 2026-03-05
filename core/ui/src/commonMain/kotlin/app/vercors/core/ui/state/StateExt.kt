@@ -3,7 +3,9 @@ package app.vercors.core.ui.state
 import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshots.StateFactoryMarker
 import com.slack.circuit.retained.collectAsRetainedState
+import com.slack.circuit.retained.produceAndCollectAsRetainedState
 import com.slack.circuit.retained.produceRetainedState
+import kotlinx.coroutines.flow.Flow
 import opensavvy.state.coroutines.ProgressiveFlow
 import opensavvy.state.progressive.ProgressiveOutcome
 
@@ -21,7 +23,22 @@ fun <Failure, Value> produceProgressiveState(
     vararg keys: Any?,
     initialValue: ProgressiveOutcome<Failure, Value> = ProgressiveOutcome.Incomplete(),
     producer: suspend ProduceStateScope<ProgressiveOutcome<Failure, Value>>.() -> Unit,
-) = produceRetainedState(initialValue, keys = keys, producer)
+) = produceRetainedState(
+    keys = keys,
+    initialValue = initialValue,
+    producer = producer
+)
+
+@Composable
+fun <Failure, Value> produceAndCollectAsProgressiveState(
+    vararg inputs: Any?,
+    initialValue: ProgressiveOutcome<Failure, Value> = ProgressiveOutcome.Incomplete(),
+    producer: suspend () -> Flow<ProgressiveOutcome<Failure, Value>>,
+) = produceAndCollectAsRetainedState(
+    inputs = inputs,
+    initial = initialValue,
+    producer = producer
+)
 
 @Composable
 fun <Failure, Value> ProgressiveFlow<Failure, Value>.collectProgressiveAsState(

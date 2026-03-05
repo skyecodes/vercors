@@ -2,6 +2,7 @@
     <string name="noInstanceFound">No instance found</string>
     <string name="launch">Launch</string>
     <string name="stop">Stop</string>
+    <string name="kill">Kill</string>
     <string name="createInstance">Create a new instance</string>
     <string name="createCustomInstance">Custom instance</string>
     <string name="createCustomInstanceDescription">Select your version, mod loader, and add all the mods you want; or play vanilla</string>
@@ -21,6 +22,7 @@
     <string name="validatingFiles">Validating files...</string>
     <string name="downloadingFiles">Downloading files...</string>
     <string name="running">Running</string>
+    <string name="stopping">Stopping</string>
     <string name="failed">Failed</string>
 
     <string name="errorEmptyInstanceId">Instance ID cannot be empty</string>

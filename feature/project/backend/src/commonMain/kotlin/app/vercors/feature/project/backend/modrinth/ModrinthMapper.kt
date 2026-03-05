@@ -49,12 +49,13 @@ internal fun ModrinthProjectResult.convert(): BriefProjectData = BriefProjectDat
     imageUrl = featuredGallery
 )
 
-internal fun ModrinthProjectType.convert(): ProjectTypeData? = when (this) {
-    ModrinthProjectType.Mod -> ProjectTypeData.Mod
-    ModrinthProjectType.Modpack -> ProjectTypeData.Modpack
-    ModrinthProjectType.ResourcePack -> ProjectTypeData.ResourcePack
-    ModrinthProjectType.ShaderPack -> ProjectTypeData.ShaderPack
-    ModrinthProjectType.DataPack -> ProjectTypeData.DataPack
+internal fun ModrinthProjectType.convert(): ProjectTypeData? = when (value) {
+    ModrinthProjectType.MOD -> ProjectTypeData.Mod
+    ModrinthProjectType.MODPACK -> ProjectTypeData.Modpack
+    ModrinthProjectType.RESOURCEPACK -> ProjectTypeData.ResourcePack
+    ModrinthProjectType.SHADERPACK -> ProjectTypeData.ShaderPack
+    ModrinthProjectType.DATAPACK -> ProjectTypeData.DataPack
+    else -> null
 }
 
 internal fun ModrinthCategory.convert(): ProjectCategoryData = ProjectCategoryData(

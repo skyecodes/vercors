@@ -17,6 +17,7 @@ plugins {
 }
 
 group = "app.vercors"
+version = "0.1.0"
 
 tasks.withType<DependencyUpdatesTask> {
     rejectVersionIf {
