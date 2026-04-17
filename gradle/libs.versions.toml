@@ -1,33 +1,34 @@
 [versions]
 # General
-kotlin = "2.3.20-RC2"
+kotlin = "2.3.20"
 ksp = "2.3.6"
 coroutines = "1.10.2"
-arrow = "2.2.2"
+arrow = "2.2.2.1"
 pedestal = "3.2.1"
 datetime = "0.7.1"
-cryptography = "0.5.0"
+cryptography = "0.6.0"
 human-readable = "1.12.0"
 buildconfig = "6.0.7"
 gradle-versions = "0.53.0"
 # Data
-serialization = "1.10.0"
+serialization = "1.11.0"
 io = "0.9.0"
-ktor = "3.4.1"
-ktor-simple-cache = "0.59.4"
-spine = "0.10.0"
+ktor = "3.4.2"
+ktor-simple-cache = "0.63.3"
+spine = "0.10.1"
 ktorfit = "2.7.2"
 kfswatch = "1.4.0"
 appdirs = "2.0.0"
-oshi = "6.10.0"
+oshi = "6.11.1"
 kzip = "1.1.1"
 xmlutil = "1.0.0-rc2"
 # GUI
-compose = "1.11.0-alpha03"
-compose-hot-reload = "1.1.0-alpha05"
-lifecycle = "2.10.0-alpha08"
-navigation3 = "1.1.0-alpha03"
+compose = "1.11.0-beta02"
+compose-hot-reload = "1.1.0-rc01"
+lifecycle = "2.11.0-alpha03"
+navigation3 = "1.1.0-rc01"
 circuit = "0.33.1"
+material3 = "1.11.0-alpha06"
 unstyled = "1.49.6"
 icons = "2.2.1"
 ripple = "1.1.0"
@@ -37,14 +38,14 @@ webview = "2.0.3"
 # CLI
 clikt = "5.1.0"
 mordant = "3.0.2"
-graalvm = "0.11.5"
+graalvm = "1.0.0"
 # DI
-metro = "0.11.2"
+metro = "1.0.0-RC2"
 # Logging
 logback = "1.5.32"
 kotlin-logging = "8.0.01"
 # Test
-mokkery = "3.2.0"
+mokkery = "3.3.0"
 turbine = "1.2.1"
 
 [libraries]
@@ -103,6 +104,7 @@ circuit-foundation = { module = "com.slack.circuit:circuit-foundation", version.
 circuit-overlay = { module = "com.slack.circuit:circuit-overlay", version.ref = "circuit" }
 circuit-codegen = { module = "com.slack.circuit:circuit-codegen", version.ref = "circuit" }
 circuit-codegen-annotations = { module = "com.slack.circuit:circuit-codegen-annotations", version.ref = "circuit" }
+compose-material3 = { module = "org.jetbrains.compose.material3:material3", version.ref = "material3" }
 composables-composeunstyled = { module = "com.composables:core", version.ref = "unstyled" }
 composables-composeunstyled-theming = { module = "com.composables:composeunstyled-theming", version.ref = "unstyled" }
 composables-ripple = { module = "com.composables:ripple-indication", version.ref = "ripple" }
