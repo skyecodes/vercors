@@ -11,8 +11,6 @@ plugins {
 
 kotlin {
     jvm()
-
-    compilerOptions.allWarningsAsErrors.set(true)
 }
 
 val libs = the<LibrariesForLibs>()

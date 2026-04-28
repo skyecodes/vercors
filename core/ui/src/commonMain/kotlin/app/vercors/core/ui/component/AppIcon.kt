@@ -5,8 +5,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
-import com.composeunstyled.Icon
 import com.composeunstyled.LocalContentColor
+import com.composeunstyled.UnstyledIcon
 
 @Composable
 fun AppIcon(
@@ -15,7 +15,7 @@ fun AppIcon(
     modifier: Modifier = Modifier,
     tint: Color = LocalContentColor.current
 ) {
-    Icon(
+    UnstyledIcon(
         imageVector = imageVector,
         contentDescription = contentDescription,
         modifier = modifier,
@@ -30,7 +30,7 @@ fun AppIcon(
     modifier: Modifier = Modifier,
     tint: Color = LocalContentColor.current
 ) {
-    Icon(
+    UnstyledIcon(
         painter = painter,
         contentDescription = contentDescription,
         modifier = modifier,

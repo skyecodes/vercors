@@ -11,8 +11,8 @@ import app.vercors.core.ui.theme.colors
 import app.vercors.core.ui.theme.primary
 import app.vercors.core.ui.theme.surface
 import com.composables.core.androidx.annotation.FloatRange
-import com.composeunstyled.ProgressBar
-import com.composeunstyled.ProgressIndicator
+import com.composeunstyled.UnstyledProgressBar
+import com.composeunstyled.UnstyledProgressIndicator
 import com.composeunstyled.theme.Theme
 
 @Composable
@@ -23,13 +23,13 @@ fun AppProgressIndicator(
     backgroundColor: Color = Theme[colors][surface],
     contentColor: Color = Theme[colors][primary]
 ) {
-    ProgressIndicator(
+    UnstyledProgressIndicator(
         progress = progress,
         modifier = modifier.heightIn(max = 8.dp),
         shape = shape,
         backgroundColor = backgroundColor,
         contentColor = contentColor,
     ) {
-        ProgressBar()
+        UnstyledProgressBar()
     }
 }

@@ -13,8 +13,8 @@ import app.vercors.core.ui.theme.colors
 import app.vercors.core.ui.theme.surface2
 import com.composeunstyled.LocalContentColor
 import com.composeunstyled.RelativeAlignment
-import com.composeunstyled.Tooltip
-import com.composeunstyled.TooltipPanel
+import com.composeunstyled.UnstyledTooltip
+import com.composeunstyled.UnstyledTooltipPanel
 import com.composeunstyled.theme.Theme
 
 @Composable
@@ -26,7 +26,7 @@ fun AppTooltip(
     hoverDelayMillis: Long = 0L,
     anchor: @Composable () -> Unit
 ) {
-    Tooltip(
+    UnstyledTooltip(
         enabled = enabled,
         panel = panel,
         placement = placement,
@@ -47,7 +47,7 @@ fun AppTooltipPanel(
     contentPadding: PaddingValues = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
     content: @Composable () -> Unit
 ) {
-    TooltipPanel(
+    UnstyledTooltipPanel(
         modifier = modifier,
         enter = enter,
         exit = exit,

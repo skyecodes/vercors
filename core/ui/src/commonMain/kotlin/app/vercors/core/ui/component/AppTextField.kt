@@ -20,11 +20,12 @@ import app.vercors.core.ui.theme.colors
 import app.vercors.core.ui.theme.surface
 import com.composeunstyled.LocalContentColor
 import com.composeunstyled.ProvideContentColor
-import com.composeunstyled.TextField
 import com.composeunstyled.TextInput
+import com.composeunstyled.UnstyledTextField
 import com.composeunstyled.theme.Theme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
+import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun AppTextField(
@@ -43,12 +44,12 @@ fun AppTextField(
 
     LaunchedEffect(state) {
         snapshotFlow { state.text.toString() }.collectLatest {
-            delay(debounceMillis)
+            delay(debounceMillis.milliseconds)
             onValueChange(it)
         }
     }
 
-    TextField(
+    UnstyledTextField(
         state = state,
         modifier = modifier,
         singleLine = true,
