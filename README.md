@@ -1,48 +1,85 @@
-This is a Kotlin Multiplatform project targeting Desktop (JVM), Server.
+<h2 align="center">Vercors</h2>
 
-* [/composeApp](./composeApp/src) is for code that will be shared across your Compose Multiplatform applications.
-  It contains several subfolders:
-    - [commonMain](./composeApp/src/commonMain/kotlin) is for code that’s common for all targets.
-    - Other folders are for Kotlin code that will be compiled for only the platform indicated in the folder name.
-      For example, if you want to use Apple’s CoreCrypto for the iOS part of your Kotlin app,
-      the [iosMain](./composeApp/src/iosMain/kotlin) folder would be the right place for such calls.
-      Similarly, if you want to edit the Desktop (JVM) specific part, the [jvmMain](./composeApp/src/jvmMain/kotlin)
-      folder is the appropriate location.
+<p align="center">
+   <img src="public/screenshot1.png" alt="Screenshot 1" width="480"/>
+   <img src="public/screenshot2.png" alt="Screenshot 2" width="480"/>
+</p>
 
-* [/server](./server/src/main/kotlin) is for the Ktor server application.
-
-* [/shared](./shared/src) is for the code that will be shared between all targets in the project.
-  The most important subfolder is [commonMain](./shared/src/commonMain/kotlin). If preferred, you
-  can add code to the platform-specific folders here too.
-
-### Build and Run Desktop (JVM) Application
-
-To build and run the development version of the desktop app, use the run configuration from the run widget
-in your IDE’s toolbar or run it directly from the terminal:
-
-- on macOS/Linux
-  ```shell
-  ./gradlew :composeApp:run
-  ```
-- on Windows
-  ```shell
-  .\gradlew.bat :composeApp:run
-  ```
-
-### Build and Run Server
-
-To build and run the development version of the server, use the run configuration from the run widget
-in your IDE’s toolbar or run it directly from the terminal:
-
-- on macOS/Linux
-  ```shell
-  ./gradlew :server:run
-  ```
-- on Windows
-  ```shell
-  .\gradlew.bat :server:run
-  ```
+<h3 align="center">A modern Minecraft Launcher with mod support and much more!</h3>
 
 ---
 
-Learn more about [Kotlin Multiplatform](https://www.jetbrains.com/help/kotlin-multiplatform-dev/get-started.html)…
+> This project is still early in development. No binaries are available for download, as no stable release has been made
+> yet.
+>
+> If you still want to run the project yourself, you can clone the repository and follow the instructions in
+> the [Build](#Build) section.
+
+For a list of planned features, check out the [Roadmap](https://codeberg.org/skyecodes/vercors/issues/1).
+
+## Build
+
+### Requirements
+
+* JDK 25
+
+### Common steps
+
+Clone the repository and navigate to the project directory
+
+```
+git clone https://codeberg.org/skyecodes/vercors.git && cd vercors/
+```
+
+### Run the launcher (GUI)
+
+Run the following command to run the launcher (GUI)
+
+```
+./gradlew :app:launcher-gui:run
+```
+
+### Run the launcher (CLI)
+
+#### Windows (x64)
+
+```
+./gradlew :app:launcher-cli:runDebugExecutableMingwX64
+cd app/launcher-cli/build/bin/mingwX64/debugExecutable/
+./vercors.kexe --help
+```
+
+#### Linux (x64)
+
+```
+./gradlew :app:launcher-cli:runDebugExecutableLinuxX64
+cd app/launcher-cli/build/bin/linuxX64/debugExecutable/
+./vercors.kexe --help
+```
+
+#### Linux (arm64)
+
+```
+./gradlew :app:launcher-cli:runDebugExecutableLinuxArm64
+cd app/launcher-cli/build/bin/linuxArm64/debugExecutable/
+./vercors.kexe --help
+```
+
+#### Mac OS (arm64 only, x64 is not supported)
+
+```
+./gradlew :app:launcher-cli:runDebugExecutableMacosArm64
+cd app/launcher-cli/build/bin/macosArm64/debugExecutable/
+./vercors.kexe --help
+```
+
+### Run the backend
+
+1. Set the `CURSEFORGE_API_KEY` environment variable to your CurseForge API key. You can get
+   one [here](https://console.curseforge.com).
+
+2. Run the following command to run the backend
+
+```
+./gradlew :app:meta:distribution:run
+```
