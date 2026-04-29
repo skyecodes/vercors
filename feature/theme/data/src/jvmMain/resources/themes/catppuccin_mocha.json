@@ -1,0 +1,18 @@
+{
+  "id": "catppuccin_mocha",
+  "displayName": "Catppuccin Mocha",
+  "colors": {
+    "background": "#1E1E2E",
+    "backgroundAlt": "#181825",
+    "onBackground": "#CDD6F4",
+    "primary": "#CBA6F7",
+    "onPrimary": "#11111B",
+    "error": "#F38BA8",
+    "onError": "#11111B",
+    "success": "#A6E3A1",
+    "onSuccess": "#11111B",
+    "warn": "#FAB387",
+    "surface": "#313244",
+    "surface2": "#45475A"
+  }
+}

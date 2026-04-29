@@ -37,6 +37,8 @@ dependencies {
     commonMainImplementation(projects.feature.project.domain)
     commonMainImplementation(projects.feature.project.data)
     commonMainImplementation(projects.feature.project.ui)
+    commonMainImplementation(projects.feature.theme.domain)
+    commonMainImplementation(projects.feature.theme.data)
     commonMainImplementation(compose.desktop.currentOs)
     commonMainImplementation(libs.coil.compose)
     commonMainImplementation(libs.cryptography.provider.optimal)

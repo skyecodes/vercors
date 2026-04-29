@@ -1,0 +1,18 @@
+{
+  "id": "catppuccin_frappe",
+  "displayName": "Catppuccin Frappé",
+  "colors": {
+    "background": "#303446",
+    "backgroundAlt": "#292C3C",
+    "onBackground": "#C6D0F5",
+    "primary": "#CA9EE6",
+    "onPrimary": "#232634",
+    "error": "#E78284",
+    "onError": "#232634",
+    "success": "#A6D189",
+    "onSuccess": "#232634",
+    "warn": "#EF9F76",
+    "surface": "#414559",
+    "surface2": "#51576D"
+  }
+}

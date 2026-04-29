@@ -7,9 +7,12 @@ data class Configuration(
     val menuDrawerOpen: Boolean,
     val animations: Boolean,
     val preferredPlatform: String,
-    val homeCategories: List<HomeCategoryConfig>
+    val homeCategories: List<HomeCategoryConfig>,
+    val selectedThemeId: String,
 ) {
     companion object {
+        const val DEFAULT_THEME_ID = "catppuccin_mocha"
+
         val Default = Configuration(
             metaApiUrl = "https://meta.vercors.app/",
             parallelDownloads = 10,
@@ -17,7 +20,8 @@ data class Configuration(
             menuDrawerOpen = true,
             animations = true,
             preferredPlatform = "modrinth",
-            homeCategories = HomeCategoryConfig.entries
+            homeCategories = HomeCategoryConfig.entries,
+            selectedThemeId = DEFAULT_THEME_ID,
         )
     }
 }

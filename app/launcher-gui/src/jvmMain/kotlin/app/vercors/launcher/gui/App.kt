@@ -37,9 +37,9 @@ fun App(
 ) {
     val (state, eventSink) = store
 
-    if (state.config != null) {
+    if (state.config != null && state.activeTheme != null) {
         CompositionLocalProvider(LocalAnimation provides state.config.animations) {
-            AppTheme {
+            (AppTheme(state.activeTheme.colors)) {
                 Box(
                     modifier = modifier.fillMaxSize()
                 ) {

@@ -13,7 +13,8 @@ data class ConfigurationData(
     val menuDrawerOpen: Boolean,
     val animations: Boolean,
     val preferredPlatform: String,
-    val homeCategories: List<HomeCategoryConfigData>
+    val homeCategories: List<HomeCategoryConfigData>,
+    val selectedThemeId: String
 )
 
 internal fun ConfigurationData.toDomain(): Configuration = Configuration(
@@ -23,7 +24,8 @@ internal fun ConfigurationData.toDomain(): Configuration = Configuration(
     menuDrawerOpen = menuDrawerOpen,
     animations = animations,
     preferredPlatform = preferredPlatform,
-    homeCategories = homeCategories.map { it.toDomain() }
+    homeCategories = homeCategories.map { it.toDomain() },
+    selectedThemeId = selectedThemeId,
 )
 
 internal fun Configuration.toData(): ConfigurationData = ConfigurationData(
@@ -33,7 +35,8 @@ internal fun Configuration.toData(): ConfigurationData = ConfigurationData(
     menuDrawerOpen = menuDrawerOpen,
     animations = animations,
     preferredPlatform = preferredPlatform,
-    homeCategories = homeCategories.map { it.toData() }
+    homeCategories = homeCategories.map { it.toData() },
+    selectedThemeId = selectedThemeId,
 )
 
 @Serializable

@@ -102,3 +102,6 @@ include(":feature:config:data")
 include(":feature:config:domain")
 include(":feature:config:ui")
 include(":feature:config:ui:screen")
+
+include(":feature:theme:data")
+include(":feature:theme:domain")

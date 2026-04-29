@@ -9,6 +9,7 @@ import androidx.compose.ui.unit.sp
 import app.vercors.core.ui.CoreRes
 import app.vercors.core.ui.Inter
 import app.vercors.core.ui.InterTight
+import app.vercors.feature.theme.domain.model.ThemeColors
 import com.composables.compose.ripple.rememberRippleIndication
 import com.composeunstyled.theme.ThemeProperty
 import com.composeunstyled.theme.ThemeToken
@@ -41,8 +42,7 @@ val subtitle = ThemeToken<TextStyle>("subtitle")
 val label = ThemeToken<TextStyle>("label")
 val console = ThemeToken<TextStyle>("console")
 
-
-val AppTheme = buildTheme {
+fun AppTheme(themeColors: ThemeColors) = buildTheme {
     val fontFamily = FontFamily(
         Font(CoreRes.font.Inter, weight = FontWeight.Normal),
         Font(CoreRes.font.Inter, weight = FontWeight.Medium),
@@ -57,10 +57,10 @@ val AppTheme = buildTheme {
     )
 
     defaultIndication = rememberRippleIndication()
-    defaultContentColor = Color(0xffcdd6f4)
+    defaultContentColor = Color(themeColors.onBackground)
     defaultTextSelectionColors = TextSelectionColors(
-        handleColor = Color(0xffcba6f7),
-        backgroundColor = Color(0x7fcba6f7)
+        handleColor = Color(themeColors.primary),
+        backgroundColor = Color(themeColors.primary).copy(alpha = 0.4f),
     )
     defaultTextStyle = TextStyle(
         fontFamily = fontFamily,
@@ -68,18 +68,18 @@ val AppTheme = buildTheme {
     )
 
     properties[colors] = mapOf(
-        background to Color(0xff1e1e2e),
-        backgroundAlt to Color(0xff181825),
-        onBackground to Color(0xffcdd6f4),
-        primary to Color(0xffcba6f7),
-        onPrimary to Color(0xff11111b),
-        error to Color(0xfff38ba8),
-        onError to Color(0xff11111b),
-        success to Color(0xffa6e3a1),
-        onSuccess to Color(0xff11111b),
-        warn to Color(0xfffab387),
-        surface to Color(0xff313244),
-        surface2 to Color(0xff45475a),
+        background to Color(themeColors.background),
+        backgroundAlt to Color(themeColors.backgroundAlt),
+        onBackground to Color(themeColors.onBackground),
+        primary to Color(themeColors.primary),
+        onPrimary to Color(themeColors.onPrimary),
+        error to Color(themeColors.error),
+        onError to Color(themeColors.onError),
+        success to Color(themeColors.success),
+        onSuccess to Color(themeColors.onSuccess),
+        warn to Color(themeColors.warn),
+        surface to Color(themeColors.surface),
+        surface2 to Color(themeColors.surface2),
     )
 
     properties[fonts] = mapOf(

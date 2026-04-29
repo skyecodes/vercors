@@ -1,0 +1,18 @@
+{
+  "id": "catppuccin_latte",
+  "displayName": "Catppuccin Latte",
+  "colors": {
+    "background": "#EFF1F5",
+    "backgroundAlt": "#E6E9EF",
+    "onBackground": "#4C4F69",
+    "primary": "#8839EF",
+    "onPrimary": "#DCE0E8",
+    "error": "#D20F39",
+    "onError": "#DCE0E8",
+    "success": "#40A02B",
+    "onSuccess": "#DCE0E8",
+    "warn": "#FE640B",
+    "surface": "#CCD0DA",
+    "surface2": "#BCC0CC"
+  }
+}

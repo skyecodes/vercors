@@ -1,0 +1,18 @@
+{
+  "id": "catppuccin_macchiato",
+  "displayName": "Catppuccin Macchiato",
+  "colors": {
+    "background": "#24273A",
+    "backgroundAlt": "#1E2030",
+    "onBackground": "#CAD3F5",
+    "primary": "#C6A0F6",
+    "onPrimary": "#181926",
+    "error": "#ED8796",
+    "onError": "#181926",
+    "success": "#A6DA95",
+    "onSuccess": "#181926",
+    "warn": "#F5A97F",
+    "surface": "#363A4F",
+    "surface2": "#494D64"
+  }
+}

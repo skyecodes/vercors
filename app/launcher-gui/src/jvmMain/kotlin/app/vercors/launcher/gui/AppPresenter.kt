@@ -3,8 +3,10 @@ package app.vercors.launcher.gui
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import app.vercors.core.ui.state.collectProgressiveAsState
+import app.vercors.feature.config.domain.model.Configuration
 import app.vercors.feature.config.domain.usecase.ObserveConfigurationUseCase
 import app.vercors.feature.config.domain.usecase.UpdateConfigurationUseCase
+import app.vercors.feature.theme.domain.usecase.ObserveThemesUseCase
 import app.vercors.shared.ui.Presenter
 import app.vercors.shared.ui.SnackbarService
 import app.vercors.shared.ui.Store
@@ -26,16 +28,24 @@ class AppPresenter(
     private val backgroundScope: CoroutineScope,
     private val observeGuiConfiguration: ObserveConfigurationUseCase,
     private val updateGuiConfiguration: UpdateConfigurationUseCase,
+    private val observeThemes: ObserveThemesUseCase,
     private val snackbarService: SnackbarService
 ) : Presenter<AppState, AppEvent> {
     @Composable
     override fun present(): Store<AppState, AppEvent> {
         val config by observeGuiConfiguration().collectProgressiveAsState()
+        val themes by observeThemes().collectProgressiveAsState()
 
-        // TODO consume snackbar messages
+        val cfg = config.valueOrNull
+        val catalog = themes.valueOrNull
+        val active = cfg?.let { c ->
+            catalog?.byId?.get(c.selectedThemeId)
+                ?: catalog?.byId?.get(Configuration.DEFAULT_THEME_ID)
+        }
 
         return AppState(
-            config = config.valueOrNull,
+            config = cfg,
+            activeTheme = active,
             isMinimized = screen.isMinimized,
             onWindowEvent = screen.onWindowEvent
         ) + {
