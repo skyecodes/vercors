@@ -87,7 +87,7 @@ fun ProjectList(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     ProjectListPagination(state.filter, state.projects.valueOrNull?.total)
-                    ProjectList(state.projects)
+                    ProjectListContent(state.filter, state.projects)
                 }
             }
         }
@@ -479,10 +479,13 @@ private fun ProjectListPagination(filter: ProjectListFilter, totalElements: Int?
 
 @Composable
 context(_: EventSink<ProjectListEvent>)
-private fun ColumnScope.ProjectList(projects: ProgressiveOutcome<ProjectSearchError, Page<BriefProjectView>>) {
+private fun ColumnScope.ProjectListContent(
+    filter: ProjectListFilter,
+    projects: ProgressiveOutcome<ProjectSearchError, Page<BriefProjectView>>
+) {
     val listState = rememberLazyListState()
 
-    LaunchedEffect(projects) {
+    LaunchedEffect(filter, projects) {
         listState.animateScrollToItem(0)
     }
 
