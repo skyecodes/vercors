@@ -15,7 +15,7 @@ private val VERSION_REGEX = Regex("((\\d+\\.)+\\d+)")
 
 @SingleIn(AppScope::class)
 @ContributesBinding(AppScope::class)
-internal actual class SystemServiceImpl : SystemService {
+actual class SystemServiceImpl : SystemService {
     actual override val osType: OsType = OsType.Windows
 
     @OptIn(ExperimentalForeignApi::class)

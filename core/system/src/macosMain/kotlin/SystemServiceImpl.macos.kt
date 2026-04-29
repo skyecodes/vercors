@@ -10,7 +10,7 @@ import kotlin.coroutines.CoroutineContext
 
 @SingleIn(AppScope::class)
 @ContributesBinding(AppScope::class)
-internal actual class SystemServiceImpl : SystemService {
+actual class SystemServiceImpl : SystemService {
     actual override val osType: OsType = OsType.MacOs
 
     @OptIn(ExperimentalForeignApi::class)
