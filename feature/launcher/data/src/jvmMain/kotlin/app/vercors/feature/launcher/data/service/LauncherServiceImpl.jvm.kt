@@ -13,6 +13,7 @@ import kotlinx.serialization.decodeFromString
 import nl.adaptivity.xmlutil.serialization.XML
 import java.io.File
 import kotlin.coroutines.CoroutineContext
+import kotlin.time.Duration.Companion.milliseconds
 
 private val logger = KotlinLogging.logger {}
 
@@ -38,7 +39,7 @@ internal actual suspend fun ProducerScope<InstanceLaunchEvent>.runCommand(
     }
     try {
         while (process.isAlive) {
-            delay(100)
+            delay(100.milliseconds)
         }
     } catch (e: CancellationException) {
         process.destroy()

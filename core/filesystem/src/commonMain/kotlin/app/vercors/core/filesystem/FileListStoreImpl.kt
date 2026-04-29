@@ -4,7 +4,10 @@ import app.vercors.core.domain.MutableProgressiveStateFlow
 import app.vercors.core.domain.forEachAsync
 import arrow.core.Either
 import arrow.core.raise.either
-import dev.zacsweers.metro.*
+import dev.zacsweers.metro.AppScope
+import dev.zacsweers.metro.ContributesBinding
+import dev.zacsweers.metro.Named
+import dev.zacsweers.metro.SingleIn
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.onStart
@@ -26,6 +29,7 @@ import opensavvy.state.progressive.successfulWithProgress
 import kotlin.concurrent.atomics.AtomicInt
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
 import kotlin.concurrent.atomics.incrementAndFetch
+import kotlin.time.Duration.Companion.milliseconds
 
 private val logger = KotlinLogging.logger {}
 
@@ -35,7 +39,7 @@ internal class FileListStoreImpl<T>(
     private val json: Json,
     private val fileWatcherService: FileWatcherService,
     private val backgroundScope: CoroutineScope,
-    @Named("parallelFilesystemOperations") private val parallelFilesystemOperationsProvider: Provider<Int>
+    @Named("parallelFilesystemOperations") private val parallelFilesystemOperationsProvider: () -> Int
 ) : FileListStore<T> {
     private val mutex = Mutex()
     private val loadMap = mutableMapOf<String, Job>()
@@ -112,7 +116,7 @@ internal class FileListStoreImpl<T>(
                 filePath.readJson(serializer, json)
             } catch (e: Exception) {
                 currentCoroutineContext().ensureActive()
-                delay(100) // If another update happens within 100ms, the failure will be canceled
+                delay(100.milliseconds) // If another update happens within 100ms, the failure will be canceled
                 logger.error(e) { "Failed to read data from $filePath" }
                 when (e) {
                     is IOException -> raise(FileStoreError.IO)
@@ -141,7 +145,7 @@ class FileListStoreFactoryImpl(
     private val json: Json,
     private val fileWatcherService: FileWatcherService,
     private val backgroundScope: CoroutineScope,
-    @Named("parallelFilesystemOperations") private val parallelFilesystemOperationsProvider: Provider<Int>
+    @Named("parallelFilesystemOperations") private val parallelFilesystemOperationsProvider: () -> Int
 ) : FileListStoreFactory {
     override operator fun <T> invoke(directoryPath: Path, serializer: KSerializer<T>): FileListStore<T> =
         FileListStoreImpl(

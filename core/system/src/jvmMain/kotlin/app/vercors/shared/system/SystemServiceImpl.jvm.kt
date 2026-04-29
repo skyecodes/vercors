@@ -5,8 +5,8 @@ import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
 import dev.zacsweers.metro.SingleIn
 import kotlinx.coroutines.withContext
-import oshi.PlatformEnum
 import oshi.SystemInfo
+import oshi.util.PlatformEnum
 import java.awt.Desktop
 import java.awt.Toolkit
 import java.awt.datatransfer.StringSelection
@@ -19,7 +19,7 @@ actual class SystemServiceImpl : SystemService {
     private val systemInfo by lazy { SystemInfo() }
 
     actual override val osType: OsType by lazy {
-        when (val platform = SystemInfo.getCurrentPlatform()) {
+        when (val platform = PlatformEnum.getCurrentPlatform()) {
             PlatformEnum.WINDOWS -> OsType.Windows
             PlatformEnum.MACOS -> OsType.MacOs
             PlatformEnum.LINUX -> OsType.Linux

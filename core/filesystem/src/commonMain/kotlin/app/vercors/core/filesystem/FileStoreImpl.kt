@@ -18,6 +18,7 @@ import opensavvy.state.coroutines.ProgressiveFlow
 import opensavvy.state.progressive.copy
 import opensavvy.state.progressive.failedWithProgress
 import opensavvy.state.progressive.successfulWithProgress
+import kotlin.time.Duration.Companion.milliseconds
 
 private val logger = KotlinLogging.logger {}
 
@@ -54,7 +55,7 @@ internal class FileStoreImpl<T>(
             _flow.emit(file.successfulWithProgress())
         } catch (e: Exception) {
             currentCoroutineContext().ensureActive()
-            delay(100) // If another update happens within 100ms, the failure will be canceled
+            delay(100.milliseconds) // If another update happens within 100ms, the failure will be canceled
             logger.error(e) { "Failed to read data from $filePath" }
             val error = when (e) {
                 is IOException -> FileStoreError.IO

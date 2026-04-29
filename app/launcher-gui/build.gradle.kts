@@ -59,7 +59,7 @@ compose.desktop {
         mainClass = "app.vercors.launcher.gui.MainKt"
 
         nativeDistributions {
-            targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
+            targetFormats(*TargetFormat.entries.toTypedArray())
             packageName = "app.vercors.launcher"
             packageVersion = "1.0.0"
         }

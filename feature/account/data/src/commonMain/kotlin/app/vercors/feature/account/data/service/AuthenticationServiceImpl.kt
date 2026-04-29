@@ -28,6 +28,7 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.*
 import kotlinx.serialization.json.*
 import kotlin.io.encoding.Base64
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.uuid.Uuid
 
 private val logger = KotlinLogging.logger {}
@@ -120,7 +121,7 @@ class AuthenticationServiceImpl(
                         call.respondText("Error: Authentication failed")
                         send(AuthorizationCodeResult.Error("Error", "Authentication failed"))
                     }
-                    delay(100)
+                    delay(100.milliseconds)
                     awaitJob.complete()
                 }
             }
