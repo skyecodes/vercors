@@ -59,7 +59,7 @@ fun App(
                         )
                         Row {
                             AppMenu(
-                                currentBackStackEntry = navStack.topRecord?.screen as? Screen,
+                                currentBackStackEntry = navStack.currentRecord?.screen as? Screen,
                                 isDrawerOpen = state.config.menuDrawerOpen,
                                 onToggleDrawerClick = { eventSink(AppEvent.ToggleDrawer) },
                                 onMenuButtonClick = { navigator.goTo(it) }
