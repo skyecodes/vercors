@@ -3,14 +3,17 @@ package app.vercors.feature.theme.data.dto
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class ThemeJsonData(
+data class ThemeDefinitionData(
     val id: String,
     val displayName: String,
-    val colors: ThemeColorsJsonData,
+    val isDark: Boolean,
+    val colors: ThemeColorsData,
+    val accents: List<ThemeNamedColorData>,
+    val defaultAccent: String,
 )
 
 @Serializable
-data class ThemeColorsJsonData(
+data class ThemeColorsData(
     val background: String,
     val backgroundAlt: String,
     val onBackground: String,
@@ -23,4 +26,11 @@ data class ThemeColorsJsonData(
     val warn: String,
     val surface: String,
     val surface2: String,
+)
+
+@Serializable
+data class ThemeNamedColorData(
+    val id: String,
+    val name: String,
+    val color: String,
 )

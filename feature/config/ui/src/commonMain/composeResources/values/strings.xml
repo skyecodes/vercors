@@ -1,0 +1,9 @@
+<resources>
+    <string name="ui">UI</string>
+    <string name="theme">Theme</string>
+    <string name="themeDesc">The UI theme of the application.</string>
+    <string name="accent">Accent</string>
+    <string name="accentDesc">The accent color used in the application.</string>
+    <string name="animations">Animations</string>
+    <string name="animationsDesc">Whether animations are enabled in the application.</string>
+</resources>

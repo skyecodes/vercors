@@ -1,26 +1,23 @@
 package app.vercors.feature.theme.data.mapper
 
-import app.vercors.feature.theme.data.dto.ThemeJsonData
-import app.vercors.feature.theme.domain.model.AppThemeDefinition
-import app.vercors.feature.theme.domain.model.ThemeColors
-import app.vercors.feature.theme.domain.model.ThemeId
-import app.vercors.feature.theme.domain.model.ThemeSource
+import app.vercors.feature.theme.data.dto.ThemeDefinitionData
+import app.vercors.feature.theme.domain.model.*
 import arrow.core.raise.context.Raise
 import arrow.core.raise.context.raise
 
-sealed interface ThemeParseError {
-    data class InvalidId(val id: String) : ThemeParseError
-    data class InvalidColor(val field: String, val value: String) : ThemeParseError
+sealed interface ThemeError {
+    data class InvalidId(val id: String) : ThemeError
+    data class InvalidColor(val field: String, val value: String) : ThemeError
 }
 
-context(raise: Raise<ThemeParseError>)
-fun ThemeJsonData.toDomain(source: ThemeSource): AppThemeDefinition {
-    if (id.isBlank()) raise(ThemeParseError.InvalidId(id))
+context(raise: Raise<ThemeError>)
+fun ThemeDefinitionData.toDomain(source: ThemeSource): ThemeDefinition {
+    if (id.isBlank()) raise(ThemeError.InvalidId(id))
 
-    return AppThemeDefinition(
-        id = ThemeId(id),
+    return ThemeDefinition(
+        id = id,
         displayName = displayName.ifBlank { id },
-        source = source,
+        isDark = isDark,
         colors = ThemeColors(
             background = parseColor("background", colors.background),
             backgroundAlt = parseColor("backgroundAlt", colors.backgroundAlt),
@@ -34,17 +31,32 @@ fun ThemeJsonData.toDomain(source: ThemeSource): AppThemeDefinition {
             warn = parseColor("warn", colors.warn),
             surface = parseColor("surface", colors.surface),
             surface2 = parseColor("surface2", colors.surface2),
-        )
+        ),
+        accents = accents.map {
+            ThemeNamedColor(
+                id = it.id,
+                name = it.name,
+                color = parseColorArgb("accents.$id", it.color),
+            )
+        },
+        defaultAccent = defaultAccent,
+        source = source
     )
 }
 
-context(raise: Raise<ThemeParseError>)
-private fun parseColor(field: String, hex: String): Long {
+context(raise: Raise<ThemeError>)
+private fun parseColor(field: String, value: String): ThemeColor = when {
+    value.startsWith("#") -> parseColorArgb(field, value)
+    value.startsWith("$") -> ThemeColor.Named(value.removePrefix("$"))
+    else -> raise(ThemeError.InvalidColor(field, value))
+}
+
+context(raise: Raise<ThemeError>)
+private fun parseColorArgb(field: String, hex: String): ThemeColor.Argb {
     val cleaned = hex.removePrefix("#")
-    val argb = when (cleaned.length) {
-        6 -> (0xFF000000 or cleaned.toLong(16))
-        8 -> cleaned.toLong(16)
-        else -> raise(ThemeParseError.InvalidColor(field, hex))
+    return when (cleaned.length) {
+        6 -> ThemeColor.Argb(0xFF000000 or cleaned.toLong(16))
+        8 -> ThemeColor.Argb(cleaned.toLong(16))
+        else -> raise(ThemeError.InvalidColor(field, hex))
     }
-    return argb
 }

@@ -1,11 +1,12 @@
 {
   "id": "catppuccin_latte",
   "displayName": "Catppuccin Latte",
+  "isDark": false,
   "colors": {
     "background": "#EFF1F5",
     "backgroundAlt": "#E6E9EF",
     "onBackground": "#4C4F69",
-    "primary": "#8839EF",
+    "primary": "$accent",
     "onPrimary": "#DCE0E8",
     "error": "#D20F39",
     "onError": "#DCE0E8",
@@ -14,5 +15,78 @@
     "warn": "#FE640B",
     "surface": "#CCD0DA",
     "surface2": "#BCC0CC"
-  }
+  },
+  "accents": [
+    {
+      "id": "rosewater",
+      "name": "Rosewater",
+      "color": "#DC8A78"
+    },
+    {
+      "id": "flamingo",
+      "name": "Flamingo",
+      "color": "#DD7878"
+    },
+    {
+      "id": "pink",
+      "name": "Pink",
+      "color": "#EA76CB"
+    },
+    {
+      "id": "mauve",
+      "name": "Mauve",
+      "color": "#8839EF"
+    },
+    {
+      "id": "red",
+      "name": "Red",
+      "color": "#D20F39"
+    },
+    {
+      "id": "maroon",
+      "name": "Maroon",
+      "color": "#E64553"
+    },
+    {
+      "id": "peach",
+      "name": "Peach",
+      "color": "#FE640B"
+    },
+    {
+      "id": "yellow",
+      "name": "Yellow",
+      "color": "#DF8E1D"
+    },
+    {
+      "id": "green",
+      "name": "Green",
+      "color": "#40A02B"
+    },
+    {
+      "id": "teal",
+      "name": "Teal",
+      "color": "#179299"
+    },
+    {
+      "id": "sky",
+      "name": "Sky",
+      "color": "#04A5E5"
+    },
+    {
+      "id": "sapphire",
+      "name": "Sapphire",
+      "color": "#209FB5"
+    },
+    {
+      "id": "blue",
+      "name": "Blue",
+      "color": "#1E66F5"
+    },
+    {
+      "id": "lavender",
+      "name": "Lavender",
+      "color": "#7287FD"
+    }
+  ],
+  "defaultAccent": "mauve"
 }

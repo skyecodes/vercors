@@ -1,6 +1,6 @@
 package app.vercors.feature.theme.data.datasource
 
-import app.vercors.feature.theme.data.dto.ThemeJsonData
+import app.vercors.feature.theme.data.dto.ThemeDefinitionData
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
@@ -17,7 +17,7 @@ class BuiltinThemeDataSource(
     private val loader: BuiltinThemeResourceLoader,
     private val json: Json,
 ) {
-    suspend fun loadAll(): List<ThemeJsonData> {
+    suspend fun loadAll(): List<ThemeDefinitionData> {
         val indexText = loader.loadResourceFromPath("$THEME_DIRECTORY/$THEME_INDEX_FILE_NAME") ?: return emptyList()
         val index = runCatching {
             json.decodeFromString(ListSerializer(String.serializer()), indexText)
@@ -26,7 +26,7 @@ class BuiltinThemeDataSource(
         return index.mapNotNull { fileName ->
             val text = loader.loadResourceFromPath("$THEME_DIRECTORY/$fileName") ?: return@mapNotNull null
             runCatching {
-                json.decodeFromString(ThemeJsonData.serializer(), text)
+                json.decodeFromString(ThemeDefinitionData.serializer(), text)
             }.getOrNull()
         }
     }

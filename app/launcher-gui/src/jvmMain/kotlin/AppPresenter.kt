@@ -37,15 +37,17 @@ class AppPresenter(
         val themes by observeThemes().collectProgressiveAsState()
 
         val cfg = config.valueOrNull
-        val catalog = themes.valueOrNull
-        val active = cfg?.let { c ->
-            catalog?.byId?.get(c.selectedThemeId)
-                ?: catalog?.byId?.get(Configuration.DEFAULT_THEME_ID)
+        val themeCatalog = themes.valueOrNull
+        val theme = cfg?.let { c ->
+            themeCatalog?.byId?.get(c.selectedThemeId)
+                ?: themeCatalog?.byId?.get(Configuration.DEFAULT_THEME_ID)
         }
+        val accent = theme?.accents?.find { it.id == cfg.selectedAccent }?.color?.value
 
         return AppState(
             config = cfg,
-            activeTheme = active,
+            theme = theme,
+            accentColor = accent,
             isMinimized = screen.isMinimized,
             onWindowEvent = screen.onWindowEvent
         ) + {

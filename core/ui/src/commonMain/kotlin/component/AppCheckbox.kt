@@ -23,7 +23,7 @@ import com.composeunstyled.theme.Theme
 
 @Composable
 fun AppCheckbox(
-    label: String,
+    label: String? = null,
     checked: Boolean,
     invert: Boolean = false,
     modifier: Modifier = Modifier,
@@ -41,7 +41,7 @@ fun AppCheckbox(
             onClick = { onCheckedChange(!checked) }
         )
     ) {
-        if (!invert) AppText(label)
+        if (label != null && !invert) AppText(label)
         UnstyledCheckbox(
             checked = checked,
             onCheckedChange = onCheckedChange,
@@ -55,6 +55,6 @@ fun AppCheckbox(
                 contentDescription = null,
             )
         }
-        if (invert) AppText(label)
+        if (label != null && invert) AppText(label)
     }
 }

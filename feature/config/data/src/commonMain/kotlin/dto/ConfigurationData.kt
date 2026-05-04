@@ -14,7 +14,8 @@ data class ConfigurationData(
     val animations: Boolean,
     val preferredPlatform: String,
     val homeCategories: List<HomeCategoryConfigData>,
-    val selectedThemeId: String
+    val selectedThemeId: String,
+    val selectedAccent: String
 )
 
 internal fun ConfigurationData.toDomain(): Configuration = Configuration(
@@ -26,6 +27,7 @@ internal fun ConfigurationData.toDomain(): Configuration = Configuration(
     preferredPlatform = preferredPlatform,
     homeCategories = homeCategories.map { it.toDomain() },
     selectedThemeId = selectedThemeId,
+    selectedAccent = selectedAccent,
 )
 
 internal fun Configuration.toData(): ConfigurationData = ConfigurationData(
@@ -37,6 +39,7 @@ internal fun Configuration.toData(): ConfigurationData = ConfigurationData(
     preferredPlatform = preferredPlatform,
     homeCategories = homeCategories.map { it.toData() },
     selectedThemeId = selectedThemeId,
+    selectedAccent = selectedAccent,
 )
 
 @Serializable

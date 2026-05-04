@@ -2,13 +2,12 @@ package app.vercors.feature.theme.data.repository
 
 import app.vercors.core.domain.ProgressiveStateFlow
 import app.vercors.core.domain.progressiveStateIn
-import app.vercors.feature.theme.data.builtin.BuiltInThemes
 import app.vercors.feature.theme.data.datasource.BuiltinThemeDataSource
 import app.vercors.feature.theme.data.datasource.CustomThemeDataSource
-import app.vercors.feature.theme.data.mapper.ThemeParseError
+import app.vercors.feature.theme.data.mapper.ThemeError
 import app.vercors.feature.theme.data.mapper.toDomain
-import app.vercors.feature.theme.domain.model.AppThemeDefinition
 import app.vercors.feature.theme.domain.model.ThemeCatalog
+import app.vercors.feature.theme.domain.model.ThemeDefinition
 import app.vercors.feature.theme.domain.model.ThemeSource
 import app.vercors.feature.theme.domain.repository.ThemeRepository
 import arrow.core.raise.recover
@@ -19,7 +18,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flow
 import opensavvy.state.progressive.map
-import opensavvy.state.progressive.valueOrNull
 
 @SingleIn(AppScope::class)
 @ContributesBinding(AppScope::class)
@@ -31,11 +29,11 @@ class ThemeRepositoryImpl(
     private val builtinMapFlow = flow {
         val builtins = builtinDataSource.loadAll()
             .mapNotNull {
-                recover<ThemeParseError, AppThemeDefinition?>({
-                    it.toDomain(source = ThemeSource.BuiltIn)
+                recover<ThemeError, ThemeDefinition?>({
+                    it.toDomain(source = ThemeSource.Builtin)
                 }) { null }
             }
-            .associateBy { it.id.value }
+            .associateBy { it.id }
         emit(builtins)
     }
 
@@ -44,12 +42,12 @@ class ThemeRepositoryImpl(
             customOutcome.map { fileMap ->
                 val customMap = fileMap.values
                     .mapNotNull {
-                        recover<ThemeParseError, AppThemeDefinition?>({
+                        recover<ThemeError, ThemeDefinition?>({
                             it.getOrNull()?.toDomain(source = ThemeSource.Custom)
                         }) { null }
                     }
-                    .filterNot { it.id.value in builtinMap.keys } // built-ins win
-                    .associateBy { it.id.value }
+                    .filterNot { it.id in builtinMap.keys } // built-ins win
+                    .associateBy { it.id }
 
                 val merged = builtinMap + customMap
                 ThemeCatalog(
@@ -58,9 +56,4 @@ class ThemeRepositoryImpl(
                 )
             }
         }.progressiveStateIn(coroutineScope)
-
-    override fun resolveTheme(selectedThemeId: String): AppThemeDefinition {
-        val current = catalog.value.valueOrNull?.byId.orEmpty()
-        return current[selectedThemeId] ?: BuiltInThemes.catppuccinMocha
-    }
 }
