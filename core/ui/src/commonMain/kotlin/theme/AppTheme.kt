@@ -1,6 +1,14 @@
 package app.vercors.core.ui.theme
 
+import androidx.compose.animation.animateColor
+import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.Transition
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.updateTransition
 import androidx.compose.foundation.text.selection.TextSelectionColors
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
@@ -44,14 +52,14 @@ val label = ThemeToken<TextStyle>("label")
 val console = ThemeToken<TextStyle>("console")
 
 fun AppTheme(themeColors: ThemeColors, accentColor: Long) = buildTheme {
-    fun ThemeColor.toColor(): Color = when (this) {
-        is ThemeColor.Argb -> Color(value)
-        is ThemeColor.Named -> when (name) {
-            "accent" -> Color(accentColor)
-            else -> Color(0xFF000000)
-        }
+    val convertedThemeColors = remember(themeColors, accentColor) {
+        themeColors.toColor(accentColor)
     }
 
+    val animatedColors = updateTransition(
+        targetState = convertedThemeColors,
+        label = "themeTransition"
+    ).animateThemeColors()
 
     val fontFamily = FontFamily(
         Font(CoreRes.font.Inter, weight = FontWeight.Normal),
@@ -67,30 +75,17 @@ fun AppTheme(themeColors: ThemeColors, accentColor: Long) = buildTheme {
     )
 
     defaultIndication = rememberRippleIndication()
-    defaultContentColor = themeColors.onBackground.toColor()
+    defaultContentColor = animatedColors.onBackgroundColor
     defaultTextSelectionColors = TextSelectionColors(
-        handleColor = themeColors.primary.toColor(),
-        backgroundColor = themeColors.primary.toColor().copy(alpha = 0.4f),
+        handleColor = animatedColors.primaryColor,
+        backgroundColor = animatedColors.primaryColor.copy(alpha = 0.4f),
     )
     defaultTextStyle = TextStyle(
         fontFamily = fontFamily,
         fontSize = 14.sp
     )
 
-    properties[colors] = mapOf(
-        background to themeColors.background.toColor(),
-        backgroundAlt to themeColors.backgroundAlt.toColor(),
-        onBackground to themeColors.onBackground.toColor(),
-        primary to themeColors.primary.toColor(),
-        onPrimary to themeColors.onPrimary.toColor(),
-        error to themeColors.error.toColor(),
-        onError to themeColors.onError.toColor(),
-        success to themeColors.success.toColor(),
-        onSuccess to themeColors.onSuccess.toColor(),
-        warn to themeColors.warn.toColor(),
-        surface to themeColors.surface.toColor(),
-        surface2 to themeColors.surface2.toColor(),
-    )
+    properties[colors] = animatedColors.toThemeMap()
 
     properties[fonts] = mapOf(
         standard to fontFamily,
@@ -123,3 +118,87 @@ fun AppTheme(themeColors: ThemeColors, accentColor: Long) = buildTheme {
         )
     )
 }
+
+private fun ThemeColors.toColor(accentColor: Long) = ConvertedThemeColors(
+    backgroundColor = background.toColor(accentColor),
+    backgroundAltColor = backgroundAlt.toColor(accentColor),
+    onBackgroundColor = onBackground.toColor(accentColor),
+    primaryColor = primary.toColor(accentColor),
+    onPrimaryColor = onPrimary.toColor(accentColor),
+    errorColor = error.toColor(accentColor),
+    onErrorColor = onError.toColor(accentColor),
+    successColor = success.toColor(accentColor),
+    onSuccessColor = onSuccess.toColor(accentColor),
+    warnColor = warn.toColor(accentColor),
+    surfaceColor = surface.toColor(accentColor),
+    surface2Color = surface2.toColor(accentColor),
+)
+
+private fun ThemeColor.toColor(accentColor: Long): Color = when (this) {
+    is ThemeColor.Argb -> Color(value)
+    is ThemeColor.Named -> when (name) {
+        "accent" -> Color(accentColor)
+        else -> Color(0xFF000000)
+    }
+}
+
+@Composable
+private fun Transition<ConvertedThemeColors>.animateThemeColors(): ConvertedThemeColors {
+    @Composable
+    fun animate(
+        label: String,
+        targetValue: @Composable (ConvertedThemeColors) -> Color,
+    ): Color {
+        val color by animateColor(
+            label = label,
+            transitionSpec = { tween(durationMillis = 500, easing = LinearOutSlowInEasing) },
+            targetValueByState = targetValue,
+        )
+        return color
+    }
+
+    return ConvertedThemeColors(
+        backgroundColor = animate("background") { it.backgroundColor },
+        backgroundAltColor = animate("backgroundAlt") { it.backgroundAltColor },
+        onBackgroundColor = animate("onBackground") { it.onBackgroundColor },
+        primaryColor = animate("primary") { it.primaryColor },
+        onPrimaryColor = animate("onPrimary") { it.onPrimaryColor },
+        errorColor = animate("error") { it.errorColor },
+        onErrorColor = animate("onError") { it.onErrorColor },
+        successColor = animate("success") { it.successColor },
+        onSuccessColor = animate("onSuccess") { it.onSuccessColor },
+        warnColor = animate("warn") { it.warnColor },
+        surfaceColor = animate("surface") { it.surfaceColor },
+        surface2Color = animate("surface2") { it.surface2Color },
+    )
+}
+
+private fun ConvertedThemeColors.toThemeMap() = mapOf(
+    background to backgroundColor,
+    backgroundAlt to backgroundAltColor,
+    onBackground to onBackgroundColor,
+    primary to primaryColor,
+    onPrimary to onPrimaryColor,
+    error to errorColor,
+    onError to onErrorColor,
+    success to successColor,
+    onSuccess to onSuccessColor,
+    warn to warnColor,
+    surface to surfaceColor,
+    surface2 to surface2Color,
+)
+
+private data class ConvertedThemeColors(
+    val backgroundColor: Color,
+    val backgroundAltColor: Color,
+    val onBackgroundColor: Color,
+    val primaryColor: Color,
+    val onPrimaryColor: Color,
+    val errorColor: Color,
+    val onErrorColor: Color,
+    val successColor: Color,
+    val onSuccessColor: Color,
+    val warnColor: Color,
+    val surfaceColor: Color,
+    val surface2Color: Color,
+)
