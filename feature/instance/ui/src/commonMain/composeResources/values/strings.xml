@@ -32,4 +32,6 @@
     <string name="errorGameVersion">Failed to load game version: %1$s</string>
     <string name="errorNotFound">Instance with ID "%1$s" not found</string>
     <string name="errorLoading">Instance with ID "%1$s" failed to load: %2$s</string>
+
+    <string name="deleteInstanceConfirmation">Are you sure you want to delete this instance?\nAll instance data (worlds, mods, etc.) will be permanently removed.</string>
 </resources>

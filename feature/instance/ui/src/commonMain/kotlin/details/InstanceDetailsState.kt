@@ -9,6 +9,7 @@ import kotlin.time.Instant
 @Immutable
 data class InstanceDetailsState(
     val instance: ProgressiveOutcome<InstanceError, InstanceView>,
+    val promptDeleteConfirmation: Boolean,
     val logs: List<InstanceLogEventView>?,
 )
 

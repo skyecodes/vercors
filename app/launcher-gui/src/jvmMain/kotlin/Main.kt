@@ -13,7 +13,6 @@ import com.slack.circuit.foundation.Circuit
 import com.slack.circuit.foundation.CircuitCompositionLocals
 import com.slack.circuit.foundation.CircuitContent
 import com.slack.circuit.foundation.animation.AnimatedNavDecorator
-import com.slack.circuit.overlay.ContentWithOverlays
 import com.slack.circuit.runtime.ExperimentalCircuitApi
 import com.slack.circuit.runtime.navigation.NavArgument
 import com.slack.circuit.runtime.presenter.Presenter
@@ -64,25 +63,23 @@ fun main() {
 
             CompositionLocalProvider(LocalAppWindowScope provides this) {
                 CircuitCompositionLocals(appGraph.circuit) {
-                    ContentWithOverlays {
-                        CircuitContent(
-                            AppScreen(
-                                isMinimized = windowState.placement != WindowPlacement.Maximized,
-                                onWindowEvent = {
-                                    when (it) {
-                                        AppWindowEvent.Close -> exitApplication()
-                                        AppWindowEvent.Maximize -> windowState.placement =
-                                            when (windowState.placement) {
-                                                WindowPlacement.Floating -> WindowPlacement.Maximized
-                                                else -> WindowPlacement.Floating
-                                            }
+                    CircuitContent(
+                        AppScreen(
+                            isMinimized = windowState.placement != WindowPlacement.Maximized,
+                            onWindowEvent = {
+                                when (it) {
+                                    AppWindowEvent.Close -> exitApplication()
+                                    AppWindowEvent.Maximize -> windowState.placement =
+                                        when (windowState.placement) {
+                                            WindowPlacement.Floating -> WindowPlacement.Maximized
+                                            else -> WindowPlacement.Floating
+                                        }
 
-                                        AppWindowEvent.Minimize -> windowState.isMinimized = true
-                                    }
+                                    AppWindowEvent.Minimize -> windowState.isMinimized = true
                                 }
-                            )
+                            }
                         )
-                    }
+                    )
                 }
             }
         }

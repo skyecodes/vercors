@@ -10,4 +10,5 @@ sealed interface InstanceDetailsEvent : Event {
     data object Stop : InstanceDetailsEvent
     data object Kill : InstanceDetailsEvent
     data object Delete : InstanceDetailsEvent
+    data class ConfirmDelete(val result: Boolean) : InstanceDetailsEvent
 }

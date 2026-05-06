@@ -23,11 +23,13 @@ import app.vercors.core.ui.modifier.appCard
 import app.vercors.core.ui.theme.*
 import app.vercors.feature.instance.domain.model.InstanceStatus
 import app.vercors.feature.instance.ui.*
+import app.vercors.feature.instance.ui.delete.ConfirmDeleteDialog
 import app.vercors.shared.ui.*
 import com.composables.icons.lucide.*
 import com.composeunstyled.ProvideTextStyle
 import com.composeunstyled.theme.Theme
 import com.slack.circuit.codegen.annotations.CircuitInject
+import com.slack.circuit.overlay.OverlayEffect
 import com.slack.circuit.sharedelements.SharedElementTransitionScope
 import dev.zacsweers.metro.AppScope
 import kotlinx.datetime.LocalDateTime
@@ -58,6 +60,13 @@ fun InstanceDetails(
         }
         state.instance.onIncomplete {
             AppLoading()
+        }
+
+        if (state.promptDeleteConfirmation) {
+            OverlayEffect {
+                val result = show(ConfirmDeleteDialog())
+                eventSink(InstanceDetailsEvent.ConfirmDelete(result))
+            }
         }
     }
 }

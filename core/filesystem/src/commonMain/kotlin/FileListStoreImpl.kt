@@ -98,7 +98,7 @@ internal class FileListStoreImpl<T>(
         mutex.withLock {
             if (event.type == FileEvent.Type.DELETE) {
                 _flow.update { outcome ->
-                    outcome.map { it - event.path.name }
+                    outcome.map { it - event.path.instanceKey }
                 }
             } else {
                 val result = readFileData(event.path)
@@ -110,7 +110,7 @@ internal class FileListStoreImpl<T>(
     }
 
     private suspend fun readFileData(filePath: Path): Pair<String, Either<FileStoreError, T>> =
-        filePath.name.removeSuffix(".json") to either {
+        filePath.instanceKey to either {
             try {
                 logger.debug { "Reading data from $filePath" }
                 filePath.readJson(serializer, json)
@@ -137,6 +137,8 @@ internal class FileListStoreImpl<T>(
         logger.debug { "Deleting file at $filePath" }
         filePath.delete()
     }
+
+    val Path.instanceKey: String get() = name.removeSuffix(".json")
 }
 
 @SingleIn(AppScope::class)

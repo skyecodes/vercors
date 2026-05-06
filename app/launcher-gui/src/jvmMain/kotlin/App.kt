@@ -24,6 +24,7 @@ import com.slack.circuit.codegen.annotations.CircuitInject
 import com.slack.circuit.foundation.NavigableCircuitContent
 import com.slack.circuit.foundation.navstack.rememberSaveableNavStack
 import com.slack.circuit.foundation.rememberCircuitNavigator
+import com.slack.circuit.overlay.ContentWithOverlays
 import com.slack.circuit.runtime.Navigator
 import com.slack.circuit.runtime.navigation.NavStack
 import com.slack.circuit.sharedelements.SharedElementTransitionLayout
@@ -43,31 +44,33 @@ fun App(
                 themeColors = state.theme.colors,
                 accentColor = state.accentColor
             )) {
-                Box(
-                    modifier = modifier.fillMaxSize()
-                ) {
-                    Column(
-                        modifier = Modifier.fillMaxSize().background(Theme[colors][backgroundAlt])
+                ContentWithOverlays {
+                    Box(
+                        modifier = modifier.fillMaxSize()
                     ) {
-                        val navStack = rememberSaveableNavStack(root = HomeScreen)
-                        val navigator = rememberCircuitNavigator(navStack) {}
+                        Column(
+                            modifier = Modifier.fillMaxSize().background(Theme[colors][backgroundAlt])
+                        ) {
+                            val navStack = rememberSaveableNavStack(root = HomeScreen)
+                            val navigator = rememberCircuitNavigator(navStack) {}
 
-                        AppTopBar(
-                            canGoBack = navStack.currentRecord != navStack.rootRecord,
-                            canGoNext = navStack.currentRecord != navStack.topRecord,
-                            isMinimized = state.isMinimized,
-                            onWindowEvent = state.onWindowEvent,
-                            onNavigateBack = { navigator.backward() },
-                            onNavigateNext = { navigator.forward() }
-                        )
-                        Row {
-                            AppMenu(
-                                currentBackStackEntry = navStack.currentRecord?.screen as? Screen,
-                                isDrawerOpen = state.config.menuDrawerOpen,
-                                onToggleDrawerClick = { eventSink(AppEvent.ToggleDrawer) },
-                                onMenuButtonClick = { navigator.goTo(it) }
+                            AppTopBar(
+                                canGoBack = navStack.currentRecord != navStack.rootRecord,
+                                canGoNext = navStack.currentRecord != navStack.topRecord,
+                                isMinimized = state.isMinimized,
+                                onWindowEvent = state.onWindowEvent,
+                                onNavigateBack = { navigator.backward() },
+                                onNavigateNext = { navigator.forward() }
                             )
-                            AppContent(navStack, navigator)
+                            Row {
+                                AppMenu(
+                                    currentBackStackEntry = navStack.currentRecord?.screen as? Screen,
+                                    isDrawerOpen = state.config.menuDrawerOpen,
+                                    onToggleDrawerClick = { eventSink(AppEvent.ToggleDrawer) },
+                                    onMenuButtonClick = { navigator.goTo(it) }
+                                )
+                                AppContent(navStack, navigator)
+                            }
                         }
                     }
                 }
