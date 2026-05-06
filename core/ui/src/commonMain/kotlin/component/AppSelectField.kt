@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
@@ -62,11 +63,15 @@ fun <T> AppSelectField(
                 AppButton(
                     onClick = { expanded = !expanded },
                     backgroundColor = backgroundColor,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    itemRenderer(value, true)
-                    Spacer(Modifier.weight(1f))
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        itemRenderer(value, true)
+                    }
                     AppIcon(
                         imageVector = if (expanded) Lucide.ChevronUp else Lucide.ChevronDown,
                         contentDescription = null

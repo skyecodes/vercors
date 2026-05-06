@@ -30,6 +30,7 @@ import com.composables.icons.lucide.Star
 import com.composeunstyled.theme.Theme
 import com.slack.circuit.codegen.annotations.CircuitInject
 import dev.zacsweers.metro.AppScope
+import opensavvy.state.progressive.valueOrNull
 import org.jetbrains.compose.resources.stringResource
 
 @CircuitInject(CreateInstanceScreen::class, AppScope::class)
@@ -39,10 +40,6 @@ fun CreateInstance(
     modifier: Modifier = Modifier,
 ) {
     val (state, eventSink) = store
-
-    LaunchedEffect(state.validationErrors) {
-
-    }
 
     with(eventSink) {
         Column(
@@ -124,6 +121,10 @@ private fun RowScope.CreateInstanceTypeButton(
 @Composable
 context(eventSink: EventSink<CreateInstanceEvent>)
 private fun CreateCustomInstanceView(state: CreateInstanceState) {
+    if (state.gameVersionList.valueOrNull != null) LaunchedEffect(state.gameVersionList) {
+        eventSink(CreateInstanceEvent.OnGameVersionChange(state.gameVersionList.valueOrNull?.firstOrNull { it.isLatestRelease }))
+    }
+
     AppForm {
         AppTextField(
             label = stringResource(InstanceRes.string.instanceName),
