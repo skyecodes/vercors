@@ -12,6 +12,7 @@ dependencies {
     commonMainImplementation(projects.feature.account.command)
     commonMainImplementation(projects.feature.account.domain)
     commonMainImplementation(projects.feature.account.data)
+    commonMainImplementation(projects.feature.config.command)
     commonMainImplementation(projects.feature.config.domain)
     commonMainImplementation(projects.feature.config.data)
     commonMainImplementation(projects.feature.game.domain)

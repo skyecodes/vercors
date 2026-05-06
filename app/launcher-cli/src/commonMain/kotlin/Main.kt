@@ -35,6 +35,7 @@ class MainCommand : SuspendingCliktCommand("vercors") {
         "run" to listOf("launch"),
         "d" to listOf("delete"),
         "rm" to listOf("delete"),
+        "conf" to listOf("config"),
     )
 
     override suspend fun run() = Unit
