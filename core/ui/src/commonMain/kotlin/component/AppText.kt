@@ -10,7 +10,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.TextUnit
 import com.composeunstyled.LocalTextStyle
-import com.composeunstyled.UnstyledText
+import com.composeunstyled.Text
 
 @Composable
 fun AppText(
@@ -29,7 +29,7 @@ fun AppText(
     maxLines: Int = if (singleLine) 1 else Int.MAX_VALUE,
     overflow: TextOverflow = TextOverflow.Clip
 ) {
-    UnstyledText(
+    Text(
         text = text,
         modifier = modifier,
         style = style,

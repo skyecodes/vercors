@@ -8,7 +8,3 @@ dependencies {
     commonMainImplementation(libs.ktorfit.lib)
     commonMainImplementation(libs.kotlinx.serialization.json)
 }
-
-ktorfit {
-    compilerPluginVersion.set("2.3.3")
-}

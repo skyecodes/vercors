@@ -2,18 +2,18 @@ package app.vercors.core.ui.component
 
 import androidx.compose.foundation.Indication
 import androidx.compose.foundation.LocalIndication
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.RowScope
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.painter.Painter
@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import app.vercors.core.ui.theme.button
 import app.vercors.core.ui.theme.textStyles
 import com.composeunstyled.LocalContentColor
+import com.composeunstyled.ProvideContentColor
 import com.composeunstyled.ProvideTextStyle
 import com.composeunstyled.UnstyledButton
 import com.composeunstyled.theme.Theme
@@ -53,23 +54,28 @@ fun AppButton(
     val hovered by interactionSource.collectIsHoveredAsState()
 
     ProvideTextStyle(textStyle) {
-        UnstyledButton(
-            onClick = onClick,
-            enabled = enabled,
-            shape = shape,
-            backgroundColor = if (enabled) backgroundColor else backgroundColor.copy(alpha = 0.5f),
-            contentColor = if (enabled) contentColor else contentColor.copy(alpha = 0.8f),
-            contentPadding = contentPadding,
-            borderColor = borderColor,
-            borderWidth = borderWidth,
-            modifier = modifier.then(if (hovered) Modifier.pointerHoverIcon(PointerIcon.Hand, true) else Modifier),
-            role = role,
-            indication = indication,
-            interactionSource = interactionSource,
-            horizontalArrangement = horizontalArrangement,
-            verticalAlignment = verticalAlignment,
-            content = content
-        )
+        ProvideContentColor(if (enabled) contentColor else contentColor.copy(alpha = 0.8f)) {
+            UnstyledButton(
+                onClick = onClick,
+                enabled = enabled,
+                contentPadding = contentPadding,
+                modifier = modifier
+                    .clip(shape)
+                    .background(if (enabled) backgroundColor else backgroundColor.copy(alpha = 0.5f))
+                    .border(borderWidth, borderColor, shape)
+                    .then(if (hovered) Modifier.pointerHoverIcon(PointerIcon.Hand, true) else Modifier),
+                role = role,
+                indication = indication,
+                interactionSource = interactionSource,
+                contentAlignment = Alignment.CenterStart
+            ) {
+                Row(
+                    horizontalArrangement = horizontalArrangement,
+                    verticalAlignment = verticalAlignment,
+                    content = content
+                )
+            }
+        }
     }
 }
 

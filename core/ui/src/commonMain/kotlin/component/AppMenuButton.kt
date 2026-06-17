@@ -1,9 +1,6 @@
 package app.vercors.core.ui.component
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -13,10 +10,7 @@ import androidx.compose.ui.unit.dp
 import app.vercors.core.ui.modifier.appCard
 import app.vercors.core.ui.theme.colors
 import app.vercors.core.ui.theme.surface2
-import com.composeunstyled.DropdownPanelAnchor
-import com.composeunstyled.LocalContentColor
-import com.composeunstyled.UnstyledDropdownMenu
-import com.composeunstyled.UnstyledDropdownMenuPanel
+import com.composeunstyled.*
 import com.composeunstyled.theme.Theme
 
 @Composable
@@ -32,10 +26,22 @@ fun AppMenuButton(
 ) = with(object : AppMenuScope {
     override var expanded by remember { mutableStateOf(false) }
 }) {
-    BoxWithConstraints(modifier = modifier) {
-        UnstyledDropdownMenu(
-            onExpandRequest = { expanded = true }
-        ) {
+    UnstyledDropdownMenu(
+        modifier = modifier,
+        expanded = expanded,
+        onExpandedChange = { expanded = it },
+        side = anchor.side,
+        alignment = anchor.alignment,
+        panel = {
+            DropdownMenuPanel(
+                modifier = menuModifier.appCard(backgroundColor = Theme[colors][surface2])
+                    //.widthIn(min = minWidth, max = maxWidth)
+                    .width(IntrinsicSize.Max),
+            ) {
+                menuContent()
+            }
+        },
+        anchor = {
             AppIconTextButton(
                 onClick = { expanded = !expanded },
                 backgroundColor = backgroundColor,
@@ -44,17 +50,7 @@ fun AppMenuButton(
                 contentPadding = contentPadding,
             )
         }
-
-        UnstyledDropdownMenuPanel(
-            expanded = expanded,
-            onDismissRequest = { expanded = false },
-            modifier = menuModifier.appCard(backgroundColor = Theme[colors][surface2])
-                .widthIn(min = minWidth, max = maxWidth),
-            anchor = anchor.convert()
-        ) {
-            menuContent()
-        }
-    }
+    )
 }
 
 interface AppMenuScope {
@@ -79,20 +75,12 @@ fun AppMenuScope.AppMenuItem(
     )
 }
 
-sealed interface AppDropdownPanelAnchor {
-    data object TopStart : AppDropdownPanelAnchor
-    data object TopEnd : AppDropdownPanelAnchor
-    data object BottomStart : AppDropdownPanelAnchor
-    data object BottomEnd : AppDropdownPanelAnchor
-    data object CenterStart : AppDropdownPanelAnchor
-    data object CenterEnd : AppDropdownPanelAnchor
-}
-
-private fun AppDropdownPanelAnchor.convert(): DropdownPanelAnchor = when (this) {
-    AppDropdownPanelAnchor.BottomEnd -> DropdownPanelAnchor.BottomEnd
-    AppDropdownPanelAnchor.BottomStart -> DropdownPanelAnchor.BottomStart
-    AppDropdownPanelAnchor.CenterEnd -> DropdownPanelAnchor.CenterEnd
-    AppDropdownPanelAnchor.CenterStart -> DropdownPanelAnchor.CenterStart
-    AppDropdownPanelAnchor.TopEnd -> DropdownPanelAnchor.TopEnd
-    AppDropdownPanelAnchor.TopStart -> DropdownPanelAnchor.TopStart
+sealed class AppDropdownPanelAnchor(
+    val side: AnchorSide,
+    val alignment: AnchorAlignment
+) {
+    data object TopStart : AppDropdownPanelAnchor(AnchorSide.Top, AnchorAlignment.Start)
+    data object TopEnd : AppDropdownPanelAnchor(AnchorSide.Top, AnchorAlignment.End)
+    data object BottomStart : AppDropdownPanelAnchor(AnchorSide.Bottom, AnchorAlignment.Start)
+    data object BottomEnd : AppDropdownPanelAnchor(AnchorSide.Bottom, AnchorAlignment.End)
 }

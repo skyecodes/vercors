@@ -8,14 +8,18 @@ import com.slack.circuit.foundation.animation.AnimatedNavDecorator
 import com.slack.circuit.foundation.animation.AnimatedNavEvent
 import com.slack.circuit.foundation.animation.AnimatedNavState
 import com.slack.circuit.runtime.InternalCircuitApi
+import com.slack.circuit.runtime.Navigator
 import com.slack.circuit.runtime.navigation.NavArgument
 import com.slack.circuit.runtime.navigation.NavStackList
 
 class AppDecorator<T : NavArgument> : AnimatedNavDecorator<T, AppDecorator.AppAnimatedState<T>> {
-
     data class AppAnimatedState<T : NavArgument>(
         override val navStack: NavStackList<T>
     ) : AnimatedNavState
+
+    override fun updateNavigator(navigator: Navigator) {
+        // Unused
+    }
 
     override fun targetState(args: NavStackList<T>): AppAnimatedState<T> {
         return AppAnimatedState(args)
@@ -31,7 +35,6 @@ class AppDecorator<T : NavArgument> : AnimatedNavDecorator<T, AppDecorator.AppAn
         animatedNavEvent: AnimatedNavEvent
     ): ContentTransform {
         return fadeIn() togetherWith fadeOut() using SizeTransform(clip = false)
-
     }
 
     @Composable

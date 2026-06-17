@@ -1,11 +1,11 @@
 [versions]
 # General
-kotlin = "2.3.21"
-ksp = "2.3.7"
-coroutines = "1.10.2"
-arrow = "2.2.2.1"
+kotlin = "2.4.0"
+ksp = "2.3.9"
+coroutines = "1.11.0"
+arrow = "2.2.3"
 pedestal = "3.2.1"
-datetime = "0.7.1"
+datetime = "0.8.0"
 cryptography = "0.6.0"
 human-readable = "1.12.3"
 buildconfig = "6.0.7"
@@ -13,39 +13,39 @@ gradle-versions = "0.54.0"
 # Data
 serialization = "1.11.0"
 io = "0.9.0"
-ktor = "3.4.3"
-ktor-simple-cache = "0.70.2"
-spine = "0.10.1"
-ktorfit = "2.7.3"
+ktor = "3.5.0"
+ktor-simple-cache = "0.72.1"
+spine = "0.11.0"
+ktorfit = "2.7.5"
 kfswatch = "1.4.0"
 appdirs = "2.0.0"
-oshi = "6.12.0"
+oshi = "7.3.1"
 kzip = "1.1.1"
-xmlutil = "1.0.0-rc2"
+xmlutil = "1.0.0-rc3"
 # GUI
-compose = "1.11.0-beta03"
-compose-hot-reload = "1.1.0-rc01"
-lifecycle = "2.11.0-alpha03"
-navigation3 = "1.1.0"
-circuit = "0.33.1"
-material3 = "1.11.0-alpha07"
-unstyled = "1.49.9"
+compose = "1.12.0-alpha02"
+compose-hot-reload = "1.1.1"
+lifecycle = "2.11.0-beta02"
+navigation3 = "1.1.1"
+circuit = "0.34.0"
+material3 = "1.12.0-alpha01"
+unstyled = "2.7.0"
 icons = "2.2.1"
 ripple = "1.1.0"
-coil = "3.4.0"
+coil = "3.5.0"
 markdown-renderer = "0.38.1"
 webview = "2.0.3"
 # CLI
 clikt = "5.1.0"
 mordant = "3.0.2"
-graalvm = "1.1.0"
+graalvm = "1.1.2"
 # DI
-metro = "1.0.0"
+metro = "1.2.1"
 # Logging
-logback = "1.5.32"
-kotlin-logging = "8.0.01"
+logback = "1.5.34"
+kotlin-logging = "8.0.4"
 # Test
-mokkery = "3.3.0"
+mokkery = "3.4.1"
 turbine = "1.2.1"
 
 [libraries]
@@ -105,7 +105,7 @@ circuit-overlay = { module = "com.slack.circuit:circuit-overlay", version.ref = 
 circuit-codegen = { module = "com.slack.circuit:circuit-codegen", version.ref = "circuit" }
 circuit-codegen-annotations = { module = "com.slack.circuit:circuit-codegen-annotations", version.ref = "circuit" }
 compose-material3 = { module = "org.jetbrains.compose.material3:material3", version.ref = "material3" }
-composables-composeunstyled = { module = "com.composables:core", version.ref = "unstyled" }
+composables-composeunstyled = { module = "com.composables:composeunstyled-primitives", version.ref = "unstyled" }
 composables-composeunstyled-theming = { module = "com.composables:composeunstyled-theming", version.ref = "unstyled" }
 composables-ripple = { module = "com.composables:ripple-indication", version.ref = "ripple" }
 composables-icons-lucide = { module = "com.composables:icons-lucide-cmp", version.ref = "icons" }

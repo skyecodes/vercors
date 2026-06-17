@@ -22,7 +22,6 @@ import app.vercors.core.ui.theme.colors
 import app.vercors.core.ui.theme.onBackground
 import app.vercors.core.ui.theme.surface
 import app.vercors.core.ui.theme.surface2
-import com.composables.core.HorizontalSeparator
 import com.composables.icons.lucide.ChevronDown
 import com.composables.icons.lucide.ChevronUp
 import com.composables.icons.lucide.Lucide
@@ -42,24 +41,53 @@ fun <T> AppSelectField(
     search: String = "",
     onSearchChange: (String) -> Unit = {},
     modifier: Modifier = Modifier,
-    anchor: DropdownPanelAnchor = DropdownPanelAnchor.BottomStart
 ) {
     var expanded by remember { mutableStateOf(false) }
 
-    BoxWithConstraints(modifier = modifier) {
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        label?.let {
+            AppText(
+                text = it,
+                fontWeight = FontWeight.Medium
+            )
+        }
+
         UnstyledDropdownMenu(
-            onExpandRequest = { expanded = true },
-        ) {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                label?.let {
-                    AppText(
-                        text = it,
-                        fontWeight = FontWeight.Medium
+            expanded = expanded,
+            onExpandedChange = { expanded = it },
+            panel = {
+                DropdownMenuPanel(
+                    modifier = Modifier.appCard(backgroundColor = Theme[colors][surface2])
+                        //.widthIn(min = minWidth, max = maxWidth)
+                        .heightIn(max = 400.dp),
+                ) {
+                    if (searchable) {
+                        AppTextField(
+                            initialValue = search,
+                            placeholder = { AppText(stringResource(CoreRes.string.search)) },
+                            onValueChange = onSearchChange,
+                            imeAction = ImeAction.Search,
+                            backgroundColor = Color.Unspecified,
+                            shape = RectangleShape
+                        )
+
+                        UnstyledHorizontalSeparator(
+                            color = Theme[colors][onBackground]
+                        )
+                    }
+
+                    DropdownOptionList(
+                        value = value,
+                        items = items,
+                        onValueChange = { onValueChange(it); expanded = false },
+                        itemRenderer = itemRenderer
                     )
                 }
-
+            },
+            anchor = {
                 AppButton(
                     onClick = { expanded = !expanded },
                     backgroundColor = backgroundColor,
@@ -78,37 +106,7 @@ fun <T> AppSelectField(
                     )
                 }
             }
-        }
-
-        UnstyledDropdownMenuPanel(
-            expanded = expanded,
-            onDismissRequest = { expanded = false },
-            modifier = Modifier.appCard(backgroundColor = Theme[colors][surface2])
-                .widthIn(min = minWidth, max = maxWidth).heightIn(max = 400.dp),
-            anchor = anchor
-        ) {
-            if (searchable) {
-                AppTextField(
-                    initialValue = search,
-                    placeholder = { AppText(stringResource(CoreRes.string.search)) },
-                    onValueChange = onSearchChange,
-                    imeAction = ImeAction.Search,
-                    backgroundColor = Color.Unspecified,
-                    shape = RectangleShape
-                )
-
-                HorizontalSeparator(
-                    color = Theme[colors][onBackground]
-                )
-            }
-
-            DropdownOptionList(
-                value = value,
-                items = items,
-                onValueChange = { onValueChange(it); expanded = false },
-                itemRenderer = itemRenderer
-            )
-        }
+        )
     }
 }
 

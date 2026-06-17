@@ -1,8 +1,9 @@
 package app.vercors.core.ui.component
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.input.rememberTextFieldState
@@ -10,6 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.SolidColor
@@ -52,9 +54,8 @@ fun AppTextField(
     UnstyledTextField(
         state = state,
         modifier = modifier,
-        singleLine = true,
         cursorBrush = SolidColor(LocalContentColor.current),
-        editable = editable,
+        readOnly = !editable,
         onKeyboardAction = {
             onValueChange(state.text.toString())
             it()
@@ -74,9 +75,10 @@ fun AppTextField(
             }
 
             TextInput(
-                shape = shape,
-                backgroundColor = backgroundColor,
-                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 7.5.dp),
+                modifier = Modifier
+                    .clip(shape)
+                    .background(backgroundColor)
+                    .padding(horizontal = 8.dp, vertical = 7.5.dp),
                 placeholder = placeholder?.let {
                     { ProvideContentColor(LocalContentColor.current.copy(alpha = 0.66f), it) }
                 }
