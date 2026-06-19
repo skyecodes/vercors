@@ -10,6 +10,7 @@ dependencies {
 }
 
 buildConfig {
+    val microsoftClientId: Provider<String> = providers.gradleProperty("microsoftClientId")
     packageName("app.vercors.feature.account.data")
     useKotlinOutput {
         topLevelConstants = true
@@ -17,6 +18,6 @@ buildConfig {
     buildConfigField(
         type = "String",
         name = "MICROSOFT_CLIENT_ID",
-        expression = "\"${properties["microsoftClientId"] ?: System.getenv("MICROSOFT_CLIENT_ID") ?: error("MICROSOFT_CLIENT_ID not set")}\""
+        expression = "\"${microsoftClientId.orNull ?: System.getenv("MICROSOFT_CLIENT_ID") ?: error("MICROSOFT_CLIENT_ID not set")}\""
     )
 }
