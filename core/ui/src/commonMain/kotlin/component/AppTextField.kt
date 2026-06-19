@@ -1,12 +1,11 @@
 package app.vercors.core.ui.component
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.input.rememberTextFieldState
+import androidx.compose.foundation.text.selection.TextSelectionColors
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.snapshotFlow
@@ -19,11 +18,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import app.vercors.core.ui.theme.colors
+import app.vercors.core.ui.theme.primary
 import app.vercors.core.ui.theme.surface
-import com.composeunstyled.LocalContentColor
-import com.composeunstyled.ProvideContentColor
-import com.composeunstyled.TextInput
-import com.composeunstyled.UnstyledTextField
+import com.composeunstyled.*
 import com.composeunstyled.theme.Theme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
@@ -53,7 +50,7 @@ fun AppTextField(
 
     UnstyledTextField(
         state = state,
-        modifier = modifier,
+        modifier = modifier.width(IntrinsicSize.Max),
         cursorBrush = SolidColor(LocalContentColor.current),
         readOnly = !editable,
         onKeyboardAction = {
@@ -62,6 +59,12 @@ fun AppTextField(
         },
         keyboardOptions = KeyboardOptions(
             imeAction = imeAction
+        ),
+        textStyle = LocalTextStyle.current,
+        textColor = LocalContentColor.current,
+        selectionColors = TextSelectionColors(
+            handleColor = Theme[colors][primary],
+            backgroundColor = Theme[colors][primary].copy(alpha = 0.2f),
         )
     ) {
         Column(
@@ -78,7 +81,8 @@ fun AppTextField(
                 modifier = Modifier
                     .clip(shape)
                     .background(backgroundColor)
-                    .padding(horizontal = 8.dp, vertical = 7.5.dp),
+                    .padding(horizontal = 8.dp, vertical = 6.5.dp)
+                    .fillMaxWidth(),
                 placeholder = placeholder?.let {
                     { ProvideContentColor(LocalContentColor.current.copy(alpha = 0.66f), it) }
                 }

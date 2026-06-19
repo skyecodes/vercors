@@ -155,6 +155,7 @@ private fun CreateCustomInstanceView(state: CreateInstanceState) {
             )
 
             AppCheckbox(
+                modifier = Modifier.padding(bottom = 4.dp),
                 label = stringResource(GameRes.string.showSnapshots),
                 checked = state.showSnapshot,
                 onCheckedChange = { eventSink(CreateInstanceEvent.OnShowSnapshotClick) }

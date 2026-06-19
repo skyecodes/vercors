@@ -63,13 +63,15 @@ fun AppButton(
                     .clip(shape)
                     .background(if (enabled) backgroundColor else backgroundColor.copy(alpha = 0.5f))
                     .border(borderWidth, borderColor, shape)
-                    .then(if (hovered) Modifier.pointerHoverIcon(PointerIcon.Hand, true) else Modifier),
+                    .then(if (hovered) Modifier.pointerHoverIcon(PointerIcon.Hand, true) else Modifier)
+                    .width(IntrinsicSize.Max),
                 role = role,
                 indication = indication,
                 interactionSource = interactionSource,
                 contentAlignment = Alignment.CenterStart
             ) {
                 Row(
+                    modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = horizontalArrangement,
                     verticalAlignment = verticalAlignment,
                     content = content

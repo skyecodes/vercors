@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
@@ -31,7 +32,7 @@ fun AppCheckbox(
     modifier: Modifier = Modifier,
     backgroundColor: Color = Theme[colors][surface],
     contentColor: Color = Theme[colors][onBackground],
-    checkboxSize: Dp = 32.dp,
+    checkboxSize: Dp = 24.dp,
     onCheckedChange: (Boolean) -> Unit
 ) {
     Row(
@@ -52,11 +53,14 @@ fun AppCheckbox(
                 .background(backgroundColor)
                 .size(checkboxSize)
         ) {
-            AppIcon(
-                imageVector = Lucide.Check,
-                contentDescription = null,
-                tint = contentColor,
-            )
+            if (checked) {
+                AppIcon(
+                    modifier = Modifier.size(checkboxSize).padding(4.dp),
+                    imageVector = Lucide.Check,
+                    contentDescription = null,
+                    tint = contentColor,
+                )
+            }
         }
         if (label != null && invert) AppText(label)
     }

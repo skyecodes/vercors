@@ -45,7 +45,7 @@ fun <T> AppSelectField(
     var expanded by remember { mutableStateOf(false) }
 
     Column(
-        modifier = modifier,
+        modifier = modifier.width(IntrinsicSize.Max),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         label?.let {
@@ -56,12 +56,13 @@ fun <T> AppSelectField(
         }
 
         UnstyledDropdownMenu(
+            modifier = Modifier.fillMaxWidth().width(IntrinsicSize.Max),
             expanded = expanded,
             onExpandedChange = { expanded = it },
             panel = {
                 DropdownMenuPanel(
                     modifier = Modifier.appCard(backgroundColor = Theme[colors][surface2])
-                        //.widthIn(min = minWidth, max = maxWidth)
+                        .fillMaxWidth()
                         .heightIn(max = 400.dp),
                 ) {
                     if (searchable) {
@@ -86,38 +87,37 @@ fun <T> AppSelectField(
                         itemRenderer = itemRenderer
                     )
                 }
-            },
-            anchor = {
-                AppButton(
-                    onClick = { expanded = !expanded },
-                    backgroundColor = backgroundColor,
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        itemRenderer(value, true)
-                    }
-                    AppIcon(
-                        imageVector = if (expanded) Lucide.ChevronUp else Lucide.ChevronDown,
-                        contentDescription = null
-                    )
-                }
             }
-        )
+        ) {
+            AppButton(
+                onClick = { expanded = !expanded },
+                backgroundColor = backgroundColor,
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    itemRenderer(value, true)
+                }
+                AppIcon(
+                    imageVector = if (expanded) Lucide.ChevronUp else Lucide.ChevronDown,
+                    contentDescription = null
+                )
+            }
+        }
     }
 }
 
 @Composable
-private fun <T> DropdownOptionList(
+private fun <T> DropdownMenuPanelScope.DropdownOptionList(
     value: T,
     items: List<T>,
     onValueChange: (T) -> Unit,
     itemRenderer: @Composable (RowScope.(T, Boolean) -> Unit)
 ) {
-    Row {
+    Row(modifier = Modifier.fillMaxWidth()) {
         val listState = rememberLazyListState()
 
         LaunchedEffect(value) {
