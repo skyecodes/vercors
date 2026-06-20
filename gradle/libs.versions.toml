@@ -33,7 +33,7 @@ unstyled = "2.7.0"
 icons = "2.2.1"
 ripple = "1.1.0"
 coil = "3.5.0"
-markdown-renderer = "0.41.0"
+markdown-renderer = "0.42.0"
 webview = "2.0.3"
 # CLI
 clikt = "5.1.0"
