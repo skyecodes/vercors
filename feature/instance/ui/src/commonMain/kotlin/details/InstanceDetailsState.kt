@@ -9,9 +9,20 @@ import kotlin.time.Instant
 @Immutable
 data class InstanceDetailsState(
     val instance: ProgressiveOutcome<InstanceError, InstanceView>,
+    val selectedTab: InstanceDetailsTab,
     val promptDeleteConfirmation: Boolean,
     val logs: List<InstanceLogEventView>?,
 )
+
+enum class InstanceDetailsTab {
+    Options,
+    Mods,
+    ResourcePacks,
+    ShaderPacks,
+    DataPacks,
+    Worlds,
+    Logs
+}
 
 @Immutable
 data class InstanceView(

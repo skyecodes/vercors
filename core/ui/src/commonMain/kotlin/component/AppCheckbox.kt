@@ -1,13 +1,19 @@
 package app.vercors.core.ui.component
 
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -16,6 +22,7 @@ import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import app.vercors.core.ui.animation.AppAnimatedVisibility
 import app.vercors.core.ui.theme.colors
 import app.vercors.core.ui.theme.onBackground
 import app.vercors.core.ui.theme.surface
@@ -35,11 +42,13 @@ fun AppCheckbox(
     checkboxSize: Dp = 24.dp,
     onCheckedChange: (Boolean) -> Unit
 ) {
+    val interactionSource = remember { MutableInteractionSource() }
+
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         modifier = modifier.pointerHoverIcon(PointerIcon.Hand).clickable(
-            interactionSource = null,
+            interactionSource = interactionSource,
             indication = null,
             onClick = { onCheckedChange(!checked) }
         )
@@ -51,17 +60,36 @@ fun AppCheckbox(
             modifier = Modifier
                 .clip(RoundedCornerShape(4.dp))
                 .background(backgroundColor)
-                .size(checkboxSize)
+                .size(checkboxSize),
+            interactionSource = interactionSource,
+            indication = LocalIndication.current
         ) {
-            if (checked) {
-                AppIcon(
-                    modifier = Modifier.size(checkboxSize).padding(4.dp),
-                    imageVector = Lucide.Check,
-                    contentDescription = null,
-                    tint = contentColor,
-                )
-            }
+            CheckIcon(
+                checked = checked,
+                checkboxSize = checkboxSize,
+                contentColor = contentColor
+            )
         }
         if (label != null && invert) AppText(label)
+    }
+}
+
+@Composable
+private fun CheckIcon(
+    checked: Boolean,
+    checkboxSize: Dp,
+    contentColor: Color
+) {
+    AppAnimatedVisibility(
+        visible = checked,
+        enter = fadeIn(tween(150)),
+        exit = fadeOut(tween(150))
+    ) {
+        AppIcon(
+            modifier = Modifier.size(checkboxSize).padding(2.dp),
+            imageVector = Lucide.Check,
+            contentDescription = null,
+            tint = contentColor,
+        )
     }
 }

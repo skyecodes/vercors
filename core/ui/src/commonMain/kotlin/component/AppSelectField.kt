@@ -1,7 +1,7 @@
 package app.vercors.core.ui.component
 
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.VerticalScrollbar
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -12,6 +12,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
@@ -56,17 +58,18 @@ fun <T> AppSelectField(
         }
 
         UnstyledDropdownMenu(
-            modifier = Modifier.fillMaxWidth().width(IntrinsicSize.Max),
+            modifier = Modifier.fillMaxWidth(),
             expanded = expanded,
             onExpandedChange = { expanded = it },
             panel = {
                 DropdownMenuPanel(
                     modifier = Modifier.appCard(backgroundColor = Theme[colors][surface2])
-                        .fillMaxWidth()
+                        .width(300.dp) // TODO: find a way to calculate this automatically
                         .heightIn(max = 400.dp),
                 ) {
                     if (searchable) {
                         AppTextField(
+                            modifier = Modifier.fillMaxWidth(),
                             initialValue = search,
                             placeholder = { AppText(stringResource(CoreRes.string.search)) },
                             onValueChange = onSearchChange,
@@ -131,19 +134,21 @@ private fun <T> DropdownMenuPanelScope.DropdownOptionList(
         ) {
             items.forEach {
                 item(it) {
-                    Row(
-                        modifier = Modifier
-                            .clickable { onValueChange(it) }
-                            .padding(8.dp)
-                            .fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    MenuItem(
+                        onClick = { onValueChange(it) },
+                        indication = LocalIndication.current
                     ) {
-                        ProvideTextStyle(
-                            LocalTextStyle.current.copy(
-                                fontWeight = if (it == value) FontWeight.SemiBold else FontWeight.Normal
-                            )
+                        Row(
+                            modifier = Modifier.pointerHoverIcon(PointerIcon.Hand).padding(8.dp).fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            itemRenderer(it, false)
+                            ProvideTextStyle(
+                                LocalTextStyle.current.copy(
+                                    fontWeight = if (it == value) FontWeight.SemiBold else FontWeight.Normal
+                                )
+                            ) {
+                                itemRenderer(it, false)
+                            }
                         }
                     }
                 }

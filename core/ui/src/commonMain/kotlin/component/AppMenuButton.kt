@@ -1,11 +1,14 @@
 package app.vercors.core.ui.component
 
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.unit.dp
 import app.vercors.core.ui.modifier.appCard
 import app.vercors.core.ui.theme.colors
@@ -23,9 +26,9 @@ fun AppMenuButton(
     modifier: Modifier = Modifier,
     menuModifier: Modifier = Modifier,
     anchor: AppDropdownPanelAnchor = AppDropdownPanelAnchor.BottomStart
-) = with(object : AppMenuScope {
-    override var expanded by remember { mutableStateOf(false) }
-}) {
+) {
+    var expanded by remember { mutableStateOf(false) }
+
     UnstyledDropdownMenu(
         modifier = modifier,
         expanded = expanded,
@@ -35,26 +38,28 @@ fun AppMenuButton(
         panel = {
             DropdownMenuPanel(
                 modifier = menuModifier.appCard(backgroundColor = Theme[colors][surface2])
-                    //.widthIn(min = minWidth, max = maxWidth)
                     .width(IntrinsicSize.Max),
-            ) {
-                menuContent()
+            ) scope@{
+                with(object : AppMenuScope {
+                    override val innerScope = this@scope
+                }) {
+                    menuContent()
+                }
             }
-        },
-        anchor = {
-            AppIconTextButton(
-                onClick = { expanded = !expanded },
-                backgroundColor = backgroundColor,
-                text = text,
-                imageVector = imageVector,
-                contentPadding = contentPadding,
-            )
         }
-    )
+    ) {
+        AppIconTextButton(
+            onClick = { expanded = !expanded },
+            backgroundColor = backgroundColor,
+            text = text,
+            imageVector = imageVector,
+            contentPadding = contentPadding,
+        )
+    }
 }
 
 interface AppMenuScope {
-    var expanded: Boolean
+    val innerScope: DropdownMenuPanelScope
 }
 
 @Composable
@@ -62,17 +67,33 @@ fun AppMenuScope.AppMenuItem(
     onClick: () -> Unit,
     text: String? = null,
     imageVector: ImageVector? = null,
+    enabled: Boolean = true,
     contentColor: Color = LocalContentColor.current
 ) {
-    AppIconTextButton(
-        onClick = { onClick(); expanded = false },
-        text = text,
-        imageVector = imageVector,
-        contentColor = contentColor,
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        shape = RectangleShape
-    )
+    with(innerScope) {
+        MenuItem(
+            onClick = onClick,
+            enabled = enabled,
+            indication = LocalIndication.current
+        ) {
+            ProvideContentColor(if (enabled) contentColor else contentColor.copy(alpha = 0.8f)) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .pointerHoverIcon(PointerIcon.Hand, true)
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    AppIconTextButtonContent(
+                        text = text,
+                        imageVector = imageVector,
+                    )
+                }
+            }
+        }
+    }
+
 }
 
 sealed class AppDropdownPanelAnchor(

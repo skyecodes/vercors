@@ -50,21 +50,24 @@ class InstanceDetailsPresenter(
         val instance by observeInstanceView()
         val logs by observeInstanceLogsView()
         val promptDeleteConfirmation = rememberSaveable { mutableStateOf(false) }
+        val selectedTab = rememberSaveable { mutableStateOf(InstanceDetailsTab.Options) }
 
         return InstanceDetailsState(
             instance = instance,
             promptDeleteConfirmation = promptDeleteConfirmation.value,
+            selectedTab = selectedTab.value,
             logs = logs
-        ) + { handleEvent(it, promptDeleteConfirmation) }
-
+        ) + { handleEvent(it, promptDeleteConfirmation, selectedTab) }
     }
 
     private fun handleEvent(
         event: InstanceDetailsEvent,
-        promptDeleteConfirmation: MutableState<Boolean>
+        promptDeleteConfirmation: MutableState<Boolean>,
+        selectedTab: MutableState<InstanceDetailsTab>
     ) {
         when (event) {
             InstanceDetailsEvent.Launch -> globalScope.launch {
+                selectedTab.value = InstanceDetailsTab.Logs
                 either { launchInstance(screen.instanceId) }.onLeft { error -> snackbarService.error { error.message } }
             }
 
@@ -84,6 +87,10 @@ class InstanceDetailsPresenter(
             InstanceDetailsEvent.Cancel -> cancelInstance(screen.instanceId)
             InstanceDetailsEvent.Stop -> globalScope.launch { stopInstance(screen.instanceId) }
             InstanceDetailsEvent.Kill -> globalScope.launch { killInstance(screen.instanceId) }
+
+            is InstanceDetailsEvent.SelectTab -> {
+                selectedTab.value = event.tab
+            }
         }
     }
 

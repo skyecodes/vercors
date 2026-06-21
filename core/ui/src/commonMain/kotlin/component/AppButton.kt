@@ -5,11 +5,9 @@ import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -51,8 +49,6 @@ fun AppButton(
     textStyle: TextStyle = Theme[textStyles][button],
     content: @Composable (RowScope.() -> Unit)
 ) {
-    val hovered by interactionSource.collectIsHoveredAsState()
-
     ProvideTextStyle(textStyle) {
         ProvideContentColor(if (enabled) contentColor else contentColor.copy(alpha = 0.8f)) {
             UnstyledButton(
@@ -63,7 +59,7 @@ fun AppButton(
                     .clip(shape)
                     .background(if (enabled) backgroundColor else backgroundColor.copy(alpha = 0.5f))
                     .border(borderWidth, borderColor, shape)
-                    .then(if (hovered) Modifier.pointerHoverIcon(PointerIcon.Hand, true) else Modifier)
+                    .then(if (enabled) Modifier.pointerHoverIcon(PointerIcon.Hand, true) else Modifier)
                     .width(IntrinsicSize.Max),
                 role = role,
                 indication = indication,
@@ -123,18 +119,31 @@ fun AppIconTextButton(
         verticalAlignment = verticalAlignment,
         textStyle = textStyle
     ) {
-        imageVector?.let {
-            AppIcon(
-                imageVector = it,
-                contentDescription = text,
-                modifier = Modifier.size(iconSize)
-            )
-        }
-        text?.let {
-            AppText(
-                text = it
-            )
-        }
+        AppIconTextButtonContent(
+            text = text,
+            imageVector = imageVector,
+            iconSize = iconSize
+        )
+    }
+}
+
+@Composable
+fun AppIconTextButtonContent(
+    text: String?,
+    imageVector: ImageVector?,
+    iconSize: Dp = 16.dp
+) {
+    imageVector?.let {
+        AppIcon(
+            imageVector = it,
+            contentDescription = text,
+            modifier = Modifier.size(iconSize)
+        )
+    }
+    text?.let {
+        AppText(
+            text = it
+        )
     }
 }
 

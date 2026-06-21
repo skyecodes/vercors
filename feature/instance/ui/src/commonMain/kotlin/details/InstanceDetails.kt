@@ -2,23 +2,27 @@ package app.vercors.feature.instance.ui.details
 
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import app.vercors.core.ui.animation.appAnimateColorAsState
 import app.vercors.core.ui.component.*
 import app.vercors.core.ui.layout.AppError
 import app.vercors.core.ui.layout.AppLoading
+import app.vercors.core.ui.layout.AppTabGroup
 import app.vercors.core.ui.modifier.appCard
 import app.vercors.core.ui.theme.*
 import app.vercors.feature.instance.domain.model.InstanceStatus
@@ -53,7 +57,7 @@ fun InstanceDetails(
 
     with(eventSink) {
         state.instance.onSuccess {
-            InstanceDetails(it, state.logs, modifier)
+            InstanceDetails(it, state, modifier)
         }
         state.instance.onFailure {
             AppError(it.message)
@@ -75,7 +79,7 @@ fun InstanceDetails(
 context(eventSink: EventSink<InstanceDetailsEvent>)
 private fun InstanceDetails(
     instance: InstanceView,
-    logs: List<InstanceLogEventView>?,
+    state: InstanceDetailsState,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -83,7 +87,39 @@ private fun InstanceDetails(
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         InstanceHeader(instance)
-        InstanceLogsSection(logs)
+        AppTabGroup(
+            selectedTab = state.selectedTab,
+            onSelectedTabChange = { eventSink(InstanceDetailsEvent.SelectTab(it)) },
+            tabs = InstanceDetailsTab.entries.filter { it != InstanceDetailsTab.Logs || state.logs != null },
+            orientation = Orientation.Vertical,
+            tabTitle = { tab ->
+                val backgroundColor by appAnimateColorAsState(if (selected) Theme[colors][surface2] else Theme[colors][surface])
+                Row(
+                    modifier = Modifier
+                        .background(backgroundColor)
+                        .fillMaxWidth()
+                        .pointerHoverIcon(PointerIcon.Hand, true)
+                        .padding(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    AppIconTextButtonContent(
+                        text = tab.title,
+                        imageVector = tab.icon
+                    )
+                }
+            }
+        ) {
+            when (it) {
+                InstanceDetailsTab.Options -> InstanceOptionsSection(state)
+                InstanceDetailsTab.Mods -> InstanceModsSection(state)
+                InstanceDetailsTab.ResourcePacks -> InstanceResourcePacksSection(state)
+                InstanceDetailsTab.ShaderPacks -> InstanceShaderPacksSection(state)
+                InstanceDetailsTab.DataPacks -> InstanceDataPacksSection(state)
+                InstanceDetailsTab.Worlds -> InstanceWorldsSection(state)
+                InstanceDetailsTab.Logs -> InstanceLogsSection(state.logs)
+            }
+        }
     }
 }
 
@@ -205,10 +241,40 @@ private fun InstanceHeader(instance: InstanceView) = SharedElementTransitionScop
 }
 
 @Composable
-private fun ColumnScope.InstanceLogsSection(logs: List<InstanceLogEventView>?) {
+private fun InstanceOptionsSection(state: InstanceDetailsState) {
+    AppText("Settings")
+}
+
+@Composable
+private fun InstanceModsSection(state: InstanceDetailsState) {
+    AppText("Mods")
+}
+
+@Composable
+private fun InstanceResourcePacksSection(state: InstanceDetailsState) {
+    AppText("Resource Packs")
+}
+
+@Composable
+private fun InstanceShaderPacksSection(state: InstanceDetailsState) {
+    AppText("Shader Packs")
+}
+
+@Composable
+private fun InstanceDataPacksSection(state: InstanceDetailsState) {
+    AppText("Data Packs")
+}
+
+@Composable
+private fun InstanceWorldsSection(state: InstanceDetailsState) {
+    AppText("Worlds")
+}
+
+@Composable
+private fun InstanceLogsSection(logs: List<InstanceLogEventView>?) {
     logs?.let { logs ->
         val scrollState = rememberScrollState()
-        SelectionContainer(modifier = Modifier.weight(1f).fillMaxWidth()) {
+        SelectionContainer(modifier = Modifier.fillMaxSize()) {
             Column(
                 modifier = Modifier.fillMaxSize().appCard().padding(horizontal = 8.dp).verticalScroll(scrollState),
                 verticalArrangement = Arrangement.spacedBy(2.dp)
@@ -299,4 +365,26 @@ private val InstanceStatus.text: String
         is InstanceStatus.Running -> stringResource(InstanceRes.string.running)
         is InstanceStatus.Stopping -> stringResource(InstanceRes.string.stopping)
         is InstanceStatus.Failed -> stringResource(InstanceRes.string.failed)
+    }
+
+private val InstanceDetailsTab.icon: ImageVector
+    @Stable get() = when (this) {
+        InstanceDetailsTab.Logs -> Lucide.Logs
+        InstanceDetailsTab.Options -> Lucide.Settings2
+        InstanceDetailsTab.Mods -> Lucide.Box
+        InstanceDetailsTab.ResourcePacks -> Lucide.Paintbrush
+        InstanceDetailsTab.ShaderPacks -> Lucide.Glasses
+        InstanceDetailsTab.DataPacks -> Lucide.Braces
+        InstanceDetailsTab.Worlds -> Lucide.Earth
+    }
+
+private val InstanceDetailsTab.title: String
+    @Composable get() = when (this) {
+        InstanceDetailsTab.Logs -> stringResource(InstanceRes.string.logs)
+        InstanceDetailsTab.Options -> stringResource(InstanceRes.string.options)
+        InstanceDetailsTab.Mods -> stringResource(InstanceRes.string.mods)
+        InstanceDetailsTab.ResourcePacks -> stringResource(InstanceRes.string.resourcePacks)
+        InstanceDetailsTab.ShaderPacks -> stringResource(InstanceRes.string.shaderPacks)
+        InstanceDetailsTab.DataPacks -> stringResource(InstanceRes.string.dataPacks)
+        InstanceDetailsTab.Worlds -> stringResource(InstanceRes.string.worlds)
     }
