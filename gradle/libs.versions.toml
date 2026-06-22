@@ -7,7 +7,7 @@ arrow = "2.2.3"
 pedestal = "3.2.1"
 datetime = "0.8.0"
 cryptography = "0.6.0"
-human-readable = "1.12.3"
+human-readable = "1.13.0"
 buildconfig = "6.0.10"
 gradle-versions = "0.54.0"
 # Data
