@@ -42,7 +42,7 @@ graalvm = "1.1.2"
 # DI
 metro = "1.2.1"
 # Logging
-logback = "1.5.34"
+logback = "1.5.35"
 kotlin-logging = "8.0.4"
 # Test
 mokkery = "3.4.1"
