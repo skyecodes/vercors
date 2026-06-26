@@ -12,7 +12,7 @@ buildconfig = "6.0.10"
 gradle-versions = "0.54.0"
 # Data
 serialization = "1.11.0"
-io = "0.9.0"
+io = "0.9.1"
 ktor = "3.5.1"
 ktor-simple-cache = "0.72.1"
 spine = "0.11.0"
