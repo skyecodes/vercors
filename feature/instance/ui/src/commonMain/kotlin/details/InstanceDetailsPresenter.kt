@@ -1,6 +1,9 @@
 package app.vercors.feature.instance.ui.details
 
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.State
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import app.vercors.core.ui.state.produceAndCollectAsProgressiveState
 import app.vercors.feature.game.domain.model.GameVersionError
@@ -58,32 +61,44 @@ class InstanceDetailsPresenter(
         val instance by observeInstanceView()
         val gameVersionList by observeGameVersionListView()
         val logs by observeInstanceLogsView()
-        val promptDeleteConfirmation = rememberSaveable { mutableStateOf(false) }
-        val selectedTab = rememberSaveable { mutableStateOf(InstanceDetailsTab.Options) }
+        val (promptDeleteConfirmation, setPromptDeleteConfirmation) = rememberSaveable { mutableStateOf(false) }
+        val (selectedTab, setSelectedTab) = rememberSaveable { mutableStateOf(InstanceDetailsTab.Options) }
+        val (editedInstance, setEditedInstance) = rememberSaveable { mutableStateOf(InstanceEditState()) }
 
         return InstanceDetailsState(
             instance = instance,
+            editedInstance = editedInstance,
             gameVersionList = gameVersionList.valueOrNull ?: emptyList(),
-            promptDeleteConfirmation = promptDeleteConfirmation.value,
-            selectedTab = selectedTab.value,
+            promptDeleteConfirmation = promptDeleteConfirmation,
+            selectedTab = selectedTab,
             logs = logs
-        ) + { handleEvent(it, promptDeleteConfirmation, selectedTab) }
+        ) + { event ->
+            handleEvent(
+                event = event,
+                setPromptDeleteConfirmation = setPromptDeleteConfirmation,
+                setSelectedTab = setSelectedTab,
+                setEditedInstance = setEditedInstance,
+                editedInstance = editedInstance
+            )
+        }
     }
 
     private fun handleEvent(
         event: InstanceDetailsEvent,
-        promptDeleteConfirmation: MutableState<Boolean>,
-        selectedTab: MutableState<InstanceDetailsTab>
+        setPromptDeleteConfirmation: (Boolean) -> Unit,
+        setSelectedTab: (InstanceDetailsTab) -> Unit,
+        setEditedInstance: (InstanceEditState) -> Unit,
+        editedInstance: InstanceEditState
     ) {
         when (event) {
             InstanceDetailsEvent.Launch -> globalScope.launch {
-                selectedTab.value = InstanceDetailsTab.Logs
+                setSelectedTab(InstanceDetailsTab.Logs)
                 either { launchInstance(screen.instanceId) }.onLeft { error -> snackbarService.error { error.message } }
             }
 
-            InstanceDetailsEvent.Delete -> promptDeleteConfirmation.value = true
+            InstanceDetailsEvent.Delete -> setPromptDeleteConfirmation(true)
             is InstanceDetailsEvent.ConfirmDelete -> {
-                promptDeleteConfirmation.value = false
+                setPromptDeleteConfirmation(false)
                 if (event.result) globalScope.launch {
                     either { deleteInstance(screen.instanceId) }
                         .onLeft { error -> snackbarService.error { error.message } }
@@ -98,24 +113,21 @@ class InstanceDetailsPresenter(
             InstanceDetailsEvent.Stop -> globalScope.launch { stopInstance(screen.instanceId) }
             InstanceDetailsEvent.Kill -> globalScope.launch { killInstance(screen.instanceId) }
 
-            is InstanceDetailsEvent.SelectTab -> {
-                selectedTab.value = event.tab
-            }
-
-            is InstanceDetailsEvent.UpdateInstanceName -> globalScope.launch {
+            is InstanceDetailsEvent.SelectTab -> setSelectedTab(event.tab)
+            is InstanceDetailsEvent.UpdateInstance -> setEditedInstance(event.update(editedInstance))
+            InstanceDetailsEvent.CancelEdit -> setEditedInstance(InstanceEditState())
+            InstanceDetailsEvent.SaveInstance -> globalScope.launch {
                 either {
-                    updateInstance(screen.instanceId) { it.copy(name = event.name) }
-                }.onLeft { error ->
-                    snackbarService.error { error.toString() }
-                }
-            }
-
-            is InstanceDetailsEvent.UpdateInstanceGameVersion -> globalScope.launch {
-                either {
-                    updateInstance(screen.instanceId) { it.copy(gameVersion = event.gameVersion) }
-                }.onLeft { error ->
-                    snackbarService.error { error.toString() }
-                }
+                    updateInstance(screen.instanceId) {
+                        var updatedInstance = it
+                        editedInstance.name?.let { name -> updatedInstance = updatedInstance.copy(name = name) }
+                        editedInstance.gameVersion?.let { version ->
+                            updatedInstance = updatedInstance.copy(gameVersion = version)
+                        }
+                        updatedInstance
+                    }
+                    setEditedInstance(InstanceEditState())
+                }.onLeft { error -> snackbarService.error { error.toString() } }
             }
         }
     }

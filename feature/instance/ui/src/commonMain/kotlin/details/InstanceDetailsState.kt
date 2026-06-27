@@ -5,16 +5,26 @@ import app.vercors.feature.game.ui.GameVersionView
 import app.vercors.feature.game.ui.displayName
 import app.vercors.feature.instance.domain.model.*
 import opensavvy.state.progressive.ProgressiveOutcome
+import opensavvy.state.progressive.valueOrNull
 import kotlin.time.Instant
 
 @Immutable
 data class InstanceDetailsState(
     val instance: ProgressiveOutcome<InstanceError, InstanceView>,
+    val editedInstance: InstanceEditState,
     val gameVersionList: List<GameVersionView>,
     val selectedTab: InstanceDetailsTab,
     val promptDeleteConfirmation: Boolean,
     val logs: List<InstanceLogEventView>?,
-)
+) {
+    val isNameEdited = instance.valueOrNull?.let {
+        editedInstance.name != null && editedInstance.name != it.name
+    } ?: false
+    val isGameVersionEdited = instance.valueOrNull?.let {
+        editedInstance.gameVersion != null && editedInstance.gameVersion != it.gameVersion
+    } ?: false
+    val isInstanceEdited: Boolean = isNameEdited || isGameVersionEdited
+}
 
 enum class InstanceDetailsTab {
     Options,
@@ -30,10 +40,16 @@ enum class InstanceDetailsTab {
 data class InstanceView(
     val id: InstanceId,
     val name: String,
-    val version: String,
+    val gameVersion: String,
     val loader: String,
     val type: String,
     val status: InstanceStatus,
+)
+
+@Immutable
+data class InstanceEditState(
+    val name: String? = null,
+    val gameVersion: String? = null,
 )
 
 @Immutable
@@ -51,7 +67,7 @@ data class InstanceLogEventView(
 fun InstanceAndStatus.toView(): InstanceView = InstanceView(
     id = instance.id,
     name = instance.name,
-    version = instance.gameVersion,
+    gameVersion = instance.gameVersion,
     loader = instance.modLoader?.type.displayName,
     type = instance.displayType,
     status = status

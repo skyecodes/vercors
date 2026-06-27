@@ -25,7 +25,8 @@ fun GameVersionSelector(
     selectedVersion: GameVersionView?,
     versionList: List<GameVersionView>,
     onVersionChange: (GameVersionView?) -> Unit,
-    backgroundColor: Color = Theme[colors][surface]
+    backgroundColor: Color = Theme[colors][surface],
+    label: String = stringResource(GameRes.string.gameVersion)
 ) {
     var versionSearch by remember { mutableStateOf("") }
     var showSnapshot by remember { mutableStateOf(true) }
@@ -56,7 +57,7 @@ fun GameVersionSelector(
         verticalAlignment = Alignment.Bottom
     ) {
         AppSelectField(
-            label = stringResource(GameRes.string.gameVersion),
+            label = label,
             value = filteredSelectedVersion,
             items = filteredVersionList,
             onValueChange = onVersionChange,

@@ -41,6 +41,14 @@ fun AppTextField(
 ) {
     val state = rememberTextFieldState(initialValue)
 
+    LaunchedEffect(initialValue) {
+        if (state.text.toString() != initialValue) {
+            state.edit {
+                replace(0, length, initialValue)
+            }
+        }
+    }
+
     LaunchedEffect(state) {
         snapshotFlow { state.text.toString() }.collectLatest {
             delay(debounceMillis.milliseconds)

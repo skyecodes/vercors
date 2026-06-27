@@ -36,6 +36,8 @@
     <string name="editInstance">Edit instance</string>
     <string name="deleteInstanceConfirmation">Are you sure you want to delete this instance?\nAll instance data (worlds, mods, etc.) will be permanently removed.</string>
 
+    <string name="changes">Unsaved changes</string>
+
     <string name="options">Options</string>
     <string name="mods">Mods</string>
     <string name="resourcePacks">Resource Packs</string>

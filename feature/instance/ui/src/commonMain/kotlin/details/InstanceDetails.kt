@@ -20,6 +20,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import app.vercors.core.ui.animation.AppAnimatedVisibility
 import app.vercors.core.ui.animation.appAnimateColorAsState
 import app.vercors.core.ui.component.*
 import app.vercors.core.ui.layout.AppError
@@ -92,7 +93,10 @@ private fun InstanceDetails(
         modifier = modifier.padding(8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        InstanceHeader(instance)
+        InstanceHeader(
+            instance = instance,
+            isInstanceEdited = state.isInstanceEdited
+        )
         AppTabGroup(
             selectedTab = state.selectedTab,
             onSelectedTabChange = { eventSink(InstanceDetailsEvent.SelectTab(it)) },
@@ -132,7 +136,7 @@ private fun InstanceDetails(
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 context(eventSink: EventSink<InstanceDetailsEvent>)
-private fun InstanceHeader(instance: InstanceView) = SharedElementTransitionScope {
+private fun InstanceHeader(instance: InstanceView, isInstanceEdited: Boolean) = SharedElementTransitionScope {
     Row(
         modifier = Modifier.appCard().padding(horizontal = 16.dp, vertical = 8.dp).fillMaxWidth()
             .instanceSharedElement(instance.id, "card"),
@@ -169,7 +173,7 @@ private fun InstanceHeader(instance: InstanceView) = SharedElementTransitionScop
                     modifier = Modifier.instanceSharedElement(instance.id, "loader")
                 )
                 AppText(
-                    text = instance.version,
+                    text = instance.gameVersion,
                     fontSize = 12.sp,
                     modifier = Modifier.instanceSharedElement(instance.id, "version")
                 )
@@ -185,48 +189,70 @@ private fun InstanceHeader(instance: InstanceView) = SharedElementTransitionScop
                 AppText(
                     text = instance.status.text
                 )
-                /*instance.status.progress?.let {
-                    AppProgressIndicator(
-                        progress = it,
-                        backgroundColor = Theme[colors][surface2],
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }*/
             }
         }
 
-        when (instance.status) {
-            is InstanceStatus.Idle, is InstanceStatus.Failed -> AppIconTextButton(
-                onClick = { eventSink(InstanceDetailsEvent.Launch) },
-                text = stringResource(InstanceRes.string.launch),
-                backgroundColor = Theme[colors][success],
-                contentColor = Theme[colors][onSuccess],
-                imageVector = Lucide.Play,
-            )
+        AppAnimatedVisibility(isInstanceEdited) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                AppText(
+                    text = stringResource(InstanceRes.string.changes),
+                )
 
-            is InstanceStatus.Launching -> AppIconTextButton(
-                onClick = { eventSink(InstanceDetailsEvent.Stop) },
-                text = stringResource(SharedRes.string.cancel),
-                backgroundColor = Theme[colors][error],
-                contentColor = Theme[colors][onError],
-                imageVector = Lucide.Square,
-            )
+                AppIconTextButton(
+                    onClick = { eventSink(InstanceDetailsEvent.CancelEdit) },
+                    text = stringResource(SharedRes.string.cancel),
+                    backgroundColor = Theme[colors][surface2],
+                    contentColor = Theme[colors][onBackground],
+                    imageVector = Lucide.X,
+                )
 
-            is InstanceStatus.Running -> AppIconTextButton(
-                onClick = { eventSink(InstanceDetailsEvent.Stop) },
-                text = stringResource(InstanceRes.string.stop),
-                backgroundColor = Theme[colors][error],
-                contentColor = Theme[colors][onError],
-                imageVector = Lucide.Square,
-            )
+                AppIconTextButton(
+                    onClick = { eventSink(InstanceDetailsEvent.SaveInstance) },
+                    text = stringResource(SharedRes.string.save),
+                    backgroundColor = Theme[colors][success],
+                    contentColor = Theme[colors][onSuccess],
+                    imageVector = Lucide.Save,
+                )
+            }
+        }
 
-            is InstanceStatus.Stopping -> AppIconTextButton(
-                onClick = { eventSink(InstanceDetailsEvent.Kill) },
-                text = stringResource(InstanceRes.string.kill),
-                backgroundColor = Theme[colors][error],
-                contentColor = Theme[colors][onError],
-                imageVector = Lucide.X,
-            )
+        AppAnimatedVisibility(!isInstanceEdited) {
+            when (instance.status) {
+                is InstanceStatus.Idle, is InstanceStatus.Failed -> AppIconTextButton(
+                    onClick = { eventSink(InstanceDetailsEvent.Launch) },
+                    text = stringResource(InstanceRes.string.launch),
+                    backgroundColor = Theme[colors][success],
+                    contentColor = Theme[colors][onSuccess],
+                    imageVector = Lucide.Play,
+                )
+
+                is InstanceStatus.Launching -> AppIconTextButton(
+                    onClick = { eventSink(InstanceDetailsEvent.Stop) },
+                    text = stringResource(SharedRes.string.cancel),
+                    backgroundColor = Theme[colors][error],
+                    contentColor = Theme[colors][onError],
+                    imageVector = Lucide.Square,
+                )
+
+                is InstanceStatus.Running -> AppIconTextButton(
+                    onClick = { eventSink(InstanceDetailsEvent.Stop) },
+                    text = stringResource(InstanceRes.string.stop),
+                    backgroundColor = Theme[colors][error],
+                    contentColor = Theme[colors][onError],
+                    imageVector = Lucide.Square,
+                )
+
+                is InstanceStatus.Stopping -> AppIconTextButton(
+                    onClick = { eventSink(InstanceDetailsEvent.Kill) },
+                    text = stringResource(InstanceRes.string.kill),
+                    backgroundColor = Theme[colors][error],
+                    contentColor = Theme[colors][onError],
+                    imageVector = Lucide.X,
+                )
+            }
         }
 
         AppMenuButton(
@@ -267,23 +293,32 @@ private fun LazyListScope.InstanceGeneralOptionsSection(instance: InstanceView, 
     ) {
         item(InstanceRes.string.instanceName) {
             AppTextField(
-                label = stringResource(InstanceRes.string.instanceName),
-                initialValue = instance.name,
-                onValueChange = { eventSink(InstanceDetailsEvent.UpdateInstanceName(it)) },
+                label = stringResource(InstanceRes.string.instanceName) + if (state.isNameEdited) "*" else "",
+                initialValue = state.editedInstance.name ?: instance.name,
+                onValueChange = { eventSink(InstanceDetailsEvent.UpdateInstance { state -> state.copy(name = it) }) },
                 backgroundColor = Theme[colors][surface2],
                 modifier = Modifier.widthIn(min = 300.dp)
             )
         }
         item(GameRes.string.gameVersion) {
-            val gameVersion = remember(state.gameVersionList, instance.version) {
-                state.gameVersionList.find { it.id == instance.version }
+            val gameVersion = remember(state.gameVersionList, state.editedInstance.gameVersion, instance.gameVersion) {
+                state.gameVersionList.find { it.id == (state.editedInstance.gameVersion ?: instance.gameVersion) }
             }
 
             GameVersionSelector(
                 selectedVersion = gameVersion,
                 versionList = state.gameVersionList,
-                onVersionChange = { it?.let { eventSink(InstanceDetailsEvent.UpdateInstanceGameVersion(it.id)) } },
-                backgroundColor = Theme[colors][surface2]
+                onVersionChange = {
+                    it?.let {
+                        eventSink(InstanceDetailsEvent.UpdateInstance { state ->
+                            state.copy(
+                                gameVersion = it.id
+                            )
+                        })
+                    }
+                },
+                backgroundColor = Theme[colors][surface2],
+                label = stringResource(GameRes.string.gameVersion) + if (state.isGameVersionEdited) "*" else ""
             )
         }
     }
