@@ -1,6 +1,7 @@
 package app.vercors.feature.instance.ui.details
 
 import androidx.compose.runtime.Immutable
+import app.vercors.feature.game.ui.GameVersionView
 import app.vercors.feature.game.ui.displayName
 import app.vercors.feature.instance.domain.model.*
 import opensavvy.state.progressive.ProgressiveOutcome
@@ -9,6 +10,7 @@ import kotlin.time.Instant
 @Immutable
 data class InstanceDetailsState(
     val instance: ProgressiveOutcome<InstanceError, InstanceView>,
+    val gameVersionList: List<GameVersionView>,
     val selectedTab: InstanceDetailsTab,
     val promptDeleteConfirmation: Boolean,
     val logs: List<InstanceLogEventView>?,

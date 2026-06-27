@@ -48,35 +48,36 @@ fun AppTextField(
         }
     }
 
-    UnstyledTextField(
-        state = state,
+    Column(
         modifier = modifier.width(IntrinsicSize.Max),
-        cursorBrush = SolidColor(LocalContentColor.current),
-        readOnly = !editable,
-        onKeyboardAction = {
-            onValueChange(state.text.toString())
-            it()
-        },
-        keyboardOptions = KeyboardOptions(
-            imeAction = imeAction
-        ),
-        textStyle = LocalTextStyle.current,
-        textColor = LocalContentColor.current,
-        selectionColors = TextSelectionColors(
-            handleColor = Theme[colors][primary],
-            backgroundColor = Theme[colors][primary].copy(alpha = 0.2f),
-        )
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        Column(
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            label?.let {
-                AppText(
-                    text = label,
-                    fontWeight = FontWeight.Medium
-                )
-            }
+        label?.let {
+            AppText(
+                text = label,
+                fontWeight = FontWeight.Medium
+            )
+        }
 
+        UnstyledTextField(
+            state = state,
+            modifier = Modifier.fillMaxWidth(),
+            cursorBrush = SolidColor(LocalContentColor.current),
+            readOnly = !editable,
+            onKeyboardAction = {
+                onValueChange(state.text.toString())
+                it()
+            },
+            keyboardOptions = KeyboardOptions(
+                imeAction = imeAction
+            ),
+            textStyle = LocalTextStyle.current,
+            textColor = LocalContentColor.current,
+            selectionColors = TextSelectionColors(
+                handleColor = Theme[colors][primary],
+                backgroundColor = Theme[colors][primary].copy(alpha = 0.2f),
+            )
+        ) {
             TextInput(
                 modifier = Modifier
                     .clip(shape)

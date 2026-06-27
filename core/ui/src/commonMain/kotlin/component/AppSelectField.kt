@@ -134,7 +134,7 @@ private fun <T> DropdownMenuPanelScope.DropdownOptionList(
         ) {
             items.forEach {
                 item(it) {
-                    MenuItem(
+                    UnstyledDropdownMenuItem(
                         onClick = { onValueChange(it) },
                         indication = LocalIndication.current
                     ) {

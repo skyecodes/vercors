@@ -40,7 +40,9 @@ import app.vercors.core.ui.theme.*
 import app.vercors.feature.home.domain.model.HomeSectionType
 import app.vercors.feature.instance.ui.*
 import app.vercors.feature.project.domain.model.ProjectId
+import app.vercors.feature.project.domain.model.ProjectType
 import app.vercors.feature.project.ui.*
+import app.vercors.feature.project.ui.list.icon
 import app.vercors.shared.ui.*
 import coil3.compose.rememberAsyncImagePainter
 import com.composables.icons.lucide.*
@@ -85,11 +87,21 @@ private fun <T> HomeSection(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = Modifier.padding(vertical = 8.dp)
     ) {
-        AppText(
-            text = stringResource(section.type.string),
-            style = Theme[textStyles][title],
-            modifier = Modifier.padding(horizontal = 16.dp)
-        )
+        Row(
+            modifier = Modifier.padding(horizontal = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            AppIcon(
+                imageVector = section.type.icon,
+                contentDescription = null,
+                modifier = Modifier.size(20.dp)
+            )
+            AppText(
+                text = stringResource(section.type.string),
+                style = Theme[textStyles][title],
+            )
+        }
 
         if (section.type == HomeSectionType.RecentlyPlayed && section.data.valueOrNull.isNullOrEmpty()) {
             NoInstanceFoundDisplay()
@@ -424,4 +436,13 @@ private val HomeSectionType.string: StringResource
         HomeSectionType.FeaturedModpacks -> HomeRes.string.featuredModpacks
         HomeSectionType.FeaturedResourcePacks -> HomeRes.string.featuredResourcePacks
         HomeSectionType.FeaturedShaderPacks -> HomeRes.string.featuredShaderPacks
+    }
+
+private val HomeSectionType.icon: ImageVector
+    get() = when (this) {
+        HomeSectionType.RecentlyPlayed -> Lucide.Clock
+        HomeSectionType.FeaturedMods -> ProjectType.Mod.icon
+        HomeSectionType.FeaturedModpacks -> ProjectType.Modpack.icon
+        HomeSectionType.FeaturedResourcePacks -> ProjectType.ResourcePack.icon
+        HomeSectionType.FeaturedShaderPacks -> ProjectType.ShaderPack.icon
     }

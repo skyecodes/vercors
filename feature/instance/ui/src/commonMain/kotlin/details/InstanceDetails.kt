@@ -4,6 +4,8 @@ import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
@@ -25,6 +27,9 @@ import app.vercors.core.ui.layout.AppLoading
 import app.vercors.core.ui.layout.AppTabGroup
 import app.vercors.core.ui.modifier.appCard
 import app.vercors.core.ui.theme.*
+import app.vercors.feature.game.ui.GameRes
+import app.vercors.feature.game.ui.GameVersionSelector
+import app.vercors.feature.game.ui.gameVersion
 import app.vercors.feature.instance.domain.model.InstanceStatus
 import app.vercors.feature.instance.ui.*
 import app.vercors.feature.instance.ui.delete.ConfirmDeleteDialog
@@ -45,6 +50,7 @@ import kotlinx.datetime.toLocalDateTime
 import opensavvy.state.progressive.onFailure
 import opensavvy.state.progressive.onIncomplete
 import opensavvy.state.progressive.onSuccess
+import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 
 @CircuitInject(InstanceDetailsScreen::class, AppScope::class)
@@ -111,13 +117,13 @@ private fun InstanceDetails(
             }
         ) {
             when (it) {
-                InstanceDetailsTab.Options -> InstanceOptionsSection(state)
-                InstanceDetailsTab.Mods -> InstanceModsSection(state)
-                InstanceDetailsTab.ResourcePacks -> InstanceResourcePacksSection(state)
-                InstanceDetailsTab.ShaderPacks -> InstanceShaderPacksSection(state)
-                InstanceDetailsTab.DataPacks -> InstanceDataPacksSection(state)
-                InstanceDetailsTab.Worlds -> InstanceWorldsSection(state)
-                InstanceDetailsTab.Logs -> InstanceLogsSection(state.logs)
+                InstanceDetailsTab.Options -> InstanceOptionsTab(instance, state)
+                InstanceDetailsTab.Mods -> InstanceModsTab(state)
+                InstanceDetailsTab.ResourcePacks -> InstanceResourcePacksTab(state)
+                InstanceDetailsTab.ShaderPacks -> InstanceShaderPacksTab(state)
+                InstanceDetailsTab.DataPacks -> InstanceDataPacksTab(state)
+                InstanceDetailsTab.Worlds -> InstanceWorldsTab(state)
+                InstanceDetailsTab.Logs -> state.logs?.let { logs -> InstanceLogsTab(logs) }
             }
         }
     }
@@ -230,9 +236,9 @@ private fun InstanceHeader(instance: InstanceView) = SharedElementTransitionScop
             anchor = AppDropdownPanelAnchor.BottomEnd,
             menuContent = {
                 AppMenuItem(
+                    onClick = { eventSink(InstanceDetailsEvent.Delete) },
                     text = stringResource(SharedRes.string.delete),
                     imageVector = Lucide.Trash,
-                    onClick = { eventSink(InstanceDetailsEvent.Delete) },
                     contentColor = Theme[colors][error]
                 )
             }
@@ -241,54 +247,146 @@ private fun InstanceHeader(instance: InstanceView) = SharedElementTransitionScop
 }
 
 @Composable
-private fun InstanceOptionsSection(state: InstanceDetailsState) {
-    AppText("Settings")
+context(eventSink: EventSink<InstanceDetailsEvent>)
+private fun InstanceOptionsTab(instance: InstanceView, state: InstanceDetailsState) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+        contentPadding = PaddingValues(8.dp)
+    ) {
+        InstanceGeneralOptionsSection(instance, state)
+        InstanceJavaOptionsSection(state)
+    }
+}
+
+context(eventSink: EventSink<InstanceDetailsEvent>)
+private fun LazyListScope.InstanceGeneralOptionsSection(instance: InstanceView, state: InstanceDetailsState) {
+    InstanceTabSection(
+        titleRes = InstanceRes.string.general,
+        icon = Lucide.Info
+    ) {
+        item(InstanceRes.string.instanceName) {
+            AppTextField(
+                label = stringResource(InstanceRes.string.instanceName),
+                initialValue = instance.name,
+                onValueChange = { eventSink(InstanceDetailsEvent.UpdateInstanceName(it)) },
+                backgroundColor = Theme[colors][surface2],
+                modifier = Modifier.widthIn(min = 300.dp)
+            )
+        }
+        item(GameRes.string.gameVersion) {
+            val gameVersion = remember(state.gameVersionList, instance.version) {
+                state.gameVersionList.find { it.id == instance.version }
+            }
+
+            GameVersionSelector(
+                selectedVersion = gameVersion,
+                versionList = state.gameVersionList,
+                onVersionChange = { it?.let { eventSink(InstanceDetailsEvent.UpdateInstanceGameVersion(it.id)) } },
+                backgroundColor = Theme[colors][surface2]
+            )
+        }
+    }
+}
+
+private fun LazyListScope.InstanceJavaOptionsSection(state: InstanceDetailsState) {
+    InstanceTabSection(
+        titleRes = InstanceRes.string.java,
+        icon = Lucide.Settings2
+    ) {
+
+    }
+}
+
+private fun LazyListScope.InstanceTabSection(
+    titleRes: StringResource,
+    icon: ImageVector,
+    content: LazyListScope.() -> Unit
+) {
+    stickyHeader(titleRes) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            AppIcon(
+                imageVector = icon,
+                contentDescription = null,
+                modifier = Modifier.size(20.dp)
+            )
+            AppText(
+                text = stringResource(titleRes),
+                style = Theme[textStyles][title],
+            )
+        }
+    }
+    content()
+}
+
+private fun LazyListScope.InstanceTabRow(
+    title: StringResource,
+    description: StringResource? = null,
+    content: @Composable RowScope.() -> Unit
+) {
+    item(title.key) {
+        Row(
+            modifier = Modifier.padding(horizontal = 8.dp).fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                AppText(text = stringResource(title), fontWeight = FontWeight.SemiBold)
+                description?.let { AppText(text = stringResource(it), style = Theme[textStyles][label]) }
+            }
+            content()
+        }
+    }
 }
 
 @Composable
-private fun InstanceModsSection(state: InstanceDetailsState) {
+private fun InstanceModsTab(state: InstanceDetailsState) {
     AppText("Mods")
 }
 
 @Composable
-private fun InstanceResourcePacksSection(state: InstanceDetailsState) {
+private fun InstanceResourcePacksTab(state: InstanceDetailsState) {
     AppText("Resource Packs")
 }
 
 @Composable
-private fun InstanceShaderPacksSection(state: InstanceDetailsState) {
+private fun InstanceShaderPacksTab(state: InstanceDetailsState) {
     AppText("Shader Packs")
 }
 
 @Composable
-private fun InstanceDataPacksSection(state: InstanceDetailsState) {
+private fun InstanceDataPacksTab(state: InstanceDetailsState) {
     AppText("Data Packs")
 }
 
 @Composable
-private fun InstanceWorldsSection(state: InstanceDetailsState) {
+private fun InstanceWorldsTab(state: InstanceDetailsState) {
     AppText("Worlds")
 }
 
 @Composable
-private fun InstanceLogsSection(logs: List<InstanceLogEventView>?) {
-    logs?.let { logs ->
-        val scrollState = rememberScrollState()
-        SelectionContainer(modifier = Modifier.fillMaxSize()) {
-            Column(
-                modifier = Modifier.fillMaxSize().appCard().padding(horizontal = 8.dp).verticalScroll(scrollState),
-                verticalArrangement = Arrangement.spacedBy(2.dp)
-            ) {
-                ProvideTextStyle(Theme[textStyles][console]) {
-                    logs.forEachIndexed { index, it ->
-                        InstanceLogMessage(it, index, logs)
-                    }
+private fun InstanceLogsTab(logs: List<InstanceLogEventView>) {
+    val scrollState = rememberScrollState()
+    SelectionContainer(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier.fillMaxSize().appCard().padding(horizontal = 8.dp).verticalScroll(scrollState),
+            verticalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
+            ProvideTextStyle(Theme[textStyles][console]) {
+                logs.forEachIndexed { index, it ->
+                    InstanceLogMessage(it, index, logs)
                 }
             }
+        }
 
-            LaunchedEffect(logs) {
-                scrollState.scrollTo(scrollState.maxValue)
-            }
+        LaunchedEffect(logs) {
+            scrollState.scrollTo(scrollState.maxValue)
         }
     }
 }

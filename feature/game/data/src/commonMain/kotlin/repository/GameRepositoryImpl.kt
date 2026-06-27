@@ -55,7 +55,8 @@ class GameRepositoryImpl(
     private val assetIndexesPath = Path(dataPath, "assets", "indexes")
     private val versionManifestFileValidationRequest = FileValidationRequest.Channel(
         channel = { it.request(ApiV1 / Game / Game.versions).body() },
-        path = Path(versionsPath, "manifest.json")
+        path = Path(versionsPath, "manifest.json"),
+        alwaysRedownload = true,
     )
     private val versionManifestMutex = Mutex()
     private val versionManifestState: MutableProgressiveStateFlow<GameVersionError.InvalidManifest, GameVersionList> =

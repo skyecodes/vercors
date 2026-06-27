@@ -43,4 +43,7 @@
     <string name="dataPacks">Data Packs</string>
     <string name="worlds">Worlds</string>
     <string name="logs">Logs</string>
+
+    <string name="general">General</string>
+    <string name="java">Java</string>
 </resources>

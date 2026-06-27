@@ -21,7 +21,7 @@ fun AppMenuButton(
     text: String? = null,
     imageVector: ImageVector? = null,
     backgroundColor: Color = Color.Unspecified,
-    menuContent: @Composable AppMenuScope.() -> Unit,
+    menuContent: @Composable () -> Unit,
     contentPadding: PaddingValues = NormalButtonContentPadding,
     modifier: Modifier = Modifier,
     menuModifier: Modifier = Modifier,
@@ -39,12 +39,8 @@ fun AppMenuButton(
             DropdownMenuPanel(
                 modifier = menuModifier.appCard(backgroundColor = Theme[colors][surface2])
                     .width(IntrinsicSize.Max),
-            ) scope@{
-                with(object : AppMenuScope {
-                    override val innerScope = this@scope
-                }) {
-                    menuContent()
-                }
+            ) {
+                menuContent()
             }
         }
     ) {
@@ -58,38 +54,32 @@ fun AppMenuButton(
     }
 }
 
-interface AppMenuScope {
-    val innerScope: DropdownMenuPanelScope
-}
-
 @Composable
-fun AppMenuScope.AppMenuItem(
+fun AppMenuItem(
     onClick: () -> Unit,
     text: String? = null,
     imageVector: ImageVector? = null,
     enabled: Boolean = true,
     contentColor: Color = LocalContentColor.current
 ) {
-    with(innerScope) {
-        MenuItem(
-            onClick = onClick,
-            enabled = enabled,
-            indication = LocalIndication.current
-        ) {
-            ProvideContentColor(if (enabled) contentColor else contentColor.copy(alpha = 0.8f)) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .pointerHoverIcon(PointerIcon.Hand, true)
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    AppIconTextButtonContent(
-                        text = text,
-                        imageVector = imageVector,
-                    )
-                }
+    UnstyledDropdownMenuItem(
+        onClick = onClick,
+        enabled = enabled,
+        indication = LocalIndication.current
+    ) {
+        ProvideContentColor(if (enabled) contentColor else contentColor.copy(alpha = 0.8f)) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .pointerHoverIcon(PointerIcon.Hand, true)
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                AppIconTextButtonContent(
+                    text = text,
+                    imageVector = imageVector,
+                )
             }
         }
     }

@@ -9,13 +9,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import app.vercors.core.ui.component.*
+import app.vercors.core.ui.component.AppIcon
+import app.vercors.core.ui.component.AppIconTextButton
+import app.vercors.core.ui.component.AppText
+import app.vercors.core.ui.component.AppTextField
 import app.vercors.core.ui.layout.AppForm
 import app.vercors.core.ui.modifier.appCard
 import app.vercors.core.ui.theme.*
-import app.vercors.feature.game.ui.GameRes
-import app.vercors.feature.game.ui.gameVersion
-import app.vercors.feature.game.ui.showSnapshots
+import app.vercors.feature.game.ui.GameVersionSelector
 import app.vercors.feature.instance.ui.InstanceRes
 import app.vercors.feature.instance.ui.createInstance
 import app.vercors.feature.instance.ui.instanceName
@@ -23,10 +24,8 @@ import app.vercors.shared.ui.EventSink
 import app.vercors.shared.ui.SharedRes
 import app.vercors.shared.ui.Store
 import app.vercors.shared.ui.create
-import com.composables.icons.lucide.Bug
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Plus
-import com.composables.icons.lucide.Star
 import com.composeunstyled.theme.Theme
 import com.slack.circuit.codegen.annotations.CircuitInject
 import dev.zacsweers.metro.AppScope
@@ -133,34 +132,11 @@ private fun CreateCustomInstanceView(state: CreateInstanceState) {
             modifier = Modifier.width(300.dp),
         )
 
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            verticalAlignment = Alignment.Bottom
-        ) {
-            AppSelectField(
-                label = stringResource(GameRes.string.gameVersion),
-                value = state.filteredSelectedGameVersion,
-                items = state.filteredGameVersionList,
-                onValueChange = { eventSink(CreateInstanceEvent.OnGameVersionChange(it)) },
-                itemRenderer = { value, _ ->
-                    AppSelectItem(
-                        text = value?.displayName ?: "",
-                        icon = if (value?.isLatestRelease == true) Lucide.Star else if (value?.isLatestSnapshot == true) Lucide.Bug else null
-                    )
-                },
-                searchable = true,
-                search = state.gameVersionFilter,
-                onSearchChange = { eventSink(CreateInstanceEvent.OnGameVersionSearchChange(it)) },
-                modifier = Modifier.width(300.dp),
-            )
-
-            AppCheckbox(
-                modifier = Modifier.padding(bottom = 4.dp),
-                label = stringResource(GameRes.string.showSnapshots),
-                checked = state.showSnapshot,
-                onCheckedChange = { eventSink(CreateInstanceEvent.OnShowSnapshotClick) }
-            )
-        }
+        GameVersionSelector(
+            selectedVersion = state.selectedGameVersion,
+            versionList = state.gameVersionList.valueOrNull ?: emptyList(),
+            onVersionChange = { eventSink(CreateInstanceEvent.OnGameVersionChange(it)) },
+        )
 
         AppIconTextButton(
             onClick = { eventSink(CreateInstanceEvent.OnCreateInstanceClick) },

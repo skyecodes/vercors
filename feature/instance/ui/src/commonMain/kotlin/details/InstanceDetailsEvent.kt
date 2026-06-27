@@ -12,4 +12,6 @@ sealed interface InstanceDetailsEvent : Event {
     data object Delete : InstanceDetailsEvent
     data class ConfirmDelete(val result: Boolean) : InstanceDetailsEvent
     data class SelectTab(val tab: InstanceDetailsTab) : InstanceDetailsEvent
+    data class UpdateInstanceName(val name: String) : InstanceDetailsEvent
+    data class UpdateInstanceGameVersion(val gameVersion: String) : InstanceDetailsEvent
 }

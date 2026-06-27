@@ -23,11 +23,7 @@ repositories {
 
 kotlin {
     compilerOptions.freeCompilerArgs.addAll(
-        "-Xcontext-parameters",
-        "-Xannotation-default-target=param-property",
         "-Xexpect-actual-classes",
-        "-Xexplicit-backing-fields",
-        "-opt-in=kotlin.uuid.ExperimentalUuidApi"
     )
 }
 

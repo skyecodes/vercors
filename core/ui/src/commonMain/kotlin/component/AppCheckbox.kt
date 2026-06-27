@@ -1,6 +1,6 @@
 package app.vercors.core.ui.component
 
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.LocalIndication
@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -23,8 +24,10 @@ import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import app.vercors.core.ui.animation.AppAnimatedVisibility
+import app.vercors.core.ui.animation.appAnimateColorAsState
 import app.vercors.core.ui.theme.colors
-import app.vercors.core.ui.theme.onBackground
+import app.vercors.core.ui.theme.onPrimary
+import app.vercors.core.ui.theme.primary
 import app.vercors.core.ui.theme.surface
 import com.composables.icons.lucide.Check
 import com.composables.icons.lucide.Lucide
@@ -37,8 +40,9 @@ fun AppCheckbox(
     checked: Boolean,
     invert: Boolean = false,
     modifier: Modifier = Modifier,
-    backgroundColor: Color = Theme[colors][surface],
-    contentColor: Color = Theme[colors][onBackground],
+    uncheckedBackgroundColor: Color = Theme[colors][surface],
+    checkedBackgroundColor: Color = Theme[colors][primary],
+    contentColor: Color = Theme[colors][onPrimary],
     checkboxSize: Dp = 24.dp,
     onCheckedChange: (Boolean) -> Unit
 ) {
@@ -53,6 +57,8 @@ fun AppCheckbox(
             onClick = { onCheckedChange(!checked) }
         )
     ) {
+        val backgroundColor by appAnimateColorAsState(if (checked) checkedBackgroundColor else uncheckedBackgroundColor)
+
         if (label != null && !invert) AppText(label)
         UnstyledCheckbox(
             checked = checked,
@@ -82,8 +88,8 @@ private fun CheckIcon(
 ) {
     AppAnimatedVisibility(
         visible = checked,
-        enter = fadeIn(tween(150)),
-        exit = fadeOut(tween(150))
+        enter = fadeIn(spring()),
+        exit = fadeOut(spring())
     ) {
         AppIcon(
             modifier = Modifier.size(checkboxSize).padding(2.dp),

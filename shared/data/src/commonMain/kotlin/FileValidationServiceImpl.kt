@@ -47,7 +47,7 @@ class FileValidationServiceImpl(
         files: List<FileValidationRequest>,
         onProgress: (Progress) -> Unit
     ) = reportProgress(onProgress) {
-        val remainingFiles = files.filter { either { it.validate() }.isLeft() }.toMutableList()
+        val remainingFiles = files.filter { either { it.validate(firstTime = true) }.isLeft() }.toMutableList()
         if (remainingFiles.isEmpty()) {
             report(done())
             return@reportProgress
@@ -82,8 +82,9 @@ class FileValidationServiceImpl(
     }
 
     context(_: Raise<FileValidationFailure>)
-    override suspend fun FileValidationRequest.validate() {
+    override suspend fun FileValidationRequest.validate(firstTime: Boolean) {
         logger.trace { "Validating file $path" }
+        ensure(!alwaysRedownload || !firstTime) { FileValidationFailure.FileNotFound(path) }
         val metadata = ensureNotNull(path.metadataOrNull()) { FileValidationFailure.FileNotFound(path) }
         ensure(metadata.isRegularFile) { FileValidationFailure.NotRegularFile(path) }
         if (size != null) ensure(size == metadata.size) { FileValidationFailure.SizeMismatch(path) }

@@ -22,6 +22,7 @@ appdirs = "2.0.0"
 oshi = "7.3.2"
 kzip = "1.1.1"
 xmlutil = "1.0.0-rc3"
+jna = "5.19.0"
 # GUI
 compose = "1.12.0-alpha02"
 compose-hot-reload = "1.1.1"
@@ -94,6 +95,8 @@ oshi = { module = "com.github.oshi:oshi-core", version.ref = "oshi" }
 kzip = { module = "de.jonasbroeckmann.kzip:kzip", version.ref = "kzip" }
 xmlutil-core = { module = "io.github.pdvrieze.xmlutil:core", version.ref = "xmlutil" }
 xmlutil-serialization = { module = "io.github.pdvrieze.xmlutil:serialization", version.ref = "xmlutil" }
+jna = { module = "net.java.dev.jna:jna-jpms", version.ref = "jna" }
+jna-platform = { module = "net.java.dev.jna:jna-platform-jpms", version.ref = "jna" }
 # GUI
 compose-foundation = { module = "org.jetbrains.compose.foundation:foundation", version.ref = "compose" }
 compose-components-resources = { module = "org.jetbrains.compose.components:components-resources", version.ref = "compose" }

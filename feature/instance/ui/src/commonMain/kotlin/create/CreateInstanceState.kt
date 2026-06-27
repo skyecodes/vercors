@@ -11,7 +11,6 @@ import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.PackagePlus
 import com.composables.icons.lucide.SquarePlus
 import opensavvy.state.progressive.ProgressiveOutcome
-import opensavvy.state.progressive.valueOrNull
 import org.jetbrains.compose.resources.StringResource
 
 @Immutable
@@ -24,16 +23,7 @@ data class CreateInstanceState(
     val gameVersionFilter: String,
     val validationErrors: List<InstanceValidationError>,
 ) {
-    val filteredGameVersionList: List<GameVersionView> = gameVersionList.valueOrNull?.filter {
-        (gameVersionFilter.isBlank() || it.id.contains(
-            gameVersionFilter,
-            ignoreCase = true
-        )) && (showSnapshot || !it.isSnapshot)
-    } ?: emptyList()
-    val canCreateInstance: Boolean = instanceName.isNotBlank() && selectedGameVersion != null
-    val filteredSelectedGameVersion: GameVersionView? = filteredGameVersionList.find { it == selectedGameVersion }
-        ?: filteredGameVersionList.firstOrNull { it.isLatestRelease }
-        ?: filteredGameVersionList.firstOrNull()
+    val canCreateInstance: Boolean = instanceName.length >= 3 && selectedGameVersion != null
 }
 
 enum class CreateInstanceTab(

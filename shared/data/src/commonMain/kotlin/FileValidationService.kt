@@ -24,7 +24,7 @@ interface FileValidationService {
     suspend fun FileValidationRequest.downloadAndValidate()
 
     context(_: Raise<FileValidationFailure>)
-    suspend fun FileValidationRequest.validate()
+    suspend fun FileValidationRequest.validate(firstTime: Boolean = false)
 
     context(_: Raise<RemoteError>)
     suspend fun FileValidationRequest.download()
@@ -35,12 +35,14 @@ interface FileValidationRequest {
     val path: Path
     val size: Long?
     val sha1: String?
+    val alwaysRedownload: Boolean
 
     open class Url(
         val url: String,
         override val path: Path,
         override val size: Long? = null,
-        override val sha1: String? = null
+        override val sha1: String? = null,
+        override val alwaysRedownload: Boolean = false
     ) : FileValidationRequest {
         override val source: FileRemoteSource = FileRemoteSource { it.get(url).bodyAsSource() }
         override fun toString(): String = "$url -> $path"
@@ -50,7 +52,8 @@ interface FileValidationRequest {
         channel: suspend (HttpClient) -> ByteReadChannel,
         override val path: Path,
         override val size: Long? = null,
-        override val sha1: String? = null
+        override val sha1: String? = null,
+        override val alwaysRedownload: Boolean = false
     ) : FileValidationRequest {
         override val source: FileRemoteSource = FileRemoteSource { channel(it).asSource().buffered() }
         override fun toString(): String = "-> $path"

@@ -18,7 +18,7 @@ fun AppDialog(onClickOutside: () -> Unit, content: @Composable BoxScope.() -> Un
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.7f))
+            .background(Color.Black.copy(alpha = 0.5f))
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
