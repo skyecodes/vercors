@@ -19,7 +19,7 @@ spine = "0.11.0"
 ktorfit = "2.7.5"
 kfswatch = "1.4.0"
 appdirs = "2.0.0"
-oshi = "7.3.1"
+oshi = "7.3.2"
 kzip = "1.1.1"
 xmlutil = "1.0.0-rc3"
 # GUI
