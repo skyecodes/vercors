@@ -8,6 +8,8 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.io.IOException
 import kotlinx.io.files.Path
 import kotlinx.serialization.KSerializer
@@ -30,6 +32,7 @@ internal class FileStoreImpl<T>(
     private val fileWatcherService: FileWatcherService,
     private val backgroundScope: CoroutineScope,
 ) : FileStore<T> {
+    private val fileWriteLock = Mutex()
     private var watcherJob: Job? = null
     private val _flow = MutableProgressiveStateFlow<FileStoreError, T>()
     override val flow: ProgressiveFlow<FileStoreError, T> = _flow.onStart { load() }
@@ -67,8 +70,10 @@ internal class FileStoreImpl<T>(
     }
 
     override suspend fun write(data: T) {
-        logger.debug { "Writing data to $filePath" }
-        filePath.writeJson(serializer, data, json)
+        fileWriteLock.withLock {
+            logger.debug { "Writing data to $filePath" }
+            filePath.writeJson(serializer, data, json)
+        }
     }
 
 }

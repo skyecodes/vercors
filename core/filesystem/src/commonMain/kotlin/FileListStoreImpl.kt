@@ -41,7 +41,8 @@ internal class FileListStoreImpl<T>(
     private val backgroundScope: CoroutineScope,
     @Named("parallelFilesystemOperations") private val parallelFilesystemOperationsProvider: () -> Int
 ) : FileListStore<T> {
-    private val mutex = Mutex()
+    private val loadMutex = Mutex()
+    private val fileWriteLock = mutableMapOf<String, Mutex>()
     private val loadMap = mutableMapOf<String, Job>()
     private var watcherJob: Job? = null
     private val _flow = MutableProgressiveStateFlow<Nothing, Map<String, Either<FileStoreError, T>>>()
@@ -64,7 +65,7 @@ internal class FileListStoreImpl<T>(
     @OptIn(ExperimentalAtomicApi::class)
     private suspend fun loadAll() {
         startWatcher()
-        mutex.withLock {
+        loadMutex.withLock {
             _flow.emit(_flow.value.copy(loading(0.0)))
             if (!directoryPath.exists()) directoryPath.createDirectories()
             val current = AtomicInt(0)
@@ -95,7 +96,7 @@ internal class FileListStoreImpl<T>(
     }
 
     private suspend fun loadOne(event: FileEvent) {
-        mutex.withLock {
+        loadMutex.withLock {
             if (event.type == FileEvent.Type.DELETE) {
                 _flow.update { outcome ->
                     outcome.map { it - event.path.instanceKey }
@@ -128,14 +129,18 @@ internal class FileListStoreImpl<T>(
 
     override suspend fun write(name: String, data: T) {
         val filePath = Path(directoryPath, "$name.json")
-        logger.debug { "Writing data to $filePath" }
-        filePath.writeJson(serializer, data, json)
+        fileWriteLock.getOrPut(name, ::Mutex).withLock {
+            logger.debug { "Writing data to $filePath" }
+            filePath.writeJson(serializer, data, json)
+        }
     }
 
     override suspend fun delete(name: String) {
         val filePath = Path(directoryPath, "$name.json")
-        logger.debug { "Deleting file at $filePath" }
-        filePath.delete()
+        fileWriteLock.getOrPut(name, ::Mutex).withLock {
+            logger.debug { "Deleting file at $filePath" }
+            filePath.delete()
+        }
     }
 
     val Path.instanceKey: String get() = name.removeSuffix(".json")
