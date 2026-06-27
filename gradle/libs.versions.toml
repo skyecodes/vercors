@@ -45,7 +45,7 @@ metro = "1.2.1"
 logback = "1.5.37"
 kotlin-logging = "8.0.4"
 # Test
-mokkery = "3.4.1"
+mokkery = "3.4.2"
 turbine = "1.2.1"
 
 [libraries]
