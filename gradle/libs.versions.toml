@@ -21,7 +21,7 @@ kfswatch = "1.4.0"
 appdirs = "2.0.0"
 oshi = "7.3.2"
 kzip = "1.1.1"
-xmlutil = "1.0.0-rc3"
+xmlutil = "1.0.0"
 jna = "5.19.1"
 # GUI
 compose = "1.12.0-alpha02"
