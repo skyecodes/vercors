@@ -24,7 +24,7 @@ kzip = "2.0.0"
 xmlutil = "1.0.1"
 jna = "5.19.1"
 # GUI
-compose = "1.12.0-beta02"
+compose = "1.12.0-beta03"
 compose-hot-reload = "1.2.0"
 lifecycle = "2.11.0"
 navigation3 = "1.1.1"
