@@ -13,7 +13,7 @@ gradle-versions = "0.57.0"
 # Data
 serialization = "1.11.0"
 io = "0.9.1"
-ktor = "3.5.1"
+ktor = "3.5.2"
 ktor-simple-cache = "0.72.1"
 spine = "0.12.1"
 ktorfit = "2.7.5"
