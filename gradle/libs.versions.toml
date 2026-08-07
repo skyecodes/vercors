@@ -39,7 +39,7 @@ webview = "2.0.3"
 # CLI
 clikt = "5.1.0"
 mordant = "3.0.2"
-graalvm = "1.1.7"
+graalvm = "1.1.8"
 # DI
 metro = "1.4.1"
 # Logging
