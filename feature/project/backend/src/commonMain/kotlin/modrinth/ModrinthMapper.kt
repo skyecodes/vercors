@@ -15,7 +15,14 @@ internal fun buildFacets(
 ): String? {
     val parts = mutableListOf<String>()
     projectType?.let { parts.add("[\"project_type:${projectType.toModrinthString()}\"]") }
-    loaders?.let { parts.add(it.joinToString(",", "[", "]") { loader -> "\"categories:$loader\"" }) }
+    loaders?.let {
+        parts.add(
+            it.joinToString(
+                ",",
+                "[",
+                "]"
+            ) { loader -> "\"categories:${loader.toModrinthString()}\"" })
+    }
     gameVersions?.let { parts.add(it.joinToString(",", "[", "]") { gameVersion -> "\"versions:$gameVersion\"" }) }
     categories?.let { parts.add(it.joinToString(",", "[", "]") { category -> "\"categories:$category\"" }) }
     return if (parts.isEmpty()) null else parts.joinToString(",", "[", "]")
@@ -29,6 +36,13 @@ private fun ProjectTypeData.toModrinthString(): String = when (this) {
     ProjectTypeData.ShaderPack -> "shader"
     ProjectTypeData.DataPack -> "datapack"
     ProjectTypeData.World -> raise(UnsupportedProjectTypeData(this))
+}
+
+private fun ProjectLoaderData.toModrinthString(): String = when (this) {
+    ProjectLoaderData.Forge -> "forge"
+    ProjectLoaderData.NeoForge -> "neoforge"
+    ProjectLoaderData.Fabric -> "fabric"
+    ProjectLoaderData.Quilt -> "quilt"
 }
 
 internal fun ModrinthProjectSearchResult.convert(): ProjectSearchResponseData = ProjectSearchResponseData(
