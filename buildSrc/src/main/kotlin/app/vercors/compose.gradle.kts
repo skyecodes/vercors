@@ -6,6 +6,7 @@ plugins {
     id("app.vercors.base")
     id("org.jetbrains.compose")
     kotlin("plugin.compose")
+    id("dev.nucleusframework")
     id("com.google.devtools.ksp")
 }
 

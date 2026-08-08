@@ -35,6 +35,7 @@ ripple = "1.1.0"
 coil = "3.5.0"
 markdown-renderer = "0.43.0"
 webview = "2.0.3"
+nucleusframework = "2.3.2"
 # CLI
 clikt = "5.1.0"
 mordant = "3.0.2"
@@ -142,6 +143,7 @@ gradle-plugin-ktorfit = { module = "de.jensklingenberg.ktorfit:de.jensklingenber
 gradle-plugin-compose-multiplatform = { module = "org.jetbrains.compose:org.jetbrains.compose.gradle.plugin", version.ref = "compose" }
 gradle-plugin-compose-compiler = { module = "org.jetbrains.kotlin.plugin.compose:org.jetbrains.kotlin.plugin.compose.gradle.plugin", version.ref = "kotlin" }
 gradle-plugin-compose-hot-reload = { module = "org.jetbrains.compose.hot-reload:org.jetbrains.compose.hot-reload.gradle.plugin", version.ref = "compose-hot-reload" }
+gradle-plugin-nucleusframework = { module = "dev.nucleusframework:dev.nucleusframework.gradle.plugin", version.ref = "nucleusframework" }
 # CLI
 gradle-plugin-graalvm = { module = "org.graalvm.buildtools.native:org.graalvm.buildtools.native.gradle.plugin", version.ref = "graalvm" }
 # DI
@@ -182,6 +184,7 @@ gradle-plugins = [
     "gradle-plugin-compose-multiplatform",
     "gradle-plugin-compose-compiler",
     "gradle-plugin-compose-hot-reload",
+    "gradle-plugin-nucleusframework",
     "gradle-plugin-graalvm",
     "gradle-plugin-metro",
     "gradle-plugin-mokkery"

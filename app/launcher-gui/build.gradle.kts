@@ -1,4 +1,4 @@
-import org.jetbrains.compose.desktop.application.dsl.TargetFormat
+import dev.nucleusframework.desktop.application.dsl.TargetFormat
 
 plugins {
     id("app.vercors.compose")
@@ -54,15 +54,13 @@ java {
     }
 }
 
-compose.desktop {
-    application {
-        mainClass = "app.vercors.launcher.gui.MainKt"
+nucleus.application {
+    mainClass = "app.vercors.launcher.gui.MainKt"
 
-        nativeDistributions {
-            targetFormats(*TargetFormat.entries.toTypedArray())
-            packageName = "app.vercors.launcher"
-            packageVersion = "1.0.0"
-        }
+    nativeDistributions {
+        targetFormats(*TargetFormat.entries.toTypedArray())
+        packageName = "app.vercors.launcher"
+        packageVersion = "1.0.0"
     }
 }
 
