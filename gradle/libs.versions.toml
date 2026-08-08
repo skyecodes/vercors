@@ -9,7 +9,6 @@ datetime = "0.8.0"
 cryptography = "0.6.0"
 human-readable = "1.13.1"
 buildconfig = "6.0.10"
-gradle-versions = "0.60.0"
 # Data
 serialization = "1.11.0"
 io = "0.9.1"
@@ -156,7 +155,6 @@ kotlin-jvm = { id = "org.jetbrains.kotlin.jvm" }
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform" }
 ksp = { id = "com.google.devtools.ksp" }
 buildconfig = { id = "com.github.gmazzo.buildconfig" }
-gradle-versions = { id = "com.github.ben-manes.versions", version.ref = "gradle-versions" }
 # Data
 serialization = { id = "org.jetbrains.kotlin.plugin.serialization" }
 ktor = { id = "io.ktor.plugin" }
