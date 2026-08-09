@@ -1,4 +1,4 @@
-package app.vercors.shared.system
+package app.vercors.core.system
 
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding

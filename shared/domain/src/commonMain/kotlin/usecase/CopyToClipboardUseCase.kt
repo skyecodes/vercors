@@ -1,6 +1,6 @@
 package app.vercors.shared.domain.usecase
 
-import app.vercors.shared.system.SystemService
+import app.vercors.core.system.SystemService
 import dev.zacsweers.metro.Inject
 
 @Inject

@@ -1,4 +1,4 @@
-package app.vercors.shared.system
+package app.vercors.core.system
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO

@@ -8,7 +8,7 @@ plugins {
 }
 
 base.archivesName.set(project.path.drop(1).replace(":", "-"))
-version = "0.1.0"
+version = rootProject.version
 
 repositories {
     mavenCentral()

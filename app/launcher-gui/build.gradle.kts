@@ -60,7 +60,7 @@ nucleus.application {
     nativeDistributions {
         targetFormats(*TargetFormat.entries.toTypedArray())
         packageName = "app.vercors.launcher"
-        packageVersion = "1.0.0"
+        packageVersion = rootProject.version.toString()
     }
 }
 

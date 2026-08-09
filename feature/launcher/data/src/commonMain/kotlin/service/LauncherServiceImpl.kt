@@ -1,6 +1,7 @@
 package app.vercors.feature.launcher.data.service
 
 import app.vercors.core.filesystem.createDirectories
+import app.vercors.core.system.SystemService
 import app.vercors.feature.account.domain.model.Account
 import app.vercors.feature.game.domain.model.GameAssetIndex
 import app.vercors.feature.game.domain.model.GameVersionDetails
@@ -14,7 +15,6 @@ import app.vercors.shared.data.FileValidationRequest
 import app.vercors.shared.data.FileValidationService
 import app.vercors.shared.domain.LAUNCHER_NAME
 import app.vercors.shared.domain.LAUNCHER_VERSION
-import app.vercors.shared.system.SystemService
 import arrow.core.NonEmptyList
 import arrow.core.raise.Raise
 import arrow.core.raise.either
