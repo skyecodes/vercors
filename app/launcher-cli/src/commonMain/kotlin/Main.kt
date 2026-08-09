@@ -1,6 +1,7 @@
 package app.vercors.launcher.cli
 
 import app.vercors.shared.command.AbstractCommand
+import app.vercors.shared.data.AppPaths
 import com.github.ajalt.clikt.command.SuspendingCliktCommand
 import com.github.ajalt.clikt.command.main
 import com.github.ajalt.clikt.core.subcommands
@@ -15,8 +16,7 @@ fun main(args: Array<String>) {
     configureLoggingPre()
     val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     val appGraph = createGraphFactory<AppGraph.Factory>().create(scope)
-    val logDir = Path(appGraph.appPath, "logs")
-    configureLoggingPost(logDir)
+    configureLoggingPost(appGraph.appPaths.logs)
     runBlocking {
         MainCommand().subcommands(appGraph.commands).main(args)
     }
@@ -43,7 +43,7 @@ class MainCommand : SuspendingCliktCommand("vercors") {
 
 @DependencyGraph(AppScope::class)
 internal interface AppGraph {
-    val appPath: Path
+    val appPaths: AppPaths
     val commands: Set<AbstractCommand>
 
     @DependencyGraph.Factory

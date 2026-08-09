@@ -17,7 +17,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import kotlinx.io.files.Path
 import okio.Path.Companion.toPath
 import java.awt.Dimension
 
@@ -25,8 +24,7 @@ import java.awt.Dimension
 fun main() {
     val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     val appGraph = createGraphFactory<AppGraph.Factory>().create(scope)
-    val logDir = Path(appGraph.appPath, "logs")
-    System.setProperty("app.vercors.logDir", logDir.toString())
+    System.setProperty("app.vercors.logDir", appGraph.appPaths.logs.toString())
     val logger = KotlinLogging.logger {}
     logger.info { "Hello World!" }
 
@@ -38,9 +36,7 @@ fun main() {
             ImageLoader.Builder(it)
                 .diskCache(
                     DiskCache.Builder()
-                        .directory(
-                            appGraph.appPath.toString().toPath().resolve("data").resolve("cache").resolve("image")
-                        )
+                        .directory(appGraph.appPaths.imageCache.toString().toPath())
                         .build()
                 )
                 .build()

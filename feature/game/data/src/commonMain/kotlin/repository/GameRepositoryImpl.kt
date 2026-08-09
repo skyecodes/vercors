@@ -13,6 +13,7 @@ import app.vercors.feature.game.domain.model.GameVersionError.InvalidDetails
 import app.vercors.feature.game.domain.model.GameVersionList
 import app.vercors.feature.game.domain.repository.GameRepository
 import app.vercors.shared.api.ApiV1
+import app.vercors.shared.data.AppPaths
 import app.vercors.shared.data.FileValidationRequest
 import app.vercors.shared.data.FileValidationService
 import arrow.core.raise.Raise
@@ -28,7 +29,6 @@ import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.io.files.Path
 import opensavvy.progress.loading
 import opensavvy.spine.api.div
 import opensavvy.spine.client.arrow.body
@@ -48,14 +48,11 @@ private val logger = KotlinLogging.logger {}
 class GameRepositoryImpl(
     private val fileValidationService: FileValidationService,
     private val gameLocalDataSource: GameLocalDataSource,
-    appPath: Path,
+    appPaths: AppPaths,
 ) : GameRepository {
-    private val dataPath = Path(appPath, "data")
-    private val versionsPath = Path(dataPath, "versions")
-    private val assetIndexesPath = Path(dataPath, "assets", "indexes")
     private val versionManifestFileValidationRequest = FileValidationRequest.Channel(
         channel = { it.request(ApiV1 / Game / Game.versions).body() },
-        path = Path(versionsPath, "manifest.json"),
+        path = appPaths.versionManifestFile,
         alwaysRedownload = true,
     )
     private val versionManifestMutex = Mutex()

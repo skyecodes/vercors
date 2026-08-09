@@ -1,5 +1,6 @@
 package app.vercors.launcher.gui
 
+import app.vercors.shared.data.AppPaths
 import com.slack.circuit.foundation.Circuit
 import com.slack.circuit.foundation.animation.AnimatedNavDecorator
 import com.slack.circuit.runtime.navigation.NavArgument
@@ -10,11 +11,10 @@ import dev.zacsweers.metro.DependencyGraph
 import dev.zacsweers.metro.Provides
 import dev.zacsweers.metro.SingleIn
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.io.files.Path
 
 @DependencyGraph(AppScope::class)
 internal interface AppGraph {
-    val appPath: Path
+    val appPaths: AppPaths
     val circuit: Circuit
 
     @Provides

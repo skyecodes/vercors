@@ -11,6 +11,7 @@ import app.vercors.feature.account.data.dto.toData
 import app.vercors.feature.account.data.dto.toDomain
 import app.vercors.feature.account.domain.model.*
 import app.vercors.feature.account.domain.repository.AccountRepository
+import app.vercors.shared.data.AppPaths
 import arrow.core.raise.Raise
 import arrow.core.raise.context.bind
 import arrow.core.raise.context.ensureNotNull
@@ -26,7 +27,6 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.io.bytestring.hexToByteString
 import kotlinx.io.bytestring.toHexString
-import kotlinx.io.files.Path
 import opensavvy.state.arrow.toEither
 import opensavvy.state.coroutines.now
 import opensavvy.state.outcome.onSuccess
@@ -42,7 +42,7 @@ private val logger = KotlinLogging.logger {}
 @Inject
 class AccountRepositoryImpl(
     coroutineScope: CoroutineScope,
-    appPath: Path,
+    appPaths: AppPaths,
     private val dataSource: AccountDataSource,
     private val cryptographyService: CryptographyService
 ) : AccountRepository {
@@ -53,7 +53,7 @@ class AccountRepositoryImpl(
         }.onEach {
             logger.trace { "Account list: $it" }
         }.progressiveStateIn(coroutineScope)
-    private val keyFile = Path(appPath, "key.priv")
+    private val keyFile = appPaths.privateKeyFile
 
     override suspend fun addAccount(account: Account) {
         mutex.withLock {
