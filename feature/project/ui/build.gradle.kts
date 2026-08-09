@@ -8,7 +8,6 @@ dependencies {
     commonMainImplementation(projects.feature.game.ui)
     commonMainImplementation(projects.feature.config.domain)
     commonMainImplementation(libs.human.readable)
-    commonMainImplementation(libs.composables.icons.fontawesome.brands)
 }
 
 compose.resources {

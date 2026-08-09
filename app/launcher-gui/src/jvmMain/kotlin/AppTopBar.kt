@@ -19,13 +19,12 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import app.vercors.core.ui.component.AppButton
 import app.vercors.core.ui.component.AppIcon
 import app.vercors.core.ui.component.AppText
-import app.vercors.core.ui.theme.colors
-import app.vercors.core.ui.theme.error
-import app.vercors.core.ui.theme.onError
+import app.vercors.core.ui.theme.*
 import app.vercors.shared.ui.SharedRes
 import app.vercors.shared.ui.back
 import app.vercors.shared.ui.next
@@ -66,7 +65,11 @@ fun AppTopBar(
                         imageVector = Lucide.MountainSnow,
                         contentDescription = stringResource(Res.string.appTitle)
                     )
-                    AppText(stringResource(Res.string.appTitle))
+                    AppText(
+                        text = stringResource(Res.string.appTitle),
+                        fontFamily = Theme[fonts][tight],
+                        fontWeight = FontWeight.SemiBold
+                    )
                     AppNavButton(
                         imageVector = Lucide.ChevronLeft,
                         contentDescription = stringResource(SharedRes.string.back),

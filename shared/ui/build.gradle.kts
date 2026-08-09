@@ -9,6 +9,7 @@ dependencies {
     commonMainApi(libs.androidx.lifecycle.runtime)
     commonMainApi(libs.androidx.navigation3.ui)
     commonMainApi(libs.composables.icons.lucide)
+    commonMainApi(libs.composables.icons.fontawesome.brands)
     commonMainApi(libs.metrox.viewmodel.compose)
 }
 

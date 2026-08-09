@@ -327,7 +327,7 @@ private fun LazyListScope.InstanceGeneralOptionsSection(instance: InstanceView, 
 private fun LazyListScope.InstanceJavaOptionsSection(state: InstanceDetailsState) {
     InstanceTabSection(
         titleRes = InstanceRes.string.java,
-        icon = Lucide.Settings2
+        icon = Lucide.Coffee
     ) {
 
     }
