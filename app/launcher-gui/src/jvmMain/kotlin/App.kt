@@ -6,11 +6,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.WindowScope
 import app.vercors.core.ui.animation.LocalAnimation
 import app.vercors.core.ui.theme.AppTheme
 import app.vercors.core.ui.theme.background
@@ -38,6 +36,9 @@ fun App(
 ) {
     val (state, eventSink) = store
 
+    val navStack = rememberSaveableNavStack(root = HomeScreen)
+    val navigator = rememberCircuitNavigator(navStack) {}
+
     if (state.config != null && state.theme != null && state.accentColor != null) {
         CompositionLocalProvider(LocalAnimation provides state.config.animations) {
             (AppTheme(
@@ -51,14 +52,9 @@ fun App(
                         Column(
                             modifier = Modifier.fillMaxSize().background(Theme[colors][backgroundAlt])
                         ) {
-                            val navStack = rememberSaveableNavStack(root = HomeScreen)
-                            val navigator = rememberCircuitNavigator(navStack) {}
-
                             AppTopBar(
                                 canGoBack = navStack.currentRecord != navStack.rootRecord,
                                 canGoNext = navStack.currentRecord != navStack.topRecord,
-                                isMinimized = state.isMinimized,
-                                onWindowEvent = state.onWindowEvent,
                                 onNavigateBack = { navigator.backward() },
                                 onNavigateNext = { navigator.forward() }
                             )
@@ -103,11 +99,3 @@ private fun AppContent(
         }
     }
 }
-
-sealed interface AppWindowEvent {
-    data object Minimize : AppWindowEvent
-    data object Maximize : AppWindowEvent
-    data object Close : AppWindowEvent
-}
-
-internal val LocalAppWindowScope = staticCompositionLocalOf<WindowScope> { error("WindowScope must be set") }

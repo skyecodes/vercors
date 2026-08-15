@@ -2,6 +2,7 @@ package app.vercors.launcher.gui
 
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
@@ -51,25 +52,30 @@ fun main() {
                 window.minimumSize = Dimension(960, 540)
             }
 
-            CompositionLocalProvider(LocalAppWindowScope provides this) {
-                CircuitCompositionLocals(appGraph.circuit) {
-                    CircuitContent(
-                        AppScreen(
-                            isMinimized = windowState.placement != WindowPlacement.Maximized,
-                            onWindowEvent = {
-                                when (it) {
-                                    AppWindowEvent.Close -> exitApplication()
-                                    AppWindowEvent.Maximize -> windowState.placement =
-                                        when (windowState.placement) {
-                                            WindowPlacement.Floating -> WindowPlacement.Maximized
-                                            else -> WindowPlacement.Floating
-                                        }
+            val windowScope = this
+            val appWindow = remember(windowState) {
+                object : AppWindow, WindowScope by windowScope {
+                    override val isMaximized: Boolean
+                        get() = windowState.placement == WindowPlacement.Maximized
 
-                                    AppWindowEvent.Minimize -> windowState.isMinimized = true
+                    override fun onEvent(event: AppWindowEvent) {
+                        when (event) {
+                            AppWindowEvent.Close -> exitApplication()
+                            AppWindowEvent.Maximize -> windowState.placement =
+                                when (windowState.placement) {
+                                    WindowPlacement.Floating -> WindowPlacement.Maximized
+                                    else -> WindowPlacement.Floating
                                 }
-                            }
-                        )
-                    )
+
+                            AppWindowEvent.Minimize -> windowState.isMinimized = true
+                        }
+                    }
+                }
+            }
+
+            CompositionLocalProvider(LocalAppWindow provides appWindow) {
+                CircuitCompositionLocals(appGraph.circuit) {
+                    CircuitContent(AppScreen)
                 }
             }
         }

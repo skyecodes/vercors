@@ -7,8 +7,6 @@ import app.vercors.feature.theme.domain.model.ThemeDefinition
 @Immutable
 data class AppState(
     val config: Configuration?,
-    val isMinimized: Boolean,
-    val onWindowEvent: (AppWindowEvent) -> Unit,
     val theme: ThemeDefinition?,
     val accentColor: Long?,
 )

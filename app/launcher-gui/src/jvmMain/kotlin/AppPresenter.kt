@@ -12,9 +12,7 @@ import app.vercors.shared.ui.SnackbarService
 import app.vercors.shared.ui.Store
 import com.slack.circuit.codegen.annotations.CircuitInject
 import dev.zacsweers.metro.AppScope
-import dev.zacsweers.metro.Assisted
-import dev.zacsweers.metro.AssistedFactory
-import dev.zacsweers.metro.AssistedInject
+import dev.zacsweers.metro.Inject
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -22,9 +20,9 @@ import opensavvy.state.progressive.valueOrNull
 
 private val logger = KotlinLogging.logger {}
 
-@AssistedInject
+@CircuitInject(AppScreen::class, AppScope::class)
+@Inject
 class AppPresenter(
-    @Assisted private val screen: AppScreen,
     private val backgroundScope: CoroutineScope,
     private val observeGuiConfiguration: ObserveConfigurationUseCase,
     private val updateGuiConfiguration: UpdateConfigurationUseCase,
@@ -48,8 +46,6 @@ class AppPresenter(
             config = cfg,
             theme = theme,
             accentColor = accent,
-            isMinimized = screen.isMinimized,
-            onWindowEvent = screen.onWindowEvent
         ) + {
             when (it) {
                 AppEvent.ToggleDrawer -> backgroundScope.launch {
@@ -57,11 +53,5 @@ class AppPresenter(
                 }
             }
         }
-    }
-
-    @CircuitInject(AppScreen::class, AppScope::class)
-    @AssistedFactory
-    fun interface Factory {
-        fun create(screen: AppScreen): AppPresenter
     }
 }

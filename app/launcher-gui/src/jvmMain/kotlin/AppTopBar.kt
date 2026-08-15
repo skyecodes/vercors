@@ -37,19 +37,17 @@ import org.jetbrains.compose.resources.stringResource
 fun AppTopBar(
     canGoBack: Boolean,
     canGoNext: Boolean,
-    isMinimized: Boolean,
-    onWindowEvent: (AppWindowEvent) -> Unit,
     onNavigateBack: () -> Unit,
     onNavigateNext: () -> Unit,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
 
-    with(LocalAppWindowScope.current) {
+    with(LocalAppWindow.current) {
         WindowDraggableArea(
             modifier = Modifier.combinedClickable(
                 interactionSource = interactionSource,
                 indication = null,
-                onDoubleClick = { onWindowEvent(AppWindowEvent.Maximize) },
+                onDoubleClick = { onEvent(AppWindowEvent.Maximize) },
                 onClick = {}
             )
         ) {
@@ -88,20 +86,20 @@ fun AppTopBar(
                     modifier = Modifier.fillMaxHeight()
                 ) {
                     AppWindowButton(
-                        onClick = { onWindowEvent(AppWindowEvent.Minimize) },
+                        onClick = { onEvent(AppWindowEvent.Minimize) },
                         imageVector = Lucide.Minus,
                         contentDescription = stringResource(Res.string.minimize)
                     )
                     AppWindowButton(
-                        onClick = { onWindowEvent(AppWindowEvent.Maximize) },
-                        imageVector = if (isMinimized) Lucide.Maximize2 else Lucide.Minimize2,
+                        onClick = { onEvent(AppWindowEvent.Maximize) },
+                        imageVector = if (isMaximized) Lucide.Minimize2 else Lucide.Maximize2,
                         contentDescription = stringResource(Res.string.maximize)
                     )
 
                     val interactionSource = remember { MutableInteractionSource() }
                     val hovered by interactionSource.collectIsHoveredAsState()
                     AppWindowButton(
-                        onClick = { onWindowEvent(AppWindowEvent.Close) },
+                        onClick = { onEvent(AppWindowEvent.Close) },
                         imageVector = Lucide.X,
                         contentDescription = stringResource(Res.string.close),
                         tint = if (hovered) Theme[colors][onError] else LocalContentColor.current,
