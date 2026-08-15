@@ -46,7 +46,8 @@ internal class FileListStoreImpl<T>(
     private val loadMap = mutableMapOf<String, Job>()
     private var watcherJob: Job? = null
     private val _flow = MutableProgressiveStateFlow<Nothing, Map<String, Either<FileStoreError, T>>>()
-    override val flow: ProgressiveFlow<Nothing, Map<String, Either<FileStoreError, T>>> = _flow.onStart { loadAll() }
+    override val flow: ProgressiveFlow<Nothing, Map<String, Either<FileStoreError, T>>> =
+        _flow.onStart { backgroundScope.launch { loadAll() } }
 
     private fun startWatcher() {
         if (watcherJob?.isActive == true) return
@@ -54,7 +55,7 @@ internal class FileListStoreImpl<T>(
             fileWatcherService.watchDirectory(directoryPath).collect { event ->
                 loadMap.put(
                     event.path.name,
-                    launch { loadOne(event) }.apply {
+                    this@launch.launch { loadOne(event) }.apply {
                         invokeOnCompletion { loadMap.remove(event.path.name) }
                     }
                 )?.cancel()

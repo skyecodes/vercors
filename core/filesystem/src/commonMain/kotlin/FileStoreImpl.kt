@@ -35,7 +35,7 @@ internal class FileStoreImpl<T>(
     private val fileWriteLock = Mutex()
     private var watcherJob: Job? = null
     private val _flow = MutableProgressiveStateFlow<FileStoreError, T>()
-    override val flow: ProgressiveFlow<FileStoreError, T> = _flow.onStart { load() }
+    override val flow: ProgressiveFlow<FileStoreError, T> = _flow.onStart { backgroundScope.launch { load() } }
 
     private fun startWatcher() {
         if (watcherJob?.isActive == true) return

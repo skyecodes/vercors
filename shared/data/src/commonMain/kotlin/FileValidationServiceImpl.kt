@@ -82,6 +82,15 @@ class FileValidationServiceImpl(
     }
 
     context(_: Raise<FileValidationFailure>)
+    override suspend fun <T> readCached(
+        file: FileValidationRequest,
+        serializer: DeserializationStrategy<T>
+    ): T {
+        file.validate()
+        return file.path.readJson(serializer, json)
+    }
+
+    context(_: Raise<FileValidationFailure>)
     override suspend fun FileValidationRequest.validate(firstTime: Boolean) {
         logger.trace { "Validating file $path" }
         ensure(!alwaysRedownload || !firstTime) { FileValidationFailure.FileNotFound(path) }

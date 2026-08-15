@@ -21,6 +21,9 @@ interface FileValidationService {
     suspend fun <T> submitAndRead(file: FileValidationRequest, serializer: DeserializationStrategy<T>): T
 
     context(_: Raise<FileValidationFailure>)
+    suspend fun <T> readCached(file: FileValidationRequest, serializer: DeserializationStrategy<T>): T
+
+    context(_: Raise<FileValidationFailure>)
     suspend fun FileValidationRequest.downloadAndValidate()
 
     context(_: Raise<FileValidationFailure>)
