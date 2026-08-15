@@ -28,9 +28,7 @@ import app.vercors.core.ui.layout.AppLoading
 import app.vercors.core.ui.layout.AppTabGroup
 import app.vercors.core.ui.modifier.appCard
 import app.vercors.core.ui.theme.*
-import app.vercors.feature.game.ui.GameRes
-import app.vercors.feature.game.ui.GameVersionSelector
-import app.vercors.feature.game.ui.gameVersion
+import app.vercors.feature.game.ui.*
 import app.vercors.feature.instance.domain.model.InstanceStatus
 import app.vercors.feature.instance.ui.*
 import app.vercors.feature.instance.ui.delete.ConfirmDeleteDialog
@@ -319,6 +317,49 @@ private fun LazyListScope.InstanceGeneralOptionsSection(instance: InstanceView, 
                 },
                 backgroundColor = Theme[colors][surface2],
                 label = stringResource(GameRes.string.gameVersion) + if (state.isGameVersionEdited) "*" else ""
+            )
+        }
+
+        InstanceGeneralOptionsLoader(state, instance)
+    }
+}
+
+context(eventSink: EventSink<InstanceDetailsEvent>)
+private fun LazyListScope.InstanceGeneralOptionsLoader(
+    state: InstanceDetailsState,
+    instance: InstanceView
+) {
+    val loaderType = when (val edit = state.editedInstance.modLoader) {
+        is InstanceModLoaderEdit.Loader -> edit.type
+        InstanceModLoaderEdit.Vanilla -> null
+        null -> instance.loaderType
+    }
+
+    item(GameRes.string.loader) {
+        LoaderSelector(
+            selectedLoader = loaderType,
+            availableLoaders = state.loaderList,
+            onLoaderChange = { eventSink(InstanceDetailsEvent.OnLoaderChange(it)) },
+            backgroundColor = Theme[colors][surface2],
+            label = stringResource(GameRes.string.loader) + if (state.isModLoaderEdited) "*" else ""
+        )
+    }
+
+    if (loaderType != null) {
+        item(GameRes.string.loaderVersion) {
+            val versionString = when (val edit = state.editedInstance.modLoader) {
+                is InstanceModLoaderEdit.Loader -> edit.version
+                else -> instance.loaderVersion
+            }
+            val selectedVersion = remember(state.loaderVersionList, versionString) {
+                state.loaderVersionList.find { it.version == versionString }
+            }
+
+            LoaderVersionSelector(
+                selectedVersion = selectedVersion,
+                versionList = state.loaderVersionList,
+                onVersionChange = { it?.let { eventSink(InstanceDetailsEvent.OnLoaderVersionChange(it.version)) } },
+                backgroundColor = Theme[colors][surface2],
             )
         }
     }

@@ -1,6 +1,7 @@
 package app.vercors.feature.instance.ui.details
 
 import androidx.compose.runtime.Immutable
+import app.vercors.feature.game.domain.model.ModLoaderType
 import app.vercors.shared.ui.Event
 
 @Immutable
@@ -13,6 +14,8 @@ sealed interface InstanceDetailsEvent : Event {
     data class ConfirmDelete(val result: Boolean) : InstanceDetailsEvent
     data class SelectTab(val tab: InstanceDetailsTab) : InstanceDetailsEvent
     data class UpdateInstance(val update: (InstanceEditState) -> InstanceEditState) : InstanceDetailsEvent
+    data class OnLoaderChange(val loader: ModLoaderType?) : InstanceDetailsEvent
+    data class OnLoaderVersionChange(val version: String) : InstanceDetailsEvent
     data object SaveInstance : InstanceDetailsEvent
     data object CancelEdit : InstanceDetailsEvent
 }

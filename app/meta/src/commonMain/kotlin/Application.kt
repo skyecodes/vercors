@@ -2,6 +2,7 @@ package app.vercors.meta
 
 import app.vercors.feature.account.backend.accountRoutes
 import app.vercors.feature.game.backend.gameRoutes
+import app.vercors.feature.game.backend.loader.LoaderService
 import app.vercors.feature.project.backend.ProjectService
 import app.vercors.feature.project.backend.projectRoutes
 import app.vercors.shared.backend.platformEnv
@@ -54,7 +55,7 @@ internal fun Application.module(appGraph: AppGraph) {
     }
 
     routing {
-        gameRoutes()
+        gameRoutes(appGraph.loaderService, appGraph.json)
         projectRoutes(appGraph.projectService, appGraph.json)
         accountRoutes()
     }
@@ -63,6 +64,7 @@ internal fun Application.module(appGraph: AppGraph) {
 @DependencyGraph(AppScope::class)
 internal interface AppGraph {
     val projectService: ProjectService
+    val loaderService: LoaderService
     val json: Json
 
     @DependencyGraph.Factory

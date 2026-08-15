@@ -1,16 +1,20 @@
 package app.vercors.feature.instance.ui.details
 
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.State
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
+import app.vercors.core.ui.state.mutableProgressiveStateOf
 import app.vercors.core.ui.state.produceAndCollectAsProgressiveState
 import app.vercors.feature.game.domain.model.GameVersionError
+import app.vercors.feature.game.domain.model.LoaderError
+import app.vercors.feature.game.domain.model.LoaderVersion
+import app.vercors.feature.game.domain.model.ModLoaderType
+import app.vercors.feature.game.domain.usecase.GetAvailableLoadersUseCase
+import app.vercors.feature.game.domain.usecase.GetLoaderVersionsUseCase
 import app.vercors.feature.game.domain.usecase.ObserveGameVersionListUseCase
 import app.vercors.feature.game.ui.GameVersionView
 import app.vercors.feature.game.ui.toView
 import app.vercors.feature.instance.domain.model.InstanceError
+import app.vercors.feature.instance.domain.model.InstanceModLoader
 import app.vercors.feature.instance.domain.usecase.DeleteInstanceUseCase
 import app.vercors.feature.instance.domain.usecase.ObserveInstanceLogsUseCase
 import app.vercors.feature.instance.domain.usecase.ObserveInstanceUseCase
@@ -36,6 +40,8 @@ import dev.zacsweers.metro.AssistedInject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import opensavvy.state.ExperimentalProgressiveRaiseApi
+import opensavvy.state.arrow.progressive
 import opensavvy.state.progressive.ProgressiveOutcome
 import opensavvy.state.progressive.map
 import opensavvy.state.progressive.valueOrNull
@@ -54,8 +60,11 @@ class InstanceDetailsPresenter(
     private val deleteInstance: DeleteInstanceUseCase,
     private val snackbarService: SnackbarService,
     private val updateInstance: UpdateInstanceUseCase,
-    private val observeGameVersionList: ObserveGameVersionListUseCase
+    private val observeGameVersionList: ObserveGameVersionListUseCase,
+    private val getAvailableLoaders: GetAvailableLoadersUseCase,
+    private val getLoaderVersions: GetLoaderVersionsUseCase
 ) : Presenter<InstanceDetailsState, InstanceDetailsEvent> {
+    @OptIn(ExperimentalProgressiveRaiseApi::class)
     @Composable
     override fun present(): Store<InstanceDetailsState, InstanceDetailsEvent> {
         val instance by observeInstanceView()
@@ -64,11 +73,55 @@ class InstanceDetailsPresenter(
         val (promptDeleteConfirmation, setPromptDeleteConfirmation) = rememberSaveable { mutableStateOf(false) }
         val (selectedTab, setSelectedTab) = rememberSaveable { mutableStateOf(InstanceDetailsTab.Options) }
         val (editedInstance, setEditedInstance) = rememberSaveable { mutableStateOf(InstanceEditState()) }
+        val loaderList = remember { mutableProgressiveStateOf<LoaderError, List<ModLoaderType>>() }
+        val loaderVersionList = remember { mutableProgressiveStateOf<LoaderError, List<LoaderVersion>>() }
+
+        val currentInstance = instance.valueOrNull
+        val effectiveGameVersion = editedInstance.gameVersion ?: currentInstance?.gameVersion
+        val effectiveLoaderType = when (val edit = editedInstance.modLoader) {
+            is InstanceModLoaderEdit.Loader -> edit.type
+            InstanceModLoaderEdit.Vanilla -> null
+            null -> currentInstance?.loaderType
+        }
+
+        LaunchedEffect(effectiveGameVersion) {
+            loaderList.value = ProgressiveOutcome.Incomplete()
+            if (effectiveGameVersion != null) {
+                loaderList.value = progressive { getAvailableLoaders(effectiveGameVersion) }
+            }
+        }
+
+        LaunchedEffect(effectiveGameVersion, effectiveLoaderType) {
+            loaderVersionList.value = ProgressiveOutcome.Incomplete()
+            if (effectiveGameVersion != null && effectiveLoaderType != null) {
+                loaderVersionList.value = progressive { getLoaderVersions(effectiveGameVersion, effectiveLoaderType) }
+            }
+        }
+
+        LaunchedEffect(editedInstance.modLoader, loaderVersionList.value) {
+            val edit = editedInstance.modLoader
+            val versions = loaderVersionList.value.valueOrNull
+            if (edit is InstanceModLoaderEdit.Loader && edit.version.isBlank() && versions != null) {
+                val recommended = versions.firstOrNull { it.stable } ?: versions.firstOrNull()
+                if (recommended != null) {
+                    setEditedInstance(
+                        editedInstance.copy(
+                            modLoader = InstanceModLoaderEdit.Loader(
+                                edit.type,
+                                recommended.version
+                            )
+                        )
+                    )
+                }
+            }
+        }
 
         return InstanceDetailsState(
             instance = instance,
             editedInstance = editedInstance,
             gameVersionList = gameVersionList.valueOrNull ?: emptyList(),
+            loaderList = loaderList.value.valueOrNull ?: emptyList(),
+            loaderVersionList = loaderVersionList.value.valueOrNull ?: emptyList(),
             promptDeleteConfirmation = promptDeleteConfirmation,
             selectedTab = selectedTab,
             logs = logs
@@ -115,6 +168,20 @@ class InstanceDetailsPresenter(
 
             is InstanceDetailsEvent.SelectTab -> setSelectedTab(event.tab)
             is InstanceDetailsEvent.UpdateInstance -> setEditedInstance(event.update(editedInstance))
+            is InstanceDetailsEvent.OnLoaderChange -> setEditedInstance(
+                editedInstance.copy(
+                    modLoader = event.loader?.let { InstanceModLoaderEdit.Loader(it, "") }
+                        ?: InstanceModLoaderEdit.Vanilla
+                )
+            )
+
+            is InstanceDetailsEvent.OnLoaderVersionChange -> {
+                val current = editedInstance.modLoader
+                if (current is InstanceModLoaderEdit.Loader) {
+                    setEditedInstance(editedInstance.copy(modLoader = current.copy(version = event.version)))
+                }
+            }
+
             InstanceDetailsEvent.CancelEdit -> setEditedInstance(InstanceEditState())
             InstanceDetailsEvent.SaveInstance -> globalScope.launch {
                 either {
@@ -123,6 +190,17 @@ class InstanceDetailsPresenter(
                         editedInstance.name?.let { name -> updatedInstance = updatedInstance.copy(name = name) }
                         editedInstance.gameVersion?.let { version ->
                             updatedInstance = updatedInstance.copy(gameVersion = version)
+                        }
+                        editedInstance.modLoader?.let { edit ->
+                            updatedInstance = updatedInstance.copy(
+                                modLoader = when (edit) {
+                                    InstanceModLoaderEdit.Vanilla -> null
+                                    is InstanceModLoaderEdit.Loader -> InstanceModLoader(
+                                        type = edit.type,
+                                        version = edit.version
+                                    )
+                                }
+                            )
                         }
                         updatedInstance
                     }

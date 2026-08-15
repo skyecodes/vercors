@@ -3,6 +3,9 @@ package app.vercors.feature.instance.ui.create
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.vector.ImageVector
 import app.vercors.feature.game.domain.model.GameVersionError
+import app.vercors.feature.game.domain.model.LoaderError
+import app.vercors.feature.game.domain.model.LoaderVersion
+import app.vercors.feature.game.domain.model.ModLoaderType
 import app.vercors.feature.game.ui.GameVersionView
 import app.vercors.feature.instance.domain.model.InstanceValidationError
 import app.vercors.feature.instance.ui.*
@@ -21,9 +24,14 @@ data class CreateInstanceState(
     val gameVersionList: ProgressiveOutcome<GameVersionError.InvalidManifest, List<GameVersionView>>,
     val showSnapshot: Boolean,
     val gameVersionFilter: String,
+    val selectedLoader: ModLoaderType?,
+    val loaderList: ProgressiveOutcome<LoaderError, List<ModLoaderType>>,
+    val selectedLoaderVersion: LoaderVersion?,
+    val loaderVersionList: ProgressiveOutcome<LoaderError, List<LoaderVersion>>,
     val validationErrors: List<InstanceValidationError>,
 ) {
-    val canCreateInstance: Boolean = instanceName.length >= 3 && selectedGameVersion != null
+    val canCreateInstance: Boolean = instanceName.length >= 3 && selectedGameVersion != null &&
+            (selectedLoader == null || selectedLoaderVersion != null)
 }
 
 enum class CreateInstanceTab(

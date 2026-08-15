@@ -1,6 +1,8 @@
 package app.vercors.feature.instance.ui.details
 
 import androidx.compose.runtime.Immutable
+import app.vercors.feature.game.domain.model.LoaderVersion
+import app.vercors.feature.game.domain.model.ModLoaderType
 import app.vercors.feature.game.ui.GameVersionView
 import app.vercors.feature.game.ui.displayName
 import app.vercors.feature.instance.domain.model.*
@@ -13,6 +15,8 @@ data class InstanceDetailsState(
     val instance: ProgressiveOutcome<InstanceError, InstanceView>,
     val editedInstance: InstanceEditState,
     val gameVersionList: List<GameVersionView>,
+    val loaderList: List<ModLoaderType>,
+    val loaderVersionList: List<LoaderVersion>,
     val selectedTab: InstanceDetailsTab,
     val promptDeleteConfirmation: Boolean,
     val logs: List<InstanceLogEventView>?,
@@ -23,7 +27,13 @@ data class InstanceDetailsState(
     val isGameVersionEdited = instance.valueOrNull?.let {
         editedInstance.gameVersion != null && editedInstance.gameVersion != it.gameVersion
     } ?: false
-    val isInstanceEdited: Boolean = isNameEdited || isGameVersionEdited
+    val isModLoaderEdited = instance.valueOrNull?.let {
+        val current: InstanceModLoaderEdit = it.loaderType?.let { type ->
+            InstanceModLoaderEdit.Loader(type, it.loaderVersion.orEmpty())
+        } ?: InstanceModLoaderEdit.Vanilla
+        editedInstance.modLoader != null && editedInstance.modLoader != current
+    } ?: false
+    val isInstanceEdited: Boolean = isNameEdited || isGameVersionEdited || isModLoaderEdited
 }
 
 enum class InstanceDetailsTab {
@@ -42,6 +52,8 @@ data class InstanceView(
     val name: String,
     val gameVersion: String,
     val loader: String,
+    val loaderType: ModLoaderType?,
+    val loaderVersion: String?,
     val type: String,
     val status: InstanceStatus,
 )
@@ -50,7 +62,14 @@ data class InstanceView(
 data class InstanceEditState(
     val name: String? = null,
     val gameVersion: String? = null,
+    val modLoader: InstanceModLoaderEdit? = null,
 )
+
+@Immutable
+sealed interface InstanceModLoaderEdit {
+    data object Vanilla : InstanceModLoaderEdit
+    data class Loader(val type: ModLoaderType, val version: String) : InstanceModLoaderEdit
+}
 
 @Immutable
 data class InstanceLogEventView(
@@ -69,6 +88,8 @@ fun InstanceAndStatus.toView(): InstanceView = InstanceView(
     name = instance.name,
     gameVersion = instance.gameVersion,
     loader = instance.modLoader?.type.displayName,
+    loaderType = instance.modLoader?.type,
+    loaderVersion = instance.modLoader?.version,
     type = instance.displayType,
     status = status
 )

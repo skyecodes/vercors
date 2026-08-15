@@ -2,6 +2,8 @@ package app.vercors.feature.instance.ui.create
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
@@ -17,6 +19,8 @@ import app.vercors.core.ui.layout.AppForm
 import app.vercors.core.ui.modifier.appCard
 import app.vercors.core.ui.theme.*
 import app.vercors.feature.game.ui.GameVersionSelector
+import app.vercors.feature.game.ui.LoaderSelector
+import app.vercors.feature.game.ui.LoaderVersionSelector
 import app.vercors.feature.instance.ui.InstanceRes
 import app.vercors.feature.instance.ui.createInstance
 import app.vercors.feature.instance.ui.instanceName
@@ -42,14 +46,14 @@ fun CreateInstance(
 
     with(eventSink) {
         Column(
-            modifier = modifier.padding(vertical = 8.dp, horizontal = 16.dp).fillMaxSize(),
+            modifier = modifier.padding(vertical = 8.dp, horizontal = 16.dp).fillMaxSize()
+                .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             InstanceTypeSelector(state.selectedTab)
 
             AnimatedContent(
                 targetState = state.selectedTab,
-                modifier = Modifier.fillMaxSize()
             ) {
                 when (it) {
                     CreateInstanceTab.Custom -> CreateCustomInstanceView(state)
@@ -137,6 +141,20 @@ private fun CreateCustomInstanceView(state: CreateInstanceState) {
             versionList = state.gameVersionList.valueOrNull ?: emptyList(),
             onVersionChange = { eventSink(CreateInstanceEvent.OnGameVersionChange(it)) },
         )
+
+        LoaderSelector(
+            selectedLoader = state.selectedLoader,
+            availableLoaders = state.loaderList.valueOrNull ?: emptyList(),
+            onLoaderChange = { eventSink(CreateInstanceEvent.OnLoaderChange(it)) },
+        )
+
+        if (state.selectedLoader != null) {
+            LoaderVersionSelector(
+                selectedVersion = state.selectedLoaderVersion,
+                versionList = state.loaderVersionList.valueOrNull ?: emptyList(),
+                onVersionChange = { eventSink(CreateInstanceEvent.OnLoaderVersionChange(it)) },
+            )
+        }
 
         AppIconTextButton(
             onClick = { eventSink(CreateInstanceEvent.OnCreateInstanceClick) },
