@@ -5,7 +5,7 @@ import io.ktor.server.routing.*
 import io.ktor.server.util.*
 
 fun Route.accountRoutes() {
-    route("/account/{accountId}") {
+    route("/v1/account/{accountId}") {
         get("/avatar") {
             val accountId: String by call.parameters
             call.respondRedirect("https://mc-heads.net/avatar/$accountId")

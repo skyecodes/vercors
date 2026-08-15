@@ -15,9 +15,9 @@ class AccountSkinServiceImpl(
 ) : AccountSkinService {
     override fun getAccountSkin(accountId: AccountId): AccountSkin = accountId.toHexString().let {
         AccountSkin(
-            avatarUrl = "${metaApiUrl}account/${it}/avatar",
-            headUrl = "${metaApiUrl}account/${it}/head",
-            bodyUrl = "${metaApiUrl}account/${it}/body"
+            avatarUrl = "${metaApiUrl}/v1/account/${it}/avatar",
+            headUrl = "${metaApiUrl}/v1/account/${it}/head",
+            bodyUrl = "${metaApiUrl}/v1/account/${it}/body"
         )
     }
 }
