@@ -2,6 +2,7 @@ package app.vercors.feature.instance.ui.list
 
 import androidx.compose.runtime.Immutable
 import app.vercors.feature.instance.ui.BriefInstanceView
+import app.vercors.feature.instance.ui.create.CreateInstanceDialog
 import opensavvy.state.progressive.ProgressiveOutcome
 import opensavvy.state.progressive.valueOrNull
 
@@ -11,7 +12,9 @@ data class InstanceListState(
     val nameFilter: String,
     val versionFilter: String,
     val loaderFilter: String,
-    val typeFilter: String
+    val typeFilter: String,
+    val promptCreateInstance: Boolean,
+    val createInstanceDialog: CreateInstanceDialog,
 ) {
     private val loadedInstances = instances.valueOrNull ?: emptyList()
     val filteredInstances = loadedInstances.filter {

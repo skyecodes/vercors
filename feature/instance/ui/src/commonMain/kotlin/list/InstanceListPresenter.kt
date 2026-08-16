@@ -5,7 +5,8 @@ import app.vercors.core.domain.filterIsRight
 import app.vercors.core.ui.state.produceAndCollectAsProgressiveState
 import app.vercors.feature.instance.domain.usecase.ObserveInstanceListUseCase
 import app.vercors.feature.instance.ui.BriefInstanceView
-import app.vercors.feature.instance.ui.create.CreateInstanceScreen
+import app.vercors.feature.instance.ui.create.CreateInstanceDialog
+import app.vercors.feature.instance.ui.create.CreateInstanceResult
 import app.vercors.feature.instance.ui.details.InstanceDetailsScreen
 import app.vercors.feature.instance.ui.toBriefView
 import app.vercors.shared.ui.Presenter
@@ -23,7 +24,8 @@ import opensavvy.state.progressive.map
 @AssistedInject
 class InstanceListPresenter(
     @Assisted private val navigator: Navigator,
-    private val observeInstanceList: ObserveInstanceListUseCase
+    private val observeInstanceList: ObserveInstanceListUseCase,
+    private val createInstanceDialog: CreateInstanceDialog
 ) : Presenter<InstanceListState, InstanceListEvent> {
     @Composable
     override fun present(): Store<InstanceListState, InstanceListEvent> {
@@ -32,15 +34,24 @@ class InstanceListPresenter(
         var versionFilter by remember { mutableStateOf("") }
         var loaderFilter by remember { mutableStateOf("") }
         var typeFilter by remember { mutableStateOf("") }
+        var promptCreateInstance by remember { mutableStateOf(false) }
         return InstanceListState(
             instances = instances,
             nameFilter = nameFilter,
             versionFilter = versionFilter,
             loaderFilter = loaderFilter,
-            typeFilter = typeFilter
+            typeFilter = typeFilter,
+            promptCreateInstance = promptCreateInstance,
+            createInstanceDialog = createInstanceDialog
         ) + {
             when (it) {
-                InstanceListEvent.OnCreateInstanceClick -> navigator.goTo(CreateInstanceScreen)
+                InstanceListEvent.OnCreateInstanceClick -> promptCreateInstance = true
+                is InstanceListEvent.OnCreateInstanceResult -> {
+                    promptCreateInstance = false
+                    val result = it.result
+                    if (result is CreateInstanceResult.Created) navigator.goTo(InstanceDetailsScreen(result.instanceId))
+                }
+
                 is InstanceListEvent.OnInstanceClick -> navigator.goTo(InstanceDetailsScreen(it.instanceId))
                 is InstanceListEvent.OnNameFilterChange -> nameFilter = it.name
                 is InstanceListEvent.OnVersionFilterChange -> versionFilter = it.version

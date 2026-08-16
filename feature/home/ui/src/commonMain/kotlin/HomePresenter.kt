@@ -1,11 +1,10 @@
 package app.vercors.feature.home.ui
 
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.State
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import app.vercors.feature.home.domain.usecase.HomeSection
 import app.vercors.feature.home.domain.usecase.ObserveHomeSectionListUseCase
-import app.vercors.feature.instance.ui.create.CreateInstanceScreen
+import app.vercors.feature.instance.ui.create.CreateInstanceDialog
+import app.vercors.feature.instance.ui.create.CreateInstanceResult
 import app.vercors.feature.instance.ui.details.InstanceDetailsScreen
 import app.vercors.feature.instance.ui.toBriefView
 import app.vercors.feature.project.ui.details.ProjectDetailsScreen
@@ -21,20 +20,36 @@ import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedFactory
 import dev.zacsweers.metro.AssistedInject
 import kotlinx.coroutines.flow.map
-import opensavvy.state.ExperimentalProgressiveRaiseApi
 import opensavvy.state.progressive.map
 
 @AssistedInject
 class HomePresenter(
     @Assisted val navigator: Navigator,
-    val observeHomeSectionList: ObserveHomeSectionListUseCase
+    val observeHomeSectionList: ObserveHomeSectionListUseCase,
+    val createInstanceDialog: CreateInstanceDialog
 ) : Presenter<HomeState, HomeEvent> {
-    @OptIn(ExperimentalProgressiveRaiseApi::class)
     @Composable
     override fun present(): Store<HomeState, HomeEvent> {
         val sections by observeHomeState()
+        var promptCreateInstance by remember { mutableStateOf(false) }
 
-        return HomeState(sections) + ::handleEvent
+        return HomeState(
+            sections = sections,
+            promptCreateInstance = promptCreateInstance,
+            createInstanceDialog = createInstanceDialog
+        ) + { event ->
+            when (event) {
+                HomeEvent.OnCreateInstanceClick -> promptCreateInstance = true
+                is HomeEvent.OnCreateInstanceResult -> {
+                    promptCreateInstance = false
+                    val result = event.result
+                    if (result is CreateInstanceResult.Created) navigator.goTo(InstanceDetailsScreen(result.instanceId))
+                }
+
+                is HomeEvent.OnProjectClick -> navigator.goTo(ProjectDetailsScreen(event.projectId))
+                is HomeEvent.OnInstanceClick -> navigator.goTo(InstanceDetailsScreen(event.instanceId))
+            }
+        }
     }
 
     @Composable
@@ -61,12 +76,6 @@ class HomePresenter(
                 }
             )
         }
-
-    private fun handleEvent(event: HomeEvent) = when (event) {
-        is HomeEvent.OnCreateInstanceClick -> navigator.goTo(CreateInstanceScreen)
-        is HomeEvent.OnProjectClick -> navigator.goTo(ProjectDetailsScreen(event.projectId))
-        is HomeEvent.OnInstanceClick -> navigator.goTo(InstanceDetailsScreen(event.instanceId))
-    }
 
     @CircuitInject(HomeScreen::class, AppScope::class)
     @AssistedFactory

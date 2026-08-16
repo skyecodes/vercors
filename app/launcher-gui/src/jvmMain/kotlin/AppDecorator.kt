@@ -7,7 +7,6 @@ import androidx.compose.runtime.Composable
 import com.slack.circuit.foundation.animation.AnimatedNavDecorator
 import com.slack.circuit.foundation.animation.AnimatedNavEvent
 import com.slack.circuit.foundation.animation.AnimatedNavState
-import com.slack.circuit.runtime.InternalCircuitApi
 import com.slack.circuit.runtime.Navigator
 import com.slack.circuit.runtime.navigation.NavArgument
 import com.slack.circuit.runtime.navigation.NavStackList
@@ -30,7 +29,6 @@ class AppDecorator<T : NavArgument> : AnimatedNavDecorator<T, AppDecorator.AppAn
         return updateTransition(targetState(args))
     }
 
-    @OptIn(InternalCircuitApi::class)
     override fun AnimatedContentTransitionScope<AnimatedNavState>.transitionSpec(
         animatedNavEvent: AnimatedNavEvent
     ): ContentTransform {

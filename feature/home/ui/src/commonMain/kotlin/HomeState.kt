@@ -4,12 +4,15 @@ import androidx.compose.runtime.Immutable
 import app.vercors.feature.home.domain.model.HomeSectionError
 import app.vercors.feature.home.domain.model.HomeSectionType
 import app.vercors.feature.instance.ui.BriefInstanceView
+import app.vercors.feature.instance.ui.create.CreateInstanceDialog
 import app.vercors.feature.project.ui.BriefProjectView
 import opensavvy.state.progressive.ProgressiveOutcome
 
 @Immutable
 data class HomeState(
-    val sections: List<Section<*>>
+    val sections: List<Section<*>>,
+    val promptCreateInstance: Boolean,
+    val createInstanceDialog: CreateInstanceDialog,
 ) {
     @Immutable
     sealed class Section<T>(

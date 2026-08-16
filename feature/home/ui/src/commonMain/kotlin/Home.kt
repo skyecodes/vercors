@@ -48,6 +48,7 @@ import coil3.compose.rememberAsyncImagePainter
 import com.composables.icons.lucide.*
 import com.composeunstyled.theme.Theme
 import com.slack.circuit.codegen.annotations.CircuitInject
+import com.slack.circuit.overlay.OverlayEffect
 import com.slack.circuit.sharedelements.SharedElementTransitionScope
 import dev.zacsweers.metro.AppScope
 import kotlinx.coroutines.launch
@@ -64,6 +65,13 @@ fun Home(
 ) {
     val (state, eventSink) = store
     with(eventSink) {
+        if (state.promptCreateInstance) {
+            OverlayEffect {
+                val result = show(state.createInstanceDialog)
+                eventSink(HomeEvent.OnCreateInstanceResult(result))
+            }
+        }
+
         Column {
             LazyColumn(
                 modifier = modifier.fillMaxSize(),

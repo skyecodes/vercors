@@ -50,7 +50,6 @@ class ProjectListPresenter(
     private val getGameVersionList: ObserveGameVersionListUseCase,
     private val observeConfiguration: ObserveConfigurationUseCase
 ) : Presenter<ProjectListState, ProjectListEvent> {
-    @OptIn(ExperimentalProgressiveRaiseApi::class)
     @Composable
     override fun present(): Store<ProjectListState, ProjectListEvent> {
         val presenterScope = rememberCoroutineScope()

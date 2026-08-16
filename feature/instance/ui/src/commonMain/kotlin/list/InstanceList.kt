@@ -26,6 +26,7 @@ import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Plus
 import com.composeunstyled.theme.Theme
 import com.slack.circuit.codegen.annotations.CircuitInject
+import com.slack.circuit.overlay.OverlayEffect
 import dev.zacsweers.metro.AppScope
 import org.jetbrains.compose.resources.stringResource
 
@@ -38,6 +39,13 @@ fun InstanceList(
     val (state, eventSink) = store
 
     with(eventSink) {
+        if (state.promptCreateInstance) {
+            OverlayEffect {
+                val result = show(state.createInstanceDialog)
+                eventSink(InstanceListEvent.OnCreateInstanceResult(result))
+            }
+        }
+
         Column(
             modifier = modifier.padding(8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)

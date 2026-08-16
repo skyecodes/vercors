@@ -43,7 +43,6 @@ import dev.zacsweers.metro.AppScope
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.format
-import kotlinx.datetime.format.FormatStringsInDatetimeFormats
 import kotlinx.datetime.format.char
 import kotlinx.datetime.toLocalDateTime
 import opensavvy.state.progressive.onFailure
@@ -465,7 +464,6 @@ private fun InstanceLogsTab(logs: List<InstanceLogEventView>) {
     }
 }
 
-@OptIn(FormatStringsInDatetimeFormats::class)
 @Composable
 private fun InstanceLogMessage(
     it: InstanceLogEventView,

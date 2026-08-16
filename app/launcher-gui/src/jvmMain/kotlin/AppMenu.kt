@@ -21,7 +21,6 @@ import app.vercors.core.ui.theme.primary
 import app.vercors.feature.account.ui.list.AccountListScreen
 import app.vercors.feature.config.ui.ConfigurationScreen
 import app.vercors.feature.home.ui.HomeScreen
-import app.vercors.feature.instance.ui.create.CreateInstanceScreen
 import app.vercors.feature.instance.ui.details.InstanceDetailsScreen
 import app.vercors.feature.instance.ui.list.InstanceListScreen
 import app.vercors.feature.project.ui.details.ProjectDetailsScreen
@@ -141,7 +140,7 @@ private fun ToggleDrawerButton(
 private val Screen.topLevelDestination: TopLevelDestination?
     get() = when (this) {
         HomeScreen -> TopLevelDestination.Home
-        InstanceListScreen, is InstanceDetailsScreen, CreateInstanceScreen -> TopLevelDestination.Instances
+        InstanceListScreen, is InstanceDetailsScreen -> TopLevelDestination.Instances
         ProjectListScreen, is ProjectDetailsScreen -> TopLevelDestination.Content
         AccountListScreen -> TopLevelDestination.Account
         ConfigurationScreen -> TopLevelDestination.Settings
