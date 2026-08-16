@@ -13,13 +13,6 @@ import arrow.core.raise.Raise
 import dev.zacsweers.metro.*
 import kotlinx.serialization.json.Json
 
-private val FORGE_CONFIG = ForgeFamilyConfig(
-    mavenBaseUrl = "https://maven.minecraftforge.net",
-    groupPath = "net/minecraftforge",
-    artifactId = "forge",
-    artifactVersion = { gameVersionId, loaderVersion -> "$gameVersionId-$loaderVersion" }
-)
-
 /**
  * Downloads Forge's installer and runs its processors (binary-patching the client jar, splitting/renaming it,
  * etc.) to produce the same `mainClass`/`libraries` shape Fabric/Quilt already return more directly.
@@ -37,7 +30,7 @@ class ForgeModLoaderInstaller(
 ) : ModLoaderInstaller {
     context(_: Raise<ModLoaderInstallError>)
     override suspend fun resolve(gameVersion: GameVersionDetails, loaderVersion: String): LoaderInstallProfile =
-        FORGE_CONFIG.installForgeFamily(
+        installForgeFamily(
             loaderType = ModLoaderType.Forge,
             loaderKey = "forge",
             gameVersion = gameVersion,

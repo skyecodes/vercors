@@ -13,13 +13,6 @@ import arrow.core.raise.Raise
 import dev.zacsweers.metro.*
 import kotlinx.serialization.json.Json
 
-private val NEOFORGE_CONFIG = ForgeFamilyConfig(
-    mavenBaseUrl = "https://maven.neoforged.net/releases",
-    groupPath = "net/neoforged",
-    artifactId = "neoforge",
-    artifactVersion = { _, loaderVersion -> loaderVersion }
-)
-
 /** NeoForge is a Forge fork sharing the same installer/`install_profile.json` lineage — see [ForgeModLoaderInstaller]. */
 @SingleIn(AppScope::class)
 @ContributesIntoMap(AppScope::class)
@@ -34,7 +27,7 @@ class NeoForgeModLoaderInstaller(
 ) : ModLoaderInstaller {
     context(_: Raise<ModLoaderInstallError>)
     override suspend fun resolve(gameVersion: GameVersionDetails, loaderVersion: String): LoaderInstallProfile =
-        NEOFORGE_CONFIG.installForgeFamily(
+        installForgeFamily(
             loaderType = ModLoaderType.NeoForge,
             loaderKey = "neoforge",
             gameVersion = gameVersion,

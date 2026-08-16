@@ -41,4 +41,12 @@ class LoaderService(
         }
         return fetcher.getVersions(gameVersion).sortedWith(compareBy(versionComparator) { it.version }).asReversed()
     }
+
+    context(_: Raise<LoaderErrorData>)
+    suspend fun getInstallUrl(gameVersion: String, loaderType: LoaderTypeData, loaderVersion: String): String {
+        val fetcher = ensureNotNull(fetchers[loaderType.key]) {
+            LoaderErrorData("UnknownLoader", "Unknown loader type: $loaderType")
+        }
+        return fetcher.getInstallUrl(gameVersion, loaderVersion)
+    }
 }

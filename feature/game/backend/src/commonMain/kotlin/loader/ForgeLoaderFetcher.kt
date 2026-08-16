@@ -8,8 +8,9 @@ import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.request.*
 
+private const val FORGE_MAVEN_BASE_URL = "https://maven.minecraftforge.net"
 private const val FORGE_MAVEN_VERSIONS_URL =
-    "https://maven.minecraftforge.net/api/maven/versions/releases/net%2Fminecraftforge%2Fforge"
+    "$FORGE_MAVEN_BASE_URL/api/maven/versions/releases/net%2Fminecraftforge%2Fforge"
 
 @SingleIn(AppScope::class)
 @ContributesIntoMap(AppScope::class)
@@ -27,5 +28,11 @@ class ForgeLoaderFetcher(
         return response.versions
             .filter { it.startsWith(prefix) }
             .map { LoaderVersionData(version = it.removePrefix(prefix), stable = true) }
+    }
+
+    context(_: Raise<LoaderErrorData>)
+    override suspend fun getInstallUrl(gameVersion: String, loaderVersion: String): String {
+        val artifactVersion = "$gameVersion-$loaderVersion"
+        return "$FORGE_MAVEN_BASE_URL/net/minecraftforge/forge/$artifactVersion/forge-$artifactVersion-installer.jar"
     }
 }

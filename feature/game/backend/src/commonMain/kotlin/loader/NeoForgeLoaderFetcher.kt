@@ -8,6 +8,7 @@ import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.request.*
 
+private const val NEOFORGE_MAVEN_RELEASES_URL = "https://maven.neoforged.net/releases"
 private const val NEOFORGE_MAVEN_VERSIONS_URL =
     "https://maven.neoforged.net/api/maven/versions/releases/net%2Fneoforged%2Fneoforge"
 
@@ -28,4 +29,8 @@ class NeoForgeLoaderFetcher(
             .filter { it.startsWith(prefix) }
             .map { LoaderVersionData(version = it, stable = !it.contains("-beta")) }
     }
+
+    context(_: Raise<LoaderErrorData>)
+    override suspend fun getInstallUrl(gameVersion: String, loaderVersion: String): String =
+        "$NEOFORGE_MAVEN_RELEASES_URL/net/neoforged/neoforge/$loaderVersion/neoforge-$loaderVersion-installer.jar"
 }

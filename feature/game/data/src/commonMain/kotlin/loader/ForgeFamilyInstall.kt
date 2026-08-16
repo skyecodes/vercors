@@ -26,14 +26,6 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.io.files.Path
 import kotlinx.serialization.json.Json
 
-/** Where a Forge-family loader's installer jar lives on its maven repo, and how its artifact version is spelled. */
-internal class ForgeFamilyConfig(
-    val mavenBaseUrl: String,
-    val groupPath: String,
-    val artifactId: String,
-    val artifactVersion: (gameVersionId: String, loaderVersion: String) -> String
-)
-
 private val PLACEHOLDER_REGEX = Regex("\\{([A-Za-z_]+)}")
 private const val MAX_ERROR_OUTPUT_LENGTH = 4000
 
@@ -53,7 +45,7 @@ private suspend fun installMutexFor(key: String): Mutex = installMutexesLock.wit
  * later launches skip straight past all of this.
  */
 context(_: Raise<ModLoaderInstallError>)
-internal suspend fun ForgeFamilyConfig.installForgeFamily(
+internal suspend fun installForgeFamily(
     loaderType: ModLoaderType,
     loaderKey: String,
     gameVersion: GameVersionDetails,
@@ -67,13 +59,16 @@ internal suspend fun ForgeFamilyConfig.installForgeFamily(
     val profileCachePath = appPaths.loaderProfileFile(gameVersion.id, loaderKey, loaderVersion)
     cachedProfileOrNull(profileCachePath, appPaths, json)?.let { return@withLock it }
 
-    val artifactVersion = artifactVersion(gameVersion.id, loaderVersion)
     val rootDir = appPaths.versionDir("${gameVersion.id}-$loaderKey-$loaderVersion")
     val installerJarPath = appPaths.installerJarFile(loaderKey, gameVersion.id, loaderVersion)
-    val installerUrl =
-        "$mavenBaseUrl/$groupPath/$artifactId/$artifactVersion/$artifactId-$artifactVersion-installer.jar"
+    val installerRequest = loaderInstallArtifactRequest(
+        gameVersionId = gameVersion.id,
+        loaderId = loaderKey,
+        loaderVersion = loaderVersion,
+        path = installerJarPath
+    )
 
-    downloadInstallerJar(loaderType, installerUrl, installerJarPath, fileValidationService)
+    downloadInstallerJar(loaderType, installerRequest, fileValidationService)
     downloadVanillaClientJar(loaderType, gameVersion, appPaths, fileValidationService)
 
     val (installProfile, versionProfile) = extractProfiles(loaderType, installerJarPath, json)
@@ -134,12 +129,11 @@ private suspend fun LoaderVersionProfile.locallyProducedArtifactsExist(appPaths:
 context(_: Raise<ModLoaderInstallError>)
 private suspend fun downloadInstallerJar(
     loaderType: ModLoaderType,
-    installerUrl: String,
-    installerJarPath: Path,
+    installerRequest: FileValidationRequest,
     fileValidationService: FileValidationService
 ) {
     withError({ ModLoaderInstallError.FetchFailed(loaderType, it) }) {
-        fileValidationService.submit(listOf(FileValidationRequest.Url(url = installerUrl, path = installerJarPath))) {}
+        fileValidationService.submit(listOf(installerRequest)) {}
     }
 }
 

@@ -10,6 +10,9 @@ import arrow.core.raise.context.bind
 interface LoaderFetcher {
     context(_: Raise<LoaderErrorData>)
     suspend fun getVersions(gameVersion: String): List<LoaderVersionData>
+
+    context(_: Raise<LoaderErrorData>)
+    suspend fun getInstallUrl(gameVersion: String, loaderVersion: String): String
 }
 
 internal val LoaderTypeData.key: String

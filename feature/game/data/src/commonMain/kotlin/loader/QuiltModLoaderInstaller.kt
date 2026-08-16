@@ -7,8 +7,8 @@ import app.vercors.feature.game.domain.model.LoaderInstallProfile
 import app.vercors.feature.game.domain.model.ModLoaderInstallError
 import app.vercors.feature.game.domain.model.ModLoaderType
 import app.vercors.feature.game.domain.service.ModLoaderInstaller
+import app.vercors.feature.game.domain.service.key
 import app.vercors.shared.data.AppPaths
-import app.vercors.shared.data.FileValidationRequest
 import app.vercors.shared.data.FileValidationService
 import arrow.core.raise.Raise
 import arrow.core.raise.context.withError
@@ -26,8 +26,10 @@ class QuiltModLoaderInstaller(
     context(_: Raise<ModLoaderInstallError>)
     override suspend fun resolve(gameVersion: GameVersionDetails, loaderVersion: String): LoaderInstallProfile =
         withError({ ModLoaderInstallError.FetchFailed(ModLoaderType.Quilt, it) }) {
-            val request = FileValidationRequest.Url(
-                url = "https://meta.quiltmc.org/v3/versions/loader/${gameVersion.id}/$loaderVersion/profile/json",
+            val request = loaderInstallArtifactRequest(
+                gameVersionId = gameVersion.id,
+                loaderId = ModLoaderType.Quilt.key,
+                loaderVersion = loaderVersion,
                 path = appPaths.loaderProfileFile(gameVersion.id, "quilt", loaderVersion)
             )
             fileValidationService.submitAndRead(request, FabricLoaderProfile.serializer()).toDomain()
