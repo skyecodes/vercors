@@ -27,12 +27,14 @@ data class InstanceDetailsState(
     val isGameVersionEdited = instance.valueOrNull?.let {
         editedInstance.gameVersion != null && editedInstance.gameVersion != it.gameVersion
     } ?: false
-    val isModLoaderEdited = instance.valueOrNull?.let {
-        val current: InstanceModLoaderEdit = it.loaderType?.let { type ->
-            InstanceModLoaderEdit.Loader(type, it.loaderVersion.orEmpty())
-        } ?: InstanceModLoaderEdit.Vanilla
-        editedInstance.modLoader != null && editedInstance.modLoader != current
+    val isLoaderTypeEdited = instance.valueOrNull?.let {
+        val current: ModLoaderTypeEdit = it.loaderType?.let(ModLoaderTypeEdit::Loader) ?: ModLoaderTypeEdit.Vanilla
+        editedInstance.modLoaderType != null && editedInstance.modLoaderType != current
     } ?: false
+    val isLoaderVersionEdited = instance.valueOrNull?.let {
+        editedInstance.modLoaderVersion != null && editedInstance.modLoaderVersion != it.loaderVersion
+    } ?: false
+    val isModLoaderEdited = isLoaderTypeEdited || isLoaderVersionEdited
     val isInstanceEdited: Boolean = isNameEdited || isGameVersionEdited || isModLoaderEdited
 }
 
@@ -62,13 +64,16 @@ data class InstanceView(
 data class InstanceEditState(
     val name: String? = null,
     val gameVersion: String? = null,
-    val modLoader: InstanceModLoaderEdit? = null,
+    val modLoaderType: ModLoaderTypeEdit? = null,
+    val modLoaderVersion: String? = null,
 )
 
 @Immutable
-sealed interface InstanceModLoaderEdit {
-    data object Vanilla : InstanceModLoaderEdit
-    data class Loader(val type: ModLoaderType, val version: String) : InstanceModLoaderEdit
+sealed interface ModLoaderTypeEdit {
+    data object Vanilla : ModLoaderTypeEdit
+
+    @JvmInline
+    value class Loader(val type: ModLoaderType) : ModLoaderTypeEdit
 }
 
 @Immutable

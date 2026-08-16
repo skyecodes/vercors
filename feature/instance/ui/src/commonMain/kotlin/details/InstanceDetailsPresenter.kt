@@ -78,9 +78,9 @@ class InstanceDetailsPresenter(
 
         val currentInstance = instance.valueOrNull
         val effectiveGameVersion = editedInstance.gameVersion ?: currentInstance?.gameVersion
-        val effectiveLoaderType = when (val edit = editedInstance.modLoader) {
-            is InstanceModLoaderEdit.Loader -> edit.type
-            InstanceModLoaderEdit.Vanilla -> null
+        val effectiveLoaderType = when (val edit = editedInstance.modLoaderType) {
+            is ModLoaderTypeEdit.Loader -> edit.type
+            ModLoaderTypeEdit.Vanilla -> null
             null -> currentInstance?.loaderType
         }
 
@@ -98,20 +98,15 @@ class InstanceDetailsPresenter(
             }
         }
 
-        LaunchedEffect(editedInstance.modLoader, loaderVersionList.value) {
-            val edit = editedInstance.modLoader
+        LaunchedEffect(editedInstance.modLoaderType, editedInstance.modLoaderVersion, loaderVersionList.value) {
             val versions = loaderVersionList.value.valueOrNull
-            if (edit is InstanceModLoaderEdit.Loader && edit.version.isBlank() && versions != null) {
+            if (editedInstance.modLoaderType is ModLoaderTypeEdit.Loader &&
+                editedInstance.modLoaderVersion == null &&
+                versions != null
+            ) {
                 val recommended = versions.firstOrNull { it.stable } ?: versions.firstOrNull()
                 if (recommended != null) {
-                    setEditedInstance(
-                        editedInstance.copy(
-                            modLoader = InstanceModLoaderEdit.Loader(
-                                edit.type,
-                                recommended.version
-                            )
-                        )
-                    )
+                    setEditedInstance(editedInstance.copy(modLoaderVersion = recommended.version))
                 }
             }
         }
@@ -170,17 +165,14 @@ class InstanceDetailsPresenter(
             is InstanceDetailsEvent.UpdateInstance -> setEditedInstance(event.update(editedInstance))
             is InstanceDetailsEvent.OnLoaderChange -> setEditedInstance(
                 editedInstance.copy(
-                    modLoader = event.loader?.let { InstanceModLoaderEdit.Loader(it, "") }
-                        ?: InstanceModLoaderEdit.Vanilla
+                    modLoaderType = event.loader?.let(ModLoaderTypeEdit::Loader) ?: ModLoaderTypeEdit.Vanilla,
+                    // Reset so the recommended-version effect can pick one that's valid for the new type.
+                    modLoaderVersion = null
                 )
             )
 
-            is InstanceDetailsEvent.OnLoaderVersionChange -> {
-                val current = editedInstance.modLoader
-                if (current is InstanceModLoaderEdit.Loader) {
-                    setEditedInstance(editedInstance.copy(modLoader = current.copy(version = event.version)))
-                }
-            }
+            is InstanceDetailsEvent.OnLoaderVersionChange ->
+                setEditedInstance(editedInstance.copy(modLoaderVersion = event.version))
 
             InstanceDetailsEvent.CancelEdit -> setEditedInstance(InstanceEditState())
             InstanceDetailsEvent.SaveInstance -> globalScope.launch {
@@ -191,13 +183,18 @@ class InstanceDetailsPresenter(
                         editedInstance.gameVersion?.let { version ->
                             updatedInstance = updatedInstance.copy(gameVersion = version)
                         }
-                        editedInstance.modLoader?.let { edit ->
+                        if (editedInstance.modLoaderType != null || editedInstance.modLoaderVersion != null) {
+                            val type = when (val edit = editedInstance.modLoaderType) {
+                                is ModLoaderTypeEdit.Loader -> edit.type
+                                ModLoaderTypeEdit.Vanilla -> null
+                                null -> updatedInstance.modLoader?.type
+                            }
                             updatedInstance = updatedInstance.copy(
-                                modLoader = when (edit) {
-                                    InstanceModLoaderEdit.Vanilla -> null
-                                    is InstanceModLoaderEdit.Loader -> InstanceModLoader(
-                                        type = edit.type,
-                                        version = edit.version
+                                modLoader = type?.let { loaderType ->
+                                    InstanceModLoader(
+                                        type = loaderType,
+                                        version = editedInstance.modLoaderVersion
+                                            ?: updatedInstance.modLoader?.version.orEmpty()
                                     )
                                 }
                             )

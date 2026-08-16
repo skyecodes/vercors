@@ -329,9 +329,9 @@ private fun LazyListScope.InstanceGeneralOptionsLoader(
     state: InstanceDetailsState,
     instance: InstanceView
 ) {
-    val loaderType = when (val edit = state.editedInstance.modLoader) {
-        is InstanceModLoaderEdit.Loader -> edit.type
-        InstanceModLoaderEdit.Vanilla -> null
+    val loaderType = when (val edit = state.editedInstance.modLoaderType) {
+        is ModLoaderTypeEdit.Loader -> edit.type
+        ModLoaderTypeEdit.Vanilla -> null
         null -> instance.loaderType
     }
 
@@ -341,16 +341,13 @@ private fun LazyListScope.InstanceGeneralOptionsLoader(
             availableLoaders = state.loaderList,
             onLoaderChange = { eventSink(InstanceDetailsEvent.OnLoaderChange(it)) },
             backgroundColor = Theme[colors][surface2],
-            label = stringResource(GameRes.string.loader) + if (state.isModLoaderEdited) "*" else ""
+            label = stringResource(GameRes.string.loader) + if (state.isLoaderTypeEdited) "*" else ""
         )
     }
 
     if (loaderType != null) {
         item(GameRes.string.loaderVersion) {
-            val versionString = when (val edit = state.editedInstance.modLoader) {
-                is InstanceModLoaderEdit.Loader -> edit.version
-                else -> instance.loaderVersion
-            }
+            val versionString = state.editedInstance.modLoaderVersion ?: instance.loaderVersion
             val selectedVersion = remember(state.loaderVersionList, versionString) {
                 state.loaderVersionList.find { it.version == versionString }
             }
@@ -360,6 +357,7 @@ private fun LazyListScope.InstanceGeneralOptionsLoader(
                 versionList = state.loaderVersionList,
                 onVersionChange = { it?.let { eventSink(InstanceDetailsEvent.OnLoaderVersionChange(it.version)) } },
                 backgroundColor = Theme[colors][surface2],
+                label = stringResource(GameRes.string.loaderVersion) + if (state.isLoaderVersionEdited) "*" else ""
             )
         }
     }
