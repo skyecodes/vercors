@@ -20,6 +20,8 @@ data class LaunchVariables(
     val gameDir: String,
     val assetsDir: String,
     val nativesDir: String,
+    val libraryDir: String,
+    val classpathSeparator: String,
 ) {
     fun toMap(): Map<String, String> = mapOf(
         "auth_player_name" to account.username,
@@ -37,6 +39,8 @@ data class LaunchVariables(
         "launcher_name" to LAUNCHER_NAME,
         "launcher_version" to LAUNCHER_VERSION,
         "classpath" to classpath,
+        "library_directory" to libraryDir,
+        "classpath_separator" to classpathSeparator,
         // Legacy
         "auth_session" to account.accessToken,
         "user_properties" to "{}",

@@ -31,8 +31,8 @@ data class MojangVersionInfo(
 ) {
     @Serializable
     data class Arguments(
-        val game: List<Argument>,
-        val jvm: List<Argument>
+        val game: List<Argument> = emptyList(),
+        val jvm: List<Argument> = emptyList()
     )
 
     @Serializable(ArgumentSerializer::class)
@@ -85,7 +85,7 @@ data class MojangVersionInfo(
 
     @Serializable
     data class Library(
-        val downloads: Downloads,
+        val downloads: Downloads? = null,
         val extract: Extract? = null,
         val name: String,
         val natives: Map<String, String>? = null,
@@ -99,7 +99,7 @@ data class MojangVersionInfo(
             @Serializable
             data class Artifact(
                 val path: String,
-                val sha1: String,
+                val sha1: String? = null,
                 val size: Long,
                 val url: String
             )

@@ -21,7 +21,7 @@ class LaunchCommandBuilder(private val appPaths: AppPaths) {
         val nativesDir = appPaths.nativesDir(instance.id)
         val classpath = buildList {
             addAll(dependencyList.libraries.map { it.path.toString() })
-            add(dependencyList.client.path.toString())
+            if (!version.omitClientFromClasspath) add(dependencyList.client.path.toString())
             add(".")
         }.joinToString(separator = platformPathSeparator)
         val variables = LaunchVariables(
@@ -32,6 +32,8 @@ class LaunchCommandBuilder(private val appPaths: AppPaths) {
             gameDir = appPaths.gameDir(instance.id).toString(),
             assetsDir = appPaths.assets.toString(),
             nativesDir = nativesDir.toString(),
+            libraryDir = appPaths.libraries.toString(),
+            classpathSeparator = platformPathSeparator,
         ).toMap()
         val jvmArgs = version.jvmArgs?.resolve(variables)
         val gameArgs = version.gameArgs?.resolve(variables)

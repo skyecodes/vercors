@@ -9,6 +9,7 @@ import app.vercors.feature.account.domain.usecase.ValidateTokenUseCase
 import app.vercors.feature.game.domain.model.GameAssetIndex
 import app.vercors.feature.game.domain.model.GameVersionDetails
 import app.vercors.feature.game.domain.repository.GameRepository
+import app.vercors.feature.game.domain.service.ModLoaderInstallerService
 import app.vercors.feature.instance.domain.model.Instance
 import app.vercors.feature.instance.domain.model.InstanceId
 import app.vercors.feature.instance.domain.model.InstanceLogEvent
@@ -35,6 +36,7 @@ class LaunchInstanceUseCase(
     private val validateTokenUseCase: ValidateTokenUseCase,
     private val refreshTokenUseCase: RefreshTokenUseCase,
     private val gameRepository: GameRepository,
+    private val modLoaderInstallerService: ModLoaderInstallerService,
     private val launcherService: LauncherService,
     private val coroutineScope: CoroutineScope,
 ) {
@@ -158,9 +160,15 @@ class LaunchInstanceUseCase(
 
         logger.info { "Loading instance metadata" }
         instanceRepository.updateInstanceStatus(instanceId, InstanceStatus.Launching.LoadingMetadata)
-        val version = withError({ InstanceLaunchError.GameVersion(it) }) {
+        val vanillaVersion = withError({ InstanceLaunchError.GameVersion(it) }) {
             gameRepository.getVersionDetails(instance.gameVersion)
         }
+        val version = instance.modLoader?.let { modLoader ->
+            logger.info { "Installing ${modLoader.type} ${modLoader.version}..." }
+            withError({ InstanceLaunchError.ModLoaderInstall(it) }) {
+                modLoaderInstallerService.resolve(vanillaVersion, modLoader.type, modLoader.version)
+            }
+        } ?: vanillaVersion
         val assetIndex = withError({ InstanceLaunchError.GameVersion(it) }) {
             gameRepository.getAssetIndex(version.assetIndex)
         }

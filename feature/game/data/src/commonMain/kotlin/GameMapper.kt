@@ -52,8 +52,8 @@ internal fun MojangVersionInfo.Downloads.Download.toDomain(): GameVersionDetails
 
 internal fun MojangVersionInfo.Library.toDomain(): GameVersionDetails.Library = GameVersionDetails.Library(
     name = name,
-    artifact = downloads.artifact?.toDomain(),
-    classifiers = downloads.classifiers?.mapValues { (_, value) -> value.toDomain() },
+    artifact = downloads?.artifact?.toDomain(),
+    classifiers = downloads?.classifiers?.mapValues { (_, value) -> value.toDomain() },
     natives = natives,
     extractExclude = extract?.exclude,
     rules = rules?.map { it.toDomain() }

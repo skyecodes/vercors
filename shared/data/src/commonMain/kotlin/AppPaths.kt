@@ -39,6 +39,14 @@ class AppPaths(root: Path) {
 
     fun versionInfoFile(versionId: String): Path = Path(versionDir(versionId), "$versionId.json")
 
+    /** Where a mod loader's resolved profile (mainClass/libraries/args) is cached for a given game+loader version. */
+    fun loaderProfileFile(gameVersion: String, loaderType: String, loaderVersion: String): Path =
+        Path(versionDir("$gameVersion-$loaderType-$loaderVersion"), "profile.json")
+
+    /** Where a Forge/NeoForge-family installer jar is cached for a given loader+version. */
+    fun installerJarFile(loaderType: String, gameVersion: String, loaderVersion: String): Path =
+        Path(versionDir("$gameVersion-$loaderType-$loaderVersion"), "installer.jar")
+
     fun assetIndexFile(assetIndexId: String): Path = Path(assetIndexes, "$assetIndexId.json")
 
     fun assetObjectFile(hash: String): Path = Path(assetObjects, hash.take(2), hash)

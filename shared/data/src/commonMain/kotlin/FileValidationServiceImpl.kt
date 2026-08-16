@@ -103,6 +103,10 @@ class FileValidationServiceImpl(
 
     context(_: Raise<RemoteError>)
     override suspend fun FileValidationRequest.download() {
+        // A blank URL means this file can only ever be produced locally (e.g. a mod loader installer's
+        // patched jar) — deleting a still-present copy before a request we know will fail would destroy
+        // the only copy of a file we can't redownload.
+        ensure(this !is FileValidationRequest.Url || url.isNotBlank()) { RemoteError.Network }
         logger.trace { "Downloading file $this" }
         if (path.exists()) path.deleteRecursively()
         makeRequest {

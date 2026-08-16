@@ -19,6 +19,7 @@ val InstanceLaunchError.message: String
         InstanceRes.string.errorLaunch, when (this) {
             is InstanceLaunchError.AccountLoading -> stringResource(InstanceRes.string.errorAccountLoading, cause)
             is InstanceLaunchError.GameVersion -> stringResource(InstanceRes.string.errorGameVersion, cause)
+            is InstanceLaunchError.ModLoaderInstall -> stringResource(InstanceRes.string.errorModLoaderInstall, cause)
             is InstanceLaunchError.InstanceNotFound -> stringResource(InstanceRes.string.errorNotFound, id)
         }
     )

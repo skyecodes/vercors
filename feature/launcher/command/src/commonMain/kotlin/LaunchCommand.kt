@@ -38,5 +38,6 @@ class LaunchCommand(private val launchInstance: LaunchInstanceUseCase) : Abstrac
                     is GameVersionError.NotFound -> "Version ${e.versionId} not found"
                 }
             }"
+            is InstanceLaunchError.ModLoaderInstall -> "Mod loader install error: $cause"
         }
 }
