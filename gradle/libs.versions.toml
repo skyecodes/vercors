@@ -35,7 +35,7 @@ ripple = "1.1.0"
 coil = "3.5.0"
 markdown-renderer = "0.43.0"
 webview = "2.0.3"
-nucleusframework = "2.4.6"
+nucleusframework = "2.4.7"
 # CLI
 clikt = "5.1.0"
 mordant = "3.0.2"
