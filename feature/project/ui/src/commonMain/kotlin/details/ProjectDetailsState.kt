@@ -1,9 +1,68 @@
 package app.vercors.feature.project.ui.details
 
 import androidx.compose.runtime.Immutable
+import app.vercors.feature.game.domain.model.ModLoaderType
+import app.vercors.feature.project.domain.model.Project
+import app.vercors.feature.project.domain.model.ProjectDetailsError
 import app.vercors.feature.project.domain.model.ProjectId
+import app.vercors.feature.project.domain.model.summarizeStableGameVersions
+import app.vercors.feature.project.ui.list.ProjectCategoryView
+import app.vercors.feature.project.ui.list.toView
+import opensavvy.state.progressive.ProgressiveOutcome
 
 @Immutable
 data class ProjectDetailsState(
-    val projectId: ProjectId
+    val projectId: ProjectId,
+    val project: ProgressiveOutcome<ProjectDetailsError, ProjectDetailsView>
+)
+
+@Immutable
+data class ProjectDetailsView(
+    val id: ProjectId,
+    val name: String,
+    val description: String,
+    val body: String?,
+    val url: String,
+    val logoUrl: String?,
+    val gameVersions: List<String>,
+    val loaders: List<ModLoaderType>,
+    val categories: List<ProjectCategoryView>,
+    val authors: List<ProjectAuthorView>,
+    val links: ProjectLinksView,
+)
+
+@Immutable
+data class ProjectAuthorView(
+    val name: String,
+    val url: String?,
+    val avatarUrl: String?
+)
+
+@Immutable
+data class ProjectLinksView(
+    val websiteUrl: String?,
+    val sourceUrl: String?,
+    val issuesUrl: String?,
+    val wikiUrl: String?,
+    val discordUrl: String?
+)
+
+fun Project.toView(): ProjectDetailsView = ProjectDetailsView(
+    id = id,
+    name = name,
+    description = description,
+    body = body,
+    url = url,
+    logoUrl = logoUrl,
+    gameVersions = gameVersions.summarizeStableGameVersions(),
+    loaders = loaders,
+    categories = categories.map { it.toView() },
+    authors = authors.map { ProjectAuthorView(it.name, it.url, it.avatarUrl) },
+    links = ProjectLinksView(
+        websiteUrl = links.websiteUrl,
+        sourceUrl = links.sourceUrl,
+        issuesUrl = links.issuesUrl,
+        wikiUrl = links.wikiUrl,
+        discordUrl = links.discordUrl
+    )
 )

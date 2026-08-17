@@ -94,7 +94,7 @@ class ProjectRepositoryImpl(
         transform = { data -> Page(items = data.results.map { it.toDomain() }, total = data.total) }
     )
 
-    context(_: Raise<ProjectNotFound>, _: Raise<PlatformNotFound>, _: Raise<PlatformError>)
+    context(_: Raise<ProjectDetailsError>)
     override suspend fun getProject(
         projectId: ProjectId
     ): Project = httpClient.request(

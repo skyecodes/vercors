@@ -76,5 +76,9 @@ class ModrinthService(
     ).bindResponse().convert()
 
     context(_: Raise<PlatformErrorData>)
-    override suspend fun getProject(projectId: String): ProjectData = api.getProject(projectId).bindResponse().convert()
+    override suspend fun getProject(projectId: String): ProjectData = coroutineScope {
+        val project = async { api.getProject(projectId).bindResponse() }
+        val members = async { api.getProjectMembers(projectId).bindResponse() }
+        project.await().convert(members.await())
+    }
 }

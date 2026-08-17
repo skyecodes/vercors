@@ -10,6 +10,8 @@ dependencies {
     commonMainImplementation(libs.composables.ripple)
     commonMainImplementation(libs.composables.icons.lucide)
     commonMainImplementation(libs.androidx.lifecycle.runtime)
+    commonMainImplementation(libs.markdown.renderer)
+    commonMainImplementation(libs.markdown.renderer.coil3)
 }
 
 compose.resources {

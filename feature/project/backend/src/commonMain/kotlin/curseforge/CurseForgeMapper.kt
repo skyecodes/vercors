@@ -22,15 +22,34 @@ internal fun CurseForgeProject.convertBrief(): BriefProjectData = BriefProjectDa
     imageUrl = screenshots.firstOrNull()?.url
 )
 
-internal fun CurseForgeProject.convert(): ProjectData = ProjectData(
+internal fun CurseForgeProject.convert(descriptionHtml: String): ProjectData = ProjectData(
     id = id.toString(),
     platform = CURSEFORGE_PLATFORM_ID,
     name = name,
     description = summary,
     url = "https://www.curseforge.com/minecraft/mc-mods/$slug",
-    body = null, // TODO: call /description endpoint to get full body
-    logoUrl = logo.thumbnailUrl
+    body = descriptionHtml.toMarkdown(),
+    logoUrl = logo.thumbnailUrl,
+    gameVersions = latestFilesIndexes.map { it.gameVersion }.distinct(),
+    loaders = latestFilesIndexes.mapNotNull { it.modLoader?.toProjectLoaderDataOrNull() }.distinct(),
+    categories = categories.map { it.convert() },
+    authors = authors.map { ProjectAuthorData(name = it.name, url = it.url) },
+    links = ProjectLinksData(
+        websiteUrl = links.websiteUrl,
+        sourceUrl = links.sourceUrl,
+        issuesUrl = links.issuesUrl,
+        wikiUrl = links.wikiUrl,
+        discordUrl = null
+    )
 )
+
+private fun CurseForgeModLoaderType.toProjectLoaderDataOrNull(): ProjectLoaderData? = when (this) {
+    CurseForgeModLoaderType.Forge -> ProjectLoaderData.Forge
+    CurseForgeModLoaderType.NeoForge -> ProjectLoaderData.NeoForge
+    CurseForgeModLoaderType.Fabric -> ProjectLoaderData.Fabric
+    CurseForgeModLoaderType.Quilt -> ProjectLoaderData.Quilt
+    CurseForgeModLoaderType.Any, CurseForgeModLoaderType.Cauldron, CurseForgeModLoaderType.LiteLoader -> null
+}
 
 internal fun CurseForgeCategory.convert(): ProjectCategoryData = ProjectCategoryData(
     id = "$id",

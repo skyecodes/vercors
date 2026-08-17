@@ -1,5 +1,6 @@
 package app.vercors.feature.project.domain.model
 
+import app.vercors.feature.game.domain.model.ModLoaderType
 import kotlin.time.Instant
 
 data class Project(
@@ -9,6 +10,25 @@ data class Project(
     val body: String?,
     val url: String,
     val logoUrl: String?,
+    val gameVersions: List<String>,
+    val loaders: List<ModLoaderType>,
+    val categories: List<ProjectCategory>,
+    val authors: List<ProjectAuthor>,
+    val links: ProjectLinks,
+)
+
+data class ProjectAuthor(
+    val name: String,
+    val url: String?,
+    val avatarUrl: String?
+)
+
+data class ProjectLinks(
+    val websiteUrl: String?,
+    val sourceUrl: String?,
+    val issuesUrl: String?,
+    val wikiUrl: String?,
+    val discordUrl: String?
 )
 
 data class BriefProject(

@@ -9,6 +9,8 @@ import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesIntoMap
 import dev.zacsweers.metro.SingleIn
 import dev.zacsweers.metro.StringKey
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 
 internal const val MINECRAFT_GAME_ID = 432
 internal const val MOD_CLASS_ID = 6
@@ -70,6 +72,9 @@ class CurseForgeService(
     ).bindResponse().convert()
 
     context(_: Raise<PlatformErrorData>)
-    override suspend fun getProject(projectId: String): ProjectData =
-        api.getProject(projectId).bindResponse().data.convert()
+    override suspend fun getProject(projectId: String): ProjectData = coroutineScope {
+        val project = async { api.getProject(projectId).bindResponse().data }
+        val description = async { api.getDescription(projectId).bindResponse().data }
+        project.await().convert(description.await())
+    }
 }

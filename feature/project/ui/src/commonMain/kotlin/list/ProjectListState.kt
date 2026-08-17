@@ -76,19 +76,19 @@ fun Map<ProjectType, Map<String, List<ProjectCategory>>>.toView(): Map<ProjectTy
         groups.map { (group, categories) ->
             ProjectCategoryGroupView(
                 name = group,
-                categories = categories.map { category ->
-                    ProjectCategoryView(
-                        id = category.id,
-                        slug = category.slug,
-                        name = category.name,
-                        iconView = category.icon?.let {
-                            when (it) {
-                                is ProjectCategory.Icon.Named -> IconView.Named(it.name)
-                                is ProjectCategory.Icon.Data -> IconView.Data(it.svgString)
-                            }
-                        }
-                    )
-                }
+                categories = categories.map { it.toView() }
             )
         }.sortedBy { it.name }
     }
+
+fun ProjectCategory.toView(): ProjectCategoryView = ProjectCategoryView(
+    id = id,
+    slug = slug,
+    name = name,
+    iconView = icon?.let {
+        when (it) {
+            is ProjectCategory.Icon.Named -> IconView.Named(it.name)
+            is ProjectCategory.Icon.Data -> IconView.Data(it.svgString)
+        }
+    }
+)

@@ -1,5 +1,6 @@
 package app.vercors.feature.project.data
 
+import app.vercors.feature.game.domain.model.ModLoaderType
 import app.vercors.feature.project.api.dto.*
 import app.vercors.feature.project.domain.model.*
 
@@ -46,8 +47,25 @@ internal fun ProjectData.toDomain(): Project = Project(
     description = description,
     body = body,
     url = url,
-    logoUrl = logoUrl
+    logoUrl = logoUrl,
+    gameVersions = gameVersions,
+    loaders = loaders.map { it.toDomain() },
+    categories = categories.map { it.toDomain() },
+    authors = authors.map { it.toDomain() },
+    links = links.toDomain()
 )
+
+internal fun ProjectLoaderData.toDomain(): ModLoaderType = when (this) {
+    ProjectLoaderData.Forge -> ModLoaderType.Forge
+    ProjectLoaderData.NeoForge -> ModLoaderType.NeoForge
+    ProjectLoaderData.Fabric -> ModLoaderType.Fabric
+    ProjectLoaderData.Quilt -> ModLoaderType.Quilt
+}
+
+internal fun ProjectAuthorData.toDomain(): ProjectAuthor = ProjectAuthor(name, url, avatarUrl)
+
+internal fun ProjectLinksData.toDomain(): ProjectLinks =
+    ProjectLinks(websiteUrl, sourceUrl, issuesUrl, wikiUrl, discordUrl)
 
 internal fun ProjectPlatformData.toDomain(): ProjectPlatform = ProjectPlatform(
     id = id,

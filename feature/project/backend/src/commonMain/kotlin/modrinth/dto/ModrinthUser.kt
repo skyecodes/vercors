@@ -8,7 +8,7 @@ data class ModrinthUser(
     val id: String,
     val username: String,
     @SerialName("avatar_url")
-    val avatarUrl: String,
+    val avatarUrl: String? = null,
     val created: ModrinthInstant,
     val role: ModrinthRole,
     val name: String? = null,

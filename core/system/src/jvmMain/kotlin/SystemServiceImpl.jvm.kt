@@ -4,12 +4,15 @@ import arrow.core.raise.catch
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
 import dev.zacsweers.metro.SingleIn
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.withContext
 import java.awt.Desktop
 import java.awt.Toolkit
 import java.awt.datatransfer.StringSelection
 import java.net.URI
 import kotlin.coroutines.CoroutineContext
+
+private val logger = KotlinLogging.logger {}
 
 @SingleIn(AppScope::class)
 @ContributesBinding(AppScope::class)
@@ -39,7 +42,10 @@ actual class SystemServiceImpl : SystemService {
     actual override fun copyToClipboard(text: String) = canCopyToClipboard && catch({
         Toolkit.getDefaultToolkit().systemClipboard.setContents(StringSelection(text), null)
         true
-    }) { false }
+    }) {
+        logger.warn(it) { "Unable to copy content to clipboard" }
+        false
+    }
 
     actual override suspend fun openUrlInBrowser(url: String, context: CoroutineContext): Boolean =
         canOpenUrlInBrowser && catch({
@@ -47,5 +53,8 @@ actual class SystemServiceImpl : SystemService {
                 Desktop.getDesktop().browse(URI(url))
             }
             true
-        }) { false }
+        }) {
+            logger.warn(it) { "Unable to open URL in browser" }
+            false
+        }
 }

@@ -130,7 +130,19 @@
     <string name="downloadCount">%1$s downloads</string>
     <string name="lastUpdated">Last updated %1$s</string>
 
+    <string name="install">Install</string>
+    <string name="compatibleVersions">Compatible versions</string>
+    <string name="modLoaders">Mod loaders</string>
+    <string name="links">Links</string>
+    <string name="authors">Authors</string>
+    <string name="website">Website</string>
+    <string name="sourceCode">Source code</string>
+    <string name="issues">Issues</string>
+    <string name="wiki">Wiki</string>
+    <string name="discord">Discord</string>
+
     <string name="errorPlatform">Platform error: %1$s - %2$s</string>
     <string name="errorPlatformNotFound">Platform "%1$s" not found</string>
     <string name="errorUnsupportedProjectType">Unsupported project type: %1$s</string>
+    <string name="errorProjectNotFound">Project "%1$s" not found</string>
 </resources>

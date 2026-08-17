@@ -25,6 +25,6 @@ interface ProjectRepository {
         offset: Int?
     ): Page<BriefProject>
 
-    context(_: Raise<ProjectNotFound>, _: Raise<PlatformNotFound>, _: Raise<PlatformError>)
+    context(_: Raise<ProjectDetailsError>)
     suspend fun getProject(projectId: ProjectId): Project
 }

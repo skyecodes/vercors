@@ -10,5 +10,10 @@ data class ProjectData(
     val description: String,
     val body: String?,
     val url: String,
-    val logoUrl: String?
+    val logoUrl: String?,
+    val gameVersions: List<String> = emptyList(),
+    val loaders: List<ProjectLoaderData> = emptyList(),
+    val categories: List<ProjectCategoryData> = emptyList(),
+    val authors: List<ProjectAuthorData> = emptyList(),
+    val links: ProjectLinksData = ProjectLinksData()
 )

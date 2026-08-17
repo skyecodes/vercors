@@ -30,4 +30,7 @@ interface CurseForgeApi {
 
     @GET("v1/mods/{projectId}")
     suspend fun getProject(@Path("projectId") projectId: String): PlatformResponse<CurseForgeStandardResponse<CurseForgeProject>>
+
+    @GET("v1/mods/{modId}/description")
+    suspend fun getDescription(@Path("modId") modId: String): PlatformResponse<CurseForgeStandardResponse<String>>
 }

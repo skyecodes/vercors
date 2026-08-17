@@ -12,13 +12,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
@@ -47,18 +44,14 @@ import app.vercors.shared.ui.SharedRes
 import app.vercors.shared.ui.Store
 import app.vercors.shared.ui.sortBy
 import coil3.compose.rememberAsyncImagePainter
-import com.composables.icons.fontawesome.FontAwesome
-import com.composables.icons.fontawesome.brands.Twitch
 import com.composables.icons.lucide.*
 import com.composeunstyled.theme.Theme
 import com.slack.circuit.codegen.annotations.CircuitInject
 import com.slack.circuit.sharedelements.SharedElementTransitionScope
 import dev.zacsweers.metro.AppScope
 import opensavvy.state.progressive.*
-import org.jetbrains.compose.resources.decodeToSvgPainter
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.resources.vectorResource
-import java.util.Locale.getDefault
 
 @CircuitInject(ProjectListScreen::class, AppScope::class)
 @Composable
@@ -704,106 +697,6 @@ val ProjectType.icon: ImageVector
         ProjectType.DataPack -> Lucide.Braces
         ProjectType.World -> Lucide.Earth
     }
-
-val IconView.painter: Painter
-    @Composable get() = when (this) {
-        is IconView.Data -> LocalDensity.current.let { remember { svgString.toByteArray().decodeToSvgPainter(it) } }
-        is IconView.Named -> rememberVectorPainter(getIconFromName(name))
-    }
-
-@Composable
-private fun categoryText(category: String): String = when (category) {
-    "categories" -> stringResource(ProjectRes.string.categories)
-    "resolutions" -> stringResource(ProjectRes.string.resolutions)
-    "features" -> stringResource(ProjectRes.string.features)
-    "performance impact" -> stringResource(ProjectRes.string.performanceImpact)
-    else -> category.replaceFirstChar { if (it.isLowerCase()) it.titlecase(getDefault()) else it.toString() }
-}
-
-@Composable
-private fun translateCategory(category: ProjectCategoryView): String =
-    ProjectRes.allStringResources[category.slugSnakeCase]?.let { stringResource(it) } ?: category.name ?: category.slug
-
-@Composable
-private fun getIconFromName(name: String): ImageVector = when (name) {
-    "compass" -> Lucide.Compass
-    "cloud-sun-rain" -> Lucide.CloudSunRain
-    "headphones" -> Lucide.Headphones
-    "box" -> Lucide.Box
-    "lamp" -> Lucide.Lamp
-    "brush" -> Lucide.Brush
-    "chart-no-axes-column-increasing" -> Lucide.ChartNoAxesColumnIncreasing
-    "blend" -> Lucide.Blend
-    "swords" -> Lucide.Swords
-    "cpu" -> Lucide.Cpu
-    "bug" -> Lucide.Bug
-    "house" -> Lucide.House
-    "dollar-sign" -> Lucide.DollarSign
-    "sun" -> Lucide.Sun
-    "wrench" -> Lucide.Wrench
-    "wand-sparkles" -> Lucide.WandSparkles
-    "tree-deciduous" -> Lucide.TreeDeciduous
-    "type" -> Lucide.Type
-    "carrot" -> Lucide.Carrot
-    "sliders-vertical" -> Lucide.SlidersVertical
-    "panels-top-left" -> Lucide.PanelsTopLeft
-    "signal-high" -> Lucide.SignalHigh
-    "pickaxe" -> Lucide.Pickaxe
-    "book" -> Lucide.Book
-    "feather" -> Lucide.Feather
-    "globe" -> Lucide.Globe
-    "signal-low" -> Lucide.SignalLow
-    "wand" -> Lucide.Wand
-    "server" -> Lucide.Server
-    "signal-medium" -> Lucide.SignalMedium
-    "award" -> Lucide.Award
-    "square-plus" -> Lucide.SquarePlus
-    "layers" -> Lucide.Layers
-    "users" -> Lucide.Users
-    "zap" -> Lucide.Zap
-    "lightbulb" -> Lucide.Lightbulb
-    "network" -> Lucide.Network
-    "image" -> Lucide.Image
-    "flip-horizontal-2" -> Lucide.FlipHorizontal2
-    "film" -> Lucide.Film
-    "mountain" -> Lucide.Mountain
-    "hexagon" -> Lucide.Hexagon
-    "message-circle" -> Lucide.MessageCircle
-    "archive" -> Lucide.Archive
-    "hard-drive" -> Lucide.HardDrive
-    "pen-tool" -> Lucide.PenTool
-    "truck" -> Lucide.Truck
-    "square-pen" -> Lucide.SquarePen
-    "toolbox" -> Lucide.ToolCase
-    "ice-cream-cone" -> Lucide.IceCreamCone
-    "earth" -> Lucide.Earth
-    "shield" -> Lucide.Shield
-    "boxes" -> Lucide.Boxes
-    "heart-crack" -> Lucide.HeartCrack
-    "map" -> Lucide.Map
-    "drone" -> Lucide.Drone
-    "bug-off" -> Lucide.BugOff
-    "blocks" -> Lucide.Blocks
-    "graduation-cap" -> Lucide.GraduationCap
-    "briefcase" -> Lucide.Briefcase
-    "cable" -> Lucide.Cable
-    "hand-fist" -> Lucide.HandFist
-    "puzzle" -> Lucide.Puzzle
-    "heart" -> Lucide.Heart
-    "video" -> Lucide.Video
-    "braces" -> Lucide.Braces
-    "castle" -> Lucide.Castle
-    "cog" -> Lucide.Cog
-    "trophy" -> Lucide.Trophy
-    "badge-check" -> Lucide.BadgeCheck
-    "twitch" -> FontAwesome.Brands.Twitch
-    "creeper" -> vectorResource(ProjectRes.drawable.creeper)
-    "path-tracing" -> vectorResource(ProjectRes.drawable.path_tracing)
-    "potato" -> vectorResource(ProjectRes.drawable.potato)
-    "sink" -> vectorResource(ProjectRes.drawable.sink)
-    "mcreator" -> vectorResource(ProjectRes.drawable.mcreator)
-    else -> Lucide.CircleQuestionMark
-}
 
 val ProjectPlatformView?.icon: ImageVector
     @Composable get() = when (this?.id) {

@@ -88,15 +88,43 @@ internal fun String.toModrinthProjectType(): ProjectTypeData? = when (this) {
     else -> null
 }
 
-internal fun ModrinthProject.convert(): ProjectData = ProjectData(
+internal fun ModrinthProject.convert(members: List<ModrinthProjectMember>): ProjectData = ProjectData(
     id = id,
     platform = MODRINTH_PLATFORM_ID,
     name = title,
     description = description,
     body = body,
     url = "https://modrinth.com/project/$id",
-    logoUrl = iconUrl
+    logoUrl = iconUrl,
+    gameVersions = gameVersions,
+    loaders = loaders.mapNotNull { it.toProjectLoaderDataOrNull() },
+    categories = (categories + additionalCategories).map {
+        ProjectCategoryData(id = it, slug = it, name = null, icon = iconMap[it]?.let(::IconNameData))
+    },
+    authors = members.filter { it.accepted }
+        .sortedByDescending { it.user.role == ModrinthRole.Admin }
+        .map {
+            ProjectAuthorData(
+                name = it.user.name ?: it.user.username,
+                url = "https://modrinth.com/user/${it.user.username}",
+                avatarUrl = it.user.avatarUrl
+            )
+        },
+    links = ProjectLinksData(
+        sourceUrl = sourceUrl,
+        issuesUrl = issuesUrl,
+        wikiUrl = wikiUrl,
+        discordUrl = discordUrl
+    )
 )
+
+private fun String.toProjectLoaderDataOrNull(): ProjectLoaderData? = when (this) {
+    "forge" -> ProjectLoaderData.Forge
+    "neoforge" -> ProjectLoaderData.NeoForge
+    "fabric" -> ProjectLoaderData.Fabric
+    "quilt" -> ProjectLoaderData.Quilt
+    else -> null
+}
 
 internal fun ProjectSortByData.toModrinthIndex(): String = when (this) {
     ProjectSortByData.Relevance -> "relevance"
