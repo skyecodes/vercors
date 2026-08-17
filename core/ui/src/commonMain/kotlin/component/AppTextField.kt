@@ -24,6 +24,7 @@ import com.composeunstyled.*
 import com.composeunstyled.theme.Theme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.drop
 import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
@@ -50,7 +51,9 @@ fun AppTextField(
     }
 
     LaunchedEffect(state) {
-        snapshotFlow { state.text.toString() }.collectLatest {
+        // Drop the current value emitted on subscribe so remounting this composable (e.g. navigating
+        // back to a screen that retained its state) doesn't spuriously re-fire onValueChange.
+        snapshotFlow { state.text.toString() }.drop(1).collectLatest {
             delay(debounceMillis.milliseconds)
             onValueChange(it)
         }

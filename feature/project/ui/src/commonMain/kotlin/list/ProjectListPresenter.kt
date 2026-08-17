@@ -25,6 +25,7 @@ import app.vercors.feature.project.ui.toView
 import app.vercors.shared.ui.Presenter
 import app.vercors.shared.ui.Store
 import com.slack.circuit.codegen.annotations.CircuitInject
+import com.slack.circuit.retained.rememberRetained
 import com.slack.circuit.runtime.Navigator
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Assisted
@@ -57,10 +58,10 @@ class ProjectListPresenter(
         val platformList by observePlatformList()
         val gameVersionList by observeGameVersionList()
 
-        val gameVersionSearchQuery = remember { mutableStateOf("") }
-        val showSnapshot = remember { mutableStateOf(false) }
-        val filter = remember { mutableStateOf(ProjectListFilter()) }
-        val projects = remember { mutableProgressiveStateOf<ProjectSearchError, Page<BriefProjectView>>() }
+        val gameVersionSearchQuery = rememberRetained { mutableStateOf("") }
+        val showSnapshot = rememberRetained { mutableStateOf(false) }
+        val filter = rememberRetained { mutableStateOf(ProjectListFilter()) }
+        val projects = rememberRetained { mutableProgressiveStateOf<ProjectSearchError, Page<BriefProjectView>>() }
 
         LaunchedEffect(platformList, preferredPlatform) {
             val defaultPlatform =
