@@ -1,9 +1,5 @@
 package app.vercors.core.system
 
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
-import kotlin.coroutines.CoroutineContext
-
 interface SystemService {
     val osType: OsType
     val osVersion: String
@@ -12,7 +8,6 @@ interface SystemService {
     val canOpenUrlInBrowser: Boolean
 
     fun copyToClipboard(text: String): Boolean
-    suspend fun openUrlInBrowser(url: String, context: CoroutineContext = Dispatchers.IO): Boolean
 }
 
 enum class OsType(val id: String) {

@@ -12,6 +12,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
 import app.vercors.core.ui.animation.*
 import app.vercors.core.ui.component.*
@@ -255,12 +256,21 @@ fun LoginDisplay(
                 text = stringResource(AccountRes.string.requireMicrosoftLogin),
                 modifier = Modifier.widthIn(max = 500.dp)
             )
-            AppIconTextButton(
-                onClick = { eventSink(AccountListEvent.CopyToClipboard(it)) },
-                text = stringResource(SharedRes.string.copyLink),
-                imageVector = Lucide.Link,
-                backgroundColor = Theme[colors][surface2]
-            )
+            Row {
+                val uriHandler = LocalUriHandler.current
+                AppIconTextButton(
+                    onClick = { uriHandler.openUri(it) },
+                    text = stringResource(SharedRes.string.openInBrowser),
+                    imageVector = Lucide.ExternalLink,
+                    backgroundColor = Theme[colors][surface2]
+                )
+                AppIconTextButton(
+                    onClick = { eventSink(AccountListEvent.CopyToClipboard(it)) },
+                    text = stringResource(SharedRes.string.copyLink),
+                    imageVector = Lucide.Link,
+                    backgroundColor = Theme[colors][surface2]
+                )
+            }
         }
 
         loginState.progress?.let {

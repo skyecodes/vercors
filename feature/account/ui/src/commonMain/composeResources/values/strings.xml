@@ -1,7 +1,7 @@
 <resources>
     <string name="noAccountFound">No Minecraft account found</string>
     <string name="logIn">Log in</string>
-    <string name="requireMicrosoftLogin">Please log into your Microsoft account from your web browser.\n\nIf your web browser did not open automatically, please click the following button to copy the link, then paste it in your web browser and follow the instructions.</string>
+    <string name="requireMicrosoftLogin">Please log into your Microsoft account from your web browser.</string>
     <string name="selectedAccount">Selected account</string>
     <string name="otherAccounts">Other accounts</string>
     <string name="logOut">Log out</string>

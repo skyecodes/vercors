@@ -1,7 +1,5 @@
 package app.vercors.core.system
 
-import kotlin.coroutines.CoroutineContext
-
 expect class SystemServiceImpl : SystemService {
     override val osType: OsType
     override val osVersion: String
@@ -10,5 +8,4 @@ expect class SystemServiceImpl : SystemService {
     override val canOpenUrlInBrowser: Boolean
 
     override fun copyToClipboard(text: String): Boolean
-    override suspend fun openUrlInBrowser(url: String, context: CoroutineContext): Boolean
 }

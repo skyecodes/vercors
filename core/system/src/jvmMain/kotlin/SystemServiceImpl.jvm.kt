@@ -5,12 +5,9 @@ import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
 import dev.zacsweers.metro.SingleIn
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.withContext
 import java.awt.Desktop
 import java.awt.Toolkit
 import java.awt.datatransfer.StringSelection
-import java.net.URI
-import kotlin.coroutines.CoroutineContext
 
 private val logger = KotlinLogging.logger {}
 
@@ -47,14 +44,4 @@ actual class SystemServiceImpl : SystemService {
         false
     }
 
-    actual override suspend fun openUrlInBrowser(url: String, context: CoroutineContext): Boolean =
-        canOpenUrlInBrowser && catch({
-            withContext(context) {
-                Desktop.getDesktop().browse(URI(url))
-            }
-            true
-        }) {
-            logger.warn(it) { "Unable to open URL in browser" }
-            false
-        }
 }

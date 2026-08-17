@@ -9,7 +9,6 @@ import app.vercors.feature.account.domain.model.AccountNotFound
 import app.vercors.feature.account.domain.service.LoginState
 import app.vercors.feature.account.domain.usecase.*
 import app.vercors.shared.domain.usecase.CopyToClipboardUseCase
-import app.vercors.shared.domain.usecase.OpenBrowserUseCase
 import app.vercors.shared.ui.Presenter
 import app.vercors.shared.ui.Store
 import arrow.core.raise.Raise
@@ -35,7 +34,6 @@ class AccountListPresenter(
     private val logout: LogoutUseCase,
     private val selectAccount: SelectAccountUseCase,
     private val getAccountSkin: GetAccountSkinUseCase,
-    private val openBrowser: OpenBrowserUseCase,
     private val copyToClipboard: CopyToClipboardUseCase
 ) : Presenter<AccountListState, AccountListEvent> {
     @Composable
@@ -92,7 +90,6 @@ class AccountListPresenter(
     private suspend fun collectLoginState(state: MutableState<LoginStateView>) = login().collect {
         when (it) {
             is LoginState.RequireLogin -> {
-                openBrowser(it.url)
                 state.update {
                     copy(
                         isLoggingIn = true,

@@ -8,7 +8,6 @@ import platform.posix.NULL
 import platform.posix._pclose
 import platform.posix._popen
 import platform.posix.fgets
-import kotlin.coroutines.CoroutineContext
 
 private const val BUFFER_SIZE = 1024
 private val VERSION_REGEX = Regex("((\\d+\\.)+\\d+)")
@@ -40,5 +39,4 @@ actual class SystemServiceImpl : SystemService {
 
     actual override fun copyToClipboard(text: String): Boolean = false
 
-    actual override suspend fun openUrlInBrowser(url: String, context: CoroutineContext): Boolean = false
 }

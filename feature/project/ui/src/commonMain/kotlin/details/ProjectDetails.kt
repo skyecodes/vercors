@@ -14,6 +14,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -129,6 +130,7 @@ private fun ProjectDetailsHeader(projectId: ProjectId, project: ProjectDetailsVi
             contentColor = Theme[colors][onPrimary],
         )
 
+        val uriHandler = LocalUriHandler.current
         AppMenuButton(
             imageVector = Lucide.EllipsisVertical,
             backgroundColor = Theme[colors][surface2],
@@ -136,7 +138,7 @@ private fun ProjectDetailsHeader(projectId: ProjectId, project: ProjectDetailsVi
             anchor = AppDropdownPanelAnchor.BottomEnd,
             menuContent = {
                 AppMenuItem(
-                    onClick = { eventSink(ProjectDetailsEvent.OnLinkClick(project.url)) },
+                    onClick = { uriHandler.openUri(project.url) },
                     text = stringResource(SharedRes.string.openInBrowser),
                     imageVector = Lucide.ExternalLink
                 )
@@ -163,7 +165,6 @@ private fun ProjectDescriptionColumn(project: ProjectDetailsView, modifier: Modi
 }
 
 @Composable
-context(eventSink: EventSink<ProjectDetailsEvent>)
 private fun ProjectInfoSidebar(project: ProjectDetailsView, modifier: Modifier = Modifier) {
     Column(
         modifier = modifier.verticalScroll(rememberScrollState()),
@@ -226,7 +227,6 @@ private fun ProjectInfoSidebar(project: ProjectDetailsView, modifier: Modifier =
 }
 
 @Composable
-context(eventSink: EventSink<ProjectDetailsEvent>)
 private fun ProjectLinksSection(links: ProjectLinksView) {
     val hasLinks = listOfNotNull(links.websiteUrl, links.sourceUrl, links.issuesUrl, links.wikiUrl, links.discordUrl)
         .isNotEmpty()
@@ -256,10 +256,10 @@ private fun ProjectLinksSection(links: ProjectLinksView) {
 }
 
 @Composable
-context(eventSink: EventSink<ProjectDetailsEvent>)
 private fun ProjectLinkRow(imageVector: ImageVector, label: String, url: String) {
+    val uriHandler = LocalUriHandler.current
     AppIconTextButton(
-        onClick = { eventSink(ProjectDetailsEvent.OnLinkClick(url)) },
+        onClick = { uriHandler.openUri(url) },
         text = label,
         imageVector = imageVector,
         modifier = Modifier.fillMaxWidth(),
@@ -268,16 +268,16 @@ private fun ProjectLinkRow(imageVector: ImageVector, label: String, url: String)
 }
 
 @Composable
-context(eventSink: EventSink<ProjectDetailsEvent>)
 private fun ProjectAuthorRow(author: ProjectAuthorView) {
     val url = author.url
+    val uriHandler = LocalUriHandler.current
     Row(
         modifier = Modifier.fillMaxWidth()
             .let {
                 if (url != null) it.clickable(
                     interactionSource = null,
                     indication = null,
-                    onClick = { eventSink(ProjectDetailsEvent.OnLinkClick(url)) }
+                    onClick = { uriHandler.openUri(url) }
                 ).pointerHoverIcon(PointerIcon.Hand) else it
             }
             .padding(4.dp),

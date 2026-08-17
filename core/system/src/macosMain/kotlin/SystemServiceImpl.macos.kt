@@ -6,7 +6,6 @@ import dev.zacsweers.metro.SingleIn
 import kotlinx.cinterop.*
 import platform.posix.uname
 import platform.posix.utsname
-import kotlin.coroutines.CoroutineContext
 
 @SingleIn(AppScope::class)
 @ContributesBinding(AppScope::class)
@@ -30,5 +29,4 @@ actual class SystemServiceImpl : SystemService {
 
     actual override fun copyToClipboard(text: String): Boolean = false
 
-    actual override suspend fun openUrlInBrowser(url: String, context: CoroutineContext): Boolean = false
 }
