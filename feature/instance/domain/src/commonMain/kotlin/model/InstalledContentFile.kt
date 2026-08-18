@@ -2,11 +2,14 @@ package app.vercors.feature.instance.domain.model
 
 import app.vercors.feature.game.domain.model.ModLoaderType
 
-data class InstalledMod(
+/** A parsed, installed content file (mod, resource pack, or shader pack) belonging to an instance. */
+data class InstalledContentFile(
     val fileName: String,
     val title: String,
     val description: String?,
-    val version: String,
+    /** Null for resource packs/shader packs — neither format has a version concept. */
+    val version: String?,
+    /** Always null for resource packs/shader packs — neither is loader-specific. */
     val loader: ModLoaderType?,
     val fileSize: Long,
     val iconFilePath: String?,

@@ -51,4 +51,6 @@
     <string name="java">Java</string>
 
     <string name="noModsInstalled">No mods installed</string>
+    <string name="noResourcePacksInstalled">No resource packs installed</string>
+    <string name="noShaderPacksInstalled">No shader packs installed</string>
 </resources>

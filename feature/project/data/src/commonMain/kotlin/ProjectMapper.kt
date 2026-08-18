@@ -44,6 +44,7 @@ internal fun BriefProjectData.toDomain(): BriefProject = BriefProject(
 internal fun ProjectData.toDomain(): Project = Project(
     id = id from platform,
     name = name,
+    type = type.toDomain(),
     description = description,
     body = body,
     url = url,

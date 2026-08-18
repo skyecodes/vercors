@@ -26,6 +26,9 @@ internal fun CurseForgeProject.convert(descriptionHtml: String): ProjectData = P
     id = id.toString(),
     platform = CURSEFORGE_PLATFORM_ID,
     name = name,
+    // Falls back to Mod for a classId this launcher doesn't otherwise recognize — in practice unreachable,
+    // since project search already filters results down to known classIds.
+    type = classId.toProjectTypeData() ?: ProjectTypeData.Mod,
     description = summary,
     url = "https://www.curseforge.com/minecraft/mc-mods/$slug",
     body = descriptionHtml.toMarkdown(),
@@ -68,6 +71,16 @@ internal fun ProjectTypeData.toCurseForgeClassId(): Int = when (this) {
 }
 
 internal fun CurseForgeCategory.convertToType(): ProjectTypeData? = when (id) {
+    MOD_CLASS_ID -> ProjectTypeData.Mod
+    MODPACK_CLASS_ID -> ProjectTypeData.Modpack
+    RESOURCEPACK_CLASS_ID -> ProjectTypeData.ResourcePack
+    SHADERPACK_CLASS_ID -> ProjectTypeData.ShaderPack
+    DATAPACK_CLASS_ID -> ProjectTypeData.DataPack
+    WORLD_CLASS_ID -> ProjectTypeData.World
+    else -> null
+}
+
+internal fun Int?.toProjectTypeData(): ProjectTypeData? = when (this) {
     MOD_CLASS_ID -> ProjectTypeData.Mod
     MODPACK_CLASS_ID -> ProjectTypeData.Modpack
     RESOURCEPACK_CLASS_ID -> ProjectTypeData.ResourcePack

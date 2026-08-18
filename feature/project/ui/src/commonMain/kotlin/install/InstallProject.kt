@@ -24,15 +24,15 @@ import com.composeunstyled.theme.Theme
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
-fun InstallMod(
-    store: Store<InstallModState, InstallModEvent>,
+fun InstallProject(
+    store: Store<InstallProjectState, InstallProjectEvent>,
 ) {
     val (state, eventSink) = store
 
-    AppDialog(onClickOutside = { eventSink(InstallModEvent.OnCancelClick) }) {
+    AppDialog(onClickOutside = { eventSink(InstallProjectEvent.OnCancelClick) }) {
         AppForm {
             AppText(
-                text = stringResource(ProjectRes.string.installMod),
+                text = stringResource(ProjectRes.string.installToInstance),
                 style = Theme[textStyles][title]
             )
 
@@ -40,7 +40,7 @@ fun InstallMod(
                 label = stringResource(ProjectRes.string.instance),
                 value = state.selectedInstance,
                 items = state.instanceList,
-                onValueChange = { eventSink(InstallModEvent.OnInstanceSelected(it?.id)) },
+                onValueChange = { eventSink(InstallProjectEvent.OnInstanceSelected(it?.id)) },
                 itemRenderer = { value, _ -> AppSelectItem(text = value?.name ?: "") },
                 backgroundColor = Theme[colors][surface2],
                 modifier = Modifier.width(300.dp),
@@ -55,7 +55,7 @@ fun InstallMod(
                     label = stringResource(ProjectRes.string.`file`),
                     value = state.selectedFile,
                     items = state.fileList,
-                    onValueChange = { eventSink(InstallModEvent.OnFileSelected(it?.id)) },
+                    onValueChange = { eventSink(InstallProjectEvent.OnFileSelected(it?.id)) },
                     itemRenderer = { value, _ -> AppSelectItem(text = value?.displayName ?: "") },
                     backgroundColor = Theme[colors][surface2],
                     modifier = Modifier.width(300.dp),
@@ -64,12 +64,12 @@ fun InstallMod(
 
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 AppIconTextButton(
-                    onClick = { eventSink(InstallModEvent.OnCancelClick) },
+                    onClick = { eventSink(InstallProjectEvent.OnCancelClick) },
                     text = stringResource(SharedRes.string.cancel),
                     imageVector = Lucide.X,
                 )
                 AppIconTextButton(
-                    onClick = { eventSink(InstallModEvent.OnConfirmClick) },
+                    onClick = { eventSink(InstallProjectEvent.OnConfirmClick) },
                     text = stringResource(ProjectRes.string.install),
                     imageVector = Lucide.Download,
                     backgroundColor = Theme[colors][primary],

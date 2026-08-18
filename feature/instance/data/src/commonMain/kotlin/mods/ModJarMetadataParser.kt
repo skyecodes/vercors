@@ -3,6 +3,7 @@ package app.vercors.feature.instance.data.mods
 import app.vercors.core.filesystem.createParentDirectories
 import app.vercors.core.filesystem.sink
 import app.vercors.feature.game.domain.model.ModLoaderType
+import app.vercors.feature.instance.data.content.contentBaseName
 import com.akuleshov7.ktoml.Toml
 import com.akuleshov7.ktoml.TomlInputConfig
 import de.jonasbroeckmann.kzip.Zip
@@ -126,7 +127,7 @@ internal suspend fun extractIcon(jarPath: Path, iconEntryPath: String, destDir: 
     }
 
 private fun fallback(jarPath: Path): ParsedModInfo = ParsedModInfo(
-    title = modBaseName(jarPath.name).replace(Regex("[-_]"), " ").trim(),
+    title = contentBaseName(jarPath.name, "jar").replace(Regex("[-_]"), " ").trim(),
     description = null,
     version = "unknown",
     loader = null,

@@ -32,5 +32,11 @@ interface ProjectRepository {
     suspend fun getProjectFiles(projectId: ProjectId, gameVersion: String?, loader: ModLoaderType?): List<ProjectFile>
 
     context(_: Raise<ProjectFileDownloadError>)
-    suspend fun downloadProjectFile(projectId: ProjectId, fileId: String, fileName: String, instanceId: String)
+    suspend fun downloadProjectFile(
+        projectId: ProjectId,
+        fileId: String,
+        fileName: String,
+        instanceId: String,
+        type: ProjectType
+    )
 }

@@ -432,38 +432,44 @@ private fun LazyListScope.InstanceTabRow(
 
 @Composable
 context(eventSink: EventSink<InstanceDetailsEvent>)
-private fun InstanceModsTab(state: InstanceDetailsState) {
-    val mods = state.installedMods
+private fun InstalledContentFileList(
+    files: List<InstalledContentFileView>?,
+    emptyMessage: StringResource,
+    onEnabledChange: (fileName: String, enabled: Boolean) -> InstanceDetailsEvent
+) {
     when {
-        mods == null -> AppLoading()
-        mods.isEmpty() -> AppText(stringResource(InstanceRes.string.noModsInstalled))
+        files == null -> AppLoading()
+        files.isEmpty() -> AppText(stringResource(emptyMessage))
         else -> LazyColumn(
             modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(4.dp),
             contentPadding = PaddingValues(8.dp)
         ) {
-            items(mods, key = { it.fileName }) { mod -> InstalledModRow(mod) }
+            items(files, key = { it.fileName }) { file -> InstalledContentFileRow(file, onEnabledChange) }
         }
     }
 }
 
 @Composable
 context(eventSink: EventSink<InstanceDetailsEvent>)
-private fun InstalledModRow(mod: InstalledModView) {
+private fun InstalledContentFileRow(
+    file: InstalledContentFileView,
+    onEnabledChange: (fileName: String, enabled: Boolean) -> InstanceDetailsEvent
+) {
     Row(
         modifier = Modifier.fillMaxWidth().appCard().padding(8.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         AppCheckbox(
-            checked = mod.enabled,
-            onCheckedChange = { eventSink(InstanceDetailsEvent.OnModEnabledChange(mod.fileName, it)) }
+            checked = file.enabled,
+            onCheckedChange = { eventSink(onEnabledChange(file.fileName, it)) }
         )
 
-        if (mod.iconFilePath != null) {
+        if (file.iconFilePath != null) {
             Image(
-                painter = rememberAsyncImagePainter(model = mod.iconFilePath.toPath()),
-                contentDescription = mod.title,
+                painter = rememberAsyncImagePainter(model = file.iconFilePath.toPath()),
+                contentDescription = file.title,
                 modifier = Modifier.size(40.dp).clip(RoundedCornerShape(4.dp)),
                 contentScale = ContentScale.Crop
             )
@@ -485,17 +491,19 @@ private fun InstalledModRow(mod: InstalledModView) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 AppText(
-                    text = mod.title,
+                    text = file.title,
                     fontWeight = FontWeight.SemiBold,
                     singleLine = true,
                     overflow = TextOverflow.Ellipsis
                 )
-                AppText(text = mod.version, fontSize = 12.sp, color = Theme[colors][onBackground].copy(alpha = 0.6f))
-                mod.loaderLabel?.let {
+                file.version?.let {
+                    AppText(text = it, fontSize = 12.sp, color = Theme[colors][onBackground].copy(alpha = 0.6f))
+                }
+                file.loaderLabel?.let {
                     AppText(text = it, fontSize = 12.sp, color = Theme[colors][onBackground].copy(alpha = 0.6f))
                 }
             }
-            mod.description?.let {
+            file.description?.let {
                 AppText(text = it, fontSize = 12.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
             }
         }
@@ -503,13 +511,33 @@ private fun InstalledModRow(mod: InstalledModView) {
 }
 
 @Composable
-private fun InstanceResourcePacksTab(state: InstanceDetailsState) {
-    AppText("Resource Packs")
+context(eventSink: EventSink<InstanceDetailsEvent>)
+private fun InstanceModsTab(state: InstanceDetailsState) {
+    InstalledContentFileList(state.installedMods, InstanceRes.string.noModsInstalled) { fileName, enabled ->
+        InstanceDetailsEvent.OnModEnabledChange(fileName, enabled)
+    }
 }
 
 @Composable
+context(eventSink: EventSink<InstanceDetailsEvent>)
+private fun InstanceResourcePacksTab(state: InstanceDetailsState) {
+    InstalledContentFileList(
+        state.installedResourcePacks,
+        InstanceRes.string.noResourcePacksInstalled
+    ) { fileName, enabled ->
+        InstanceDetailsEvent.OnResourcePackEnabledChange(fileName, enabled)
+    }
+}
+
+@Composable
+context(eventSink: EventSink<InstanceDetailsEvent>)
 private fun InstanceShaderPacksTab(state: InstanceDetailsState) {
-    AppText("Shader Packs")
+    InstalledContentFileList(
+        state.installedShaderPacks,
+        InstanceRes.string.noShaderPacksInstalled
+    ) { fileName, enabled ->
+        InstanceDetailsEvent.OnShaderPackEnabledChange(fileName, enabled)
+    }
 }
 
 @Composable

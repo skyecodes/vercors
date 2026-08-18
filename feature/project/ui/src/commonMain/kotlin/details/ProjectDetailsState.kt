@@ -2,11 +2,8 @@ package app.vercors.feature.project.ui.details
 
 import androidx.compose.runtime.Immutable
 import app.vercors.feature.game.domain.model.ModLoaderType
-import app.vercors.feature.project.domain.model.Project
-import app.vercors.feature.project.domain.model.ProjectDetailsError
-import app.vercors.feature.project.domain.model.ProjectId
-import app.vercors.feature.project.domain.model.summarizeStableGameVersions
-import app.vercors.feature.project.ui.install.InstallModDialog
+import app.vercors.feature.project.domain.model.*
+import app.vercors.feature.project.ui.install.InstallProjectDialog
 import app.vercors.feature.project.ui.list.ProjectCategoryView
 import app.vercors.feature.project.ui.list.toView
 import opensavvy.state.progressive.ProgressiveOutcome
@@ -16,13 +13,14 @@ data class ProjectDetailsState(
     val projectId: ProjectId,
     val project: ProgressiveOutcome<ProjectDetailsError, ProjectDetailsView>,
     val promptInstall: Boolean,
-    val installModDialog: InstallModDialog,
+    val installProjectDialog: InstallProjectDialog,
 )
 
 @Immutable
 data class ProjectDetailsView(
     val id: ProjectId,
     val name: String,
+    val type: ProjectType,
     val description: String,
     val body: String?,
     val url: String,
@@ -50,9 +48,14 @@ data class ProjectLinksView(
     val discordUrl: String?
 )
 
+/** Install is only wired up for these three types — Modpack/DataPack/World need their own, different flows. */
+val ProjectType.isInstallable: Boolean
+    get() = this == ProjectType.Mod || this == ProjectType.ResourcePack || this == ProjectType.ShaderPack
+
 fun Project.toView(): ProjectDetailsView = ProjectDetailsView(
     id = id,
     name = name,
+    type = type,
     description = description,
     body = body,
     url = url,

@@ -1,7 +1,7 @@
 package app.vercors.feature.instance.data.repository
 
 import app.vercors.feature.instance.data.mods.InstanceModScannerService
-import app.vercors.feature.instance.domain.model.InstalledMod
+import app.vercors.feature.instance.domain.model.InstalledContentFile
 import app.vercors.feature.instance.domain.model.InstanceId
 import app.vercors.feature.instance.domain.repository.InstanceModRepository
 import dev.zacsweers.metro.AppScope
@@ -16,7 +16,7 @@ import opensavvy.state.coroutines.ProgressiveFlow
 class InstanceModRepositoryImpl(
     private val scannerService: InstanceModScannerService
 ) : InstanceModRepository {
-    override fun observeInstalledMods(instanceId: InstanceId): ProgressiveFlow<Nothing, List<InstalledMod>> =
+    override fun observeInstalledMods(instanceId: InstanceId): ProgressiveFlow<Nothing, List<InstalledContentFile>> =
         scannerService.observe(instanceId)
 
     override suspend fun recordModOrigin(

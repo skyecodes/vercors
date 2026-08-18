@@ -7,6 +7,7 @@ data class ProjectData(
     val id: String,
     val platform: String,
     val name: String,
+    val type: ProjectTypeData,
     val description: String,
     val body: String?,
     val url: String,

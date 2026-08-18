@@ -6,6 +6,7 @@ import kotlin.time.Instant
 data class Project(
     val id: ProjectId,
     val name: String,
+    val type: ProjectType,
     val description: String,
     val body: String?,
     val url: String,

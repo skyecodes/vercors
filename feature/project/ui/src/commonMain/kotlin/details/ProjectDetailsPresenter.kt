@@ -2,8 +2,9 @@ package app.vercors.feature.project.ui.details
 
 import androidx.compose.runtime.*
 import app.vercors.core.ui.state.produceProgressiveState
+import app.vercors.feature.project.domain.model.ProjectType
 import app.vercors.feature.project.domain.usecase.GetProjectUseCase
-import app.vercors.feature.project.ui.install.InstallModDialog
+import app.vercors.feature.project.ui.install.InstallProjectDialog
 import app.vercors.shared.ui.Presenter
 import app.vercors.shared.ui.Store
 import com.slack.circuit.codegen.annotations.CircuitInject
@@ -19,7 +20,7 @@ import opensavvy.state.progressive.valueOrNull
 class ProjectDetailsPresenter(
     @Assisted private val screen: ProjectDetailsScreen,
     private val getProject: GetProjectUseCase,
-    private val installModDialogFactory: InstallModDialog.Factory,
+    private val installProjectDialogFactory: InstallProjectDialog.Factory,
 ) : Presenter<ProjectDetailsState, ProjectDetailsEvent> {
     @OptIn(ExperimentalProgressiveRaiseApi::class)
     @Composable
@@ -28,16 +29,19 @@ class ProjectDetailsPresenter(
             value = progressive { getProject(screen.projectId).toView() }
         }
         var promptInstall by remember { mutableStateOf(false) }
+        val type = project.valueOrNull?.type
         val loaders = project.valueOrNull?.loaders
-        val installModDialog = remember(screen.projectId, loaders) {
-            installModDialogFactory.create(screen.projectId, loaders ?: emptyList())
+        val installProjectDialog = remember(screen.projectId, type, loaders) {
+            // The placeholder ProjectType.Mod is never actually installed against — the Install button (which is
+            // the only way to make promptInstall true) only renders once project has loaded successfully.
+            installProjectDialogFactory.create(screen.projectId, type ?: ProjectType.Mod, loaders ?: emptyList())
         }
 
         return ProjectDetailsState(
             projectId = screen.projectId,
             project = project,
             promptInstall = promptInstall,
-            installModDialog = installModDialog
+            installProjectDialog = installProjectDialog
         ) + { event ->
             when (event) {
                 ProjectDetailsEvent.OnInstallClick -> promptInstall = true

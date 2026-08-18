@@ -151,19 +151,27 @@ class ProjectRepositoryImpl(
         projectId: ProjectId,
         fileId: String,
         fileName: String,
-        instanceId: String
+        instanceId: String,
+        type: ProjectType
     ) {
         val request = projectFileDownloadRequest(
             platformId = projectId.platform,
             projectId = projectId.id,
             fileId = fileId,
-            path = Path(appPaths.modsDir(instanceId), fileName)
+            path = Path(type.targetDir(instanceId), fileName)
         )
         recover({
             fileValidationService.submit(listOf(request)) {}
         }) { _: NonEmptyList<FileValidationFailure> ->
             raise(ProjectFileDownloadFailed)
         }
+    }
+
+    private fun ProjectType.targetDir(instanceId: String): Path = when (this) {
+        ProjectType.Mod, ProjectType.Modpack -> appPaths.modsDir(instanceId)
+        ProjectType.ResourcePack -> appPaths.resourcePacksDir(instanceId)
+        ProjectType.ShaderPack -> appPaths.shaderPacksDir(instanceId)
+        ProjectType.DataPack, ProjectType.World -> error("Install is not supported for project type $this")
     }
 }
 

@@ -19,4 +19,6 @@ sealed interface InstanceDetailsEvent : Event {
     data object SaveInstance : InstanceDetailsEvent
     data object CancelEdit : InstanceDetailsEvent
     data class OnModEnabledChange(val fileName: String, val enabled: Boolean) : InstanceDetailsEvent
+    data class OnResourcePackEnabledChange(val fileName: String, val enabled: Boolean) : InstanceDetailsEvent
+    data class OnShaderPackEnabledChange(val fileName: String, val enabled: Boolean) : InstanceDetailsEvent
 }

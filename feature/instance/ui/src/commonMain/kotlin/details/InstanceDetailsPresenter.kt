@@ -52,6 +52,10 @@ class InstanceDetailsPresenter(
     private val observeInstanceLogs: ObserveInstanceLogsUseCase,
     private val observeInstalledMods: ObserveInstalledModsUseCase,
     private val setModEnabled: SetModEnabledUseCase,
+    private val observeInstalledResourcePacks: ObserveInstalledResourcePacksUseCase,
+    private val setResourcePackEnabled: SetResourcePackEnabledUseCase,
+    private val observeInstalledShaderPacks: ObserveInstalledShaderPacksUseCase,
+    private val setShaderPackEnabled: SetShaderPackEnabledUseCase,
     private val launchInstance: LaunchInstanceUseCase,
     private val cancelInstance: CancelInstanceUseCase,
     private val stopInstance: StopInstanceUseCase,
@@ -70,6 +74,8 @@ class InstanceDetailsPresenter(
         val gameVersionList by observeGameVersionListView()
         val logs by observeInstanceLogsView()
         val installedMods by observeInstalledModsView()
+        val installedResourcePacks by observeInstalledResourcePacksView()
+        val installedShaderPacks by observeInstalledShaderPacksView()
         val (promptDeleteConfirmation, setPromptDeleteConfirmation) = rememberSaveable { mutableStateOf(false) }
         val (selectedTab, setSelectedTab) = rememberSaveable { mutableStateOf(InstanceDetailsTab.Options) }
         val (editedInstance, setEditedInstance) = rememberSaveable { mutableStateOf(InstanceEditState()) }
@@ -120,7 +126,9 @@ class InstanceDetailsPresenter(
             promptDeleteConfirmation = promptDeleteConfirmation,
             selectedTab = selectedTab,
             logs = logs,
-            installedMods = installedMods
+            installedMods = installedMods,
+            installedResourcePacks = installedResourcePacks,
+            installedShaderPacks = installedShaderPacks
         ) + { event ->
             handleEvent(
                 event = event,
@@ -179,6 +187,14 @@ class InstanceDetailsPresenter(
                 setModEnabled(screen.instanceId, event.fileName, event.enabled)
             }
 
+            is InstanceDetailsEvent.OnResourcePackEnabledChange -> globalScope.launch {
+                setResourcePackEnabled(screen.instanceId, event.fileName, event.enabled)
+            }
+
+            is InstanceDetailsEvent.OnShaderPackEnabledChange -> globalScope.launch {
+                setShaderPackEnabled(screen.instanceId, event.fileName, event.enabled)
+            }
+
             InstanceDetailsEvent.CancelEdit -> setEditedInstance(InstanceEditState())
             InstanceDetailsEvent.SaveInstance -> globalScope.launch {
                 either {
@@ -226,9 +242,21 @@ class InstanceDetailsPresenter(
         }
 
     @Composable
-    private fun observeInstalledModsView(): State<List<InstalledModView>?> =
+    private fun observeInstalledModsView(): State<List<InstalledContentFileView>?> =
         produceAndCollectAsRetainedState(observeInstalledMods, screen, initial = null) {
             observeInstalledMods(screen.instanceId).map { outcome -> outcome.valueOrNull?.map { it.toView() } }
+        }
+
+    @Composable
+    private fun observeInstalledResourcePacksView(): State<List<InstalledContentFileView>?> =
+        produceAndCollectAsRetainedState(observeInstalledResourcePacks, screen, initial = null) {
+            observeInstalledResourcePacks(screen.instanceId).map { outcome -> outcome.valueOrNull?.map { it.toView() } }
+        }
+
+    @Composable
+    private fun observeInstalledShaderPacksView(): State<List<InstalledContentFileView>?> =
+        produceAndCollectAsRetainedState(observeInstalledShaderPacks, screen, initial = null) {
+            observeInstalledShaderPacks(screen.instanceId).map { outcome -> outcome.valueOrNull?.map { it.toView() } }
         }
 
     @Composable

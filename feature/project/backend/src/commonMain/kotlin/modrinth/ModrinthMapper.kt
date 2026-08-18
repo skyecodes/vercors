@@ -92,6 +92,9 @@ internal fun ModrinthProject.convert(members: List<ModrinthProjectMember>): Proj
     id = id,
     platform = MODRINTH_PLATFORM_ID,
     name = title,
+    // Falls back to Mod for a Modrinth type this launcher doesn't otherwise recognize (e.g. "plugin") — in
+    // practice unreachable, since project search already filters results down to known types.
+    type = projectType.convert() ?: ProjectTypeData.Mod,
     description = description,
     body = body,
     url = "https://modrinth.com/project/$id",

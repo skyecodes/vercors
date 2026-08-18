@@ -10,7 +10,7 @@ import opensavvy.state.progressive.valueOrNull
 import kotlin.time.Instant
 
 @Immutable
-data class InstallModState(
+data class InstallProjectState(
     val instances: ProgressiveOutcome<Nothing, List<InstallableInstanceView>>,
     val selectedInstanceId: InstanceId?,
     val files: ProgressiveOutcome<ProjectDetailsError, List<ProjectFileView>>,
@@ -29,8 +29,9 @@ data class InstallableInstanceView(
     val id: InstanceId,
     val name: String,
     val gameVersion: String,
-    val loaderType: ModLoaderType,
-    val loaderVersion: String,
+    /** Null for an instance with no mod loader — only relevant when the project being installed requires one. */
+    val loaderType: ModLoaderType?,
+    val loaderVersion: String?,
 )
 
 @Immutable

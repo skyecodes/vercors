@@ -1,11 +1,11 @@
 package app.vercors.feature.instance.domain.repository
 
-import app.vercors.feature.instance.domain.model.InstalledMod
+import app.vercors.feature.instance.domain.model.InstalledContentFile
 import app.vercors.feature.instance.domain.model.InstanceId
 import opensavvy.state.coroutines.ProgressiveFlow
 
 interface InstanceModRepository {
-    fun observeInstalledMods(instanceId: InstanceId): ProgressiveFlow<Nothing, List<InstalledMod>>
+    fun observeInstalledMods(instanceId: InstanceId): ProgressiveFlow<Nothing, List<InstalledContentFile>>
 
     suspend fun recordModOrigin(
         instanceId: InstanceId,

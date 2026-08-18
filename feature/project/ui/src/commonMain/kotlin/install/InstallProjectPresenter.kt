@@ -6,11 +6,13 @@ import app.vercors.core.ui.state.mutableProgressiveStateOf
 import app.vercors.core.ui.state.produceAndCollectAsProgressiveState
 import app.vercors.feature.game.domain.model.ModLoaderType
 import app.vercors.feature.instance.domain.model.InstanceId
+import app.vercors.feature.instance.domain.usecase.ContentKind
 import app.vercors.feature.instance.domain.usecase.ObserveInstanceListUseCase
-import app.vercors.feature.instance.domain.usecase.RecordInstalledModOriginUseCase
+import app.vercors.feature.instance.domain.usecase.RecordInstalledContentOriginUseCase
 import app.vercors.feature.project.domain.model.ProjectDetailsError
 import app.vercors.feature.project.domain.model.ProjectId
 import app.vercors.feature.project.domain.model.ProjectReleaseChannel
+import app.vercors.feature.project.domain.model.ProjectType
 import app.vercors.feature.project.domain.usecase.DownloadProjectFileUseCase
 import app.vercors.feature.project.domain.usecase.GetProjectFilesUseCase
 import app.vercors.feature.project.ui.message
@@ -29,20 +31,21 @@ import opensavvy.state.progressive.ProgressiveOutcome
 import opensavvy.state.progressive.map
 import opensavvy.state.progressive.valueOrNull
 
-class InstallModPresenter(
-    private val navigator: OverlayNavigator<InstallModResult>,
+class InstallProjectPresenter(
+    private val navigator: OverlayNavigator<InstallProjectResult>,
     private val projectId: ProjectId,
+    private val projectType: ProjectType,
     private val compatibleLoaders: List<ModLoaderType>,
     private val globalScope: CoroutineScope,
     private val observeInstanceList: ObserveInstanceListUseCase,
     private val getProjectFiles: GetProjectFilesUseCase,
     private val downloadProjectFile: DownloadProjectFileUseCase,
-    private val recordInstalledModOrigin: RecordInstalledModOriginUseCase,
+    private val recordInstalledContentOrigin: RecordInstalledContentOriginUseCase,
     private val snackbarService: SnackbarService
-) : Presenter<InstallModState, InstallModEvent> {
+) : Presenter<InstallProjectState, InstallProjectEvent> {
     @OptIn(ExperimentalProgressiveRaiseApi::class)
     @Composable
-    override fun present(): Store<InstallModState, InstallModEvent> {
+    override fun present(): Store<InstallProjectState, InstallProjectEvent> {
         val instances by observeInstanceListView()
         var selectedInstanceId by remember { mutableStateOf<InstanceId?>(null) }
         var selectedFileId by remember { mutableStateOf<String?>(null) }
@@ -56,8 +59,11 @@ class InstallModPresenter(
             selectedFileId = null
             if (selectedInstance != null) {
                 val outcome = progressive {
-                    getProjectFiles(projectId, selectedInstance.gameVersion, selectedInstance.loaderType)
-                        .map { it.toView() }
+                    getProjectFiles(
+                        projectId,
+                        selectedInstance.gameVersion,
+                        if (projectType.requiresLoader) selectedInstance.loaderType else null
+                    ).map { it.toView() }
                 }
                 files.value = outcome
                 val fileList = outcome.valueOrNull
@@ -69,7 +75,7 @@ class InstallModPresenter(
             }
         }
 
-        return InstallModState(
+        return InstallProjectState(
             instances = instances,
             selectedInstanceId = selectedInstanceId,
             files = files.value,
@@ -77,18 +83,19 @@ class InstallModPresenter(
             installing = installing
         ) + { event ->
             when (event) {
-                is InstallModEvent.OnInstanceSelected -> selectedInstanceId = event.instanceId
-                is InstallModEvent.OnFileSelected -> selectedFileId = event.fileId
-                InstallModEvent.OnCancelClick -> navigator.finish(InstallModResult.Cancelled)
-                InstallModEvent.OnConfirmClick -> {
+                is InstallProjectEvent.OnInstanceSelected -> selectedInstanceId = event.instanceId
+                is InstallProjectEvent.OnFileSelected -> selectedFileId = event.fileId
+                InstallProjectEvent.OnCancelClick -> navigator.finish(InstallProjectResult.Cancelled)
+                InstallProjectEvent.OnConfirmClick -> {
                     val instanceId = selectedInstanceId
                     val file = files.value.valueOrNull?.find { it.id == selectedFileId }
                     if (instanceId != null && file != null) {
                         installing = true
                         globalScope.launch {
                             recover({
-                                downloadProjectFile(projectId, file.id, file.fileName, instanceId)
-                                recordInstalledModOrigin(
+                                downloadProjectFile(projectId, file.id, file.fileName, instanceId, projectType)
+                                recordInstalledContentOrigin(
+                                    projectType.toContentKind(),
                                     instanceId,
                                     file.fileName,
                                     projectId.platform,
@@ -98,7 +105,7 @@ class InstallModPresenter(
                             }) { error -> snackbarService.error { error.message } }
                         }.invokeOnCompletion { error ->
                             installing = false
-                            if (error == null) navigator.finish(InstallModResult.Installed(instanceId))
+                            if (error == null) navigator.finish(InstallProjectResult.Installed(instanceId))
                         }
                     }
                 }
@@ -111,8 +118,18 @@ class InstallModPresenter(
         produceAndCollectAsProgressiveState {
             observeInstanceList().map { res ->
                 res.map { list ->
-                    list.filterIsRight().mapNotNull { it.instance.toInstallableInstanceViewOrNull(compatibleLoaders) }
+                    list.filterIsRight()
+                        .mapNotNull { it.instance.toInstallableInstanceViewOrNull(projectType, compatibleLoaders) }
                 }
             }
         }
+}
+
+/** Install is only wired up for these three types — see [app.vercors.feature.project.ui.details.isInstallable]. */
+private fun ProjectType.toContentKind(): ContentKind = when (this) {
+    ProjectType.Mod -> ContentKind.Mod
+    ProjectType.ResourcePack -> ContentKind.ResourcePack
+    ProjectType.ShaderPack -> ContentKind.ShaderPack
+    ProjectType.Modpack, ProjectType.DataPack, ProjectType.World ->
+        error("Install is not supported for project type $this")
 }

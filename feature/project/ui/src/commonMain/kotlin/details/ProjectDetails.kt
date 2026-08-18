@@ -59,7 +59,7 @@ fun ProjectDetails(
 
     if (state.promptInstall) {
         OverlayEffect {
-            val result = show(state.installModDialog)
+            val result = show(state.installProjectDialog)
             eventSink(ProjectDetailsEvent.OnInstallResult(result))
         }
     }
@@ -130,13 +130,15 @@ private fun ProjectDetailsHeader(projectId: ProjectId, project: ProjectDetailsVi
                 modifier = Modifier.projectSharedElement(projectId, "description")
             )
         }
-        AppIconTextButton(
-            onClick = { eventSink(ProjectDetailsEvent.OnInstallClick) },
-            text = stringResource(ProjectRes.string.install),
-            imageVector = Lucide.Download,
-            backgroundColor = Theme[colors][primary],
-            contentColor = Theme[colors][onPrimary],
-        )
+        if (project.type.isInstallable) {
+            AppIconTextButton(
+                onClick = { eventSink(ProjectDetailsEvent.OnInstallClick) },
+                text = stringResource(ProjectRes.string.install),
+                imageVector = Lucide.Download,
+                backgroundColor = Theme[colors][primary],
+                contentColor = Theme[colors][onPrimary],
+            )
+        }
 
         val uriHandler = LocalUriHandler.current
         AppMenuButton(
