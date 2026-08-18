@@ -1,11 +1,13 @@
 package app.vercors.feature.project.backend
 
 import app.vercors.feature.project.api.Platforms
+import app.vercors.feature.project.api.ProjectFiles
 import app.vercors.feature.project.api.Projects
 import app.vercors.feature.project.api.dto.ProjectLoaderData
 import app.vercors.feature.project.api.dto.ProjectSortByData
 import app.vercors.feature.project.api.dto.ProjectTypeData
 import app.vercors.shared.backend.cache
+import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.serialization.json.Json
 import opensavvy.spine.server.arrow.routeWithRaise
@@ -50,5 +52,25 @@ fun Route.projectRoutes(service: ProjectService, json: Json) {
             val projectId = idOf(Projects.ProjectId)
             respond(service.getProjectDetails(platformId, projectId))
         }
+        routeWithRaise(ProjectFiles.list) {
+            val platformId = idOf(Platforms.PlatformId)
+            val projectId = idOf(Projects.ProjectId)
+            respond(
+                service.getProjectFiles(
+                    platformId = platformId,
+                    projectId = projectId,
+                    gameVersion = parameters.gameVersion,
+                    loader = parameters.loader?.let { json.decodeFromString<ProjectLoaderData>("\"$it\"") }
+                )
+            )
+        }
+    }
+    // Not cached: the CurseForge download-url resolution can return short-lived/signed URLs.
+    routeWithRaise(ProjectFiles.ProjectFileId.download) {
+        val platformId = idOf(Platforms.PlatformId)
+        val projectId = idOf(Projects.ProjectId)
+        val fileId = idOf(ProjectFiles.ProjectFileId)
+        val url = service.getFileDownloadUrl(platformId, projectId, fileId)
+        call.respondRedirect(url)
     }
 }

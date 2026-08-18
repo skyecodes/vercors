@@ -3,22 +3,30 @@ package app.vercors.feature.project.data.repository
 import app.vercors.core.domain.Page
 import app.vercors.feature.game.domain.model.ModLoaderType
 import app.vercors.feature.project.api.Platforms
+import app.vercors.feature.project.api.ProjectFiles
 import app.vercors.feature.project.api.Projects
 import app.vercors.feature.project.api.dto.PlatformNotFoundData
 import app.vercors.feature.project.api.dto.ProjectLoaderData
 import app.vercors.feature.project.api.dto.ProjectNotFoundData
+import app.vercors.feature.project.data.projectFileDownloadRequest
 import app.vercors.feature.project.data.toData
 import app.vercors.feature.project.data.toDomain
 import app.vercors.feature.project.domain.model.*
 import app.vercors.feature.project.domain.repository.ProjectRepository
 import app.vercors.shared.api.ApiV1
+import app.vercors.shared.data.AppPaths
+import app.vercors.shared.data.FileValidationFailure
+import app.vercors.shared.data.FileValidationService
+import arrow.core.NonEmptyList
 import arrow.core.raise.Raise
 import arrow.core.raise.context.raise
+import arrow.core.raise.recover
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
 import io.ktor.client.*
+import kotlinx.io.files.Path
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.json.jsonArray
@@ -33,7 +41,9 @@ import opensavvy.spine.client.request
 @Inject
 class ProjectRepositoryImpl(
     private val httpClient: HttpClient,
-    private val json: Json
+    private val json: Json,
+    private val appPaths: AppPaths,
+    private val fileValidationService: FileValidationService
 ) : ProjectRepository {
 
     context(_: Raise<PlatformError>)
@@ -111,6 +121,50 @@ class ProjectRepositoryImpl(
         handle2 = { raise(it.toDomain()) },
         transform = { it.toDomain() }
     )
+
+    context(_: Raise<ProjectDetailsError>)
+    override suspend fun getProjectFiles(
+        projectId: ProjectId,
+        gameVersion: String?,
+        loader: ModLoaderType?
+    ): List<ProjectFile> = httpClient.request(
+        endpoint = ApiV1 / Platforms / Platforms.PlatformId(projectId.platform) / Projects / Projects.ProjectId(
+            projectId.id
+        ) / ProjectFiles / ProjectFiles.list,
+        parameters = {
+            this.gameVersion = gameVersion
+            this.loader = loader?.let { json.encodeToJsonElement(it.toMetaData()).jsonPrimitive.content }
+        }
+    ).handle(
+        handle1 = {
+            when (it) {
+                is ProjectNotFoundData -> raise(it.toDomain())
+                is PlatformNotFoundData -> raise(it.toDomain())
+            }
+        },
+        handle2 = { raise(it.toDomain()) },
+        transform = { list -> list.map { it.toDomain() } }
+    )
+
+    context(_: Raise<ProjectFileDownloadError>)
+    override suspend fun downloadProjectFile(
+        projectId: ProjectId,
+        fileId: String,
+        fileName: String,
+        instanceId: String
+    ) {
+        val request = projectFileDownloadRequest(
+            platformId = projectId.platform,
+            projectId = projectId.id,
+            fileId = fileId,
+            path = Path(appPaths.modsDir(instanceId), fileName)
+        )
+        recover({
+            fileValidationService.submit(listOf(request)) {}
+        }) { _: NonEmptyList<FileValidationFailure> ->
+            raise(ProjectFileDownloadFailed)
+        }
+    }
 }
 
 private fun ModLoaderType.toMetaData() = when (this) {

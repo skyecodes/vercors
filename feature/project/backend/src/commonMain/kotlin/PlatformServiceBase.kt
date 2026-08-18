@@ -31,6 +31,16 @@ interface PlatformServiceBase {
 
     context(_: Raise<PlatformErrorData>)
     suspend fun getProject(projectId: String): ProjectData
+
+    context(_: Raise<PlatformErrorData>)
+    suspend fun getProjectFiles(
+        projectId: String,
+        gameVersion: String?,
+        loader: ProjectLoaderData?
+    ): List<ProjectFileData>
+
+    context(_: Raise<PlatformErrorData>)
+    suspend fun getFileDownloadUrl(projectId: String, fileId: String): String
 }
 
 data class PlatformInfo(

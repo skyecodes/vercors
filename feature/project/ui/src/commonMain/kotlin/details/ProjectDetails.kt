@@ -41,6 +41,7 @@ import com.composables.icons.fontawesome.brands.Github
 import com.composables.icons.lucide.*
 import com.composeunstyled.theme.Theme
 import com.slack.circuit.codegen.annotations.CircuitInject
+import com.slack.circuit.overlay.OverlayEffect
 import com.slack.circuit.sharedelements.SharedElementTransitionScope
 import dev.zacsweers.metro.AppScope
 import opensavvy.state.progressive.onFailure
@@ -55,6 +56,13 @@ fun ProjectDetails(
     modifier: Modifier = Modifier,
 ) {
     val (state, eventSink) = store
+
+    if (state.promptInstall) {
+        OverlayEffect {
+            val result = show(state.installModDialog)
+            eventSink(ProjectDetailsEvent.OnInstallResult(result))
+        }
+    }
 
     with(eventSink) {
         state.project.onSuccess { ProjectDetails(state.projectId, it, modifier) }

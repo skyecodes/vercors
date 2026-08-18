@@ -27,4 +27,14 @@ interface ModrinthApi {
 
     @GET("v2/project/{projectId}/members")
     suspend fun getProjectMembers(@Path("projectId") projectId: String): PlatformResponse<List<ModrinthProjectMember>>
+
+    @GET("v2/project/{projectId}/version")
+    suspend fun getVersions(
+        @Path("projectId") projectId: String,
+        @Query("loaders") loaders: String? = null,
+        @Query("game_versions") gameVersions: String? = null
+    ): PlatformResponse<List<ModrinthVersion>>
+
+    @GET("v2/version/{id}")
+    suspend fun getVersion(@Path("id") id: String): PlatformResponse<ModrinthVersion>
 }

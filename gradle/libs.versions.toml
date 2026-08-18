@@ -20,6 +20,7 @@ kfswatch = "1.4.0"
 appdirs = "2.0.0"
 oshi = "7.6.0"
 kzip = "2.0.0"
+ktoml = "0.7.1"
 xmlutil = "1.0.2.1"
 jna = "5.19.1"
 flexmark = "0.64.8"
@@ -94,6 +95,7 @@ kfswatch = { module = "io.github.irgaly.kfswatch:kfswatch", version.ref = "kfswa
 appdirs = { module = "ca.gosyer:kotlin-multiplatform-appdirs", version.ref = "appdirs" }
 oshi = { module = "com.github.oshi:oshi-core", version.ref = "oshi" }
 kzip = { module = "de.jonasbroeckmann.kzip:kzip", version.ref = "kzip" }
+ktoml-core = { module = "com.akuleshov7:ktoml-core", version.ref = "ktoml" }
 xmlutil-core = { module = "io.github.pdvrieze.xmlutil:core", version.ref = "xmlutil" }
 xmlutil-serialization = { module = "io.github.pdvrieze.xmlutil:serialization", version.ref = "xmlutil" }
 jna = { module = "net.java.dev.jna:jna-jpms", version.ref = "jna" }

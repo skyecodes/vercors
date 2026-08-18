@@ -1,0 +1,20 @@
+package app.vercors.feature.instance.domain.repository
+
+import app.vercors.feature.instance.domain.model.InstalledMod
+import app.vercors.feature.instance.domain.model.InstanceId
+import opensavvy.state.coroutines.ProgressiveFlow
+
+interface InstanceModRepository {
+    fun observeInstalledMods(instanceId: InstanceId): ProgressiveFlow<Nothing, List<InstalledMod>>
+
+    suspend fun recordModOrigin(
+        instanceId: InstanceId,
+        fileName: String,
+        platformId: String,
+        projectId: String,
+        fileId: String
+    )
+
+    /** [fileName] is the mod's stable, "logical" name — never includes the `.disabled` suffix used on disk. */
+    suspend fun setModEnabled(instanceId: InstanceId, fileName: String, enabled: Boolean)
+}

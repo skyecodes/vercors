@@ -96,3 +96,21 @@ internal fun PlatformErrorData.toDomain(): PlatformError = PlatformError(error, 
 internal fun PlatformNotFoundData.toDomain(): PlatformNotFound = PlatformNotFound(platformId)
 
 internal fun ProjectNotFoundData.toDomain(): ProjectNotFound = ProjectNotFound(projectId from platformId)
+
+internal fun ProjectFileData.toDomain(): ProjectFile = ProjectFile(
+    id = id,
+    displayName = displayName,
+    fileName = fileName,
+    gameVersions = gameVersions,
+    loaders = loaders.map { it.toDomain() },
+    releaseChannel = releaseChannel.toDomain(),
+    size = size,
+    sha1 = sha1,
+    publishedAt = publishedAt
+)
+
+internal fun ProjectReleaseChannelData.toDomain(): ProjectReleaseChannel = when (this) {
+    ProjectReleaseChannelData.Release -> ProjectReleaseChannel.Release
+    ProjectReleaseChannelData.Beta -> ProjectReleaseChannel.Beta
+    ProjectReleaseChannelData.Alpha -> ProjectReleaseChannel.Alpha
+}

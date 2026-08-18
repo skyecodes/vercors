@@ -21,3 +21,8 @@ val ProjectDetailsError.message: String
         is PlatformNotFound -> stringResource(ProjectRes.string.errorPlatformNotFound, platformId)
         is ProjectNotFound -> stringResource(ProjectRes.string.errorProjectNotFound, projectId.id)
     }
+
+val ProjectFileDownloadError.message: String
+    @Composable get() = when (this) {
+        ProjectFileDownloadFailed -> stringResource(ProjectRes.string.errorProjectFileDownloadFailed)
+    }

@@ -18,4 +18,5 @@ sealed interface InstanceDetailsEvent : Event {
     data class OnLoaderVersionChange(val version: String) : InstanceDetailsEvent
     data object SaveInstance : InstanceDetailsEvent
     data object CancelEdit : InstanceDetailsEvent
+    data class OnModEnabledChange(val fileName: String, val enabled: Boolean) : InstanceDetailsEvent
 }

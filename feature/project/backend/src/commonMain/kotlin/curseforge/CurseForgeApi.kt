@@ -33,4 +33,25 @@ interface CurseForgeApi {
 
     @GET("v1/mods/{modId}/description")
     suspend fun getDescription(@Path("modId") modId: String): PlatformResponse<CurseForgeStandardResponse<String>>
+
+    @GET("v1/mods/{modId}/files")
+    suspend fun getFiles(
+        @Path("modId") modId: String,
+        @Query("gameVersion") gameVersion: String? = null,
+        @Query("modLoaderType") modLoaderType: CurseForgeModLoaderType? = null,
+        @Query("index") index: Int? = null,
+        @Query("pageSize") pageSize: Int? = null
+    ): PlatformResponse<CurseForgeStandardResponse<List<CurseForgeFile>>>
+
+    @GET("v1/mods/{modId}/files/{fileId}")
+    suspend fun getFile(
+        @Path("modId") modId: String,
+        @Path("fileId") fileId: String
+    ): PlatformResponse<CurseForgeStandardResponse<CurseForgeFile>>
+
+    @GET("v1/mods/{modId}/files/{fileId}/download-url")
+    suspend fun getFileDownloadUrl(
+        @Path("modId") modId: String,
+        @Path("fileId") fileId: String
+    ): PlatformResponse<CurseForgeStandardResponse<String>>
 }

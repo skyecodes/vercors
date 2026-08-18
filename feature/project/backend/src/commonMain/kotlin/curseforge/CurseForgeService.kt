@@ -77,4 +77,21 @@ class CurseForgeService(
         val description = async { api.getDescription(projectId).bindResponse().data }
         project.await().convert(description.await())
     }
+
+    context(_: Raise<PlatformErrorData>)
+    override suspend fun getProjectFiles(
+        projectId: String,
+        gameVersion: String?,
+        loader: ProjectLoaderData?
+    ): List<ProjectFileData> = api.getFiles(
+        modId = projectId,
+        gameVersion = gameVersion,
+        modLoaderType = loader?.toCurseForgeModLoaderType()
+    ).bindResponse().data.map { it.convert(loader) }
+
+    context(_: Raise<PlatformErrorData>)
+    override suspend fun getFileDownloadUrl(projectId: String, fileId: String): String {
+        val file = api.getFile(projectId, fileId).bindResponse().data
+        return file.downloadUrl ?: api.getFileDownloadUrl(projectId, fileId).bindResponse().data
+    }
 }

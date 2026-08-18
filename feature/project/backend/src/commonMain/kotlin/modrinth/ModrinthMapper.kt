@@ -38,7 +38,7 @@ private fun ProjectTypeData.toModrinthString(): String = when (this) {
     ProjectTypeData.World -> raise(UnsupportedProjectTypeData(this))
 }
 
-private fun ProjectLoaderData.toModrinthString(): String = when (this) {
+internal fun ProjectLoaderData.toModrinthString(): String = when (this) {
     ProjectLoaderData.Forge -> "forge"
     ProjectLoaderData.NeoForge -> "neoforge"
     ProjectLoaderData.Fabric -> "fabric"
@@ -124,6 +124,29 @@ private fun String.toProjectLoaderDataOrNull(): ProjectLoaderData? = when (this)
     "fabric" -> ProjectLoaderData.Fabric
     "quilt" -> ProjectLoaderData.Quilt
     else -> null
+}
+
+/** Modrinth versions can carry multiple files (e.g. split/universal jar variants); keep the primary one. */
+internal fun ModrinthVersion.convert(): ProjectFileData? {
+    val file = files.firstOrNull { it.primary } ?: files.firstOrNull() ?: return null
+    return ProjectFileData(
+        id = id,
+        displayName = name,
+        fileName = file.filename,
+        gameVersions = gameVersions,
+        loaders = loaders.mapNotNull { it.toProjectLoaderDataOrNull() },
+        releaseChannel = versionType.toProjectReleaseChannelData(),
+        size = file.size,
+        sha1 = file.hashes["sha1"],
+        publishedAt = datePublished
+    )
+}
+
+private fun ModrinthVersionType.toProjectReleaseChannelData(): ProjectReleaseChannelData = when (value) {
+    ModrinthVersionType.RELEASE -> ProjectReleaseChannelData.Release
+    ModrinthVersionType.BETA -> ProjectReleaseChannelData.Beta
+    ModrinthVersionType.ALPHA -> ProjectReleaseChannelData.Alpha
+    else -> ProjectReleaseChannelData.Alpha
 }
 
 internal fun ProjectSortByData.toModrinthIndex(): String = when (this) {

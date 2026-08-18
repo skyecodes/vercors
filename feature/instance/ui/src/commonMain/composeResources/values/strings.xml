@@ -49,4 +49,6 @@
 
     <string name="general">General</string>
     <string name="java">Java</string>
+
+    <string name="noModsInstalled">No mods installed</string>
 </resources>

@@ -81,4 +81,22 @@ class ModrinthService(
         val members = async { api.getProjectMembers(projectId).bindResponse() }
         project.await().convert(members.await())
     }
+
+    context(_: Raise<PlatformErrorData>)
+    override suspend fun getProjectFiles(
+        projectId: String,
+        gameVersion: String?,
+        loader: ProjectLoaderData?
+    ): List<ProjectFileData> = api.getVersions(
+        projectId = projectId,
+        loaders = loader?.let { "[\"${it.toModrinthString()}\"]" },
+        gameVersions = gameVersion?.let { "[\"$it\"]" }
+    ).bindResponse().mapNotNull { it.convert() }
+
+    context(_: Raise<PlatformErrorData>)
+    override suspend fun getFileDownloadUrl(projectId: String, fileId: String): String {
+        val version = api.getVersion(fileId).bindResponse()
+        val file = version.files.firstOrNull { it.primary } ?: version.files.first()
+        return file.url
+    }
 }

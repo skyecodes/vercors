@@ -57,6 +57,13 @@ suspend inline fun Path.delete(
     SystemFileSystem.delete(this@delete)
 }
 
+suspend inline fun Path.moveTo(
+    target: Path,
+    context: CoroutineContext = Dispatchers.IO
+) = withContext(context) {
+    SystemFileSystem.atomicMove(this@moveTo, target)
+}
+
 suspend fun Path.deleteRecursively(
     context: CoroutineContext = Dispatchers.IO
 ) {

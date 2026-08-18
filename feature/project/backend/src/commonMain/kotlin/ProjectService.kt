@@ -77,4 +77,20 @@ class ProjectService(
         catch { getPlatformService(platformId).getProject(projectId) }
             .mapLeft { ProjectNotFoundData(projectId, platformId) }
             .bind()
+
+    context(_: Raise<PlatformOrProjectNotFoundData>, _: Raise<PlatformErrorData>)
+    suspend fun getProjectFiles(
+        platformId: String,
+        projectId: String,
+        gameVersion: String?,
+        loader: ProjectLoaderData?
+    ) = catch { getPlatformService(platformId).getProjectFiles(projectId, gameVersion, loader) }
+        .mapLeft { ProjectNotFoundData(projectId, platformId) }
+        .bind()
+
+    context(_: Raise<PlatformOrProjectNotFoundData>, _: Raise<PlatformErrorData>)
+    suspend fun getFileDownloadUrl(platformId: String, projectId: String, fileId: String) =
+        catch { getPlatformService(platformId).getFileDownloadUrl(projectId, fileId) }
+            .mapLeft { ProjectNotFoundData(projectId, platformId) }
+            .bind()
 }

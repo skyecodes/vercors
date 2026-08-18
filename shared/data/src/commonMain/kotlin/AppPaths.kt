@@ -32,6 +32,8 @@ class AppPaths(root: Path) {
     val loggingConfigs = Path(data, "logging")
     val gameDirs = Path(data, "instances")
     val imageCache = Path(data, "cache", "image")
+    val modMetadataCache = Path(data, "cache", "mod-metadata")
+    val modIconCache = Path(data, "cache", "mod-icons")
 
     fun versionDir(versionId: String): Path = Path(versions, versionId)
 
@@ -59,6 +61,8 @@ class AppPaths(root: Path) {
     fun gameDir(instanceId: String): Path = Path(gameDirs, instanceId)
 
     fun nativesDir(instanceId: String): Path = Path(gameDir(instanceId), "natives")
+
+    fun modsDir(instanceId: String): Path = Path(gameDir(instanceId), "mods")
 
     private fun String.pathSegments(): Array<String> = split('/').filter { it.isNotBlank() }.toTypedArray()
 }

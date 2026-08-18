@@ -15,10 +15,7 @@ import app.vercors.feature.game.ui.GameVersionView
 import app.vercors.feature.game.ui.toView
 import app.vercors.feature.instance.domain.model.InstanceError
 import app.vercors.feature.instance.domain.model.InstanceModLoader
-import app.vercors.feature.instance.domain.usecase.DeleteInstanceUseCase
-import app.vercors.feature.instance.domain.usecase.ObserveInstanceLogsUseCase
-import app.vercors.feature.instance.domain.usecase.ObserveInstanceUseCase
-import app.vercors.feature.instance.domain.usecase.UpdateInstanceUseCase
+import app.vercors.feature.instance.domain.usecase.*
 import app.vercors.feature.instance.ui.list.InstanceListScreen
 import app.vercors.feature.instance.ui.message
 import app.vercors.feature.launcher.domain.usecase.CancelInstanceUseCase
@@ -53,6 +50,8 @@ class InstanceDetailsPresenter(
     private val globalScope: CoroutineScope,
     private val observeInstance: ObserveInstanceUseCase,
     private val observeInstanceLogs: ObserveInstanceLogsUseCase,
+    private val observeInstalledMods: ObserveInstalledModsUseCase,
+    private val setModEnabled: SetModEnabledUseCase,
     private val launchInstance: LaunchInstanceUseCase,
     private val cancelInstance: CancelInstanceUseCase,
     private val stopInstance: StopInstanceUseCase,
@@ -70,6 +69,7 @@ class InstanceDetailsPresenter(
         val instance by observeInstanceView()
         val gameVersionList by observeGameVersionListView()
         val logs by observeInstanceLogsView()
+        val installedMods by observeInstalledModsView()
         val (promptDeleteConfirmation, setPromptDeleteConfirmation) = rememberSaveable { mutableStateOf(false) }
         val (selectedTab, setSelectedTab) = rememberSaveable { mutableStateOf(InstanceDetailsTab.Options) }
         val (editedInstance, setEditedInstance) = rememberSaveable { mutableStateOf(InstanceEditState()) }
@@ -119,7 +119,8 @@ class InstanceDetailsPresenter(
             loaderVersionList = loaderVersionList.value.valueOrNull ?: emptyList(),
             promptDeleteConfirmation = promptDeleteConfirmation,
             selectedTab = selectedTab,
-            logs = logs
+            logs = logs,
+            installedMods = installedMods
         ) + { event ->
             handleEvent(
                 event = event,
@@ -174,6 +175,10 @@ class InstanceDetailsPresenter(
             is InstanceDetailsEvent.OnLoaderVersionChange ->
                 setEditedInstance(editedInstance.copy(modLoaderVersion = event.version))
 
+            is InstanceDetailsEvent.OnModEnabledChange -> globalScope.launch {
+                setModEnabled(screen.instanceId, event.fileName, event.enabled)
+            }
+
             InstanceDetailsEvent.CancelEdit -> setEditedInstance(InstanceEditState())
             InstanceDetailsEvent.SaveInstance -> globalScope.launch {
                 either {
@@ -218,6 +223,12 @@ class InstanceDetailsPresenter(
     private fun observeInstanceLogsView(): State<List<InstanceLogEventView>?> =
         produceAndCollectAsRetainedState(observeInstanceLogs, screen, initial = null) {
             observeInstanceLogs(screen.instanceId).map { list -> list?.map { it.toView() } }
+        }
+
+    @Composable
+    private fun observeInstalledModsView(): State<List<InstalledModView>?> =
+        produceAndCollectAsRetainedState(observeInstalledMods, screen, initial = null) {
+            observeInstalledMods(screen.instanceId).map { outcome -> outcome.valueOrNull?.map { it.toView() } }
         }
 
     @Composable

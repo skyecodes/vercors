@@ -90,3 +90,35 @@ internal fun ProjectSortByData.toCurseForgeSortField(): CurseForgeProjectSearchS
     ProjectSortByData.DateUpdated -> CurseForgeProjectSearchSortField.LastUpdated
     ProjectSortByData.DateCreated -> CurseForgeProjectSearchSortField.ReleasedDate
 }
+
+/**
+ * [CurseForgeFile] has no clean per-file loader field: [CurseForgeFile.gameVersions] mixes real version
+ * strings and loader names (e.g. `["1.20.1", "Forge"]`) with no separator. When the caller already filtered
+ * by [loaderFilter] server-side, just echo it back; otherwise fall back to scanning [CurseForgeFile.gameVersions]
+ * against the known loader-name set.
+ */
+internal fun CurseForgeFile.convert(loaderFilter: ProjectLoaderData?): ProjectFileData = ProjectFileData(
+    id = id.toString(),
+    displayName = displayName,
+    fileName = fileName,
+    gameVersions = sortableGameVersions.map { it.gameVersion }.distinct(),
+    loaders = loaderFilter?.let { listOf(it) } ?: gameVersions.mapNotNull { it.toProjectLoaderDataOrNull() }.distinct(),
+    releaseChannel = releaseType.toProjectReleaseChannelData(),
+    size = fileLength,
+    sha1 = hashes.firstOrNull { it.algo == CurseForgeHashAlgo.Sha1 }?.value,
+    publishedAt = fileDate
+)
+
+private fun String.toProjectLoaderDataOrNull(): ProjectLoaderData? = when (this) {
+    "Forge" -> ProjectLoaderData.Forge
+    "NeoForge" -> ProjectLoaderData.NeoForge
+    "Fabric" -> ProjectLoaderData.Fabric
+    "Quilt" -> ProjectLoaderData.Quilt
+    else -> null
+}
+
+internal fun CurseForgeFileReleaseType.toProjectReleaseChannelData(): ProjectReleaseChannelData = when (this) {
+    CurseForgeFileReleaseType.Release -> ProjectReleaseChannelData.Release
+    CurseForgeFileReleaseType.Beta -> ProjectReleaseChannelData.Beta
+    CurseForgeFileReleaseType.Alpha -> ProjectReleaseChannelData.Alpha
+}

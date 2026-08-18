@@ -20,6 +20,7 @@ data class InstanceDetailsState(
     val selectedTab: InstanceDetailsTab,
     val promptDeleteConfirmation: Boolean,
     val logs: List<InstanceLogEventView>?,
+    val installedMods: List<InstalledModView>?,
 ) {
     val isNameEdited = instance.valueOrNull?.let {
         editedInstance.name != null && editedInstance.name != it.name
@@ -100,6 +101,27 @@ fun InstanceAndStatus.toView(): InstanceView = InstanceView(
 )
 
 val Instance.displayType: String get() = if (modpackInfo != null) "Modpack" else "Custom"
+
+@Immutable
+data class InstalledModView(
+    val fileName: String,
+    val title: String,
+    val description: String?,
+    val version: String,
+    val loaderLabel: String?,
+    val iconFilePath: String?,
+    val enabled: Boolean,
+)
+
+fun InstalledMod.toView(): InstalledModView = InstalledModView(
+    fileName = fileName,
+    title = title,
+    description = description,
+    version = version,
+    loaderLabel = loader?.displayName,
+    iconFilePath = iconFilePath,
+    enabled = enabled
+)
 
 fun InstanceLogEvent.toView(): InstanceLogEventView = when (this) {
     is InstanceLogEvent.GameLog4j -> InstanceLogEventView(

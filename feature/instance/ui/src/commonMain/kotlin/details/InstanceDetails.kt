@@ -1,11 +1,13 @@
 package app.vercors.feature.instance.ui.details
 
 import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
@@ -13,11 +15,14 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.vercors.core.ui.animation.AppAnimatedVisibility
@@ -33,6 +38,7 @@ import app.vercors.feature.instance.domain.model.InstanceStatus
 import app.vercors.feature.instance.ui.*
 import app.vercors.feature.instance.ui.delete.ConfirmDeleteDialog
 import app.vercors.shared.ui.*
+import coil3.compose.rememberAsyncImagePainter
 import com.composables.icons.lucide.*
 import com.composeunstyled.ProvideTextStyle
 import com.composeunstyled.theme.Theme
@@ -45,6 +51,7 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.format
 import kotlinx.datetime.format.char
 import kotlinx.datetime.toLocalDateTime
+import okio.Path.Companion.toPath
 import opensavvy.state.progressive.onFailure
 import opensavvy.state.progressive.onIncomplete
 import opensavvy.state.progressive.onSuccess
@@ -110,8 +117,13 @@ private fun InstanceDetails(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    val title = if (tab == InstanceDetailsTab.Mods && state.installedMods != null) {
+                        "${tab.title} (${state.installedMods.count { it.enabled }})"
+                    } else {
+                        tab.title
+                    }
                     AppIconTextButtonContent(
-                        text = tab.title,
+                        text = title,
                         imageVector = tab.icon
                     )
                 }
@@ -419,8 +431,75 @@ private fun LazyListScope.InstanceTabRow(
 }
 
 @Composable
+context(eventSink: EventSink<InstanceDetailsEvent>)
 private fun InstanceModsTab(state: InstanceDetailsState) {
-    AppText("Mods")
+    val mods = state.installedMods
+    when {
+        mods == null -> AppLoading()
+        mods.isEmpty() -> AppText(stringResource(InstanceRes.string.noModsInstalled))
+        else -> LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+            contentPadding = PaddingValues(8.dp)
+        ) {
+            items(mods, key = { it.fileName }) { mod -> InstalledModRow(mod) }
+        }
+    }
+}
+
+@Composable
+context(eventSink: EventSink<InstanceDetailsEvent>)
+private fun InstalledModRow(mod: InstalledModView) {
+    Row(
+        modifier = Modifier.fillMaxWidth().appCard().padding(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        AppCheckbox(
+            checked = mod.enabled,
+            onCheckedChange = { eventSink(InstanceDetailsEvent.OnModEnabledChange(mod.fileName, it)) }
+        )
+
+        if (mod.iconFilePath != null) {
+            Image(
+                painter = rememberAsyncImagePainter(model = mod.iconFilePath.toPath()),
+                contentDescription = mod.title,
+                modifier = Modifier.size(40.dp).clip(RoundedCornerShape(4.dp)),
+                contentScale = ContentScale.Crop
+            )
+        } else {
+            Box(
+                modifier = Modifier.size(40.dp).clip(RoundedCornerShape(4.dp)).background(Theme[colors][surface2]),
+                contentAlignment = Alignment.Center
+            ) {
+                AppIcon(imageVector = Lucide.Box, contentDescription = null, modifier = Modifier.size(20.dp))
+            }
+        }
+
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                AppText(
+                    text = mod.title,
+                    fontWeight = FontWeight.SemiBold,
+                    singleLine = true,
+                    overflow = TextOverflow.Ellipsis
+                )
+                AppText(text = mod.version, fontSize = 12.sp, color = Theme[colors][onBackground].copy(alpha = 0.6f))
+                mod.loaderLabel?.let {
+                    AppText(text = it, fontSize = 12.sp, color = Theme[colors][onBackground].copy(alpha = 0.6f))
+                }
+            }
+            mod.description?.let {
+                AppText(text = it, fontSize = 12.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            }
+        }
+    }
 }
 
 @Composable

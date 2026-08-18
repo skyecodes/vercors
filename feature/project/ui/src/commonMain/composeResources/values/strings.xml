@@ -145,4 +145,11 @@
     <string name="errorPlatformNotFound">Platform "%1$s" not found</string>
     <string name="errorUnsupportedProjectType">Unsupported project type: %1$s</string>
     <string name="errorProjectNotFound">Project "%1$s" not found</string>
+    <string name="errorProjectFileDownloadFailed">Failed to download the mod file</string>
+
+    <string name="installMod">Install to instance</string>
+    <string name="instance">Instance</string>
+    <string name="file">File</string>
+    <string name="noCompatibleInstances">No compatible instances found</string>
+    <string name="modInstalled">Mod installed</string>
 </resources>
