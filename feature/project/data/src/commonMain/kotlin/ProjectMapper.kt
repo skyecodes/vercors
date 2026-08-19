@@ -98,7 +98,7 @@ internal fun PlatformNotFoundData.toDomain(): PlatformNotFound = PlatformNotFoun
 
 internal fun ProjectNotFoundData.toDomain(): ProjectNotFound = ProjectNotFound(projectId from platformId)
 
-internal fun ProjectFileData.toDomain(): ProjectFile = ProjectFile(
+internal fun ProjectFileData.toDomain(platform: PlatformId): ProjectFile = ProjectFile(
     id = id,
     displayName = displayName,
     fileName = fileName,
@@ -107,7 +107,8 @@ internal fun ProjectFileData.toDomain(): ProjectFile = ProjectFile(
     releaseChannel = releaseChannel.toDomain(),
     size = size,
     sha1 = sha1,
-    publishedAt = publishedAt
+    publishedAt = publishedAt,
+    dependencies = dependencies.map { it.projectId from platform }
 )
 
 internal fun ProjectReleaseChannelData.toDomain(): ProjectReleaseChannel = when (this) {

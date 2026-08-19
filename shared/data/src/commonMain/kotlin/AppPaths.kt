@@ -35,6 +35,9 @@ class AppPaths(root: Path) {
     val metadataCacheRoot = Path(data, "cache", "metadata")
     val iconCacheRoot = Path(data, "cache", "icon")
 
+    /** Scratch space for in-progress downloads — deliberately outside any directory a content directory watcher observes. */
+    val downloadsTmp = Path(data, "tmp")
+
     fun versionDir(versionId: String): Path = Path(versions, versionId)
 
     fun versionJarFile(versionId: String): Path = Path(versionDir(versionId), "$versionId.jar")

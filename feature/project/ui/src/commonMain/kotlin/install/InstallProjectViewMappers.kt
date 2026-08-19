@@ -35,5 +35,6 @@ internal fun ProjectFile.toView(): ProjectFileView = ProjectFileView(
     fileName = fileName,
     gameVersions = gameVersions,
     releaseChannel = releaseChannel,
-    publishedAt = publishedAt
+    publishedAt = publishedAt,
+    dependencies = dependencies
 )

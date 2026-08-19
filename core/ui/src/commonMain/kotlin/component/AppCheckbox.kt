@@ -28,7 +28,7 @@ import app.vercors.core.ui.animation.appAnimateColorAsState
 import app.vercors.core.ui.theme.colors
 import app.vercors.core.ui.theme.onPrimary
 import app.vercors.core.ui.theme.primary
-import app.vercors.core.ui.theme.surface
+import app.vercors.core.ui.theme.surface2
 import com.composables.icons.lucide.Check
 import com.composables.icons.lucide.Lucide
 import com.composeunstyled.UnstyledCheckbox
@@ -40,7 +40,7 @@ fun AppCheckbox(
     checked: Boolean,
     invert: Boolean = false,
     modifier: Modifier = Modifier,
-    uncheckedBackgroundColor: Color = Theme[colors][surface],
+    uncheckedBackgroundColor: Color = Theme[colors][surface2],
     checkedBackgroundColor: Color = Theme[colors][primary],
     contentColor: Color = Theme[colors][onPrimary],
     checkboxSize: Dp = 24.dp,

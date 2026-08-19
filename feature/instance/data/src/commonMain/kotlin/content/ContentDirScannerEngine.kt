@@ -59,6 +59,15 @@ internal class ContentDirScannerEngine(
     private val hashMemoLock = Mutex()
     private val hashMemo = mutableMapOf<Path, HashMemo>()
 
+    /**
+     * Guards every read-modify-write against [metadataCache]. Without it, [resolveEntry] (driven by the file
+     * watcher, which fires as soon as a newly-downloaded file appears on disk) and [recordOrigin] (called right
+     * after that same download completes) can race: both read the cache, [resolveEntry] writes back metadata with
+     * no providers, and if that write lands after [recordOrigin]'s provider-populated write, it silently clobbers
+     * the just-recorded provider.
+     */
+    private val metadataLock = Mutex()
+
     fun observe(instanceId: InstanceId): ProgressiveFlow<Nothing, List<ContentEntry>> {
         val state = stateFor(instanceId)
         return state.onStart { backgroundScope.launch { activate(instanceId, state) } }
@@ -141,7 +150,7 @@ internal class ContentDirScannerEngine(
     private suspend fun resolveEntry(filePath: Path): ContentEntry? {
         val size = filePath.metadataOrNull()?.size ?: return null
         val sha1 = hashOf(filePath, size)
-        val metadata = metadataCache.get(sha1) ?: parseAndCache(filePath, sha1)
+        val metadata = metadataLock.withLock { metadataCache.get(sha1) ?: parseAndCache(filePath, sha1) }
         return ContentEntry(
             fileName = contentLogicalFileName(filePath.name),
             title = metadata.title,
@@ -202,10 +211,12 @@ internal class ContentDirScannerEngine(
         val size = filePath.metadataOrNull()?.size ?: return
         val sha1 = hashOf(filePath, size)
 
-        val existing = metadataCache.get(sha1) ?: parseAndCache(filePath, sha1)
-        val provider = ContentProviderMetadata(platformId, projectId, fileId)
-        val updatedProviders = existing.providers.filterNot { it.platformId == platformId } + provider
-        metadataCache.put(sha1, existing.copy(providers = updatedProviders))
+        metadataLock.withLock {
+            val existing = metadataCache.get(sha1) ?: parseAndCache(filePath, sha1)
+            val provider = ContentProviderMetadata(platformId, projectId, fileId)
+            val updatedProviders = existing.providers.filterNot { it.platformId == platformId } + provider
+            metadataCache.put(sha1, existing.copy(providers = updatedProviders))
+        }
 
         updateEntry(stateFor(instanceId), filePath)
     }

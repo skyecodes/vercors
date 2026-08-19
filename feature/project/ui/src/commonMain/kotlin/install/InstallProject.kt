@@ -6,10 +6,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import app.vercors.core.ui.component.AppIconTextButton
-import app.vercors.core.ui.component.AppSelectField
-import app.vercors.core.ui.component.AppSelectItem
-import app.vercors.core.ui.component.AppText
+import app.vercors.core.ui.component.*
 import app.vercors.core.ui.layout.AppDialog
 import app.vercors.core.ui.layout.AppForm
 import app.vercors.core.ui.theme.*
@@ -60,6 +57,19 @@ fun InstallProject(
                     backgroundColor = Theme[colors][surface2],
                     modifier = Modifier.width(300.dp),
                 )
+            }
+
+            if (state.dependencies.isNotEmpty()) {
+                AppText(text = stringResource(ProjectRes.string.requiredDependencies))
+                state.dependencies.forEach { dependency ->
+                    AppCheckbox(
+                        label = dependency.name,
+                        checked = dependency.projectId in state.selectedDependencyIds,
+                        onCheckedChange = {
+                            eventSink(InstallProjectEvent.OnDependencyToggled(dependency.projectId, it))
+                        }
+                    )
+                }
             }
 
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {

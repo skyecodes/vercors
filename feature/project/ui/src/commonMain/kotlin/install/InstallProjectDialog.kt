@@ -5,12 +5,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import app.vercors.feature.game.domain.model.ModLoaderType
 import app.vercors.feature.instance.domain.model.InstanceId
+import app.vercors.feature.instance.domain.usecase.ObserveInstalledContentUseCase
 import app.vercors.feature.instance.domain.usecase.ObserveInstanceListUseCase
 import app.vercors.feature.instance.domain.usecase.RecordInstalledContentOriginUseCase
 import app.vercors.feature.project.domain.model.ProjectId
 import app.vercors.feature.project.domain.model.ProjectType
 import app.vercors.feature.project.domain.usecase.DownloadProjectFileUseCase
 import app.vercors.feature.project.domain.usecase.GetProjectFilesUseCase
+import app.vercors.feature.project.domain.usecase.GetProjectUseCase
 import app.vercors.shared.ui.SnackbarService
 import app.vercors.shared.ui.overlay.DialogOverlay
 import com.slack.circuit.overlay.OverlayNavigator
@@ -32,6 +34,8 @@ class InstallProjectDialog(
     @Assisted private val compatibleLoaders: List<ModLoaderType>,
     private val globalScope: CoroutineScope,
     private val observeInstanceList: ObserveInstanceListUseCase,
+    private val observeInstalledContent: ObserveInstalledContentUseCase,
+    private val getProject: GetProjectUseCase,
     private val getProjectFiles: GetProjectFilesUseCase,
     private val downloadProjectFile: DownloadProjectFileUseCase,
     private val recordInstalledContentOrigin: RecordInstalledContentOriginUseCase,
@@ -50,6 +54,8 @@ class InstallProjectDialog(
                 compatibleLoaders = compatibleLoaders,
                 globalScope = globalScope,
                 observeInstanceList = observeInstanceList,
+                observeInstalledContent = observeInstalledContent,
+                getProject = getProject,
                 getProjectFiles = getProjectFiles,
                 downloadProjectFile = downloadProjectFile,
                 recordInstalledContentOrigin = recordInstalledContentOrigin,

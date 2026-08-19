@@ -141,7 +141,9 @@ internal fun ModrinthVersion.convert(): ProjectFileData? {
         releaseChannel = versionType.toProjectReleaseChannelData(),
         size = file.size,
         sha1 = file.hashes["sha1"],
-        publishedAt = datePublished
+        publishedAt = datePublished,
+        dependencies = dependencies.filter { it.dependencyType.value == ModrinthDependencyType.REQUIRED }
+            .mapNotNull { it.projectId?.let(::ProjectFileDependencyData) }
     )
 }
 

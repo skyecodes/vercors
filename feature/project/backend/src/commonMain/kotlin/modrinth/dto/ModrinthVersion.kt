@@ -18,8 +18,25 @@ data class ModrinthVersion(
     val loaders: List<String> = emptyList(),
     @SerialName("date_published")
     val datePublished: ModrinthInstant,
-    val files: List<ModrinthVersionFile> = emptyList()
+    val files: List<ModrinthVersionFile> = emptyList(),
+    val dependencies: List<ModrinthVersionDependency> = emptyList()
 )
+
+@Serializable
+data class ModrinthVersionDependency(
+    @SerialName("project_id")
+    val projectId: String? = null,
+    @SerialName("dependency_type")
+    val dependencyType: ModrinthDependencyType
+)
+
+@JvmInline
+@Serializable
+value class ModrinthDependencyType(val value: String) {
+    companion object {
+        const val REQUIRED = "required"
+    }
+}
 
 @Serializable
 data class ModrinthVersionFile(

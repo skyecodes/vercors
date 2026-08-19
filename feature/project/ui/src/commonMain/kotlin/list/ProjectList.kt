@@ -273,7 +273,6 @@ private fun ProjectVersionFilter(state: ProjectListState) {
             checked = state.showSnapshot,
             onCheckedChange = { eventSink(ProjectListEvent.OnShowSnapshotClick) },
             invert = true,
-            uncheckedBackgroundColor = Theme[colors][surface2],
             checkboxSize = 20.dp,
             modifier = Modifier.padding(top = 6.dp)
         )

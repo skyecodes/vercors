@@ -4,6 +4,7 @@ import androidx.compose.runtime.Immutable
 import app.vercors.feature.game.domain.model.ModLoaderType
 import app.vercors.feature.instance.domain.model.InstanceId
 import app.vercors.feature.project.domain.model.ProjectDetailsError
+import app.vercors.feature.project.domain.model.ProjectId
 import app.vercors.feature.project.domain.model.ProjectReleaseChannel
 import opensavvy.state.progressive.ProgressiveOutcome
 import opensavvy.state.progressive.valueOrNull
@@ -15,13 +16,16 @@ data class InstallProjectState(
     val selectedInstanceId: InstanceId?,
     val files: ProgressiveOutcome<ProjectDetailsError, List<ProjectFileView>>,
     val selectedFileId: String?,
+    val dependencies: List<DependencyFileView>,
+    val selectedDependencyIds: Set<ProjectId>,
+    val resolvingDependencies: Boolean,
     val installing: Boolean,
 ) {
     val instanceList = instances.valueOrNull ?: emptyList()
     val selectedInstance = instanceList.find { it.id == selectedInstanceId }
     val fileList = files.valueOrNull ?: emptyList()
     val selectedFile = fileList.find { it.id == selectedFileId }
-    val canInstall = selectedInstance != null && selectedFile != null && !installing
+    val canInstall = selectedInstance != null && selectedFile != null && !resolvingDependencies && !installing
 }
 
 @Immutable
@@ -42,4 +46,12 @@ data class ProjectFileView(
     val gameVersions: List<String>,
     val releaseChannel: ProjectReleaseChannel,
     val publishedAt: Instant,
+    val dependencies: List<ProjectId>,
+)
+
+@Immutable
+data class DependencyFileView(
+    val projectId: ProjectId,
+    val name: String,
+    val file: ProjectFileView,
 )

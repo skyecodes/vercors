@@ -119,7 +119,9 @@ internal fun CurseForgeFile.convert(loaderFilter: ProjectLoaderData?): ProjectFi
     releaseChannel = releaseType.toProjectReleaseChannelData(),
     size = fileLength,
     sha1 = hashes.firstOrNull { it.algo == CurseForgeHashAlgo.Sha1 }?.value,
-    publishedAt = fileDate
+    publishedAt = fileDate,
+    dependencies = dependencies.filter { it.relationType == CurseForgeFileRelationType.RequiredDependency }
+        .map { ProjectFileDependencyData(it.modId.toString()) }
 )
 
 private fun String.toProjectLoaderDataOrNull(): ProjectLoaderData? = when (this) {

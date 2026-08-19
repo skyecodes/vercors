@@ -12,7 +12,8 @@ data class ProjectFile(
     val releaseChannel: ProjectReleaseChannel,
     val size: Long,
     val sha1: String?,
-    val publishedAt: Instant
+    val publishedAt: Instant,
+    val dependencies: List<ProjectId>
 )
 
 enum class ProjectReleaseChannel {

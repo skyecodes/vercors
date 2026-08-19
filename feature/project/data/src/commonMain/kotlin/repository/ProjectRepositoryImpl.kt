@@ -1,6 +1,10 @@
 package app.vercors.feature.project.data.repository
 
 import app.vercors.core.domain.Page
+import app.vercors.core.filesystem.createParentDirectories
+import app.vercors.core.filesystem.deleteRecursively
+import app.vercors.core.filesystem.exists
+import app.vercors.core.filesystem.moveTo
 import app.vercors.feature.game.domain.model.ModLoaderType
 import app.vercors.feature.project.api.Platforms
 import app.vercors.feature.project.api.ProjectFiles
@@ -26,6 +30,8 @@ import dev.zacsweers.metro.ContributesBinding
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
 import io.ktor.client.*
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.io.files.Path
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.encodeToJsonElement
@@ -35,6 +41,7 @@ import opensavvy.spine.api.div
 import opensavvy.spine.api.invoke
 import opensavvy.spine.client.handle
 import opensavvy.spine.client.request
+import kotlin.uuid.Uuid
 
 @SingleIn(AppScope::class)
 @ContributesBinding(AppScope::class)
@@ -143,7 +150,7 @@ class ProjectRepositoryImpl(
             }
         },
         handle2 = { raise(it.toDomain()) },
-        transform = { list -> list.map { it.toDomain() } }
+        transform = { list -> list.map { it.toDomain(projectId.platform) } }
     )
 
     context(_: Raise<ProjectFileDownloadError>)
@@ -154,15 +161,25 @@ class ProjectRepositoryImpl(
         instanceId: String,
         type: ProjectType
     ) {
+        val finalPath = Path(type.targetDir(instanceId), fileName)
+        val tempPath = Path(appPaths.downloadsTmp, "${Uuid.random()}-$fileName")
         val request = projectFileDownloadRequest(
             platformId = projectId.platform,
             projectId = projectId.id,
             fileId = fileId,
-            path = Path(type.targetDir(instanceId), fileName)
+            path = tempPath
         )
         recover({
             fileValidationService.submit(listOf(request)) {}
         }) { _: NonEmptyList<FileValidationFailure> ->
+            raise(ProjectFileDownloadFailed)
+        }
+        try {
+            if (finalPath.exists()) finalPath.deleteRecursively()
+            finalPath.createParentDirectories()
+            tempPath.moveTo(finalPath)
+        } catch (_: Exception) {
+            currentCoroutineContext().ensureActive()
             raise(ProjectFileDownloadFailed)
         }
     }

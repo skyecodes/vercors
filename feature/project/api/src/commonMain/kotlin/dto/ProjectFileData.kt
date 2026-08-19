@@ -13,5 +13,6 @@ data class ProjectFileData(
     val releaseChannel: ProjectReleaseChannelData,
     val size: Long,
     val sha1: String?,
-    val publishedAt: Instant
+    val publishedAt: Instant,
+    val dependencies: List<ProjectFileDependencyData>
 )
