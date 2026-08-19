@@ -236,4 +236,11 @@ internal class ContentDirScannerEngine(
 
         updateEntry(stateFor(instanceId), to)
     }
+
+    /** Permanently deletes a file (whichever of the enabled/disabled variants is present) and drops its entry. */
+    suspend fun removeFile(instanceId: InstanceId, fileName: String) {
+        val target = existingFile(instanceId, fileName) ?: return
+        target.delete()
+        stateFor(instanceId).update { it.map { map -> map - fileName } }
+    }
 }

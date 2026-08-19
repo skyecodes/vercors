@@ -29,4 +29,7 @@ class InstanceShaderPackRepositoryImpl(
 
     override suspend fun setShaderPackEnabled(instanceId: InstanceId, fileName: String, enabled: Boolean) =
         scannerService.setEnabled(instanceId, fileName, enabled)
+
+    override suspend fun removeShaderPack(instanceId: InstanceId, fileName: String) =
+        scannerService.removeFile(instanceId, fileName)
 }

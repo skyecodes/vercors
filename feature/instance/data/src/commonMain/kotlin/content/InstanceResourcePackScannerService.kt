@@ -61,4 +61,7 @@ class InstanceResourcePackScannerService(
 
     suspend fun setEnabled(instanceId: InstanceId, fileName: String, enabled: Boolean) =
         engine.setEnabled(instanceId, fileName, enabled)
+
+    suspend fun removeFile(instanceId: InstanceId, fileName: String) =
+        engine.removeFile(instanceId, fileName)
 }

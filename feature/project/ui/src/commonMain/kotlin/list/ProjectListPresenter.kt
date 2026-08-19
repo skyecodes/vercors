@@ -45,6 +45,7 @@ private val logger = KotlinLogging.logger {}
 
 @AssistedInject
 class ProjectListPresenter(
+    @Assisted private val screen: ProjectListScreen,
     @Assisted private val navigator: Navigator,
     private val getPlatformList: GetPlatformListUseCase,
     private val searchProjects: SearchProjectsUseCase,
@@ -70,10 +71,21 @@ class ProjectListPresenter(
             filter.update {
                 copy(
                     selectedPlatform = selectedPlatform ?: defaultPlatform,
-                    selectedType = selectedType ?: defaultPlatform?.categoryGroups?.keys?.let { types ->
+                    selectedType = selectedType ?: screen.initialType
+                    ?: defaultPlatform?.categoryGroups?.keys?.let { types ->
                         ProjectType.entries.first { it in types }
+                    },
+                    selectedLoaders = selectedLoaders.ifEmpty {
+                        screen.initialLoader?.let { listOf(it) } ?: emptyList()
                     }
                 )
+            }
+        }
+
+        LaunchedEffect(gameVersionList) {
+            val initialVersion = gameVersionList.valueOrNull?.find { it.id == screen.initialGameVersion }
+            if (initialVersion != null) {
+                filter.update { copy(selectedGameVersions = selectedGameVersions.ifEmpty { listOf(initialVersion) }) }
             }
         }
 
@@ -156,12 +168,12 @@ class ProjectListPresenter(
         filter: ProjectListFilter,
         projects: MutableState<ProgressiveOutcome<ProjectSearchError, Page<BriefProjectView>>>
     ) {
-        if (filter.selectedPlatform != null || filter.selectedType != null) {
+        if (filter.selectedPlatform != null && filter.selectedType != null) {
             projects.value = ProgressiveOutcome.Incomplete()
             projects.value = progressive {
                 searchProjects(
-                    platformId = filter.selectedPlatform!!.id,
-                    type = filter.selectedType!!,
+                    platformId = filter.selectedPlatform.id,
+                    type = filter.selectedType,
                     loaders = if (filter.selectedType.requiresLoader) filter.selectedLoaders.ifEmpty { null } else null,
                     gameVersions = filter.selectedGameVersions.map { it.id }.ifEmpty { null },
                     query = filter.searchQuery.ifBlank { null },
@@ -180,6 +192,6 @@ class ProjectListPresenter(
     @CircuitInject(ProjectListScreen::class, AppScope::class)
     @AssistedFactory
     fun interface Factory {
-        fun create(navigator: Navigator): ProjectListPresenter
+        fun create(screen: ProjectListScreen, navigator: Navigator): ProjectListPresenter
     }
 }

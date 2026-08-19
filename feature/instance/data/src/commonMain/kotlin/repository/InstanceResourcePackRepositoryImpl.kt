@@ -29,4 +29,7 @@ class InstanceResourcePackRepositoryImpl(
 
     override suspend fun setResourcePackEnabled(instanceId: InstanceId, fileName: String, enabled: Boolean) =
         scannerService.setEnabled(instanceId, fileName, enabled)
+
+    override suspend fun removeResourcePack(instanceId: InstanceId, fileName: String) =
+        scannerService.removeFile(instanceId, fileName)
 }

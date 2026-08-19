@@ -141,7 +141,7 @@ private val Screen.topLevelDestination: TopLevelDestination?
     get() = when (this) {
         HomeScreen -> TopLevelDestination.Home
         InstanceListScreen, is InstanceDetailsScreen -> TopLevelDestination.Instances
-        ProjectListScreen, is ProjectDetailsScreen -> TopLevelDestination.Content
+        is ProjectListScreen, is ProjectDetailsScreen -> TopLevelDestination.Content
         AccountListScreen -> TopLevelDestination.Account
         ConfigurationScreen -> TopLevelDestination.Settings
         else -> null
@@ -163,7 +163,7 @@ private enum class TopLevelDestination(
         icon = Lucide.Gamepad2
     ),
     Content(
-        screen = ProjectListScreen,
+        screen = ProjectListScreen(),
         text = Res.string.content,
         icon = Lucide.Box
     ),

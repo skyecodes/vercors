@@ -22,6 +22,10 @@ import app.vercors.feature.launcher.domain.usecase.CancelInstanceUseCase
 import app.vercors.feature.launcher.domain.usecase.KillInstanceUseCase
 import app.vercors.feature.launcher.domain.usecase.LaunchInstanceUseCase
 import app.vercors.feature.launcher.domain.usecase.StopInstanceUseCase
+import app.vercors.feature.project.domain.model.ProjectType
+import app.vercors.feature.project.domain.model.from
+import app.vercors.feature.project.ui.details.ProjectDetailsScreen
+import app.vercors.feature.project.ui.list.ProjectListScreen
 import app.vercors.shared.ui.Presenter
 import app.vercors.shared.ui.SnackbarService
 import app.vercors.shared.ui.Store
@@ -52,10 +56,13 @@ class InstanceDetailsPresenter(
     private val observeInstanceLogs: ObserveInstanceLogsUseCase,
     private val observeInstalledMods: ObserveInstalledModsUseCase,
     private val setModEnabled: SetModEnabledUseCase,
+    private val removeMod: RemoveModUseCase,
     private val observeInstalledResourcePacks: ObserveInstalledResourcePacksUseCase,
     private val setResourcePackEnabled: SetResourcePackEnabledUseCase,
+    private val removeResourcePack: RemoveResourcePackUseCase,
     private val observeInstalledShaderPacks: ObserveInstalledShaderPacksUseCase,
     private val setShaderPackEnabled: SetShaderPackEnabledUseCase,
+    private val removeShaderPack: RemoveShaderPackUseCase,
     private val launchInstance: LaunchInstanceUseCase,
     private val cancelInstance: CancelInstanceUseCase,
     private val stopInstance: StopInstanceUseCase,
@@ -77,6 +84,8 @@ class InstanceDetailsPresenter(
         val installedResourcePacks by observeInstalledResourcePacksView()
         val installedShaderPacks by observeInstalledShaderPacksView()
         val (promptDeleteConfirmation, setPromptDeleteConfirmation) = rememberSaveable { mutableStateOf(false) }
+        val (promptRemoveConfirmation, setPromptRemoveConfirmation) =
+            remember { mutableStateOf<PendingRemoval?>(null) }
         val (selectedTab, setSelectedTab) = rememberSaveable { mutableStateOf(InstanceDetailsTab.Options) }
         val (editedInstance, setEditedInstance) = rememberSaveable { mutableStateOf(InstanceEditState()) }
         val loaderList = remember { mutableProgressiveStateOf<LoaderError, List<ModLoaderType>>() }
@@ -128,14 +137,18 @@ class InstanceDetailsPresenter(
             logs = logs,
             installedMods = installedMods,
             installedResourcePacks = installedResourcePacks,
-            installedShaderPacks = installedShaderPacks
+            installedShaderPacks = installedShaderPacks,
+            promptRemoveConfirmation = promptRemoveConfirmation
         ) + { event ->
             handleEvent(
                 event = event,
                 setPromptDeleteConfirmation = setPromptDeleteConfirmation,
                 setSelectedTab = setSelectedTab,
                 setEditedInstance = setEditedInstance,
-                editedInstance = editedInstance
+                editedInstance = editedInstance,
+                currentInstance = currentInstance,
+                promptRemoveConfirmation = promptRemoveConfirmation,
+                setPromptRemoveConfirmation = setPromptRemoveConfirmation
             )
         }
     }
@@ -145,7 +158,10 @@ class InstanceDetailsPresenter(
         setPromptDeleteConfirmation: (Boolean) -> Unit,
         setSelectedTab: (InstanceDetailsTab) -> Unit,
         setEditedInstance: (InstanceEditState) -> Unit,
-        editedInstance: InstanceEditState
+        editedInstance: InstanceEditState,
+        currentInstance: InstanceView?,
+        promptRemoveConfirmation: PendingRemoval?,
+        setPromptRemoveConfirmation: (PendingRemoval?) -> Unit
     ) {
         when (event) {
             InstanceDetailsEvent.Launch -> globalScope.launch {
@@ -194,6 +210,35 @@ class InstanceDetailsPresenter(
             is InstanceDetailsEvent.OnShaderPackEnabledChange -> globalScope.launch {
                 setShaderPackEnabled(screen.instanceId, event.fileName, event.enabled)
             }
+
+            is InstanceDetailsEvent.OnRemoveClick ->
+                setPromptRemoveConfirmation(PendingRemoval(event.kind, event.fileName, event.title))
+
+            is InstanceDetailsEvent.OnConfirmRemove -> {
+                setPromptRemoveConfirmation(null)
+                if (event.result && promptRemoveConfirmation != null) globalScope.launch {
+                    when (promptRemoveConfirmation.kind) {
+                        RemovalKind.Mod -> removeMod(screen.instanceId, promptRemoveConfirmation.fileName)
+                        RemovalKind.ResourcePack -> removeResourcePack(
+                            screen.instanceId,
+                            promptRemoveConfirmation.fileName
+                        )
+
+                        RemovalKind.ShaderPack -> removeShaderPack(screen.instanceId, promptRemoveConfirmation.fileName)
+                    }
+                }
+            }
+
+            is InstanceDetailsEvent.OnOpenProjectClick ->
+                navigator.goTo(ProjectDetailsScreen(event.projectId from event.platformId))
+
+            is InstanceDetailsEvent.OnAddContentClick -> navigator.goTo(
+                ProjectListScreen(
+                    initialType = event.type,
+                    initialGameVersion = currentInstance?.gameVersion,
+                    initialLoader = if (event.type == ProjectType.Mod) currentInstance?.loaderType else null
+                )
+            )
 
             InstanceDetailsEvent.CancelEdit -> setEditedInstance(InstanceEditState())
             InstanceDetailsEvent.SaveInstance -> globalScope.launch {

@@ -15,6 +15,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.PointerIcon
@@ -25,6 +26,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import app.vercors.core.ui.CoreRes
 import app.vercors.core.ui.animation.AppAnimatedVisibility
 import app.vercors.core.ui.animation.appAnimateColorAsState
 import app.vercors.core.ui.component.*
@@ -32,11 +34,14 @@ import app.vercors.core.ui.layout.AppError
 import app.vercors.core.ui.layout.AppLoading
 import app.vercors.core.ui.layout.AppTabGroup
 import app.vercors.core.ui.modifier.appCard
+import app.vercors.core.ui.search
 import app.vercors.core.ui.theme.*
 import app.vercors.feature.game.ui.*
 import app.vercors.feature.instance.domain.model.InstanceStatus
 import app.vercors.feature.instance.ui.*
 import app.vercors.feature.instance.ui.delete.ConfirmDeleteDialog
+import app.vercors.feature.instance.ui.delete.ConfirmRemoveDialog
+import app.vercors.feature.project.domain.model.ProjectType
 import app.vercors.shared.ui.*
 import coil3.compose.rememberAsyncImagePainter
 import com.composables.icons.lucide.*
@@ -55,6 +60,7 @@ import okio.Path.Companion.toPath
 import opensavvy.state.progressive.onFailure
 import opensavvy.state.progressive.onIncomplete
 import opensavvy.state.progressive.onSuccess
+import opensavvy.state.progressive.valueOrNull
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 
@@ -81,6 +87,13 @@ fun InstanceDetails(
             OverlayEffect {
                 val result = show(ConfirmDeleteDialog())
                 eventSink(InstanceDetailsEvent.ConfirmDelete(result))
+            }
+        }
+
+        state.promptRemoveConfirmation?.let { pending ->
+            OverlayEffect(pending) {
+                val result = show(ConfirmRemoveDialog(pending.title))
+                eventSink(InstanceDetailsEvent.OnConfirmRemove(result))
             }
         }
     }
@@ -430,22 +443,67 @@ private fun LazyListScope.InstanceTabRow(
     }
 }
 
+private const val MODRINTH_PLATFORM_ID = "modrinth"
+private const val CURSEFORGE_PLATFORM_ID = "curseforge"
+
 @Composable
 context(eventSink: EventSink<InstanceDetailsEvent>)
 private fun InstalledContentFileList(
     files: List<InstalledContentFileView>?,
     emptyMessage: StringResource,
+    addLabel: StringResource,
+    addEnabled: Boolean,
+    removalKind: RemovalKind,
+    onAddClick: () -> Unit,
     onEnabledChange: (fileName: String, enabled: Boolean) -> InstanceDetailsEvent
 ) {
-    when {
-        files == null -> AppLoading()
-        files.isEmpty() -> AppText(stringResource(emptyMessage))
-        else -> LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-            contentPadding = PaddingValues(8.dp)
+    var searchQuery by remember { mutableStateOf("") }
+    var showOnlyEnabled by remember { mutableStateOf(false) }
+
+    Column(modifier = Modifier.fillMaxSize()) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            items(files, key = { it.fileName }) { file -> InstalledContentFileRow(file, onEnabledChange) }
+            AppTextField(
+                initialValue = searchQuery,
+                placeholder = { AppText(stringResource(CoreRes.string.search)) },
+                onValueChange = { searchQuery = it },
+                backgroundColor = Theme[colors][surface2],
+                modifier = Modifier.weight(1f)
+            )
+            AppCheckbox(
+                label = stringResource(InstanceRes.string.showOnlyEnabled),
+                checked = showOnlyEnabled,
+                onCheckedChange = { showOnlyEnabled = it }
+            )
+            AppIconTextButton(
+                onClick = onAddClick,
+                text = stringResource(addLabel),
+                imageVector = Lucide.Plus,
+                backgroundColor = Theme[colors][surface2],
+                enabled = addEnabled
+            )
+        }
+
+        val filteredFiles = files?.filter {
+            (searchQuery.isBlank() || it.title.contains(searchQuery, ignoreCase = true)) &&
+                    (!showOnlyEnabled || it.enabled)
+        }
+        when {
+            files == null -> AppLoading()
+            files.isEmpty() -> AppText(stringResource(emptyMessage))
+            filteredFiles.isNullOrEmpty() -> AppText(stringResource(InstanceRes.string.noMatchingFiles))
+            else -> LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                contentPadding = PaddingValues(vertical = 8.dp)
+            ) {
+                items(filteredFiles, key = { it.fileName }) { file ->
+                    InstalledContentFileRow(file, removalKind, onEnabledChange)
+                }
+            }
         }
     }
 }
@@ -454,28 +512,27 @@ private fun InstalledContentFileList(
 context(eventSink: EventSink<InstanceDetailsEvent>)
 private fun InstalledContentFileRow(
     file: InstalledContentFileView,
+    removalKind: RemovalKind,
     onEnabledChange: (fileName: String, enabled: Boolean) -> InstanceDetailsEvent
 ) {
+    val contentAlpha = if (file.enabled) 1f else 0.4f
+
     Row(
-        modifier = Modifier.fillMaxWidth().appCard().padding(8.dp),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        AppCheckbox(
-            checked = file.enabled,
-            onCheckedChange = { eventSink(onEnabledChange(file.fileName, it)) }
-        )
-
         if (file.iconFilePath != null) {
             Image(
                 painter = rememberAsyncImagePainter(model = file.iconFilePath.toPath()),
                 contentDescription = file.title,
-                modifier = Modifier.size(40.dp).clip(RoundedCornerShape(4.dp)),
+                modifier = Modifier.size(40.dp).clip(RoundedCornerShape(4.dp)).alpha(contentAlpha),
                 contentScale = ContentScale.Crop
             )
         } else {
             Box(
-                modifier = Modifier.size(40.dp).clip(RoundedCornerShape(4.dp)).background(Theme[colors][surface2]),
+                modifier = Modifier.size(40.dp).clip(RoundedCornerShape(4.dp)).alpha(contentAlpha)
+                    .background(Theme[colors][surface2]),
                 contentAlignment = Alignment.Center
             ) {
                 AppIcon(imageVector = Lucide.Box, contentDescription = null, modifier = Modifier.size(20.dp))
@@ -483,7 +540,7 @@ private fun InstalledContentFileRow(
         }
 
         Column(
-            modifier = Modifier.weight(1f),
+            modifier = Modifier.weight(1f).alpha(contentAlpha),
             verticalArrangement = Arrangement.spacedBy(2.dp)
         ) {
             Row(
@@ -507,13 +564,60 @@ private fun InstalledContentFileRow(
                 AppText(text = it, fontSize = 12.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
             }
         }
+
+        AppMenuButton(
+            imageVector = Lucide.EllipsisVertical,
+            backgroundColor = Theme[colors][surface2],
+            menuModifier = Modifier.offset(y = 4.dp),
+            anchor = AppDropdownPanelAnchor.BottomEnd,
+            menuContent = {
+                AppMenuItem(
+                    onClick = { eventSink(onEnabledChange(file.fileName, !file.enabled)) },
+                    text = stringResource(if (file.enabled) InstanceRes.string.disable else InstanceRes.string.enable),
+                    imageVector = if (file.enabled) Lucide.EyeOff else Lucide.Eye
+                )
+                AppMenuItem(
+                    onClick = {
+                        eventSink(InstanceDetailsEvent.OnRemoveClick(removalKind, file.fileName, file.title))
+                    },
+                    text = stringResource(InstanceRes.string.remove),
+                    imageVector = Lucide.Trash,
+                    contentColor = Theme[colors][error]
+                )
+                file.providers.find { it.platformId == MODRINTH_PLATFORM_ID }?.let { provider ->
+                    AppMenuItem(
+                        onClick = {
+                            eventSink(InstanceDetailsEvent.OnOpenProjectClick(provider.platformId, provider.projectId))
+                        },
+                        text = stringResource(InstanceRes.string.openModrinthProject),
+                        imageVector = Lucide.ArrowRight
+                    )
+                }
+                file.providers.find { it.platformId == CURSEFORGE_PLATFORM_ID }?.let { provider ->
+                    AppMenuItem(
+                        onClick = {
+                            eventSink(InstanceDetailsEvent.OnOpenProjectClick(provider.platformId, provider.projectId))
+                        },
+                        text = stringResource(InstanceRes.string.openCurseForgeProject),
+                        imageVector = Lucide.ArrowRight
+                    )
+                }
+            }
+        )
     }
 }
 
 @Composable
 context(eventSink: EventSink<InstanceDetailsEvent>)
 private fun InstanceModsTab(state: InstanceDetailsState) {
-    InstalledContentFileList(state.installedMods, InstanceRes.string.noModsInstalled) { fileName, enabled ->
+    InstalledContentFileList(
+        files = state.installedMods,
+        emptyMessage = InstanceRes.string.noModsInstalled,
+        addLabel = InstanceRes.string.addMod,
+        addEnabled = state.instance.valueOrNull?.loaderType != null,
+        removalKind = RemovalKind.Mod,
+        onAddClick = { eventSink(InstanceDetailsEvent.OnAddContentClick(ProjectType.Mod)) }
+    ) { fileName, enabled ->
         InstanceDetailsEvent.OnModEnabledChange(fileName, enabled)
     }
 }
@@ -522,8 +626,12 @@ private fun InstanceModsTab(state: InstanceDetailsState) {
 context(eventSink: EventSink<InstanceDetailsEvent>)
 private fun InstanceResourcePacksTab(state: InstanceDetailsState) {
     InstalledContentFileList(
-        state.installedResourcePacks,
-        InstanceRes.string.noResourcePacksInstalled
+        files = state.installedResourcePacks,
+        emptyMessage = InstanceRes.string.noResourcePacksInstalled,
+        addLabel = InstanceRes.string.addResourcePack,
+        addEnabled = true,
+        removalKind = RemovalKind.ResourcePack,
+        onAddClick = { eventSink(InstanceDetailsEvent.OnAddContentClick(ProjectType.ResourcePack)) }
     ) { fileName, enabled ->
         InstanceDetailsEvent.OnResourcePackEnabledChange(fileName, enabled)
     }
@@ -533,8 +641,12 @@ private fun InstanceResourcePacksTab(state: InstanceDetailsState) {
 context(eventSink: EventSink<InstanceDetailsEvent>)
 private fun InstanceShaderPacksTab(state: InstanceDetailsState) {
     InstalledContentFileList(
-        state.installedShaderPacks,
-        InstanceRes.string.noShaderPacksInstalled
+        files = state.installedShaderPacks,
+        emptyMessage = InstanceRes.string.noShaderPacksInstalled,
+        addLabel = InstanceRes.string.addShaderPack,
+        addEnabled = true,
+        removalKind = RemovalKind.ShaderPack,
+        onAddClick = { eventSink(InstanceDetailsEvent.OnAddContentClick(ProjectType.ShaderPack)) }
     ) { fileName, enabled ->
         InstanceDetailsEvent.OnShaderPackEnabledChange(fileName, enabled)
     }

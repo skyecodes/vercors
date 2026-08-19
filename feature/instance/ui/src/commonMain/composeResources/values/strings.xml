@@ -36,6 +36,7 @@
 
     <string name="editInstance">Edit instance</string>
     <string name="deleteInstanceConfirmation">Are you sure you want to delete this instance?\nAll instance data (worlds, mods, etc.) will be permanently removed.</string>
+    <string name="removeContentConfirmation">Are you sure you want to remove %1$s?\nThis cannot be undone.</string>
 
     <string name="changes">Unsaved changes</string>
 
@@ -53,4 +54,15 @@
     <string name="noModsInstalled">No mods installed</string>
     <string name="noResourcePacksInstalled">No resource packs installed</string>
     <string name="noShaderPacksInstalled">No shader packs installed</string>
+    <string name="noMatchingFiles">No matching files found</string>
+
+    <string name="showOnlyEnabled">Only show enabled</string>
+    <string name="addMod">Add a mod</string>
+    <string name="addResourcePack">Add a resource pack</string>
+    <string name="addShaderPack">Add a shader pack</string>
+    <string name="disable">Disable</string>
+    <string name="enable">Enable</string>
+    <string name="remove">Remove</string>
+    <string name="openModrinthProject">Open Modrinth Project</string>
+    <string name="openCurseForgeProject">Open CurseForge Project</string>
 </resources>

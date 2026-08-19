@@ -17,4 +17,7 @@ interface InstanceShaderPackRepository {
 
     /** [fileName] is the pack's stable, "logical" name — never includes the `.disabled` suffix used on disk. */
     suspend fun setShaderPackEnabled(instanceId: InstanceId, fileName: String, enabled: Boolean)
+
+    /** Permanently deletes the pack file from disk. [fileName] is the logical name, as with [setShaderPackEnabled]. */
+    suspend fun removeShaderPack(instanceId: InstanceId, fileName: String)
 }

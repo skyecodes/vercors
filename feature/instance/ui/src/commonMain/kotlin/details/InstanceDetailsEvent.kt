@@ -2,6 +2,7 @@ package app.vercors.feature.instance.ui.details
 
 import androidx.compose.runtime.Immutable
 import app.vercors.feature.game.domain.model.ModLoaderType
+import app.vercors.feature.project.domain.model.ProjectType
 import app.vercors.shared.ui.Event
 
 @Immutable
@@ -21,4 +22,8 @@ sealed interface InstanceDetailsEvent : Event {
     data class OnModEnabledChange(val fileName: String, val enabled: Boolean) : InstanceDetailsEvent
     data class OnResourcePackEnabledChange(val fileName: String, val enabled: Boolean) : InstanceDetailsEvent
     data class OnShaderPackEnabledChange(val fileName: String, val enabled: Boolean) : InstanceDetailsEvent
+    data class OnRemoveClick(val kind: RemovalKind, val fileName: String, val title: String) : InstanceDetailsEvent
+    data class OnConfirmRemove(val result: Boolean) : InstanceDetailsEvent
+    data class OnOpenProjectClick(val platformId: String, val projectId: String) : InstanceDetailsEvent
+    data class OnAddContentClick(val type: ProjectType) : InstanceDetailsEvent
 }

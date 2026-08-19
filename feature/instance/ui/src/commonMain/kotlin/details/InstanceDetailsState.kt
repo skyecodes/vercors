@@ -23,6 +23,7 @@ data class InstanceDetailsState(
     val installedMods: List<InstalledContentFileView>?,
     val installedResourcePacks: List<InstalledContentFileView>?,
     val installedShaderPacks: List<InstalledContentFileView>?,
+    val promptRemoveConfirmation: PendingRemoval?,
 ) {
     val isNameEdited = instance.valueOrNull?.let {
         editedInstance.name != null && editedInstance.name != it.name
@@ -113,6 +114,7 @@ data class InstalledContentFileView(
     val loaderLabel: String?,
     val iconFilePath: String?,
     val enabled: Boolean,
+    val providers: List<ModProvider>,
 )
 
 fun InstalledContentFile.toView(): InstalledContentFileView = InstalledContentFileView(
@@ -122,7 +124,20 @@ fun InstalledContentFile.toView(): InstalledContentFileView = InstalledContentFi
     version = version,
     loaderLabel = loader?.displayName,
     iconFilePath = iconFilePath,
-    enabled = enabled
+    enabled = enabled,
+    providers = providers
+)
+
+@Immutable
+enum class RemovalKind {
+    Mod, ResourcePack, ShaderPack
+}
+
+@Immutable
+data class PendingRemoval(
+    val kind: RemovalKind,
+    val fileName: String,
+    val title: String,
 )
 
 fun InstanceLogEvent.toView(): InstanceLogEventView = when (this) {

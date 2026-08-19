@@ -3,7 +3,10 @@ package app.vercors.feature.instance.data.mods
 import app.vercors.core.cryptography.CryptographyService
 import app.vercors.core.filesystem.FileWatcherService
 import app.vercors.core.filesystem.HashedJsonCacheFactory
-import app.vercors.feature.instance.data.content.*
+import app.vercors.feature.instance.data.content.ContentDirScannerEngine
+import app.vercors.feature.instance.data.content.ContentFileMetadata
+import app.vercors.feature.instance.data.content.ParsedContentInfo
+import app.vercors.feature.instance.data.content.toInstalledContentFile
 import app.vercors.feature.instance.domain.model.InstalledContentFile
 import app.vercors.feature.instance.domain.model.InstanceId
 import app.vercors.shared.data.AppPaths
@@ -38,7 +41,7 @@ class InstanceModScannerService(
         extension = "jar",
         metadataCache = hashedJsonCacheFactory(appPaths.metadataCache(MOD_KIND), ContentFileMetadata.serializer()),
         iconCacheDir = appPaths.iconCache(MOD_KIND),
-        parser = ContentFileParser { parseModJar(it, json).toContentInfo() },
+        parser = { parseModJar(it, json).toContentInfo() },
         fileWatcherService = fileWatcherService,
         cryptographyService = cryptographyService,
         backgroundScope = backgroundScope
@@ -59,6 +62,9 @@ class InstanceModScannerService(
 
     suspend fun setEnabled(instanceId: InstanceId, fileName: String, enabled: Boolean) =
         engine.setEnabled(instanceId, fileName, enabled)
+
+    suspend fun removeFile(instanceId: InstanceId, fileName: String) =
+        engine.removeFile(instanceId, fileName)
 }
 
 private fun ParsedModInfo.toContentInfo() = ParsedContentInfo(
