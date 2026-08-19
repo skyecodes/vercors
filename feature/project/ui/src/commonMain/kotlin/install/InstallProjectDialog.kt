@@ -32,6 +32,7 @@ class InstallProjectDialog(
     @Assisted private val projectId: ProjectId,
     @Assisted private val projectType: ProjectType,
     @Assisted private val compatibleLoaders: List<ModLoaderType>,
+    @Assisted private val preferredInstanceId: InstanceId?,
     private val globalScope: CoroutineScope,
     private val observeInstanceList: ObserveInstanceListUseCase,
     private val observeInstalledContent: ObserveInstalledContentUseCase,
@@ -52,6 +53,7 @@ class InstallProjectDialog(
                 projectId = projectId,
                 projectType = projectType,
                 compatibleLoaders = compatibleLoaders,
+                preferredInstanceId = preferredInstanceId,
                 globalScope = globalScope,
                 observeInstanceList = observeInstanceList,
                 observeInstalledContent = observeInstalledContent,
@@ -70,7 +72,8 @@ class InstallProjectDialog(
         fun create(
             projectId: ProjectId,
             projectType: ProjectType,
-            compatibleLoaders: List<ModLoaderType>
+            compatibleLoaders: List<ModLoaderType>,
+            preferredInstanceId: InstanceId?
         ): InstallProjectDialog
     }
 }

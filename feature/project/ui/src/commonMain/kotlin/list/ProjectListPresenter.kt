@@ -159,7 +159,9 @@ class ProjectListPresenter(
                 )
             }
 
-            is ProjectListEvent.OnProjectClick -> navigator.goTo(ProjectDetailsScreen(event.projectId))
+            is ProjectListEvent.OnProjectClick -> navigator.goTo(
+                ProjectDetailsScreen(event.projectId, preferredInstanceId = screen.sourceInstanceId)
+            )
         }
     }
 

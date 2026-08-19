@@ -130,8 +130,14 @@ private fun InstanceDetails(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    val title = if (tab == InstanceDetailsTab.Mods && state.installedMods != null) {
-                        "${tab.title} (${state.installedMods.count { it.enabled }})"
+                    val installedFiles = when (tab) {
+                        InstanceDetailsTab.Mods -> state.installedMods
+                        InstanceDetailsTab.ResourcePacks -> state.installedResourcePacks
+                        InstanceDetailsTab.ShaderPacks -> state.installedShaderPacks
+                        else -> null
+                    }
+                    val title = if (installedFiles != null) {
+                        "${tab.title} (${installedFiles.count { it.enabled }})"
                     } else {
                         tab.title
                     }

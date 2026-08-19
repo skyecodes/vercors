@@ -34,7 +34,12 @@ class ProjectDetailsPresenter(
         val installProjectDialog = remember(screen.projectId, type, loaders) {
             // The placeholder ProjectType.Mod is never actually installed against — the Install button (which is
             // the only way to make promptInstall true) only renders once project has loaded successfully.
-            installProjectDialogFactory.create(screen.projectId, type ?: ProjectType.Mod, loaders ?: emptyList())
+            installProjectDialogFactory.create(
+                screen.projectId,
+                type ?: ProjectType.Mod,
+                loaders ?: emptyList(),
+                screen.preferredInstanceId
+            )
         }
 
         return ProjectDetailsState(

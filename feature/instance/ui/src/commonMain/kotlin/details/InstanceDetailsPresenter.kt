@@ -229,14 +229,16 @@ class InstanceDetailsPresenter(
                 }
             }
 
-            is InstanceDetailsEvent.OnOpenProjectClick ->
-                navigator.goTo(ProjectDetailsScreen(event.projectId from event.platformId))
+            is InstanceDetailsEvent.OnOpenProjectClick -> navigator.goTo(
+                ProjectDetailsScreen(event.projectId from event.platformId, preferredInstanceId = screen.instanceId)
+            )
 
             is InstanceDetailsEvent.OnAddContentClick -> navigator.goTo(
                 ProjectListScreen(
                     initialType = event.type,
                     initialGameVersion = currentInstance?.gameVersion,
-                    initialLoader = if (event.type == ProjectType.Mod) currentInstance?.loaderType else null
+                    initialLoader = if (event.type == ProjectType.Mod) currentInstance?.loaderType else null,
+                    sourceInstanceId = screen.instanceId
                 )
             )
 

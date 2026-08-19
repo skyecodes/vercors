@@ -37,6 +37,7 @@ class InstallProjectPresenter(
     private val projectId: ProjectId,
     private val projectType: ProjectType,
     private val compatibleLoaders: List<ModLoaderType>,
+    private val preferredInstanceId: InstanceId?,
     private val globalScope: CoroutineScope,
     private val observeInstanceList: ObserveInstanceListUseCase,
     private val observeInstalledContent: ObserveInstalledContentUseCase,
@@ -49,7 +50,7 @@ class InstallProjectPresenter(
     @Composable
     override fun present(): Store<InstallProjectState, InstallProjectEvent> {
         val instances by observeInstanceListView()
-        var selectedInstanceId by remember { mutableStateOf<InstanceId?>(null) }
+        var selectedInstanceId by remember { mutableStateOf(preferredInstanceId) }
         var selectedFileId by remember { mutableStateOf<String?>(null) }
         var dependencies by remember { mutableStateOf<List<DependencyFileView>>(emptyList()) }
         var selectedDependencyIds by remember { mutableStateOf<Set<ProjectId>>(emptySet()) }
