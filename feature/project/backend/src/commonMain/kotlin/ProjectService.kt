@@ -93,4 +93,10 @@ class ProjectService(
         catch { getPlatformService(platformId).getFileDownloadUrl(projectId, fileId) }
             .mapLeft { ProjectNotFoundData(projectId, platformId) }
             .bind()
+
+    context(_: Raise<PlatformOrProjectNotFoundData>, _: Raise<PlatformErrorData>)
+    suspend fun getProjectFile(platformId: String, projectId: String, fileId: String) =
+        catch { getPlatformService(platformId).getProjectFile(projectId, fileId) }
+            .mapLeft { ProjectNotFoundData(projectId, platformId) }
+            .bind()
 }

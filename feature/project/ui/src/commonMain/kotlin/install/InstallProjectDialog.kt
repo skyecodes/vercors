@@ -10,9 +10,11 @@ import app.vercors.feature.instance.domain.usecase.ObserveInstanceListUseCase
 import app.vercors.feature.instance.domain.usecase.RecordInstalledContentOriginUseCase
 import app.vercors.feature.project.domain.model.ProjectId
 import app.vercors.feature.project.domain.model.ProjectType
+import app.vercors.feature.project.domain.usecase.AwaitManualDownloadUseCase
 import app.vercors.feature.project.domain.usecase.DownloadProjectFileUseCase
 import app.vercors.feature.project.domain.usecase.GetProjectFilesUseCase
 import app.vercors.feature.project.domain.usecase.GetProjectUseCase
+import app.vercors.shared.domain.usecase.CopyToClipboardUseCase
 import app.vercors.shared.ui.SnackbarService
 import app.vercors.shared.ui.overlay.DialogOverlay
 import com.slack.circuit.overlay.OverlayNavigator
@@ -39,7 +41,9 @@ class InstallProjectDialog(
     private val getProject: GetProjectUseCase,
     private val getProjectFiles: GetProjectFilesUseCase,
     private val downloadProjectFile: DownloadProjectFileUseCase,
+    private val awaitManualDownload: AwaitManualDownloadUseCase,
     private val recordInstalledContentOrigin: RecordInstalledContentOriginUseCase,
+    private val copyToClipboard: CopyToClipboardUseCase,
     private val snackbarService: SnackbarService
 ) : DialogOverlay<InstallProjectResult>() {
     @Composable
@@ -60,7 +64,9 @@ class InstallProjectDialog(
                 getProject = getProject,
                 getProjectFiles = getProjectFiles,
                 downloadProjectFile = downloadProjectFile,
+                awaitManualDownload = awaitManualDownload,
                 recordInstalledContentOrigin = recordInstalledContentOrigin,
+                copyToClipboard = copyToClipboard,
                 snackbarService = snackbarService
             )
         }

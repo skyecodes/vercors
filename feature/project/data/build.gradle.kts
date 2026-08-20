@@ -5,4 +5,5 @@ plugins {
 dependencies {
     commonMainApi(projects.feature.project.domain)
     commonMainApi(projects.feature.project.api)
+    commonMainImplementation(libs.kzip)
 }

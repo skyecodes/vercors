@@ -3,6 +3,7 @@ package app.vercors.feature.project.ui.details
 import androidx.compose.runtime.Immutable
 import app.vercors.feature.game.domain.model.ModLoaderType
 import app.vercors.feature.project.domain.model.*
+import app.vercors.feature.project.ui.install.InstallModpackDialog
 import app.vercors.feature.project.ui.install.InstallProjectDialog
 import app.vercors.feature.project.ui.list.ProjectCategoryView
 import app.vercors.feature.project.ui.list.toView
@@ -14,6 +15,7 @@ data class ProjectDetailsState(
     val project: ProgressiveOutcome<ProjectDetailsError, ProjectDetailsView>,
     val promptInstall: Boolean,
     val installProjectDialog: InstallProjectDialog,
+    val installModpackDialog: InstallModpackDialog,
 )
 
 @Immutable
@@ -48,9 +50,10 @@ data class ProjectLinksView(
     val discordUrl: String?
 )
 
-/** Install is only wired up for these three types — Modpack/DataPack/World need their own, different flows. */
+/** Install is only wired up for these types — DataPack/World need their own, different flows. */
 val ProjectType.isInstallable: Boolean
-    get() = this == ProjectType.Mod || this == ProjectType.ResourcePack || this == ProjectType.ShaderPack
+    get() = this == ProjectType.Mod || this == ProjectType.ResourcePack || this == ProjectType.ShaderPack ||
+            this == ProjectType.Modpack
 
 fun Project.toView(): ProjectDetailsView = ProjectDetailsView(
     id = id,

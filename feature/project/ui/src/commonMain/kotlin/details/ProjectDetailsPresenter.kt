@@ -4,6 +4,7 @@ import androidx.compose.runtime.*
 import app.vercors.core.ui.state.produceProgressiveState
 import app.vercors.feature.project.domain.model.ProjectType
 import app.vercors.feature.project.domain.usecase.GetProjectUseCase
+import app.vercors.feature.project.ui.install.InstallModpackDialog
 import app.vercors.feature.project.ui.install.InstallProjectDialog
 import app.vercors.shared.ui.Presenter
 import app.vercors.shared.ui.Store
@@ -21,6 +22,7 @@ class ProjectDetailsPresenter(
     @Assisted private val screen: ProjectDetailsScreen,
     private val getProject: GetProjectUseCase,
     private val installProjectDialogFactory: InstallProjectDialog.Factory,
+    private val installModpackDialogFactory: InstallModpackDialog.Factory,
 ) : Presenter<ProjectDetailsState, ProjectDetailsEvent> {
     @OptIn(ExperimentalProgressiveRaiseApi::class)
     @Composable
@@ -31,6 +33,7 @@ class ProjectDetailsPresenter(
         var promptInstall by remember { mutableStateOf(false) }
         val type = project.valueOrNull?.type
         val loaders = project.valueOrNull?.loaders
+        val name = project.valueOrNull?.name
         val installProjectDialog = remember(screen.projectId, type, loaders) {
             // The placeholder ProjectType.Mod is never actually installed against — the Install button (which is
             // the only way to make promptInstall true) only renders once project has loaded successfully.
@@ -41,16 +44,24 @@ class ProjectDetailsPresenter(
                 screen.preferredInstanceId
             )
         }
+        val installModpackDialog = remember(screen.projectId, name) {
+            installModpackDialogFactory.create(screen.projectId, name ?: "")
+        }
 
         return ProjectDetailsState(
             projectId = screen.projectId,
             project = project,
             promptInstall = promptInstall,
-            installProjectDialog = installProjectDialog
+            installProjectDialog = installProjectDialog,
+            installModpackDialog = installModpackDialog
         ) + { event ->
             when (event) {
                 ProjectDetailsEvent.OnInstallClick -> promptInstall = true
                 is ProjectDetailsEvent.OnInstallResult -> {
+                    promptInstall = false
+                }
+
+                is ProjectDetailsEvent.OnInstallModpackResult -> {
                     promptInstall = false
                 }
             }

@@ -20,6 +20,7 @@ data class InstallProjectState(
     val selectedDependencyIds: Set<ProjectId>,
     val resolvingDependencies: Boolean,
     val installing: Boolean,
+    val manualDownloadItems: List<ManualDownloadItemView> = emptyList(),
 ) {
     val instanceList = instances.valueOrNull ?: emptyList()
     val selectedInstance = instanceList.find { it.id == selectedInstanceId }
@@ -47,6 +48,7 @@ data class ProjectFileView(
     val releaseChannel: ProjectReleaseChannel,
     val publishedAt: Instant,
     val dependencies: List<ProjectId>,
+    val manualDownloadUrl: String?,
 )
 
 @Immutable

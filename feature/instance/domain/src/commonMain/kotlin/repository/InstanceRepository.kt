@@ -17,6 +17,9 @@ interface InstanceRepository {
 
     suspend fun deleteInstance(instance: Instance)
 
+    /** Deletes an instance's on-disk game directory — [deleteInstance] only removes its metadata. */
+    suspend fun deleteInstanceFiles(instanceId: InstanceId)
+
     context(_: Raise<InstanceError>)
     suspend fun findInstance(id: InstanceId): Instance
 

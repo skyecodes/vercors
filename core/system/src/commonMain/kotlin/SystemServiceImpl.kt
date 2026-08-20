@@ -8,4 +8,5 @@ expect class SystemServiceImpl : SystemService {
     override val canOpenUrlInBrowser: Boolean
 
     override fun copyToClipboard(text: String): Boolean
+    override fun downloadsDir(): String?
 }

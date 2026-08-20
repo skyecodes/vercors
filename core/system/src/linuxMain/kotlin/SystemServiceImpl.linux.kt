@@ -4,6 +4,7 @@ import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
 import dev.zacsweers.metro.SingleIn
 import kotlinx.cinterop.*
+import platform.posix.getenv
 import platform.posix.uname
 import platform.posix.utsname
 
@@ -30,5 +31,8 @@ actual class SystemServiceImpl : SystemService {
     actual override val canOpenUrlInBrowser: Boolean = false
 
     actual override fun copyToClipboard(text: String): Boolean = false
+
+    @OptIn(ExperimentalForeignApi::class)
+    actual override fun downloadsDir(): String? = getenv("HOME")?.toKString()?.let { "$it/Downloads" }
 
 }

@@ -17,5 +17,5 @@ data class UnsupportedProjectTypeData(val projectType: ProjectTypeData)
 @Serializable
 data class PlatformErrorData(
     val error: String,
-    val description: String?
+    val description: String? = null
 )

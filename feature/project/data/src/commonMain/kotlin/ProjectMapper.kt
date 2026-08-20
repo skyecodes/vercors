@@ -108,7 +108,8 @@ internal fun ProjectFileData.toDomain(platform: PlatformId): ProjectFile = Proje
     size = size,
     sha1 = sha1,
     publishedAt = publishedAt,
-    dependencies = dependencies.map { it.projectId from platform }
+    dependencies = dependencies.map { it.projectId from platform },
+    manualDownloadUrl = manualDownloadUrl
 )
 
 internal fun ProjectReleaseChannelData.toDomain(): ProjectReleaseChannel = when (this) {

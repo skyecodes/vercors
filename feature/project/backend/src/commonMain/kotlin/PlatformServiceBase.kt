@@ -41,6 +41,9 @@ interface PlatformServiceBase {
 
     context(_: Raise<PlatformErrorData>)
     suspend fun getFileDownloadUrl(projectId: String, fileId: String): String
+
+    context(_: Raise<PlatformErrorData>)
+    suspend fun getProjectFile(projectId: String, fileId: String): ProjectFileData
 }
 
 data class PlatformInfo(

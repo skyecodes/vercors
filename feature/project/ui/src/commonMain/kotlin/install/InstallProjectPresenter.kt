@@ -12,10 +12,12 @@ import app.vercors.feature.instance.domain.usecase.ObserveInstalledContentUseCas
 import app.vercors.feature.instance.domain.usecase.ObserveInstanceListUseCase
 import app.vercors.feature.instance.domain.usecase.RecordInstalledContentOriginUseCase
 import app.vercors.feature.project.domain.model.*
+import app.vercors.feature.project.domain.usecase.AwaitManualDownloadUseCase
 import app.vercors.feature.project.domain.usecase.DownloadProjectFileUseCase
 import app.vercors.feature.project.domain.usecase.GetProjectFilesUseCase
 import app.vercors.feature.project.domain.usecase.GetProjectUseCase
 import app.vercors.feature.project.ui.message
+import app.vercors.shared.domain.usecase.CopyToClipboardUseCase
 import app.vercors.shared.ui.Presenter
 import app.vercors.shared.ui.SnackbarService
 import app.vercors.shared.ui.Store
@@ -44,7 +46,9 @@ class InstallProjectPresenter(
     private val getProject: GetProjectUseCase,
     private val getProjectFiles: GetProjectFilesUseCase,
     private val downloadProjectFile: DownloadProjectFileUseCase,
+    private val awaitManualDownload: AwaitManualDownloadUseCase,
     private val recordInstalledContentOrigin: RecordInstalledContentOriginUseCase,
+    private val copyToClipboard: CopyToClipboardUseCase,
     private val snackbarService: SnackbarService
 ) : Presenter<InstallProjectState, InstallProjectEvent> {
     @Composable
@@ -56,6 +60,8 @@ class InstallProjectPresenter(
         var selectedDependencyIds by remember { mutableStateOf<Set<ProjectId>>(emptySet()) }
         var resolvingDependencies by remember { mutableStateOf(false) }
         var installing by remember { mutableStateOf(false) }
+        var installJob by remember { mutableStateOf<Job?>(null) }
+        var manualDownloadItems by remember { mutableStateOf<List<ManualDownloadItemView>>(emptyList()) }
         val files = remember { mutableProgressiveStateOf<ProjectDetailsError, List<ProjectFileView>>() }
 
         val selectedInstance = instances.valueOrNull?.find { it.id == selectedInstanceId }
@@ -94,15 +100,25 @@ class InstallProjectPresenter(
                     selectedDependencyIds - event.projectId
                 }
 
-                InstallProjectEvent.OnCancelClick -> navigator.finish(InstallProjectResult.Cancelled)
+                is InstallProjectEvent.OnCopyUrlClick -> copyToClipboard(event.url)
+
+                InstallProjectEvent.OnCancelClick -> {
+                    val job = installJob
+                    if (job != null && job.isActive) job.cancel() else navigator.finish(InstallProjectResult.Cancelled)
+                }
+
                 InstallProjectEvent.OnConfirmClick -> {
                     val instanceId = selectedInstanceId
                     val file = files.value.valueOrNull?.find { it.id == selectedFileId }
                     if (instanceId != null && file != null) {
                         val selectedDependencies = dependencies.filter { it.projectId in selectedDependencyIds }
                         installing = true
-                        confirmInstall(instanceId, file, selectedDependencies) { success ->
+                        installJob = confirmInstall(
+                            instanceId, file, selectedDependencies,
+                            onManualDownloadItemsChanged = { manualDownloadItems = it }
+                        ) { success ->
                             installing = false
+                            manualDownloadItems = emptyList()
                             if (success) navigator.finish(InstallProjectResult.Installed(instanceId))
                         }
                     }
@@ -118,7 +134,8 @@ class InstallProjectPresenter(
             dependencies = dependencies,
             selectedDependencyIds = selectedDependencyIds,
             resolvingDependencies = resolvingDependencies,
-            installing = installing
+            installing = installing,
+            manualDownloadItems = manualDownloadItems
         ) + ::handleEvent
     }
 
@@ -183,21 +200,55 @@ class InstallProjectPresenter(
         pickRecommendedFile(fileList)?.let { DependencyFileView(dependencyId, project.name, it) }
     }) { null }
 
-    /** Downloads [file] (and each of [selectedDependencies]) and reports success/failure via [onFinished]. */
+    /** Installs [file] (and each of [selectedDependencies]), auto files first, then manual ones in parallel. */
     private fun confirmInstall(
         instanceId: InstanceId,
         file: ProjectFileView,
         selectedDependencies: List<DependencyFileView>,
+        onManualDownloadItemsChanged: (List<ManualDownloadItemView>) -> Unit,
         onFinished: (success: Boolean) -> Unit
-    ) {
-        globalScope.launch {
-            recover({
-                installFile(projectId, file, instanceId)
-                for ((dependencyProjectId, _, dependencyFile) in selectedDependencies) {
-                    installFile(dependencyProjectId, dependencyFile, instanceId)
-                }
-            }) { error -> snackbarService.error { error.message } }
-        }.invokeOnCompletion { error -> onFinished(error == null) }
+    ): Job {
+        val candidates = buildList {
+            add(InstallCandidate(projectId, file))
+            selectedDependencies.forEach { add(InstallCandidate(it.projectId, it.file)) }
+        }
+        val (autoCandidates, manualCandidates) = candidates.partition { it.file.manualDownloadUrl == null }
+
+        val job = globalScope.launch {
+            val autoOk = recover({
+                for (candidate in autoCandidates) installFile(candidate.projectId, candidate.file, instanceId)
+                true
+            }) { error: ProjectFileDownloadError ->
+                snackbarService.error { error.message }
+                false
+            }
+
+            val manualOk = autoOk && runManualDownloads(
+                manualCandidates.map { candidate ->
+                    ManualDownloadCandidate(
+                        fileName = candidate.file.fileName,
+                        downloadUrl = requireNotNull(candidate.file.manualDownloadUrl),
+                        instanceId = instanceId,
+                        projectType = projectType,
+                        recordOrigin = {
+                            recordInstalledContentOrigin(
+                                projectType.toContentKind(),
+                                instanceId,
+                                candidate.file.fileName,
+                                candidate.projectId.platform,
+                                candidate.projectId.id,
+                                candidate.file.id
+                            )
+                        }
+                    )
+                },
+                awaitManualDownload, snackbarService, onManualDownloadItemsChanged
+            )
+
+            onFinished(autoOk && manualOk)
+        }
+        job.invokeOnCompletion { error -> if (error != null) onFinished(false) }
+        return job
     }
 
     /**
@@ -244,13 +295,15 @@ class InstallProjectPresenter(
         }
 }
 
+private data class InstallCandidate(val projectId: ProjectId, val file: ProjectFileView)
+
 private sealed interface DependencyResolution {
     data object NotApplicable : DependencyResolution
     data object Pending : DependencyResolution
     data class Resolved(val dependencies: List<DependencyFileView>) : DependencyResolution
 }
 
-private fun pickRecommendedFile(files: List<ProjectFileView>): ProjectFileView? =
+internal fun pickRecommendedFile(files: List<ProjectFileView>): ProjectFileView? =
     files.filter { it.releaseChannel == ProjectReleaseChannel.Release }.maxByOrNull { it.publishedAt }
         ?: files.maxByOrNull { it.publishedAt }
 

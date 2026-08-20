@@ -44,4 +44,7 @@ actual class SystemServiceImpl : SystemService {
         false
     }
 
+    actual override fun downloadsDir(): String? =
+        System.getProperty("user.home")?.let { "$it/Downloads" }
+
 }

@@ -29,6 +29,7 @@ import app.vercors.core.ui.theme.primary
 import app.vercors.core.ui.theme.surface2
 import app.vercors.feature.game.ui.*
 import app.vercors.feature.project.domain.model.ProjectId
+import app.vercors.feature.project.domain.model.ProjectType
 import app.vercors.feature.project.ui.*
 import app.vercors.shared.ui.EventSink
 import app.vercors.shared.ui.SharedRes
@@ -47,6 +48,7 @@ import dev.zacsweers.metro.AppScope
 import opensavvy.state.progressive.onFailure
 import opensavvy.state.progressive.onIncomplete
 import opensavvy.state.progressive.onSuccess
+import opensavvy.state.progressive.valueOrNull
 import org.jetbrains.compose.resources.stringResource
 
 @CircuitInject(ProjectDetailsScreen::class, AppScope::class)
@@ -59,8 +61,13 @@ fun ProjectDetails(
 
     if (state.promptInstall) {
         OverlayEffect {
-            val result = show(state.installProjectDialog)
-            eventSink(ProjectDetailsEvent.OnInstallResult(result))
+            if (state.project.valueOrNull?.type == ProjectType.Modpack) {
+                val result = show(state.installModpackDialog)
+                eventSink(ProjectDetailsEvent.OnInstallModpackResult(result))
+            } else {
+                val result = show(state.installProjectDialog)
+                eventSink(ProjectDetailsEvent.OnInstallResult(result))
+            }
         }
     }
 

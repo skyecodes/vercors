@@ -15,7 +15,9 @@ internal fun projectFileDownloadRequest(
     platformId: String,
     projectId: String,
     fileId: String,
-    path: Path
+    path: Path,
+    size: Long? = null,
+    sha1: String? = null
 ): FileValidationRequest = FileValidationRequest.Channel(
     channel = { httpClient ->
         httpClient.request(
@@ -23,5 +25,7 @@ internal fun projectFileDownloadRequest(
                     ProjectFiles / ProjectFiles.ProjectFileId(fileId) / ProjectFiles.ProjectFileId.download
         ).bodyOrThrow()
     },
-    path = path
+    path = path,
+    size = size,
+    sha1 = sha1
 )

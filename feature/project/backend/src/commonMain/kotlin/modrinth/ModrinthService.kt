@@ -5,6 +5,7 @@ import app.vercors.feature.project.backend.PlatformInfo
 import app.vercors.feature.project.backend.PlatformServiceBase
 import app.vercors.feature.project.backend.bindResponse
 import arrow.core.raise.context.Raise
+import arrow.core.raise.context.ensureNotNull
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesIntoMap
 import dev.zacsweers.metro.SingleIn
@@ -99,4 +100,10 @@ class ModrinthService(
         val file = version.files.firstOrNull { it.primary } ?: version.files.first()
         return file.url
     }
+
+    context(_: Raise<PlatformErrorData>)
+    override suspend fun getProjectFile(projectId: String, fileId: String): ProjectFileData =
+        ensureNotNull(api.getVersion(fileId).bindResponse().convert()) {
+            PlatformErrorData("NoFiles", "Version $fileId has no files")
+        }
 }

@@ -64,6 +64,12 @@ fun Route.projectRoutes(service: ProjectService, json: Json) {
                 )
             )
         }
+        routeWithRaise(ProjectFiles.ProjectFileId.get) {
+            val platformId = idOf(Platforms.PlatformId)
+            val projectId = idOf(Projects.ProjectId)
+            val fileId = idOf(ProjectFiles.ProjectFileId)
+            respond(service.getProjectFile(platformId, projectId, fileId))
+        }
     }
     // Not cached: the CurseForge download-url resolution can return short-lived/signed URLs.
     routeWithRaise(ProjectFiles.ProjectFileId.download) {

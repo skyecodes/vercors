@@ -4,10 +4,7 @@ import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
 import dev.zacsweers.metro.SingleIn
 import kotlinx.cinterop.*
-import platform.posix.NULL
-import platform.posix._pclose
-import platform.posix._popen
-import platform.posix.fgets
+import platform.posix.*
 
 private const val BUFFER_SIZE = 1024
 private val VERSION_REGEX = Regex("((\\d+\\.)+\\d+)")
@@ -38,5 +35,8 @@ actual class SystemServiceImpl : SystemService {
     actual override val canOpenUrlInBrowser: Boolean = false
 
     actual override fun copyToClipboard(text: String): Boolean = false
+
+    @OptIn(ExperimentalForeignApi::class)
+    actual override fun downloadsDir(): String? = getenv("USERPROFILE")?.toKString()?.let { "$it\\Downloads" }
 
 }

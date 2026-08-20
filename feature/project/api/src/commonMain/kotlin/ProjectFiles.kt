@@ -21,6 +21,11 @@ object ProjectFiles : StaticResource<Projects.ProjectId>("files", Projects.Proje
     }
 
     object ProjectFileId : DynamicResource<ProjectFiles>("fileId", ProjectFiles) {
+        val get by get()
+            .failure<PlatformOrProjectNotFoundData>(HttpStatusCode.NotFound)
+            .failure<PlatformErrorData>(HttpStatusCode.InternalServerError)
+            .response<ProjectFileData>()
+
         val download by get("download")
             .failure<PlatformOrProjectNotFoundData>(HttpStatusCode.NotFound)
             .failure<PlatformErrorData>(HttpStatusCode.InternalServerError)

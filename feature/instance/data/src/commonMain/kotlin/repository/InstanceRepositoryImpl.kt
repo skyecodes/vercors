@@ -2,11 +2,14 @@ package app.vercors.feature.instance.data.repository
 
 import app.vercors.core.domain.ProgressiveStateFlow
 import app.vercors.core.domain.progressiveStateIn
+import app.vercors.core.filesystem.deleteRecursively
+import app.vercors.core.filesystem.exists
 import app.vercors.feature.instance.data.datasource.InstanceDataSource
 import app.vercors.feature.instance.data.dto.toData
 import app.vercors.feature.instance.data.dto.toDomain
 import app.vercors.feature.instance.domain.model.*
 import app.vercors.feature.instance.domain.repository.InstanceRepository
+import app.vercors.shared.data.AppPaths
 import arrow.core.Either
 import arrow.core.raise.Raise
 import arrow.core.raise.context.bind
@@ -35,6 +38,7 @@ private val logger = KotlinLogging.logger {}
 class InstanceRepositoryImpl(
     coroutineScope: CoroutineScope,
     private val dataSource: InstanceDataSource,
+    private val appPaths: AppPaths,
 ) : InstanceRepository {
     override val instances: ProgressiveStateFlow<Nothing, Map<InstanceId, Either<InstanceLoadingError, Instance>>> =
         dataSource.flow.map { outcome ->
@@ -65,6 +69,12 @@ class InstanceRepositoryImpl(
     override suspend fun deleteInstance(instance: Instance) {
         dataSource.delete(instance.id)
         logger.info { "Deleted instance ${instance.id}" }
+    }
+
+    override suspend fun deleteInstanceFiles(instanceId: InstanceId) {
+        val gameDir = appPaths.gameDir(instanceId)
+        if (gameDir.exists()) gameDir.deleteRecursively()
+        logger.info { "Deleted game directory for instance $instanceId" }
     }
 
     context(_: Raise<InstanceError>)

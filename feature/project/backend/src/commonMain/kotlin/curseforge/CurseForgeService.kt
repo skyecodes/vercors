@@ -83,15 +83,40 @@ class CurseForgeService(
         projectId: String,
         gameVersion: String?,
         loader: ProjectLoaderData?
-    ): List<ProjectFileData> = api.getFiles(
-        modId = projectId,
-        gameVersion = gameVersion,
-        modLoaderType = loader?.toCurseForgeModLoaderType()
-    ).bindResponse().data.map { it.convert(loader) }
+    ): List<ProjectFileData> {
+        val files = api.getFiles(
+            modId = projectId,
+            gameVersion = gameVersion,
+            modLoaderType = loader?.toCurseForgeModLoaderType()
+        ).bindResponse().data
+        val slug =
+            if (files.any { it.downloadUrl == null }) api.getProject(projectId).bindResponse().data.slug else null
+        return files.map { file ->
+            val data = file.convert(loader)
+            if (slug != null && file.downloadUrl == null) data.copy(
+                manualDownloadUrl = manualDownloadUrl(
+                    slug,
+                    file.id
+                )
+            ) else data
+        }
+    }
 
     context(_: Raise<PlatformErrorData>)
     override suspend fun getFileDownloadUrl(projectId: String, fileId: String): String {
         val file = api.getFile(projectId, fileId).bindResponse().data
         return file.downloadUrl ?: api.getFileDownloadUrl(projectId, fileId).bindResponse().data
     }
+
+    context(_: Raise<PlatformErrorData>)
+    override suspend fun getProjectFile(projectId: String, fileId: String): ProjectFileData {
+        val file = api.getFile(projectId, fileId).bindResponse().data
+        val data = file.convert(loaderFilter = null)
+        if (file.downloadUrl != null) return data
+        val slug = api.getProject(projectId).bindResponse().data.slug
+        return data.copy(manualDownloadUrl = manualDownloadUrl(slug, file.id))
+    }
+
+    private fun manualDownloadUrl(slug: String, fileId: Int): String =
+        "https://www.curseforge.com/minecraft/mc-mods/$slug/download/$fileId"
 }

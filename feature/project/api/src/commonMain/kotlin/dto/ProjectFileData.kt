@@ -12,7 +12,8 @@ data class ProjectFileData(
     val loaders: List<ProjectLoaderData>,
     val releaseChannel: ProjectReleaseChannelData,
     val size: Long,
-    val sha1: String?,
+    val sha1: String? = null,
     val publishedAt: Instant,
-    val dependencies: List<ProjectFileDependencyData>
+    val dependencies: List<ProjectFileDependencyData>,
+    val manualDownloadUrl: String? = null
 )

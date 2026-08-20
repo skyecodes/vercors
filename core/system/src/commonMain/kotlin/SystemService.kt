@@ -8,6 +8,9 @@ interface SystemService {
     val canOpenUrlInBrowser: Boolean
 
     fun copyToClipboard(text: String): Boolean
+
+    /** The OS "Downloads" folder for the current user, or null if it can't be resolved. */
+    fun downloadsDir(): String?
 }
 
 enum class OsType(val id: String) {
