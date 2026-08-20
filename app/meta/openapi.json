@@ -1,0 +1,1385 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Vercors Meta API",
+    "description": "Backend service used by the Vercors GUI and CLI launchers to browse mod/modpack platforms, resolve loader install URLs, and fetch Minecraft account skin renders. Built with Ktor and dev.opensavvy.spine.",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8080",
+      "description": "Local instance (default port used by app:meta:distribution)"
+    }
+  ],
+  "security": [],
+  "tags": [
+    {
+      "name": "Platforms",
+      "description": "Mod/modpack platform metadata (CurseForge, Modrinth, ...)"
+    },
+    {
+      "name": "Projects",
+      "description": "Searching and reading individual projects (mods, modpacks, resource packs, ...) on a platform"
+    },
+    {
+      "name": "Project files",
+      "description": "Downloadable files belonging to a project"
+    },
+    {
+      "name": "Game",
+      "description": "Minecraft version and Java runtime manifests"
+    },
+    {
+      "name": "Loaders",
+      "description": "Mod loader versions and install URLs for a given game version"
+    },
+    {
+      "name": "Account",
+      "description": "Minecraft account skin renders"
+    }
+  ],
+  "paths": {
+    "/v1/platforms": {
+      "get": {
+        "tags": [
+          "Platforms"
+        ],
+        "summary": "List supported platforms",
+        "operationId": "listPlatforms",
+        "responses": {
+          "200": {
+            "description": "The list of supported platforms",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ProjectPlatformData"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error while listing platforms",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlatformErrorData"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/platforms/{platformId}": {
+      "get": {
+        "tags": [
+          "Platforms"
+        ],
+        "summary": "Get a single platform",
+        "operationId": "getPlatform",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/PlatformId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The platform",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectPlatformData"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No platform with this id exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlatformNotFoundData"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlatformErrorData"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/platforms/{platformId}/featured-projects": {
+      "get": {
+        "tags": [
+          "Platforms"
+        ],
+        "summary": "Get featured projects for a platform, grouped by project type",
+        "operationId": "getFeaturedProjects",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/PlatformId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Featured projects, keyed by project type",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeaturedProjectListData"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No platform with this id exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlatformNotFoundData"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlatformErrorData"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/platforms/{platformId}/projects": {
+      "get": {
+        "tags": [
+          "Projects"
+        ],
+        "summary": "Search projects on a platform",
+        "operationId": "searchProjects",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/PlatformId"
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "description": "Restrict results to a single project type",
+            "schema": {
+              "$ref": "#/components/schemas/ProjectTypeData"
+            }
+          },
+          {
+            "name": "loaders",
+            "in": "query",
+            "required": false,
+            "description": "Restrict results to projects supporting any of these loaders",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "gameVersions",
+            "in": "query",
+            "required": false,
+            "description": "Restrict results to projects supporting any of these game versions",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "categories",
+            "in": "query",
+            "required": false,
+            "description": "Restrict results to projects tagged with any of these category ids",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "query",
+            "in": "query",
+            "required": false,
+            "description": "Free-text search query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortBy",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/ProjectSortByData"
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Search results",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectSearchResponseData"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The `type` parameter is not a project type supported by this platform",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnsupportedProjectTypeData"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No platform with this id exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlatformNotFoundData"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlatformErrorData"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/platforms/{platformId}/projects/{projectId}": {
+      "get": {
+        "tags": [
+          "Projects"
+        ],
+        "summary": "Get a single project",
+        "operationId": "getProject",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/PlatformId"
+          },
+          {
+            "$ref": "#/components/parameters/ProjectId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The project",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectData"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No platform or project with these ids exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlatformOrProjectNotFoundData"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlatformErrorData"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/platforms/{platformId}/projects/{projectId}/files": {
+      "get": {
+        "tags": [
+          "Project files"
+        ],
+        "summary": "List a project's downloadable files",
+        "operationId": "listProjectFiles",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/PlatformId"
+          },
+          {
+            "$ref": "#/components/parameters/ProjectId"
+          },
+          {
+            "name": "gameVersion",
+            "in": "query",
+            "required": false,
+            "description": "Restrict results to files supporting this game version",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "loader",
+            "in": "query",
+            "required": false,
+            "description": "Restrict results to files supporting this loader",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The project's files",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ProjectFileData"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No platform or project with these ids exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlatformOrProjectNotFoundData"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlatformErrorData"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/platforms/{platformId}/projects/{projectId}/files/{fileId}": {
+      "get": {
+        "tags": [
+          "Project files"
+        ],
+        "summary": "Get a single project file",
+        "operationId": "getProjectFile",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/PlatformId"
+          },
+          {
+            "$ref": "#/components/parameters/ProjectId"
+          },
+          {
+            "$ref": "#/components/parameters/FileId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The file",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectFileData"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No platform, project or file with these ids exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlatformOrProjectNotFoundData"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlatformErrorData"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/platforms/{platformId}/projects/{projectId}/files/{fileId}/download": {
+      "get": {
+        "tags": [
+          "Project files"
+        ],
+        "summary": "Download a project file",
+        "description": "Redirects (302) to the platform's actual file host; the response body is not produced by this service.",
+        "operationId": "downloadProjectFile",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/PlatformId"
+          },
+          {
+            "$ref": "#/components/parameters/ProjectId"
+          },
+          {
+            "$ref": "#/components/parameters/FileId"
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Redirect to the file's download URL",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string",
+                  "format": "uri"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No platform, project or file with these ids exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlatformOrProjectNotFoundData"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlatformErrorData"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/game/versions": {
+      "get": {
+        "tags": [
+          "Game"
+        ],
+        "summary": "Get the Minecraft version manifest",
+        "description": "Redirects (302) to Mojang's `version_manifest_v2.json`.",
+        "operationId": "getGameVersions",
+        "responses": {
+          "302": {
+            "description": "Redirect to Mojang's version manifest",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string",
+                  "format": "uri"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/game/runtimes": {
+      "get": {
+        "tags": [
+          "Game"
+        ],
+        "summary": "Get the Java runtime manifest",
+        "description": "Redirects (302) to Mojang's Java runtime manifest.",
+        "operationId": "getGameRuntimes",
+        "responses": {
+          "302": {
+            "description": "Redirect to Mojang's Java runtime manifest",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string",
+                  "format": "uri"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/game/{gameVersionId}/loaders": {
+      "get": {
+        "tags": [
+          "Loaders"
+        ],
+        "summary": "List loaders available for a game version",
+        "operationId": "listLoaders",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/GameVersionId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Available loaders",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LoaderTypeData"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoaderErrorData"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/game/{gameVersionId}/loaders/{loaderId}/versions": {
+      "get": {
+        "tags": [
+          "Loaders"
+        ],
+        "summary": "List versions of a loader available for a game version",
+        "operationId": "listLoaderVersions",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/GameVersionId"
+          },
+          {
+            "$ref": "#/components/parameters/LoaderId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Available loader versions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LoaderVersionData"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error, or `loaderId` is not a known loader",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoaderErrorData"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/game/{gameVersionId}/loaders/{loaderId}/install-url": {
+      "get": {
+        "tags": [
+          "Loaders"
+        ],
+        "summary": "Get the install URL for a specific loader version",
+        "description": "Redirects (302) to the URL of the loader installer/profile for the requested game version and loader version.",
+        "operationId": "getLoaderInstallUrl",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/GameVersionId"
+          },
+          {
+            "$ref": "#/components/parameters/LoaderId"
+          },
+          {
+            "name": "loaderVersion",
+            "in": "query",
+            "required": true,
+            "description": "The loader version to install",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Redirect to the install URL",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string",
+                  "format": "uri"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error, `loaderId` is not a known loader, or `loaderVersion` is missing/invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoaderErrorData"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/account/{accountId}/avatar": {
+      "get": {
+        "tags": [
+          "Account"
+        ],
+        "summary": "Get an account's avatar (face) render",
+        "description": "Redirects (302) to mc-heads.net.",
+        "operationId": "getAccountAvatar",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AccountId"
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Redirect to the avatar image",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string",
+                  "format": "uri"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/account/{accountId}/head": {
+      "get": {
+        "tags": [
+          "Account"
+        ],
+        "summary": "Get an account's head render",
+        "description": "Redirects (302) to mc-heads.net.",
+        "operationId": "getAccountHead",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AccountId"
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Redirect to the head image",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string",
+                  "format": "uri"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/account/{accountId}/body": {
+      "get": {
+        "tags": [
+          "Account"
+        ],
+        "summary": "Get an account's full body render",
+        "description": "Redirects (302) to mc-heads.net.",
+        "operationId": "getAccountBody",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AccountId"
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Redirect to the body image",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string",
+                  "format": "uri"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "PlatformId": {
+        "name": "platformId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string"
+        }
+      },
+      "ProjectId": {
+        "name": "projectId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string"
+        }
+      },
+      "FileId": {
+        "name": "fileId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string"
+        }
+      },
+      "GameVersionId": {
+        "name": "gameVersionId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string"
+        }
+      },
+      "LoaderId": {
+        "name": "loaderId",
+        "in": "path",
+        "required": true,
+        "description": "One of the values of LoaderTypeData",
+        "schema": {
+          "type": "string"
+        }
+      },
+      "AccountId": {
+        "name": "accountId",
+        "in": "path",
+        "required": true,
+        "description": "A Minecraft account UUID",
+        "schema": {
+          "type": "string"
+        }
+      }
+    },
+    "schemas": {
+      "ProjectTypeData": {
+        "type": "string",
+        "enum": [
+          "mod",
+          "modpack",
+          "resourcepack",
+          "shaderpack",
+          "datapack",
+          "world"
+        ]
+      },
+      "ProjectLoaderData": {
+        "type": "string",
+        "enum": [
+          "forge",
+          "neoforge",
+          "fabric",
+          "quilt"
+        ]
+      },
+      "ProjectReleaseChannelData": {
+        "type": "string",
+        "enum": [
+          "release",
+          "beta",
+          "alpha"
+        ]
+      },
+      "ProjectSortByData": {
+        "type": "string",
+        "enum": [
+          "relevance",
+          "downloads",
+          "updated",
+          "created"
+        ]
+      },
+      "LoaderTypeData": {
+        "type": "string",
+        "enum": [
+          "fabric",
+          "quilt",
+          "forge",
+          "neoforge"
+        ]
+      },
+      "IconData": {
+        "description": "Either an icon name (referring to a well-known bundled icon) or raw SVG markup.",
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "name"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "data": {
+                "type": "string",
+                "description": "Raw SVG markup"
+              }
+            },
+            "required": [
+              "data"
+            ]
+          }
+        ]
+      },
+      "ProjectCategoryData": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "icon": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/IconData"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "slug"
+        ]
+      },
+      "ProjectAuthorData": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "url": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "avatarUrl": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "ProjectLinksData": {
+        "type": "object",
+        "properties": {
+          "websiteUrl": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "sourceUrl": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "issuesUrl": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "wikiUrl": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "discordUrl": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "ProjectPlatformData": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "baseUrl": {
+            "type": "string"
+          },
+          "categories": {
+            "description": "Keyed by project type, then by category group name",
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ProjectCategoryData"
+                }
+              }
+            }
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "baseUrl",
+          "categories"
+        ]
+      },
+      "BriefProjectData": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "platform": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "author": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "downloads": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "lastUpdated": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "logoUrl": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "imageUrl": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "platform",
+          "name",
+          "description",
+          "author",
+          "url",
+          "downloads",
+          "lastUpdated"
+        ]
+      },
+      "FeaturedProjectListData": {
+        "description": "Keyed by project type",
+        "type": "object",
+        "additionalProperties": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/BriefProjectData"
+          }
+        }
+      },
+      "ProjectSearchResponseData": {
+        "type": "object",
+        "properties": {
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BriefProjectData"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "required": [
+          "results",
+          "total"
+        ]
+      },
+      "ProjectData": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "platform": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "type": {
+            "$ref": "#/components/schemas/ProjectTypeData"
+          },
+          "description": {
+            "type": "string"
+          },
+          "body": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "url": {
+            "type": "string"
+          },
+          "logoUrl": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "gameVersions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "loaders": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProjectLoaderData"
+            }
+          },
+          "categories": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProjectCategoryData"
+            }
+          },
+          "authors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProjectAuthorData"
+            }
+          },
+          "links": {
+            "$ref": "#/components/schemas/ProjectLinksData"
+          }
+        },
+        "required": [
+          "id",
+          "platform",
+          "name",
+          "type",
+          "description",
+          "url"
+        ]
+      },
+      "ProjectFileDependencyData": {
+        "type": "object",
+        "properties": {
+          "projectId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "projectId"
+        ]
+      },
+      "ProjectFileData": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "fileName": {
+            "type": "string"
+          },
+          "gameVersions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "loaders": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProjectLoaderData"
+            }
+          },
+          "releaseChannel": {
+            "$ref": "#/components/schemas/ProjectReleaseChannelData"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "sha1": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "publishedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "dependencies": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProjectFileDependencyData"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "displayName",
+          "fileName",
+          "gameVersions",
+          "loaders",
+          "releaseChannel",
+          "size",
+          "publishedAt",
+          "dependencies"
+        ]
+      },
+      "PlatformErrorData": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "error"
+        ]
+      },
+      "PlatformNotFoundData": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "app.vercors.feature.project.api.dto.PlatformNotFoundData"
+          },
+          "platformId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "platformId"
+        ]
+      },
+      "ProjectNotFoundData": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "app.vercors.feature.project.api.dto.ProjectNotFoundData"
+          },
+          "projectId": {
+            "type": "string"
+          },
+          "platformId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "projectId",
+          "platformId"
+        ]
+      },
+      "PlatformOrProjectNotFoundData": {
+        "description": "kotlinx.serialization sealed-interface polymorphic envelope; the `type` discriminator field is added automatically by the serializer and holds the failure's fully-qualified class name.",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/ProjectNotFoundData"
+          },
+          {
+            "$ref": "#/components/schemas/PlatformNotFoundData"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "app.vercors.feature.project.api.dto.ProjectNotFoundData": "#/components/schemas/ProjectNotFoundData",
+            "app.vercors.feature.project.api.dto.PlatformNotFoundData": "#/components/schemas/PlatformNotFoundData"
+          }
+        }
+      },
+      "UnsupportedProjectTypeData": {
+        "type": "object",
+        "properties": {
+          "projectType": {
+            "$ref": "#/components/schemas/ProjectTypeData"
+          }
+        },
+        "required": [
+          "projectType"
+        ]
+      },
+      "LoaderErrorData": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "error",
+          "description"
+        ]
+      },
+      "LoaderVersionData": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "string"
+          },
+          "stable": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "version",
+          "stable"
+        ]
+      }
+    }
+  }
+}
