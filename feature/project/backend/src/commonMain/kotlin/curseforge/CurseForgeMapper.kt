@@ -15,7 +15,7 @@ internal fun CurseForgeProject.convertBrief(): BriefProjectData = BriefProjectDa
     name = name,
     description = summary,
     author = authors.first().name,
-    url = "https://www.curseforge.com/minecraft/mc-mods/$slug",
+    url = "https://www.curseforge.com/minecraft/${classId.toCurseForgeUrlSegment()}/$slug",
     downloads = downloadCount,
     lastUpdated = dateModified,
     logoUrl = logo.thumbnailUrl,
@@ -30,7 +30,7 @@ internal fun CurseForgeProject.convert(descriptionHtml: String): ProjectData = P
     // since project search already filters results down to known classIds.
     type = classId.toProjectTypeData() ?: ProjectTypeData.Mod,
     description = summary,
-    url = "https://www.curseforge.com/minecraft/mc-mods/$slug",
+    url = "https://www.curseforge.com/minecraft/${classId.toCurseForgeUrlSegment()}/$slug",
     body = descriptionHtml.toMarkdown(),
     logoUrl = logo.thumbnailUrl,
     gameVersions = latestFilesIndexes.map { it.gameVersion }.distinct(),
@@ -88,6 +88,20 @@ internal fun Int?.toProjectTypeData(): ProjectTypeData? = when (this) {
     DATAPACK_CLASS_ID -> ProjectTypeData.DataPack
     WORLD_CLASS_ID -> ProjectTypeData.World
     else -> null
+}
+
+// Falls back to "mc-mods" for a classId this launcher doesn't otherwise recognize — in practice unreachable,
+// since project search already filters results down to known classIds.
+internal fun Int?.toCurseForgeUrlSegment(): String =
+    (this.toProjectTypeData() ?: ProjectTypeData.Mod).toCurseForgeUrlSegment()
+
+internal fun ProjectTypeData.toCurseForgeUrlSegment(): String = when (this) {
+    ProjectTypeData.Mod -> "mc-mods"
+    ProjectTypeData.Modpack -> "modpacks"
+    ProjectTypeData.ResourcePack -> "texture-packs"
+    ProjectTypeData.ShaderPack -> "shaders"
+    ProjectTypeData.DataPack -> "data-packs"
+    ProjectTypeData.World -> "worlds"
 }
 
 internal fun ProjectLoaderData.toCurseForgeModLoaderType(): CurseForgeModLoaderType = when (this) {
