@@ -75,4 +75,39 @@ class ModJarMetadataParserTest {
         assertEquals("Example Mod", result.title)
         assertEquals("1.2.3", result.version)
     }
+
+    /**
+     * Legacy Forge `mcmod.info` (Minecraft 1.12.2 and earlier) is a bare JSON array, not an object like the other
+     * three formats — and real mcmod.info files carry extra fields (mcversion, authorList, url, ...) beyond what
+     * [McModInfoEntry] models, so unknown-field tolerance needs pinning down here too.
+     */
+    @Test
+    fun parsesLegacyForgeMcModInfoWithUnknownFields() {
+        val path = Path("build/diag-legacy-forge.jar")
+        Zip.open(path, mode = Zip.Mode.Write).use { zip ->
+            zip.entryFromSource(
+                Path("mcmod.info"),
+                Buffer().apply {
+                    writeString(
+                        """
+                        [
+                          {
+                            "modid": "examplemod",
+                            "name": "Example Mod",
+                            "description": "An example mod",
+                            "version": "1.2.3",
+                            "mcversion": "1.12.2",
+                            "authorList": ["Author1"]
+                          }
+                        ]
+                        """.trimIndent()
+                    )
+                }
+            )
+        }
+        val result = parseModJar(path, json)
+        assertEquals("Example Mod", result.title)
+        assertEquals("1.2.3", result.version)
+        assertEquals("An example mod", result.description)
+    }
 }

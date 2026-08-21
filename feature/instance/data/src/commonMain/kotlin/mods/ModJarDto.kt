@@ -51,6 +51,16 @@ internal data class ForgeModEntry(
     val logoFile: String? = null
 )
 
+/** Legacy Forge `mcmod.info` (Minecraft 1.12.2 and earlier) — a bare JSON array of mod entries. */
+@Serializable
+internal data class McModInfoEntry(
+    val modid: String? = null,
+    val name: String? = null,
+    val description: String? = null,
+    val version: String? = null,
+    val logoFile: String? = null
+)
+
 /** Fabric/Quilt icon fields are either a single path, or a map of icon-size to path — pick the largest. */
 internal fun JsonElement?.iconPathOrNull(): String? = when (this) {
     null -> null
