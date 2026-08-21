@@ -8,6 +8,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import java.awt.Desktop
 import java.awt.Toolkit
 import java.awt.datatransfer.StringSelection
+import java.io.File
 
 private val logger = KotlinLogging.logger {}
 
@@ -36,6 +37,10 @@ actual class SystemServiceImpl : SystemService {
         Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)
     }
 
+    actual override val canOpenFileManager: Boolean by lazy {
+        Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.OPEN)
+    }
+
     actual override fun copyToClipboard(text: String) = canCopyToClipboard && catch({
         Toolkit.getDefaultToolkit().systemClipboard.setContents(StringSelection(text), null)
         true
@@ -46,5 +51,13 @@ actual class SystemServiceImpl : SystemService {
 
     actual override fun downloadsDir(): String? =
         System.getProperty("user.home")?.let { "$it/Downloads" }
+
+    actual override fun openInFileManager(path: String): Boolean = canOpenFileManager && catch({
+        Desktop.getDesktop().open(File(path))
+        true
+    }) {
+        logger.warn(it) { "Unable to open $path in the file manager" }
+        false
+    }
 
 }

@@ -7,10 +7,7 @@ import app.vercors.feature.instance.domain.usecase.*
 import app.vercors.feature.project.domain.model.ProjectDetailsError
 import app.vercors.feature.project.domain.model.ProjectId
 import app.vercors.feature.project.domain.model.ProjectType
-import app.vercors.feature.project.domain.model.modpack.InstalledModpackFile
-import app.vercors.feature.project.domain.model.modpack.ModpackFileKind
-import app.vercors.feature.project.domain.model.modpack.ModpackInstallError
-import app.vercors.feature.project.domain.model.modpack.ModpackResolutionError
+import app.vercors.feature.project.domain.model.modpack.*
 import app.vercors.feature.project.domain.usecase.*
 import app.vercors.feature.project.ui.message
 import app.vercors.shared.ui.Presenter
@@ -125,31 +122,13 @@ class InstallModpackPresenter(
         var createdInstanceId: InstanceId? = null
         lateinit var job: Job
         job = globalScope.launch {
-            val manifest = recover({ getModpackManifest(projectId, file.id) }) { error: ModpackResolutionError ->
-                snackbarService.error { error.message }
-                null
-            }
-            if (manifest == null) {
+            val manifest = resolveManifestOrNull(file) ?: run {
                 onFinished()
                 return@launch
             }
 
-            val instance = Instance(
-                name = instanceName,
-                gameVersion = manifest.gameVersion,
-                modLoader = manifest.loaderType?.let {
-                    InstanceModLoader(
-                        type = it,
-                        version = manifest.loaderVersion!!
-                    )
-                },
-                modpackInfo = InstanceModpackInfo(manifest.platformId, manifest.projectId, manifest.fileId)
-            )
-            val created = recover({ createInstance(instance); true }) { error: InstanceValidationError ->
-                snackbarService.error { error.message }
-                false
-            }
-            if (!created) {
+            val instance = buildInstance(manifest, instanceName)
+            if (!tryCreateInstance(instance)) {
                 onFinished()
                 return@launch
             }
@@ -158,70 +137,13 @@ class InstallModpackPresenter(
             onInstanceCreated(instance.id)
 
             // Child of `job`, not `globalScope`, so it's cancelled automatically if the install is rolled back.
-            // Best-effort only: a missing/broken project logo must never fail or delay the modpack install.
-            launch {
-                recover({
-                    getProject(projectId).logoUrl?.let { setInstanceIconFromUrl(instance.id, it) }
-                }) { _: ProjectDetailsError -> }
-            }
+            launch { fetchAndApplyProjectIcon(instance) }
 
-            val resolvedManifest = recover({
-                resolveModpackManifestFiles(manifest) { progress ->
-                    updateInstanceStatus(
-                        instance.id,
-                        InstanceStatus.Installing.ResolvingFiles(progress.toFractionOrNull())
-                    )
-                }
-            }) { error: ModpackResolutionError ->
-                logger.error { "Modpack file resolution failed for ${instance.id}: $error" }
-                updateInstanceStatus(instance.id, InstanceStatus.Failed.InstallFailed)
-                null
-            }
-            if (resolvedManifest == null) return@launch
-
-            val installedFiles = recover({
-                installModpackFiles(resolvedManifest, instance.id) { progress ->
-                    updateInstanceStatus(
-                        instance.id,
-                        InstanceStatus.Installing.DownloadingFiles(progress.toFractionOrNull())
-                    )
-                }
-            }) { error: ModpackInstallError ->
-                logger.error { "Modpack install failed for ${instance.id}: $error" }
-                updateInstanceStatus(instance.id, InstanceStatus.Failed.InstallFailed)
-                null
-            }
-            if (installedFiles == null) return@launch
-
+            val resolvedManifest = resolveManifestFilesOrNull(manifest, instance.id) ?: return@launch
+            val installedFiles = installFilesOrNull(resolvedManifest, instance.id) ?: return@launch
             recordOrigins(instance.id, resolvedManifest.platformId, installedFiles)
 
-            updateInstanceStatus(instance.id, InstanceStatus.Installing.AwaitingManualDownloads)
-            val manualCandidates = resolvedManifest.files.mapNotNull { manualFile ->
-                val manualDownloadUrl = manualFile.manualDownloadUrl ?: return@mapNotNull null
-                val providerProjectId = manualFile.providerProjectId ?: return@mapNotNull null
-                val providerFileId = manualFile.providerFileId ?: return@mapNotNull null
-                val fileName = manualFile.targetPath.substringAfterLast('/')
-                ManualDownloadCandidate(
-                    fileName = fileName,
-                    downloadUrl = manualDownloadUrl,
-                    instanceId = instance.id,
-                    projectType = ProjectType.Mod,
-                    recordOrigin = {
-                        recordInstalledContentOrigin(
-                            ContentKind.Mod,
-                            instance.id,
-                            fileName,
-                            resolvedManifest.platformId,
-                            providerProjectId,
-                            providerFileId
-                        )
-                    }
-                )
-            }
-            val manualOk = runManualDownloads(manualCandidates, awaitManualDownload, snackbarService) { items ->
-                updateManualDownloadItems(instance.id, items)
-            }
-            if (!manualOk) {
+            if (!awaitManualDownloads(resolvedManifest, instance.id)) {
                 updateInstanceStatus(instance.id, InstanceStatus.Failed.InstallFailed)
                 return@launch
             }
@@ -236,6 +158,107 @@ class InstallModpackPresenter(
             if (error != null) createdInstanceId?.let { id -> globalScope.launch { rollback(id) } }
         }
         return job
+    }
+
+    private suspend fun resolveManifestOrNull(file: ProjectFileView): ModpackManifest? =
+        recover({ getModpackManifest(projectId, file.id) }) { error: ModpackResolutionError ->
+            snackbarService.error { error.message }
+            null
+        }
+
+    private fun buildInstance(manifest: ModpackManifest, instanceName: String) = Instance(
+        name = instanceName,
+        gameVersion = manifest.gameVersion,
+        modLoader = manifest.loaderType?.let {
+            InstanceModLoader(
+                type = it,
+                version = manifest.loaderVersion!!
+            )
+        },
+        modpackInfo = InstanceModpackInfo(manifest.platformId, manifest.projectId, manifest.fileId)
+    )
+
+    private suspend fun tryCreateInstance(instance: Instance): Boolean =
+        recover({ createInstance(instance); true }) { error: InstanceValidationError ->
+            snackbarService.error { error.message }
+            false
+        }
+
+    /** Best-effort only: a missing/broken project logo must never fail or delay the modpack install. */
+    private suspend fun fetchAndApplyProjectIcon(instance: Instance) {
+        recover({
+            val logoUrl = getProject(projectId).logoUrl
+            if (logoUrl != null && !setInstanceIconFromUrl(instance, logoUrl)) {
+                logger.warn { "Failed to set instance icon for ${instance.id} from $logoUrl" }
+            }
+        }) { error: ProjectDetailsError ->
+            logger.warn { "Failed to fetch modpack project details for instance icon (${instance.id}): $error" }
+        }
+    }
+
+    private suspend fun resolveManifestFilesOrNull(
+        manifest: ModpackManifest,
+        instanceId: InstanceId
+    ): ModpackManifest? =
+        recover({
+            resolveModpackManifestFiles(manifest) { progress ->
+                updateInstanceStatus(instanceId, InstanceStatus.Installing.ResolvingFiles(progress.toFractionOrNull()))
+            }
+        }) { error: ModpackResolutionError ->
+            logger.error { "Modpack file resolution failed for $instanceId: $error" }
+            updateInstanceStatus(instanceId, InstanceStatus.Failed.InstallFailed)
+            null
+        }
+
+    private suspend fun installFilesOrNull(
+        resolvedManifest: ModpackManifest,
+        instanceId: InstanceId
+    ): List<InstalledModpackFile>? =
+        recover({
+            installModpackFiles(resolvedManifest, instanceId) { progress ->
+                updateInstanceStatus(
+                    instanceId,
+                    InstanceStatus.Installing.DownloadingFiles(progress.toFractionOrNull())
+                )
+            }
+        }) { error: ModpackInstallError ->
+            logger.error { "Modpack install failed for $instanceId: $error" }
+            updateInstanceStatus(instanceId, InstanceStatus.Failed.InstallFailed)
+            null
+        }
+
+    private suspend fun awaitManualDownloads(resolvedManifest: ModpackManifest, instanceId: InstanceId): Boolean {
+        updateInstanceStatus(instanceId, InstanceStatus.Installing.AwaitingManualDownloads)
+        val manualCandidates = buildManualDownloadCandidates(resolvedManifest, instanceId)
+        return runManualDownloads(manualCandidates, awaitManualDownload, snackbarService) { items ->
+            updateManualDownloadItems(instanceId, items)
+        }
+    }
+
+    private fun buildManualDownloadCandidates(
+        resolvedManifest: ModpackManifest,
+        instanceId: InstanceId
+    ): List<ManualDownloadCandidate> = resolvedManifest.files.mapNotNull { manualFile ->
+        val manualDownloadUrl = manualFile.manualDownloadUrl ?: return@mapNotNull null
+        val providerProjectId = manualFile.providerProjectId ?: return@mapNotNull null
+        val providerFileId = manualFile.providerFileId ?: return@mapNotNull null
+        val fileName = manualFile.targetPath.substringAfterLast('/')
+        ManualDownloadCandidate(
+            fileName = fileName,
+            downloadUrl = manualDownloadUrl,
+            instanceId = instanceId,
+            projectType = ProjectType.Mod,
+            recordOrigin = {
+                recordInstalledContentOrigin(
+                    ContentKind.Mod,
+                    instanceId,
+                    fileName,
+                    resolvedManifest.platformId,
+                    providerProjectId,
+                    providerFileId
+                )
+            }
+        )
     }
 
     private fun Progress.toFractionOrNull(): Float? = when (this) {

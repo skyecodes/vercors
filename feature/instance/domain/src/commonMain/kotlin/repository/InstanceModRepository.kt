@@ -20,4 +20,7 @@ interface InstanceModRepository {
 
     /** Permanently deletes the mod file from disk. [fileName] is the logical name, as with [setModEnabled]. */
     suspend fun removeMod(instanceId: InstanceId, fileName: String)
+
+    /** Copies [sourcePath] (an arbitrary local file, never deleted) into the instance's mods directory. */
+    suspend fun importMod(instanceId: InstanceId, sourcePath: String): Boolean
 }

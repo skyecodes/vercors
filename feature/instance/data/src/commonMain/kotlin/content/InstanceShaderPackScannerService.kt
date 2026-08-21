@@ -11,6 +11,7 @@ import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.map
+import kotlinx.io.files.Path
 import opensavvy.state.coroutines.ProgressiveFlow
 import opensavvy.state.progressive.map
 
@@ -62,4 +63,7 @@ class InstanceShaderPackScannerService(
 
     suspend fun removeFile(instanceId: InstanceId, fileName: String) =
         engine.removeFile(instanceId, fileName)
+
+    suspend fun importFile(instanceId: InstanceId, sourcePath: String): Boolean =
+        engine.importFile(instanceId, Path(sourcePath))
 }

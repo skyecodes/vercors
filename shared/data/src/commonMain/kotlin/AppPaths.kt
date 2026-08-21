@@ -71,6 +71,8 @@ class AppPaths(root: Path) {
 
     fun shaderPacksDir(instanceId: String): Path = Path(gameDir(instanceId), "shaderpacks")
 
+    fun configDir(instanceId: String): Path = Path(gameDir(instanceId), "config")
+
     fun metadataCache(kind: String): Path = Path(metadataCacheRoot, kind)
 
     fun iconCache(kind: String): Path = Path(iconCacheRoot, kind)

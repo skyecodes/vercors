@@ -17,6 +17,9 @@ import app.vercors.feature.instance.domain.model.Instance
 import app.vercors.feature.instance.domain.model.InstanceError
 import app.vercors.feature.instance.domain.model.InstanceModLoader
 import app.vercors.feature.instance.domain.usecase.*
+import app.vercors.feature.instance.ui.InstanceRes
+import app.vercors.feature.instance.ui.errorImportFailed
+import app.vercors.feature.instance.ui.errorOpenFolderFailed
 import app.vercors.feature.instance.ui.install.FinishInstallationDialog
 import app.vercors.feature.instance.ui.list.InstanceListScreen
 import app.vercors.feature.instance.ui.message
@@ -48,6 +51,7 @@ import opensavvy.state.arrow.progressive
 import opensavvy.state.progressive.ProgressiveOutcome
 import opensavvy.state.progressive.map
 import opensavvy.state.progressive.valueOrNull
+import org.jetbrains.compose.resources.stringResource
 import kotlin.time.Clock
 
 @AssistedInject
@@ -80,7 +84,11 @@ class InstanceDetailsPresenter(
     private val observeManualDownloadItems: ObserveManualDownloadItemsUseCase,
     private val copyToClipboard: CopyToClipboardUseCase,
     private val setInstanceIcon: SetInstanceIconUseCase,
-    private val removeInstanceIcon: RemoveInstanceIconUseCase
+    private val removeInstanceIcon: RemoveInstanceIconUseCase,
+    private val importMod: ImportModUseCase,
+    private val importResourcePack: ImportResourcePackUseCase,
+    private val importShaderPack: ImportShaderPackUseCase,
+    private val openInstanceFolder: OpenInstanceFolderUseCase
 ) : Presenter<InstanceDetailsState, InstanceDetailsEvent> {
     @OptIn(ExperimentalProgressiveRaiseApi::class)
     @Composable
@@ -286,6 +294,20 @@ class InstanceDetailsPresenter(
 
             InstanceDetailsEvent.OnRemoveIconClick -> globalScope.launch {
                 either { removeInstanceIcon(screen.instanceId) }.onLeft { error -> snackbarService.error { error.message } }
+            }
+
+            is InstanceDetailsEvent.OnImportContentClick -> globalScope.launch {
+                val imported = when (event.kind) {
+                    RemovalKind.Mod -> importMod(screen.instanceId, event.path)
+                    RemovalKind.ResourcePack -> importResourcePack(screen.instanceId, event.path)
+                    RemovalKind.ShaderPack -> importShaderPack(screen.instanceId, event.path)
+                }
+                if (!imported) snackbarService.error { stringResource(InstanceRes.string.errorImportFailed) }
+            }
+
+            is InstanceDetailsEvent.OnOpenInstanceFolderClick -> globalScope.launch {
+                val opened = openInstanceFolder(screen.instanceId, event.folder)
+                if (!opened) snackbarService.error { stringResource(InstanceRes.string.errorOpenFolderFailed) }
             }
 
             InstanceDetailsEvent.OnFinishInstallationClick -> setPromptFinishInstallation(true)

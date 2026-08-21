@@ -39,6 +39,8 @@
     <string name="errorModLoaderInstall">Failed to install mod loader: %1$s</string>
     <string name="errorNotFound">Instance with ID "%1$s" not found</string>
     <string name="errorLoading">Instance with ID "%1$s" failed to load: %2$s</string>
+    <string name="errorImportFailed">Failed to import file</string>
+    <string name="errorOpenFolderFailed">Failed to open folder</string>
 
     <string name="editInstance">Edit instance</string>
     <string name="deleteInstanceConfirmation">Are you sure you want to delete this instance?\nAll instance data (worlds, mods, etc.) will be permanently removed.</string>
@@ -68,6 +70,14 @@
     <string name="addMod">Add a mod</string>
     <string name="addResourcePack">Add a resource pack</string>
     <string name="addShaderPack">Add a shader pack</string>
+    <string name="importMod">Import a mod</string>
+    <string name="importResourcePack">Import a resource pack</string>
+    <string name="importShaderPack">Import a shader pack</string>
+    <string name="openModsFolder">Open Mods Folder</string>
+    <string name="openResourcePacksFolder">Open Resource Packs Folder</string>
+    <string name="openShaderPacksFolder">Open Shader Packs Folder</string>
+    <string name="openConfigFolder">Open Config Folder</string>
+    <string name="openInstanceFolder">Open Instance Folder</string>
     <string name="disable">Disable</string>
     <string name="enable">Enable</string>
     <string name="remove">Remove</string>

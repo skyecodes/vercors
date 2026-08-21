@@ -32,4 +32,7 @@ class InstanceShaderPackRepositoryImpl(
 
     override suspend fun removeShaderPack(instanceId: InstanceId, fileName: String) =
         scannerService.removeFile(instanceId, fileName)
+
+    override suspend fun importShaderPack(instanceId: InstanceId, sourcePath: String): Boolean =
+        scannerService.importFile(instanceId, sourcePath)
 }

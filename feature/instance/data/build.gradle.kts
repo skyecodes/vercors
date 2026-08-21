@@ -7,6 +7,7 @@ dependencies {
     commonMainApi(projects.feature.game.data)
     commonMainApi(projects.core.cryptography)
     commonMainApi(projects.core.domain)
+    commonMainImplementation(projects.core.system)
     commonMainImplementation(libs.kzip)
     commonMainImplementation(libs.ktoml.core)
 }

@@ -6,7 +6,9 @@ expect class SystemServiceImpl : SystemService {
     override val osArch: OsArch
     override val canCopyToClipboard: Boolean
     override val canOpenUrlInBrowser: Boolean
+    override val canOpenFileManager: Boolean
 
     override fun copyToClipboard(text: String): Boolean
     override fun downloadsDir(): String?
+    override fun openInFileManager(path: String): Boolean
 }

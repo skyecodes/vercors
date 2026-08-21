@@ -20,4 +20,7 @@ interface InstanceResourcePackRepository {
 
     /** Permanently deletes the pack file from disk. [fileName] is the logical name, as with [setResourcePackEnabled]. */
     suspend fun removeResourcePack(instanceId: InstanceId, fileName: String)
+
+    /** Copies [sourcePath] (an arbitrary local file, never deleted) into the instance's resource packs directory. */
+    suspend fun importResourcePack(instanceId: InstanceId, sourcePath: String): Boolean
 }

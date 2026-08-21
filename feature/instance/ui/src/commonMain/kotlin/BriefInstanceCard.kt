@@ -69,7 +69,7 @@ fun BriefInstanceCard(
                     maxLines = 2,
                     textAlign = TextAlign.Center,
                     overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.instanceSharedElement(instance.id, "title", origin),
+                    modifier = Modifier.padding(horizontal = 4.dp).instanceSharedElement(instance.id, "title", origin),
                 )
             },
             type = {

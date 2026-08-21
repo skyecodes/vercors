@@ -32,4 +32,7 @@ class InstanceModRepositoryImpl(
 
     override suspend fun removeMod(instanceId: InstanceId, fileName: String) =
         scannerService.removeFile(instanceId, fileName)
+
+    override suspend fun importMod(instanceId: InstanceId, sourcePath: String): Boolean =
+        scannerService.importFile(instanceId, sourcePath)
 }

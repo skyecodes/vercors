@@ -28,12 +28,20 @@ interface InstanceRepository {
     context(_: Raise<InstanceError>)
     suspend fun setInstanceIcon(instanceId: InstanceId, sourcePath: String)
 
-    /** Best-effort: downloads [url] into the instance's managed icon storage. Never raises — returns `false` on failure. */
-    suspend fun setInstanceIconFromUrl(instanceId: InstanceId, url: String): Boolean
+    /**
+     * Best-effort: downloads [url] into the instance's managed icon storage. Never raises — returns `false` on
+     * failure. Takes the full [instance] (rather than just its ID) so callers that already have a freshly-created
+     * one in hand — e.g. right after [saveInstance] — aren't forced through the reactive [instances] map, which
+     * only catches up once the file watcher notices the on-disk write and can otherwise lose this race entirely.
+     */
+    suspend fun setInstanceIconFromUrl(instance: Instance, url: String): Boolean
 
     /** Deletes the instance's custom icon (if any) and reverts it to the default icon. */
     context(_: Raise<InstanceError>)
     suspend fun removeInstanceIcon(instanceId: InstanceId)
+
+    /** Opens [folder] (creating it first if it doesn't exist) in the OS file manager. Returns whether it succeeded. */
+    suspend fun openInstanceFolder(instanceId: InstanceId, folder: InstanceFolder): Boolean
 
     fun updateInstanceStatus(id: InstanceId, status: InstanceStatus)
 

@@ -238,6 +238,21 @@ internal class ContentDirScannerEngine(
         updateEntry(stateFor(instanceId), to)
     }
 
+    /**
+     * Copies [sourcePath] (an arbitrary local file, never deleted) into this content directory, preserving its
+     * filename, and immediately refreshes its entry — not relying on the watcher to eventually catch up. Returns
+     * `false` without copying anything if [sourcePath] doesn't have the expected [extension].
+     */
+    suspend fun importFile(instanceId: InstanceId, sourcePath: Path): Boolean {
+        if (!isContentFile(sourcePath.name, extension)) return false
+        val dir = instanceDir(instanceId)
+        if (!dir.exists()) dir.createDirectories()
+        val targetPath = Path(dir, sourcePath.name)
+        sourcePath.copyTo(targetPath)
+        updateEntry(stateFor(instanceId), targetPath)
+        return true
+    }
+
     /** Permanently deletes a file (whichever of the enabled/disabled variants is present) and drops its entry. */
     suspend fun removeFile(instanceId: InstanceId, fileName: String) {
         val target = existingFile(instanceId, fileName) ?: return

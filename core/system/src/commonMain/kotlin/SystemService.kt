@@ -6,11 +6,15 @@ interface SystemService {
     val osArch: OsArch
     val canCopyToClipboard: Boolean
     val canOpenUrlInBrowser: Boolean
+    val canOpenFileManager: Boolean
 
     fun copyToClipboard(text: String): Boolean
 
     /** The OS "Downloads" folder for the current user, or null if it can't be resolved. */
     fun downloadsDir(): String?
+
+    /** Opens [path] (a file or directory) in the OS's file manager. */
+    fun openInFileManager(path: String): Boolean
 }
 
 enum class OsType(val id: String) {

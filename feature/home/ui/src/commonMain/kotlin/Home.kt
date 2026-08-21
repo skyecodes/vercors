@@ -367,7 +367,7 @@ private fun HomeProjectCard(
                         text = project.downloadsReadable
                     )
                     HomeProjectChip(
-                        icon = Lucide.Calendar,
+                        icon = Lucide.History,
                         text = project.lastUpdatedReadable
                     )
                 }

@@ -20,6 +20,15 @@ import opensavvy.progress.done
 
 private const val MODRINTH_PLATFORM_ID = "modrinth"
 
+/**
+ * Modrinth's CDN download URLs conventionally encode the project and version IDs directly, e.g.
+ * `https://cdn.modrinth.com/data/<projectId>/versions/<versionId>/<fileName>` — `modrinth.index.json` itself
+ * carries no per-file project/version ID field, so this is the only way to recover them without an API call.
+ * Not every download URL follows this shape (mirrors, CDN changes, etc.), so entries that don't match are left
+ * without a provider rather than guessed at.
+ */
+private val MODRINTH_CDN_URL_REGEX = Regex("""^https://cdn\.modrinth\.com/data/([^/]+)/versions/([^/]+)/[^/]+$""")
+
 @Serializable
 private data class MrpackIndex(
     val name: String,
@@ -59,14 +68,16 @@ class ModrinthModpackParser(private val json: Json) : ModpackManifestParser {
         val files = index.files
             .filterNot { it.env?.client == "unsupported" }
             .map { file ->
+                val downloadUrl = file.downloads.firstOrNull()
+                val providerIds = downloadUrl?.toModrinthCdnProviderIds()
                 ModpackManifestFile(
                     targetPath = file.path,
                     kind = file.path.toModpackFileKind(),
-                    downloadUrl = file.downloads.firstOrNull(),
+                    downloadUrl = downloadUrl,
                     sha1 = file.hashes.sha1,
                     size = file.fileSize,
-                    providerProjectId = null,
-                    providerFileId = null
+                    providerProjectId = providerIds?.first,
+                    providerFileId = providerIds?.second
                 )
             }
 
@@ -106,6 +117,9 @@ class ModrinthModpackParser(private val json: Json) : ModpackManifestParser {
         raise(ModpackParseFailed)
     }
 }
+
+private fun String.toModrinthCdnProviderIds(): Pair<String, String>? =
+    MODRINTH_CDN_URL_REGEX.matchEntire(this)?.destructured?.let { (projectId, versionId) -> projectId to versionId }
 
 private fun String.toModLoaderTypeOrNull(): ModLoaderType? = when (this) {
     "forge" -> ModLoaderType.Forge

@@ -20,4 +20,7 @@ interface InstanceShaderPackRepository {
 
     /** Permanently deletes the pack file from disk. [fileName] is the logical name, as with [setShaderPackEnabled]. */
     suspend fun removeShaderPack(instanceId: InstanceId, fileName: String)
+
+    /** Copies [sourcePath] (an arbitrary local file, never deleted) into the instance's shader packs directory. */
+    suspend fun importShaderPack(instanceId: InstanceId, sourcePath: String): Boolean
 }

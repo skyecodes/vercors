@@ -32,4 +32,7 @@ class InstanceResourcePackRepositoryImpl(
 
     override suspend fun removeResourcePack(instanceId: InstanceId, fileName: String) =
         scannerService.removeFile(instanceId, fileName)
+
+    override suspend fun importResourcePack(instanceId: InstanceId, sourcePath: String): Boolean =
+        scannerService.importFile(instanceId, sourcePath)
 }

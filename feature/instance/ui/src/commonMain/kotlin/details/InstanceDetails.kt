@@ -4,9 +4,7 @@ import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.foundation.*
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListScope
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.runtime.*
@@ -36,6 +34,7 @@ import app.vercors.core.ui.modifier.appCard
 import app.vercors.core.ui.search
 import app.vercors.core.ui.theme.*
 import app.vercors.feature.game.ui.*
+import app.vercors.feature.instance.domain.model.InstanceFolder
 import app.vercors.feature.instance.domain.model.InstanceStatus
 import app.vercors.feature.instance.ui.*
 import app.vercors.feature.instance.ui.delete.ConfirmDeleteDialog
@@ -389,6 +388,11 @@ private fun InstanceHeaderMenu(instance: InstanceView) {
                     contentColor = Theme[colors][error]
                 )
             }
+            AppMenuItem(
+                onClick = { eventSink(InstanceDetailsEvent.OnOpenInstanceFolderClick(InstanceFolder.Root)) },
+                text = stringResource(InstanceRes.string.openInstanceFolder),
+                imageVector = Lucide.FolderOpen
+            )
             instance.modpackInfo?.let { modpackInfo ->
                 AppMenuItem(
                     onClick = {
@@ -597,68 +601,200 @@ private fun InstalledContentFileList(
     addLabel: StringResource,
     addEnabled: Boolean,
     removalKind: RemovalKind,
+    importLabel: StringResource,
+    importExtension: String,
+    openFolderLabel: StringResource,
+    contentFolder: InstanceFolder,
     onAddClick: () -> Unit,
     onEnabledChange: (fileName: String, enabled: Boolean) -> InstanceDetailsEvent
 ) {
     var searchQuery by remember { mutableStateOf("") }
     var showOnlyEnabled by remember { mutableStateOf(false) }
     var sortBy by remember { mutableStateOf(ContentSortBy.Name) }
+    val listState = rememberLazyListState()
+
+    LaunchedEffect(searchQuery, showOnlyEnabled, sortBy) {
+        listState.scrollToItem(0)
+    }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            AppTextField(
-                initialValue = searchQuery,
-                placeholder = { AppText(stringResource(CoreRes.string.search)) },
-                onValueChange = { searchQuery = it },
-                backgroundColor = Theme[colors][surface2],
-                modifier = Modifier.weight(1f)
-            )
-            AppCheckbox(
-                label = stringResource(InstanceRes.string.showOnlyEnabled),
-                checked = showOnlyEnabled,
-                onCheckedChange = { showOnlyEnabled = it }
-            )
-            AppSelectField(
-                value = sortBy,
-                items = ContentSortBy.entries,
-                onValueChange = { sortBy = it },
-                itemRenderer = { value, isButton ->
-                    AppSelectItem(
-                        text = if (isButton) "${stringResource(SharedRes.string.sortBy)}: ${value.displayName}"
-                        else value.displayName
-                    )
-                },
-                backgroundColor = Theme[colors][surface2],
-                modifier = Modifier.width(200.dp)
-            )
-            AppIconTextButton(
+        InstalledContentFileListHeader(
+            searchQuery = searchQuery,
+            onSearchQueryChange = { searchQuery = it },
+            showOnlyEnabled = showOnlyEnabled,
+            onShowOnlyEnabledChange = { showOnlyEnabled = it },
+            sortBy = sortBy,
+            onSortByChange = { sortBy = it },
+            addLabel = addLabel,
+            addEnabled = addEnabled,
+            removalKind = removalKind,
+            importLabel = importLabel,
+            importExtension = importExtension,
+            openFolderLabel = openFolderLabel,
+            contentFolder = contentFolder,
+            onAddClick = onAddClick
+        )
+
+        val filteredFiles = files?.filteredAndSorted(searchQuery, showOnlyEnabled, sortBy)
+        InstalledContentFileListBody(
+            files = files,
+            filteredFiles = filteredFiles,
+            emptyMessage = emptyMessage,
+            removalKind = removalKind,
+            listState = listState,
+            onEnabledChange = onEnabledChange
+        )
+    }
+}
+
+@Composable
+context(eventSink: EventSink<InstanceDetailsEvent>)
+private fun InstalledContentFileListHeader(
+    searchQuery: String,
+    onSearchQueryChange: (String) -> Unit,
+    showOnlyEnabled: Boolean,
+    onShowOnlyEnabledChange: (Boolean) -> Unit,
+    sortBy: ContentSortBy,
+    onSortByChange: (ContentSortBy) -> Unit,
+    addLabel: StringResource,
+    addEnabled: Boolean,
+    removalKind: RemovalKind,
+    importLabel: StringResource,
+    importExtension: String,
+    openFolderLabel: StringResource,
+    contentFolder: InstanceFolder,
+    onAddClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        AppTextField(
+            initialValue = searchQuery,
+            placeholder = { AppText(stringResource(CoreRes.string.search)) },
+            onValueChange = onSearchQueryChange,
+            backgroundColor = Theme[colors][surface2],
+            modifier = Modifier.weight(1f)
+        )
+        AppCheckbox(
+            label = stringResource(InstanceRes.string.showOnlyEnabled),
+            checked = showOnlyEnabled,
+            onCheckedChange = onShowOnlyEnabledChange
+        )
+        AppSelectField(
+            value = sortBy,
+            items = ContentSortBy.entries,
+            onValueChange = onSortByChange,
+            itemRenderer = { value, isButton ->
+                AppSelectItem(
+                    text = if (isButton) "${stringResource(SharedRes.string.sortBy)}: ${value.displayName}"
+                    else value.displayName
+                )
+            },
+            backgroundColor = Theme[colors][surface2],
+            modifier = Modifier.width(200.dp)
+        )
+        InstalledContentFileListMenu(
+            addLabel = addLabel,
+            addEnabled = addEnabled,
+            removalKind = removalKind,
+            importLabel = importLabel,
+            importExtension = importExtension,
+            openFolderLabel = openFolderLabel,
+            contentFolder = contentFolder,
+            onAddClick = onAddClick
+        )
+    }
+}
+
+@Composable
+context(eventSink: EventSink<InstanceDetailsEvent>)
+private fun InstalledContentFileListMenu(
+    addLabel: StringResource,
+    addEnabled: Boolean,
+    removalKind: RemovalKind,
+    importLabel: StringResource,
+    importExtension: String,
+    openFolderLabel: StringResource,
+    contentFolder: InstanceFolder,
+    onAddClick: () -> Unit
+) {
+    val importPickerLauncher = rememberFilePickerLauncher(type = FileKitType.File(importExtension)) { file ->
+        file?.let { eventSink(InstanceDetailsEvent.OnImportContentClick(removalKind, it.path)) }
+    }
+    AppMenuButton(
+        imageVector = Lucide.EllipsisVertical,
+        backgroundColor = Theme[colors][surface2],
+        menuModifier = Modifier.offset(y = 4.dp),
+        anchor = AppDropdownPanelAnchor.BottomEnd,
+        menuContent = {
+            AppMenuItem(
                 onClick = onAddClick,
                 text = stringResource(addLabel),
                 imageVector = Lucide.Plus,
-                backgroundColor = Theme[colors][surface2],
                 enabled = addEnabled
             )
-        }
-
-        val filteredFiles = files?.filter {
-            (searchQuery.isBlank() || it.title.contains(searchQuery, ignoreCase = true)) &&
-                    (!showOnlyEnabled || it.enabled)
-        }?.let { list ->
-            when (sortBy) {
-                ContentSortBy.Name -> list.sortedBy { it.title.lowercase() }
-                ContentSortBy.LastModified -> list.sortedByDescending { it.lastModified ?: Instant.DISTANT_PAST }
+            AppMenuItem(
+                onClick = importPickerLauncher::launch,
+                text = stringResource(importLabel),
+                imageVector = Lucide.FileUp,
+                enabled = addEnabled
+            )
+            AppMenuItem(
+                onClick = { eventSink(InstanceDetailsEvent.OnOpenInstanceFolderClick(contentFolder)) },
+                text = stringResource(openFolderLabel),
+                imageVector = Lucide.FolderOpen
+            )
+            if (contentFolder == InstanceFolder.Mods) {
+                AppMenuItem(
+                    onClick = { eventSink(InstanceDetailsEvent.OnOpenInstanceFolderClick(InstanceFolder.Config)) },
+                    text = stringResource(InstanceRes.string.openConfigFolder),
+                    imageVector = Lucide.FolderCog
+                )
             }
         }
-        when {
-            files == null -> AppLoading()
-            files.isEmpty() -> AppText(stringResource(emptyMessage))
-            filteredFiles.isNullOrEmpty() -> AppText(stringResource(InstanceRes.string.noMatchingFiles))
-            else -> LazyColumn(
-                modifier = Modifier.fillMaxSize(),
+    )
+}
+
+private fun List<InstalledContentFileView>.filteredAndSorted(
+    searchQuery: String,
+    showOnlyEnabled: Boolean,
+    sortBy: ContentSortBy
+): List<InstalledContentFileView> = filter {
+    (searchQuery.isBlank() || it.title.contains(searchQuery, ignoreCase = true)) &&
+            (!showOnlyEnabled || it.enabled)
+}.let { list ->
+    when (sortBy) {
+        ContentSortBy.Name -> list.sortedBy { it.title.lowercase() }
+        ContentSortBy.LastModified -> list.sortedByDescending { it.lastModified ?: Instant.DISTANT_PAST }
+    }
+}
+
+@Composable
+context(eventSink: EventSink<InstanceDetailsEvent>)
+private fun InstalledContentFileListBody(
+    files: List<InstalledContentFileView>?,
+    filteredFiles: List<InstalledContentFileView>?,
+    emptyMessage: StringResource,
+    removalKind: RemovalKind,
+    listState: LazyListState,
+    onEnabledChange: (fileName: String, enabled: Boolean) -> InstanceDetailsEvent
+) {
+    when {
+        files == null -> AppLoading()
+        files.isEmpty() -> Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            AppText(stringResource(emptyMessage))
+        }
+
+        filteredFiles.isNullOrEmpty() -> AppText(stringResource(InstanceRes.string.noMatchingFiles))
+        else -> Row(modifier = Modifier.fillMaxSize().padding(end = 4.dp)) {
+            LazyColumn(
+                state = listState,
+                modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 contentPadding = PaddingValues(vertical = 8.dp)
             ) {
@@ -666,6 +802,7 @@ private fun InstalledContentFileList(
                     InstalledContentFileRow(file, removalKind, onEnabledChange)
                 }
             }
+            VerticalScrollbar(adapter = rememberScrollbarAdapter(listState))
         }
     }
 }
@@ -716,9 +853,6 @@ private fun InstalledContentFileRow(
                     overflow = TextOverflow.Ellipsis
                 )
                 file.version?.let {
-                    AppText(text = it, fontSize = 12.sp, color = Theme[colors][onBackground].copy(alpha = 0.6f))
-                }
-                file.loaderLabel?.let {
                     AppText(text = it, fontSize = 12.sp, color = Theme[colors][onBackground].copy(alpha = 0.6f))
                 }
             }
@@ -772,6 +906,10 @@ private fun InstanceModsTab(state: InstanceDetailsState) {
         addLabel = InstanceRes.string.addMod,
         addEnabled = state.instance.valueOrNull?.loaderType != null,
         removalKind = RemovalKind.Mod,
+        importLabel = InstanceRes.string.importMod,
+        importExtension = "jar",
+        openFolderLabel = InstanceRes.string.openModsFolder,
+        contentFolder = InstanceFolder.Mods,
         onAddClick = { eventSink(InstanceDetailsEvent.OnAddContentClick(ProjectType.Mod)) }
     ) { fileName, enabled ->
         InstanceDetailsEvent.OnModEnabledChange(fileName, enabled)
@@ -787,6 +925,10 @@ private fun InstanceResourcePacksTab(state: InstanceDetailsState) {
         addLabel = InstanceRes.string.addResourcePack,
         addEnabled = true,
         removalKind = RemovalKind.ResourcePack,
+        importLabel = InstanceRes.string.importResourcePack,
+        importExtension = "zip",
+        openFolderLabel = InstanceRes.string.openResourcePacksFolder,
+        contentFolder = InstanceFolder.ResourcePacks,
         onAddClick = { eventSink(InstanceDetailsEvent.OnAddContentClick(ProjectType.ResourcePack)) }
     ) { fileName, enabled ->
         InstanceDetailsEvent.OnResourcePackEnabledChange(fileName, enabled)
@@ -802,6 +944,10 @@ private fun InstanceShaderPacksTab(state: InstanceDetailsState) {
         addLabel = InstanceRes.string.addShaderPack,
         addEnabled = true,
         removalKind = RemovalKind.ShaderPack,
+        importLabel = InstanceRes.string.importShaderPack,
+        importExtension = "zip",
+        openFolderLabel = InstanceRes.string.openShaderPacksFolder,
+        contentFolder = InstanceFolder.ShaderPacks,
         onAddClick = { eventSink(InstanceDetailsEvent.OnAddContentClick(ProjectType.ShaderPack)) }
     ) { fileName, enabled ->
         InstanceDetailsEvent.OnShaderPackEnabledChange(fileName, enabled)

@@ -34,9 +34,13 @@ actual class SystemServiceImpl : SystemService {
 
     actual override val canOpenUrlInBrowser: Boolean = false
 
+    actual override val canOpenFileManager: Boolean = false
+
     actual override fun copyToClipboard(text: String): Boolean = false
 
     @OptIn(ExperimentalForeignApi::class)
     actual override fun downloadsDir(): String? = getenv("USERPROFILE")?.toKString()?.let { "$it\\Downloads" }
+
+    actual override fun openInFileManager(path: String): Boolean = false
 
 }

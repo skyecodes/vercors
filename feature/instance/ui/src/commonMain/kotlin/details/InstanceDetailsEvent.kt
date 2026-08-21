@@ -2,6 +2,7 @@ package app.vercors.feature.instance.ui.details
 
 import androidx.compose.runtime.Immutable
 import app.vercors.feature.game.domain.model.ModLoaderType
+import app.vercors.feature.instance.domain.model.InstanceFolder
 import app.vercors.feature.project.domain.model.ProjectType
 import app.vercors.shared.ui.Event
 
@@ -29,6 +30,8 @@ sealed interface InstanceDetailsEvent : Event {
     data class OnAddContentClick(val type: ProjectType) : InstanceDetailsEvent
     data class OnIconSelected(val path: String) : InstanceDetailsEvent
     data object OnRemoveIconClick : InstanceDetailsEvent
+    data class OnImportContentClick(val kind: RemovalKind, val path: String) : InstanceDetailsEvent
+    data class OnOpenInstanceFolderClick(val folder: InstanceFolder) : InstanceDetailsEvent
     data object OnFinishInstallationClick : InstanceDetailsEvent
     data object OnFinishInstallationDismiss : InstanceDetailsEvent
 }

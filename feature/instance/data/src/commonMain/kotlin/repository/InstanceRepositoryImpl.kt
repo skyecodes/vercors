@@ -2,10 +2,8 @@ package app.vercors.feature.instance.data.repository
 
 import app.vercors.core.domain.ProgressiveStateFlow
 import app.vercors.core.domain.progressiveStateIn
-import app.vercors.core.filesystem.copyTo
-import app.vercors.core.filesystem.delete
-import app.vercors.core.filesystem.deleteRecursively
-import app.vercors.core.filesystem.exists
+import app.vercors.core.filesystem.*
+import app.vercors.core.system.SystemService
 import app.vercors.feature.instance.data.datasource.InstanceDataSource
 import app.vercors.feature.instance.data.dto.toData
 import app.vercors.feature.instance.data.dto.toDomain
@@ -50,6 +48,7 @@ class InstanceRepositoryImpl(
     private val dataSource: InstanceDataSource,
     private val appPaths: AppPaths,
     private val fileValidationService: FileValidationService,
+    private val systemService: SystemService,
 ) : InstanceRepository {
     override val instances: ProgressiveStateFlow<Nothing, Map<InstanceId, Either<InstanceLoadingError, Instance>>> =
         dataSource.flow.map { outcome ->
@@ -108,14 +107,17 @@ class InstanceRepositoryImpl(
         )
     }
 
-    override suspend fun setInstanceIconFromUrl(instanceId: InstanceId, url: String): Boolean {
-        val instance = instances.now().value[instanceId]?.getOrNull() ?: return false
+    override suspend fun setInstanceIconFromUrl(instance: Instance, url: String): Boolean {
+        val instanceId = instance.id
         val extension = url.substringBefore('?').substringAfterLast('.', DEFAULT_ICON_EXTENSION)
         val targetPath = appPaths.instanceIconFile(instanceId, extension)
         val downloaded = recover({
             fileValidationService.submit(listOf(FileValidationRequest.Url(url, targetPath))) {}
             true
-        }) { _: NonEmptyList<FileValidationFailure> -> false }
+        }) { failures: NonEmptyList<FileValidationFailure> ->
+            logger.warn { "Failed to download icon from $url for instance $instanceId: $failures" }
+            false
+        }
         if (!downloaded) return false
         deletePreviousIconIfDifferent(instance.iconFilePath, targetPath)
         dataSource.write(
@@ -130,6 +132,18 @@ class InstanceRepositoryImpl(
         val instance = findInstance(instanceId)
         instance.iconFilePath?.let { Path(it) }?.let { if (it.exists()) it.delete() }
         dataSource.write(instanceId, instance.copy(iconFilePath = null, updatedAt = Clock.System.now()).toData())
+    }
+
+    override suspend fun openInstanceFolder(instanceId: InstanceId, folder: InstanceFolder): Boolean {
+        val dir = when (folder) {
+            InstanceFolder.Root -> appPaths.gameDir(instanceId)
+            InstanceFolder.Mods -> appPaths.modsDir(instanceId)
+            InstanceFolder.ResourcePacks -> appPaths.resourcePacksDir(instanceId)
+            InstanceFolder.ShaderPacks -> appPaths.shaderPacksDir(instanceId)
+            InstanceFolder.Config -> appPaths.configDir(instanceId)
+        }
+        if (!dir.exists()) dir.createDirectories()
+        return systemService.openInFileManager(dir.toString())
     }
 
     /**

@@ -569,7 +569,7 @@ private fun LazyItemScope.ProjectListItemCard(
                     maxLines = 2,
                     fontSize = 12.sp,
                     modifier = Modifier
-                        .projectSharedElement(project.id, "description", ProjectSharedElementOrigin.ProjectList)
+                        .projectSharedElement(project.id, "description", ProjectSharedElementOrigin.ProjectList),
                 )
             },
             downloads = {
@@ -595,7 +595,7 @@ private fun LazyItemScope.ProjectListItemCard(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     AppIcon(
-                        imageVector = Lucide.RefreshCw,
+                        imageVector = Lucide.History,
                         contentDescription = null,
                         modifier = Modifier.size(12.dp)
                     )
