@@ -160,7 +160,8 @@ internal class ContentDirScannerEngine(
             fileSize = size,
             iconFilePath = metadata.iconExtension?.let { Path(iconCacheDir, "$sha1.$it").toString() },
             providers = metadata.providers.map { ModProvider(it.platformId, it.projectId, it.fileId) },
-            enabled = isContentFileEnabled(filePath.name)
+            enabled = isContentFileEnabled(filePath.name),
+            lastModified = filePath.lastModifiedOrNull()
         )
     }
 

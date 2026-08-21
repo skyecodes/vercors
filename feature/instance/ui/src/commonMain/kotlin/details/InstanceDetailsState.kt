@@ -125,6 +125,7 @@ data class InstalledContentFileView(
     val iconFilePath: String?,
     val enabled: Boolean,
     val providers: List<ModProvider>,
+    val lastModified: Instant?,
 )
 
 fun InstalledContentFile.toView(): InstalledContentFileView = InstalledContentFileView(
@@ -135,7 +136,8 @@ fun InstalledContentFile.toView(): InstalledContentFileView = InstalledContentFi
     loaderLabel = loader?.displayName,
     iconFilePath = iconFilePath,
     enabled = enabled,
-    providers = providers
+    providers = providers,
+    lastModified = lastModified
 )
 
 @Immutable

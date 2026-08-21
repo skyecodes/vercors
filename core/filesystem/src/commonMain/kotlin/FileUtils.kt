@@ -13,6 +13,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.io.decodeFromSource
 import kotlinx.serialization.json.io.encodeToSink
 import kotlin.coroutines.CoroutineContext
+import kotlin.time.Instant
 
 suspend inline fun Path.exists(
     context: CoroutineContext = Dispatchers.IO
@@ -199,3 +200,6 @@ expect suspend fun Path.createLink(
     context: CoroutineContext = Dispatchers.IO,
     isSymbolic: Boolean = false
 ): Boolean
+
+/** The file's last-modified time, or `null` if it doesn't exist or the platform can't report one. */
+expect suspend fun Path.lastModifiedOrNull(context: CoroutineContext = Dispatchers.IO): Instant?

@@ -63,6 +63,8 @@
     <string name="noMatchingFiles">No matching files found</string>
 
     <string name="showOnlyEnabled">Only show enabled</string>
+    <string name="sortByName">Name</string>
+    <string name="sortByLastModified">Last Modified</string>
     <string name="addMod">Add a mod</string>
     <string name="addResourcePack">Add a resource pack</string>
     <string name="addShaderPack">Add a shader pack</string>

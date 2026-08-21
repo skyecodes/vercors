@@ -6,6 +6,8 @@ import kotlin.coroutines.CoroutineContext
 import kotlin.io.path.createLinkPointingTo
 import kotlin.io.path.createParentDirectories
 import kotlin.io.path.createSymbolicLinkPointingTo
+import kotlin.io.path.getLastModifiedTime
+import kotlin.time.Instant
 import kotlin.io.path.Path as JvmPath
 
 actual suspend fun Path.createLink(target: Path, context: CoroutineContext, isSymbolic: Boolean): Boolean {
@@ -16,4 +18,10 @@ actual suspend fun Path.createLink(target: Path, context: CoroutineContext, isSy
         if (isSymbolic) src.createSymbolicLinkPointingTo(dst) else src.createLinkPointingTo(dst)
     }
     return true
+}
+
+actual suspend fun Path.lastModifiedOrNull(context: CoroutineContext): Instant? = withContext(context) {
+    runCatching { JvmPath(toString()).getLastModifiedTime().toMillis() }
+        .getOrNull()
+        ?.let { Instant.fromEpochMilliseconds(it) }
 }

@@ -11,5 +11,6 @@ internal fun ContentEntry.toInstalledContentFile() = InstalledContentFile(
     fileSize = fileSize,
     iconFilePath = iconFilePath,
     providers = providers,
-    enabled = enabled
+    enabled = enabled,
+    lastModified = lastModified
 )

@@ -65,6 +65,7 @@ import opensavvy.state.progressive.onSuccess
 import opensavvy.state.progressive.valueOrNull
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
+import kotlin.time.Instant
 
 @CircuitInject(InstanceDetailsScreen::class, AppScope::class)
 @Composable
@@ -575,6 +576,19 @@ private fun String.toPlatformDisplayName(): String = when (this) {
     else -> this
 }
 
+private enum class ContentSortBy {
+    Name,
+    LastModified
+}
+
+private val ContentSortBy.displayName: String
+    @Composable get() = stringResource(
+        when (this) {
+            ContentSortBy.Name -> InstanceRes.string.sortByName
+            ContentSortBy.LastModified -> InstanceRes.string.sortByLastModified
+        }
+    )
+
 @Composable
 context(eventSink: EventSink<InstanceDetailsEvent>)
 private fun InstalledContentFileList(
@@ -588,6 +602,7 @@ private fun InstalledContentFileList(
 ) {
     var searchQuery by remember { mutableStateOf("") }
     var showOnlyEnabled by remember { mutableStateOf(false) }
+    var sortBy by remember { mutableStateOf(ContentSortBy.Name) }
 
     Column(modifier = Modifier.fillMaxSize()) {
         Row(
@@ -607,6 +622,19 @@ private fun InstalledContentFileList(
                 checked = showOnlyEnabled,
                 onCheckedChange = { showOnlyEnabled = it }
             )
+            AppSelectField(
+                value = sortBy,
+                items = ContentSortBy.entries,
+                onValueChange = { sortBy = it },
+                itemRenderer = { value, isButton ->
+                    AppSelectItem(
+                        text = if (isButton) "${stringResource(SharedRes.string.sortBy)}: ${value.displayName}"
+                        else value.displayName
+                    )
+                },
+                backgroundColor = Theme[colors][surface2],
+                modifier = Modifier.width(200.dp)
+            )
             AppIconTextButton(
                 onClick = onAddClick,
                 text = stringResource(addLabel),
@@ -619,6 +647,11 @@ private fun InstalledContentFileList(
         val filteredFiles = files?.filter {
             (searchQuery.isBlank() || it.title.contains(searchQuery, ignoreCase = true)) &&
                     (!showOnlyEnabled || it.enabled)
+        }?.let { list ->
+            when (sortBy) {
+                ContentSortBy.Name -> list.sortedBy { it.title.lowercase() }
+                ContentSortBy.LastModified -> list.sortedByDescending { it.lastModified ?: Instant.DISTANT_PAST }
+            }
         }
         when {
             files == null -> AppLoading()
@@ -690,7 +723,7 @@ private fun InstalledContentFileRow(
                 }
             }
             file.description?.let {
-                AppText(text = it, fontSize = 12.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                AppText(text = it, fontSize = 12.sp, singleLine = true, overflow = TextOverflow.Ellipsis)
             }
         }
 
