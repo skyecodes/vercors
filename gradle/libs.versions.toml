@@ -38,6 +38,7 @@ coil = "3.6.0"
 markdown-renderer = "0.45.0"
 webview = "2.0.3"
 nucleusframework = "2.5.5"
+filekit = "0.15.0"
 # CLI
 clikt = "5.1.0"
 mordant = "3.0.2"
@@ -122,6 +123,7 @@ coil-network-ktor3 = { module = "io.coil-kt.coil3:coil-network-ktor3", version.r
 markdown-renderer = { module = "com.mikepenz:multiplatform-markdown-renderer-jvm", version.ref = "markdown-renderer" }
 markdown-renderer-coil3 = { module = "com.mikepenz:multiplatform-markdown-renderer-coil3", version.ref = "markdown-renderer" }
 webview = { module = "io.github.kevinnzou:compose-webview-multiplatform", version.ref = "webview" }
+filekit-dialogs-compose = { module = "io.github.vinceglb:filekit-dialogs-compose", version.ref = "filekit" }
 # CLI
 clikt = { module = "com.github.ajalt.clikt:clikt", version.ref = "clikt" }
 mordant-coroutines = { module = "com.github.ajalt.mordant:mordant-coroutines", version.ref = "mordant" }

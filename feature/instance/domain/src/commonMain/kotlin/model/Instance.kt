@@ -11,6 +11,7 @@ data class Instance(
     val gameVersion: String,
     val modLoader: InstanceModLoader? = null,
     val modpackInfo: InstanceModpackInfo? = null,
+    val iconFilePath: String? = null,
     val createdAt: Instant = Clock.System.now(),
     val updatedAt: Instant = Clock.System.now(),
     val lastPlayedAt: Instant? = null,

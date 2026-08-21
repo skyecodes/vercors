@@ -70,4 +70,5 @@
     <string name="enable">Enable</string>
     <string name="remove">Remove</string>
     <string name="openProject">Open %1$s Project</string>
+    <string name="removeIcon">Remove Custom Icon</string>
 </resources>

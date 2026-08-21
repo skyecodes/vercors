@@ -27,6 +27,8 @@ sealed interface InstanceDetailsEvent : Event {
     data class OnConfirmRemove(val result: Boolean) : InstanceDetailsEvent
     data class OnOpenProjectClick(val platformId: String, val projectId: String) : InstanceDetailsEvent
     data class OnAddContentClick(val type: ProjectType) : InstanceDetailsEvent
+    data class OnIconSelected(val path: String) : InstanceDetailsEvent
+    data object OnRemoveIconClick : InstanceDetailsEvent
     data object OnFinishInstallationClick : InstanceDetailsEvent
     data object OnFinishInstallationDismiss : InstanceDetailsEvent
 }

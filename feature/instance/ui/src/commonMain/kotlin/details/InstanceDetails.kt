@@ -1,17 +1,14 @@
 package app.vercors.feature.instance.ui.details
 
 import androidx.compose.animation.ExperimentalSharedTransitionApi
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
+import androidx.compose.foundation.*
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -53,6 +50,9 @@ import com.slack.circuit.codegen.annotations.CircuitInject
 import com.slack.circuit.overlay.OverlayEffect
 import com.slack.circuit.sharedelements.SharedElementTransitionScope
 import dev.zacsweers.metro.AppScope
+import io.github.vinceglb.filekit.dialogs.FileKitType
+import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
+import io.github.vinceglb.filekit.path
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.format
@@ -197,13 +197,32 @@ private fun InstanceHeader(instance: InstanceView, isInstanceEdited: Boolean) = 
 }
 
 @Composable
-context(_: SharedElementTransitionScope)
+context(_: SharedElementTransitionScope, eventSink: EventSink<InstanceDetailsEvent>)
 private fun InstanceHeaderIcon(instance: InstanceView) {
-    AppIcon(
-        imageVector = Lucide.Gamepad2,
-        contentDescription = instance.name,
+    val pickerLauncher = rememberFilePickerLauncher(type = FileKitType.Image) { file ->
+        file?.let { eventSink(InstanceDetailsEvent.OnIconSelected(it.path)) }
+    }
+    Box(
         modifier = Modifier.size(48.dp).instanceSharedElement(instance.id, "icon")
-    )
+            .clip(RoundedCornerShape(8.dp))
+            .pointerHoverIcon(PointerIcon.Hand)
+            .clickable(onClick = pickerLauncher::launch)
+    ) {
+        if (instance.iconFilePath != null) {
+            Image(
+                painter = rememberInstanceIconPainter(instance.iconFilePath, instance.updatedAt),
+                contentDescription = instance.name,
+                modifier = Modifier.matchParentSize(),
+                contentScale = ContentScale.Crop
+            )
+        } else {
+            AppIcon(
+                imageVector = Lucide.Gamepad2,
+                contentDescription = instance.name,
+                modifier = Modifier.matchParentSize()
+            )
+        }
+    }
 }
 
 @Composable
@@ -381,6 +400,13 @@ private fun InstanceHeaderMenu(instance: InstanceView) {
                         modpackInfo.platformId.toPlatformDisplayName()
                     ),
                     imageVector = Lucide.ArrowRight
+                )
+            }
+            if (instance.iconFilePath != null) {
+                AppMenuItem(
+                    onClick = { eventSink(InstanceDetailsEvent.OnRemoveIconClick) },
+                    text = stringResource(InstanceRes.string.removeIcon),
+                    imageVector = Lucide.ImageOff
                 )
             }
             AppMenuItem(

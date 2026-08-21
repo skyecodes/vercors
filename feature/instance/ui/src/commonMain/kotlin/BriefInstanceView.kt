@@ -5,6 +5,7 @@ import app.vercors.feature.game.ui.displayName
 import app.vercors.feature.instance.domain.model.InstanceAndStatus
 import app.vercors.feature.instance.domain.model.InstanceId
 import app.vercors.feature.instance.ui.details.displayType
+import kotlin.time.Instant
 
 @Immutable
 data class BriefInstanceView(
@@ -12,7 +13,10 @@ data class BriefInstanceView(
     val name: String,
     val version: String,
     val loader: String,
-    val type: String
+    val type: String,
+    val iconFilePath: String?,
+    /** Bumped whenever the icon changes — used to bust the image cache when [iconFilePath] is reused unchanged. */
+    val updatedAt: Instant
 )
 
 fun InstanceAndStatus.toBriefView(): BriefInstanceView = BriefInstanceView(
@@ -20,5 +24,7 @@ fun InstanceAndStatus.toBriefView(): BriefInstanceView = BriefInstanceView(
     name = instance.name,
     version = instance.gameVersion,
     loader = instance.modLoader?.type.displayName,
-    type = instance.displayType
+    type = instance.displayType,
+    iconFilePath = instance.iconFilePath,
+    updatedAt = instance.updatedAt
 )

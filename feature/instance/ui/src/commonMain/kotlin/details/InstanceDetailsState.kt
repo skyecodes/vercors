@@ -66,6 +66,9 @@ data class InstanceView(
     val type: String,
     val status: InstanceStatus,
     val modpackInfo: InstanceModpackInfo?,
+    val iconFilePath: String?,
+    /** Bumped whenever the icon changes — used to bust the image cache when [iconFilePath] is reused unchanged. */
+    val updatedAt: Instant,
 )
 
 @Immutable
@@ -105,7 +108,9 @@ fun InstanceAndStatus.toView(): InstanceView = InstanceView(
     loaderVersion = instance.modLoader?.version,
     type = instance.displayType,
     status = status,
-    modpackInfo = instance.modpackInfo
+    modpackInfo = instance.modpackInfo,
+    iconFilePath = instance.iconFilePath,
+    updatedAt = instance.updatedAt
 )
 
 val Instance.displayType: String get() = if (modpackInfo != null) "Modpack" else "Custom"

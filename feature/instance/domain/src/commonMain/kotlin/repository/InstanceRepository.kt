@@ -24,6 +24,17 @@ interface InstanceRepository {
     context(_: Raise<InstanceError>)
     suspend fun findInstance(id: InstanceId): Instance
 
+    /** Copies [sourcePath] (an arbitrary local file, never deleted) into the instance's managed icon storage. */
+    context(_: Raise<InstanceError>)
+    suspend fun setInstanceIcon(instanceId: InstanceId, sourcePath: String)
+
+    /** Best-effort: downloads [url] into the instance's managed icon storage. Never raises — returns `false` on failure. */
+    suspend fun setInstanceIconFromUrl(instanceId: InstanceId, url: String): Boolean
+
+    /** Deletes the instance's custom icon (if any) and reverts it to the default icon. */
+    context(_: Raise<InstanceError>)
+    suspend fun removeInstanceIcon(instanceId: InstanceId)
+
     fun updateInstanceStatus(id: InstanceId, status: InstanceStatus)
 
     fun getInstanceStatus(id: InstanceId): InstanceStatus

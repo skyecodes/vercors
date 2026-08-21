@@ -37,12 +37,14 @@ class InstallModpackPresenter(
     private val projectName: String,
     private val globalScope: CoroutineScope,
     private val getProjectFiles: GetProjectFilesUseCase,
+    private val getProject: GetProjectUseCase,
     private val getModpackManifest: GetModpackManifestUseCase,
     private val resolveModpackManifestFiles: ResolveModpackManifestFilesUseCase,
     private val createInstance: CreateInstanceUseCase,
     private val installModpackFiles: InstallModpackFilesUseCase,
     private val awaitManualDownload: AwaitManualDownloadUseCase,
     private val recordInstalledContentOrigin: RecordInstalledContentOriginUseCase,
+    private val setInstanceIconFromUrl: SetInstanceIconFromUrlUseCase,
     private val deleteInstance: DeleteInstanceUseCase,
     private val deleteInstanceFiles: DeleteInstanceFilesUseCase,
     private val updateInstanceStatus: UpdateInstanceStatusUseCase,
@@ -154,6 +156,14 @@ class InstallModpackPresenter(
             createdInstanceId = instance.id
             updateInstanceJob(instance.id, job)
             onInstanceCreated(instance.id)
+
+            // Child of `job`, not `globalScope`, so it's cancelled automatically if the install is rolled back.
+            // Best-effort only: a missing/broken project logo must never fail or delay the modpack install.
+            launch {
+                recover({
+                    getProject(projectId).logoUrl?.let { setInstanceIconFromUrl(instance.id, it) }
+                }) { _: ProjectDetailsError -> }
+            }
 
             val resolvedManifest = recover({
                 resolveModpackManifestFiles(manifest) { progress ->

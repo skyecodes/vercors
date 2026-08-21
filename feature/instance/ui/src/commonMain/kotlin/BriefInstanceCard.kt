@@ -1,13 +1,17 @@
 package app.vercors.feature.instance.ui
 
 import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -41,11 +45,21 @@ fun BriefInstanceCard(
             interactionSource = interactionSource,
             onClick = { onInstanceClick(instance.id) },
             icon = {
-                AppIcon(
-                    imageVector = Lucide.Gamepad2,
-                    contentDescription = instance.name,
-                    modifier = Modifier.size(36.dp).instanceSharedElement(instance.id, "icon", origin),
-                )
+                if (instance.iconFilePath != null) {
+                    Image(
+                        painter = rememberInstanceIconPainter(instance.iconFilePath, instance.updatedAt),
+                        contentDescription = instance.name,
+                        modifier = Modifier.size(36.dp).clip(RoundedCornerShape(6.dp))
+                            .instanceSharedElement(instance.id, "icon", origin),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    AppIcon(
+                        imageVector = Lucide.Gamepad2,
+                        contentDescription = instance.name,
+                        modifier = Modifier.size(36.dp).instanceSharedElement(instance.id, "icon", origin),
+                    )
+                }
             },
             title = {
                 AppText(

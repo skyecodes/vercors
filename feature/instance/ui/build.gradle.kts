@@ -9,6 +9,7 @@ dependencies {
     commonMainImplementation(projects.feature.game.ui)
     commonMainImplementation(projects.feature.project.ui.screen)
     commonMainImplementation(libs.kotlinx.datetime)
+    commonMainImplementation(libs.filekit.dialogs.compose)
 }
 
 compose.resources {

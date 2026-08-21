@@ -13,6 +13,7 @@ import app.vercors.feature.game.domain.usecase.GetLoaderVersionsUseCase
 import app.vercors.feature.game.domain.usecase.ObserveGameVersionListUseCase
 import app.vercors.feature.game.ui.GameVersionView
 import app.vercors.feature.game.ui.toView
+import app.vercors.feature.instance.domain.model.Instance
 import app.vercors.feature.instance.domain.model.InstanceError
 import app.vercors.feature.instance.domain.model.InstanceModLoader
 import app.vercors.feature.instance.domain.usecase.*
@@ -23,7 +24,6 @@ import app.vercors.feature.launcher.domain.usecase.CancelInstanceUseCase
 import app.vercors.feature.launcher.domain.usecase.KillInstanceUseCase
 import app.vercors.feature.launcher.domain.usecase.LaunchInstanceUseCase
 import app.vercors.feature.launcher.domain.usecase.StopInstanceUseCase
-import app.vercors.feature.project.domain.model.ProjectType
 import app.vercors.feature.project.domain.model.from
 import app.vercors.feature.project.ui.details.ProjectDetailsScreen
 import app.vercors.feature.project.ui.list.ProjectListScreen
@@ -48,6 +48,7 @@ import opensavvy.state.arrow.progressive
 import opensavvy.state.progressive.ProgressiveOutcome
 import opensavvy.state.progressive.map
 import opensavvy.state.progressive.valueOrNull
+import kotlin.time.Clock
 
 @AssistedInject
 class InstanceDetailsPresenter(
@@ -77,7 +78,9 @@ class InstanceDetailsPresenter(
     private val getAvailableLoaders: GetAvailableLoadersUseCase,
     private val getLoaderVersions: GetLoaderVersionsUseCase,
     private val observeManualDownloadItems: ObserveManualDownloadItemsUseCase,
-    private val copyToClipboard: CopyToClipboardUseCase
+    private val copyToClipboard: CopyToClipboardUseCase,
+    private val setInstanceIcon: SetInstanceIconUseCase,
+    private val removeInstanceIcon: RemoveInstanceIconUseCase
 ) : Presenter<InstanceDetailsState, InstanceDetailsEvent> {
     @OptIn(ExperimentalProgressiveRaiseApi::class)
     @Composable
@@ -176,43 +179,59 @@ class InstanceDetailsPresenter(
         setPromptRemoveConfirmation: (PendingRemoval?) -> Unit,
         setPromptFinishInstallation: (Boolean) -> Unit
     ) {
+        if (handleLifecycleEvent(event, setSelectedTab, setPromptDeleteConfirmation)) return
+        if (handleEditEvent(event, editedInstance, setEditedInstance, setSelectedTab)) return
+        if (handleContentEvent(event, promptRemoveConfirmation, setPromptRemoveConfirmation)) return
+        handleNavigationAndMiscEvent(event, currentInstance, setPromptFinishInstallation)
+    }
+
+    /** Launch/stop/delete and other whole-instance lifecycle events. Returns whether [event] was one of these. */
+    private fun handleLifecycleEvent(
+        event: InstanceDetailsEvent,
+        setSelectedTab: (InstanceDetailsTab) -> Unit,
+        setPromptDeleteConfirmation: (Boolean) -> Unit
+    ): Boolean {
         when (event) {
-            InstanceDetailsEvent.Launch -> globalScope.launch {
-                setSelectedTab(InstanceDetailsTab.Logs)
-                either { launchInstance(screen.instanceId) }.onLeft { error -> snackbarService.error { error.message } }
-            }
-
+            InstanceDetailsEvent.Launch -> handleLaunch(setSelectedTab)
             InstanceDetailsEvent.Delete -> setPromptDeleteConfirmation(true)
-            is InstanceDetailsEvent.ConfirmDelete -> {
-                setPromptDeleteConfirmation(false)
-                if (event.result) globalScope.launch {
-                    either { deleteInstance(screen.instanceId) }
-                        .onLeft { error -> snackbarService.error { error.message } }
-                        .onRight {
-                            navigator.pop()
-                            navigator.goTo(InstanceListScreen)
-                        }
-                }
-            }
-
+            is InstanceDetailsEvent.ConfirmDelete -> handleConfirmDelete(event, setPromptDeleteConfirmation)
             InstanceDetailsEvent.Cancel -> cancelInstance(screen.instanceId)
             InstanceDetailsEvent.CancelSetup -> cancelInstanceSetup(screen.instanceId)
             InstanceDetailsEvent.Stop -> globalScope.launch { stopInstance(screen.instanceId) }
             InstanceDetailsEvent.Kill -> globalScope.launch { killInstance(screen.instanceId) }
+            else -> return false
+        }
+        return true
+    }
 
+    /** Tab selection and the name/version/loader edit-and-save flow. Returns whether [event] was one of these. */
+    private fun handleEditEvent(
+        event: InstanceDetailsEvent,
+        editedInstance: InstanceEditState,
+        setEditedInstance: (InstanceEditState) -> Unit,
+        setSelectedTab: (InstanceDetailsTab) -> Unit
+    ): Boolean {
+        when (event) {
             is InstanceDetailsEvent.SelectTab -> setSelectedTab(event.tab)
             is InstanceDetailsEvent.UpdateInstance -> setEditedInstance(event.update(editedInstance))
-            is InstanceDetailsEvent.OnLoaderChange -> setEditedInstance(
-                editedInstance.copy(
-                    modLoaderType = event.loader?.let(ModLoaderTypeEdit::Loader) ?: ModLoaderTypeEdit.Vanilla,
-                    // Reset so the recommended-version effect can pick one that's valid for the new type.
-                    modLoaderVersion = null
-                )
-            )
-
+            is InstanceDetailsEvent.OnLoaderChange -> handleLoaderChange(event, editedInstance, setEditedInstance)
             is InstanceDetailsEvent.OnLoaderVersionChange ->
                 setEditedInstance(editedInstance.copy(modLoaderVersion = event.version))
 
+            InstanceDetailsEvent.CancelEdit -> setEditedInstance(InstanceEditState())
+            InstanceDetailsEvent.SaveInstance -> handleSaveInstance(editedInstance, setEditedInstance)
+            else -> return false
+        }
+        return true
+    }
+
+    /** Enable/disable and removal of installed mods/resource packs/shader packs. Returns whether [event] was one of these. */
+    private fun handleContentEvent(
+        event: InstanceDetailsEvent,
+        promptRemoveConfirmation: PendingRemoval?,
+        setPromptRemoveConfirmation: (PendingRemoval?) -> Unit
+    ): Boolean {
+        when (event) {
             is InstanceDetailsEvent.OnModEnabledChange -> globalScope.launch {
                 setModEnabled(screen.instanceId, event.fileName, event.enabled)
             }
@@ -228,21 +247,21 @@ class InstanceDetailsPresenter(
             is InstanceDetailsEvent.OnRemoveClick ->
                 setPromptRemoveConfirmation(PendingRemoval(event.kind, event.fileName, event.title))
 
-            is InstanceDetailsEvent.OnConfirmRemove -> {
-                setPromptRemoveConfirmation(null)
-                if (event.result && promptRemoveConfirmation != null) globalScope.launch {
-                    when (promptRemoveConfirmation.kind) {
-                        RemovalKind.Mod -> removeMod(screen.instanceId, promptRemoveConfirmation.fileName)
-                        RemovalKind.ResourcePack -> removeResourcePack(
-                            screen.instanceId,
-                            promptRemoveConfirmation.fileName
-                        )
+            is InstanceDetailsEvent.OnConfirmRemove ->
+                handleConfirmRemove(event, promptRemoveConfirmation, setPromptRemoveConfirmation)
 
-                        RemovalKind.ShaderPack -> removeShaderPack(screen.instanceId, promptRemoveConfirmation.fileName)
-                    }
-                }
-            }
+            else -> return false
+        }
+        return true
+    }
 
+    /** Navigation, custom icon, and manual-download-installation events. */
+    private fun handleNavigationAndMiscEvent(
+        event: InstanceDetailsEvent,
+        currentInstance: InstanceView?,
+        setPromptFinishInstallation: (Boolean) -> Unit
+    ) {
+        when (event) {
             is InstanceDetailsEvent.OnOpenProjectClick -> navigator.goTo(
                 ProjectDetailsScreen(event.projectId from event.platformId, preferredInstanceId = screen.instanceId)
             )
@@ -251,45 +270,105 @@ class InstanceDetailsPresenter(
                 ProjectListScreen(
                     initialType = event.type,
                     initialGameVersion = currentInstance?.gameVersion,
-                    initialLoader = if (event.type == ProjectType.Mod) currentInstance?.loaderType else null,
+                    initialLoader = currentInstance?.loaderType,
                     sourceInstanceId = screen.instanceId
                 )
             )
 
+            is InstanceDetailsEvent.OnIconSelected -> globalScope.launch {
+                either {
+                    setInstanceIcon(
+                        screen.instanceId,
+                        event.path
+                    )
+                }.onLeft { error -> snackbarService.error { error.message } }
+            }
+
+            InstanceDetailsEvent.OnRemoveIconClick -> globalScope.launch {
+                either { removeInstanceIcon(screen.instanceId) }.onLeft { error -> snackbarService.error { error.message } }
+            }
+
             InstanceDetailsEvent.OnFinishInstallationClick -> setPromptFinishInstallation(true)
             InstanceDetailsEvent.OnFinishInstallationDismiss -> setPromptFinishInstallation(false)
+            else -> Unit
+        }
+    }
 
-            InstanceDetailsEvent.CancelEdit -> setEditedInstance(InstanceEditState())
-            InstanceDetailsEvent.SaveInstance -> globalScope.launch {
-                either {
-                    updateInstance(screen.instanceId) {
-                        var updatedInstance = it
-                        editedInstance.name?.let { name -> updatedInstance = updatedInstance.copy(name = name) }
-                        editedInstance.gameVersion?.let { version ->
-                            updatedInstance = updatedInstance.copy(gameVersion = version)
-                        }
-                        if (editedInstance.modLoaderType != null || editedInstance.modLoaderVersion != null) {
-                            val type = when (val edit = editedInstance.modLoaderType) {
-                                is ModLoaderTypeEdit.Loader -> edit.type
-                                ModLoaderTypeEdit.Vanilla -> null
-                                null -> updatedInstance.modLoader?.type
-                            }
-                            updatedInstance = updatedInstance.copy(
-                                modLoader = type?.let { loaderType ->
-                                    InstanceModLoader(
-                                        type = loaderType,
-                                        version = editedInstance.modLoaderVersion
-                                            ?: updatedInstance.modLoader?.version.orEmpty()
-                                    )
-                                }
-                            )
-                        }
-                        updatedInstance
-                    }
-                    setEditedInstance(InstanceEditState())
-                }.onLeft { error -> snackbarService.error { error.toString() } }
+    private fun handleLaunch(setSelectedTab: (InstanceDetailsTab) -> Unit) = globalScope.launch {
+        setSelectedTab(InstanceDetailsTab.Logs)
+        either { launchInstance(screen.instanceId) }.onLeft { error -> snackbarService.error { error.message } }
+    }
+
+    private fun handleConfirmDelete(
+        event: InstanceDetailsEvent.ConfirmDelete,
+        setPromptDeleteConfirmation: (Boolean) -> Unit
+    ) {
+        setPromptDeleteConfirmation(false)
+        if (!event.result) return
+        globalScope.launch {
+            either { deleteInstance(screen.instanceId) }
+                .onLeft { error -> snackbarService.error { error.message } }
+                .onRight {
+                    navigator.pop()
+                    navigator.goTo(InstanceListScreen)
+                }
+        }
+    }
+
+    private fun handleLoaderChange(
+        event: InstanceDetailsEvent.OnLoaderChange,
+        editedInstance: InstanceEditState,
+        setEditedInstance: (InstanceEditState) -> Unit
+    ) = setEditedInstance(
+        editedInstance.copy(
+            modLoaderType = event.loader?.let(ModLoaderTypeEdit::Loader) ?: ModLoaderTypeEdit.Vanilla,
+            // Reset so the recommended-version effect can pick one that's valid for the new type.
+            modLoaderVersion = null
+        )
+    )
+
+    private fun handleConfirmRemove(
+        event: InstanceDetailsEvent.OnConfirmRemove,
+        promptRemoveConfirmation: PendingRemoval?,
+        setPromptRemoveConfirmation: (PendingRemoval?) -> Unit
+    ) {
+        setPromptRemoveConfirmation(null)
+        if (!event.result || promptRemoveConfirmation == null) return
+        globalScope.launch {
+            when (promptRemoveConfirmation.kind) {
+                RemovalKind.Mod -> removeMod(screen.instanceId, promptRemoveConfirmation.fileName)
+                RemovalKind.ResourcePack -> removeResourcePack(screen.instanceId, promptRemoveConfirmation.fileName)
+                RemovalKind.ShaderPack -> removeShaderPack(screen.instanceId, promptRemoveConfirmation.fileName)
             }
         }
+    }
+
+    private fun handleSaveInstance(editedInstance: InstanceEditState, setEditedInstance: (InstanceEditState) -> Unit) =
+        globalScope.launch {
+            either {
+                updateInstance(screen.instanceId) { it.withEdits(editedInstance).copy(updatedAt = Clock.System.now()) }
+                setEditedInstance(InstanceEditState())
+            }.onLeft { error -> snackbarService.error { error.toString() } }
+        }
+
+    private fun Instance.withEdits(editedInstance: InstanceEditState): Instance {
+        var updated = editedInstance.name?.let { name -> copy(name = name) } ?: this
+        updated = editedInstance.gameVersion?.let { version -> updated.copy(gameVersion = version) } ?: updated
+        if (editedInstance.modLoaderType == null && editedInstance.modLoaderVersion == null) return updated
+
+        val type = when (val edit = editedInstance.modLoaderType) {
+            is ModLoaderTypeEdit.Loader -> edit.type
+            ModLoaderTypeEdit.Vanilla -> null
+            null -> updated.modLoader?.type
+        }
+        return updated.copy(
+            modLoader = type?.let { loaderType ->
+                InstanceModLoader(
+                    type = loaderType,
+                    version = editedInstance.modLoaderVersion ?: updated.modLoader?.version.orEmpty()
+                )
+            }
+        )
     }
 
 

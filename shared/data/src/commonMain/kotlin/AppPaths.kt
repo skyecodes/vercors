@@ -75,5 +75,7 @@ class AppPaths(root: Path) {
 
     fun iconCache(kind: String): Path = Path(iconCacheRoot, kind)
 
+    fun instanceIconFile(instanceId: String, extension: String): Path = Path(gameDir(instanceId), "icon.$extension")
+
     private fun String.pathSegments(): Array<String> = split('/').filter { it.isNotBlank() }.toTypedArray()
 }
