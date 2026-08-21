@@ -6,6 +6,7 @@ import app.vercors.core.ui.state.mutableProgressiveStateOf
 import app.vercors.core.ui.state.produceAndCollectAsProgressiveState
 import app.vercors.feature.game.domain.model.ModLoaderType
 import app.vercors.feature.instance.domain.model.InstanceId
+import app.vercors.feature.instance.domain.model.ManualDownloadItem
 import app.vercors.feature.instance.domain.model.ModProvider
 import app.vercors.feature.instance.domain.usecase.ContentKind
 import app.vercors.feature.instance.domain.usecase.ObserveInstalledContentUseCase
@@ -61,7 +62,7 @@ class InstallProjectPresenter(
         var resolvingDependencies by remember { mutableStateOf(false) }
         var installing by remember { mutableStateOf(false) }
         var installJob by remember { mutableStateOf<Job?>(null) }
-        var manualDownloadItems by remember { mutableStateOf<List<ManualDownloadItemView>>(emptyList()) }
+        var manualDownloadItems by remember { mutableStateOf<List<ManualDownloadItem>>(emptyList()) }
         val files = remember { mutableProgressiveStateOf<ProjectDetailsError, List<ProjectFileView>>() }
 
         val selectedInstance = instances.valueOrNull?.find { it.id == selectedInstanceId }
@@ -205,7 +206,7 @@ class InstallProjectPresenter(
         instanceId: InstanceId,
         file: ProjectFileView,
         selectedDependencies: List<DependencyFileView>,
-        onManualDownloadItemsChanged: (List<ManualDownloadItemView>) -> Unit,
+        onManualDownloadItemsChanged: (List<ManualDownloadItem>) -> Unit,
         onFinished: (success: Boolean) -> Unit
     ): Job {
         val candidates = buildList {

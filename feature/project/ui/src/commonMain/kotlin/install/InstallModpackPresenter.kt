@@ -11,25 +11,25 @@ import app.vercors.feature.project.domain.model.modpack.InstalledModpackFile
 import app.vercors.feature.project.domain.model.modpack.ModpackFileKind
 import app.vercors.feature.project.domain.model.modpack.ModpackInstallError
 import app.vercors.feature.project.domain.model.modpack.ModpackResolutionError
-import app.vercors.feature.project.domain.usecase.AwaitManualDownloadUseCase
-import app.vercors.feature.project.domain.usecase.GetModpackManifestUseCase
-import app.vercors.feature.project.domain.usecase.GetProjectFilesUseCase
-import app.vercors.feature.project.domain.usecase.InstallModpackFilesUseCase
+import app.vercors.feature.project.domain.usecase.*
 import app.vercors.feature.project.ui.message
-import app.vercors.shared.domain.usecase.CopyToClipboardUseCase
 import app.vercors.shared.ui.Presenter
 import app.vercors.shared.ui.SnackbarService
 import app.vercors.shared.ui.Store
 import app.vercors.shared.ui.error
 import arrow.core.raise.recover
 import com.slack.circuit.overlay.OverlayNavigator
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import opensavvy.progress.Progress
 import opensavvy.state.ExperimentalProgressiveRaiseApi
 import opensavvy.state.arrow.progressive
 import opensavvy.state.progressive.ProgressiveOutcome
 import opensavvy.state.progressive.valueOrNull
+
+private val logger = KotlinLogging.logger {}
 
 class InstallModpackPresenter(
     private val navigator: OverlayNavigator<InstallModpackResult>,
@@ -38,13 +38,16 @@ class InstallModpackPresenter(
     private val globalScope: CoroutineScope,
     private val getProjectFiles: GetProjectFilesUseCase,
     private val getModpackManifest: GetModpackManifestUseCase,
+    private val resolveModpackManifestFiles: ResolveModpackManifestFilesUseCase,
     private val createInstance: CreateInstanceUseCase,
     private val installModpackFiles: InstallModpackFilesUseCase,
     private val awaitManualDownload: AwaitManualDownloadUseCase,
     private val recordInstalledContentOrigin: RecordInstalledContentOriginUseCase,
     private val deleteInstance: DeleteInstanceUseCase,
     private val deleteInstanceFiles: DeleteInstanceFilesUseCase,
-    private val copyToClipboard: CopyToClipboardUseCase,
+    private val updateInstanceStatus: UpdateInstanceStatusUseCase,
+    private val updateInstanceJob: UpdateInstanceJobUseCase,
+    private val updateManualDownloadItems: UpdateManualDownloadItemsUseCase,
     private val snackbarService: SnackbarService
 ) : Presenter<InstallModpackState, InstallModpackEvent> {
     @OptIn(ExperimentalProgressiveRaiseApi::class)
@@ -54,7 +57,6 @@ class InstallModpackPresenter(
         var instanceName by remember { mutableStateOf(projectName) }
         var installing by remember { mutableStateOf(false) }
         var installJob by remember { mutableStateOf<Job?>(null) }
-        var manualDownloadItems by remember { mutableStateOf<List<ManualDownloadItemView>>(emptyList()) }
         val files = remember { mutableProgressiveStateOf<ProjectDetailsError, List<ProjectFileView>>() }
 
         LaunchedEffect(projectId) {
@@ -68,10 +70,9 @@ class InstallModpackPresenter(
             when (event) {
                 is InstallModpackEvent.OnFileSelected -> selectedFileId = event.fileId
                 is InstallModpackEvent.OnInstanceNameChange -> instanceName = event.name
-                is InstallModpackEvent.OnCopyUrlClick -> copyToClipboard(event.url)
                 InstallModpackEvent.OnCancelClick -> {
-                    val job = installJob
-                    if (job != null && job.isActive) job.cancel() else navigator.finish(InstallModpackResult.Cancelled)
+                    installJob?.cancel()
+                    navigator.finish(InstallModpackResult.Cancelled)
                 }
 
                 InstallModpackEvent.OnConfirmClick -> {
@@ -80,15 +81,15 @@ class InstallModpackPresenter(
                         installing = true
                         installJob = confirmInstall(
                             file, instanceName,
-                            onManualDownloadItemsChanged = { manualDownloadItems = it }
-                        ) { instanceId ->
-                            installing = false
-                            manualDownloadItems = emptyList()
-                            navigator.finish(
-                                if (instanceId != null) InstallModpackResult.Installed(instanceId)
-                                else InstallModpackResult.Cancelled
-                            )
-                        }
+                            onInstanceCreated = { instanceId ->
+                                installing = false
+                                navigator.finish(InstallModpackResult.Installed(instanceId))
+                            },
+                            onFinished = {
+                                installing = false
+                                navigator.finish(InstallModpackResult.Cancelled)
+                            }
+                        )
                     }
                 }
             }
@@ -98,26 +99,36 @@ class InstallModpackPresenter(
             files = files.value,
             selectedFileId = selectedFileId,
             instanceName = instanceName,
-            installing = installing,
-            manualDownloadItems = manualDownloadItems
+            installing = installing
         ) + ::handleEvent
     }
 
-    /** Resolves the modpack, creates its instance, installs its files (prompting for manual downloads as needed), and records provenance — all-or-nothing. */
+    /**
+     * Parses the pack's own manifest (fast, local-file-only — enough to create the instance), creates the
+     * instance, then resolves the rest of the manifest (may be slow: CurseForge needs one network lookup per mod),
+     * downloads its files (prompting for manual downloads as needed), and records provenance. [onInstanceCreated]
+     * fires as soon as the instance exists, so the caller can navigate to it immediately — the remaining steps keep
+     * running on [globalScope] and report their progress via [updateInstanceStatus], surviving the dialog being
+     * dismissed. Failures before the instance exists call [onFinished] with nothing to clean up; failures afterward
+     * leave the instance in place with an [InstanceStatus.Failed] status instead of rolling it back, since the user
+     * may already be looking at it — only an explicit cancellation (job cancelled from the instance details screen)
+     * rolls it back.
+     */
     private fun confirmInstall(
         file: ProjectFileView,
         instanceName: String,
-        onManualDownloadItemsChanged: (List<ManualDownloadItemView>) -> Unit,
-        onFinished: (InstanceId?) -> Unit
+        onInstanceCreated: (InstanceId) -> Unit,
+        onFinished: () -> Unit
     ): Job {
         var createdInstanceId: InstanceId? = null
-        val job = globalScope.launch {
+        lateinit var job: Job
+        job = globalScope.launch {
             val manifest = recover({ getModpackManifest(projectId, file.id) }) { error: ModpackResolutionError ->
                 snackbarService.error { error.message }
                 null
             }
             if (manifest == null) {
-                onFinished(null)
+                onFinished()
                 return@launch
             }
 
@@ -137,26 +148,45 @@ class InstallModpackPresenter(
                 false
             }
             if (!created) {
-                onFinished(null)
+                onFinished()
                 return@launch
             }
             createdInstanceId = instance.id
+            updateInstanceJob(instance.id, job)
+            onInstanceCreated(instance.id)
 
-            val installedFiles = recover({
-                installModpackFiles(manifest, instance.id) {}
-            }) { error: ModpackInstallError ->
-                snackbarService.error { error.message }
+            val resolvedManifest = recover({
+                resolveModpackManifestFiles(manifest) { progress ->
+                    updateInstanceStatus(
+                        instance.id,
+                        InstanceStatus.Installing.ResolvingFiles(progress.toFractionOrNull())
+                    )
+                }
+            }) { error: ModpackResolutionError ->
+                logger.error { "Modpack file resolution failed for ${instance.id}: $error" }
+                updateInstanceStatus(instance.id, InstanceStatus.Failed.InstallFailed)
                 null
             }
-            if (installedFiles == null) {
-                rollback(instance.id)
-                onFinished(null)
-                return@launch
+            if (resolvedManifest == null) return@launch
+
+            val installedFiles = recover({
+                installModpackFiles(resolvedManifest, instance.id) { progress ->
+                    updateInstanceStatus(
+                        instance.id,
+                        InstanceStatus.Installing.DownloadingFiles(progress.toFractionOrNull())
+                    )
+                }
+            }) { error: ModpackInstallError ->
+                logger.error { "Modpack install failed for ${instance.id}: $error" }
+                updateInstanceStatus(instance.id, InstanceStatus.Failed.InstallFailed)
+                null
             }
+            if (installedFiles == null) return@launch
 
-            recordOrigins(instance.id, manifest.platformId, installedFiles)
+            recordOrigins(instance.id, resolvedManifest.platformId, installedFiles)
 
-            val manualCandidates = manifest.files.mapNotNull { manualFile ->
+            updateInstanceStatus(instance.id, InstanceStatus.Installing.AwaitingManualDownloads)
+            val manualCandidates = resolvedManifest.files.mapNotNull { manualFile ->
                 val manualDownloadUrl = manualFile.manualDownloadUrl ?: return@mapNotNull null
                 val providerProjectId = manualFile.providerProjectId ?: return@mapNotNull null
                 val providerFileId = manualFile.providerFileId ?: return@mapNotNull null
@@ -171,29 +201,37 @@ class InstallModpackPresenter(
                             ContentKind.Mod,
                             instance.id,
                             fileName,
-                            manifest.platformId,
+                            resolvedManifest.platformId,
                             providerProjectId,
                             providerFileId
                         )
                     }
                 )
             }
-            val manualOk =
-                runManualDownloads(manualCandidates, awaitManualDownload, snackbarService, onManualDownloadItemsChanged)
+            val manualOk = runManualDownloads(manualCandidates, awaitManualDownload, snackbarService) { items ->
+                updateManualDownloadItems(instance.id, items)
+            }
             if (!manualOk) {
-                rollback(instance.id)
-                onFinished(null)
+                updateInstanceStatus(instance.id, InstanceStatus.Failed.InstallFailed)
                 return@launch
             }
 
-            onFinished(instance.id)
+            updateInstanceStatus(instance.id, InstanceStatus.Idle)
         }
-        // Only reached when the job was actually cancelled (e.g. mid manual-download wait) — logical failures
-        // above already roll back explicitly and complete normally, so this never double-rolls-back.
+        // Only reached with a non-null error on genuine cancellation (job.cancel() via CancelInstanceSetupUseCase)
+        // or a truly unexpected exception — expected step failures above already report InstanceStatus.Failed and
+        // complete normally instead of throwing, so they never reach this rollback path.
         job.invokeOnCompletion { error ->
+            createdInstanceId?.let { updateInstanceJob(it, null) }
             if (error != null) createdInstanceId?.let { id -> globalScope.launch { rollback(id) } }
         }
         return job
+    }
+
+    private fun Progress.toFractionOrNull(): Float? = when (this) {
+        is Progress.Loading.Quantified -> normalized.toFloat()
+        Progress.Done -> 1f
+        Progress.Loading.Unquantified -> null
     }
 
     private suspend fun rollback(instanceId: InstanceId) {

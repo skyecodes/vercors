@@ -3,6 +3,7 @@ package app.vercors.feature.project.ui.install
 import androidx.compose.runtime.Immutable
 import app.vercors.feature.game.domain.model.ModLoaderType
 import app.vercors.feature.instance.domain.model.InstanceId
+import app.vercors.feature.instance.domain.model.ManualDownloadItem
 import app.vercors.feature.project.domain.model.ProjectDetailsError
 import app.vercors.feature.project.domain.model.ProjectId
 import app.vercors.feature.project.domain.model.ProjectReleaseChannel
@@ -20,7 +21,7 @@ data class InstallProjectState(
     val selectedDependencyIds: Set<ProjectId>,
     val resolvingDependencies: Boolean,
     val installing: Boolean,
-    val manualDownloadItems: List<ManualDownloadItemView> = emptyList(),
+    val manualDownloadItems: List<ManualDownloadItem> = emptyList(),
 ) {
     val instanceList = instances.valueOrNull ?: emptyList()
     val selectedInstance = instanceList.find { it.id == selectedInstanceId }

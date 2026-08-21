@@ -16,6 +16,7 @@ import app.vercors.feature.game.ui.toView
 import app.vercors.feature.instance.domain.model.InstanceError
 import app.vercors.feature.instance.domain.model.InstanceModLoader
 import app.vercors.feature.instance.domain.usecase.*
+import app.vercors.feature.instance.ui.install.FinishInstallationDialog
 import app.vercors.feature.instance.ui.list.InstanceListScreen
 import app.vercors.feature.instance.ui.message
 import app.vercors.feature.launcher.domain.usecase.CancelInstanceUseCase
@@ -26,6 +27,7 @@ import app.vercors.feature.project.domain.model.ProjectType
 import app.vercors.feature.project.domain.model.from
 import app.vercors.feature.project.ui.details.ProjectDetailsScreen
 import app.vercors.feature.project.ui.list.ProjectListScreen
+import app.vercors.shared.domain.usecase.CopyToClipboardUseCase
 import app.vercors.shared.ui.Presenter
 import app.vercors.shared.ui.SnackbarService
 import app.vercors.shared.ui.Store
@@ -65,6 +67,7 @@ class InstanceDetailsPresenter(
     private val removeShaderPack: RemoveShaderPackUseCase,
     private val launchInstance: LaunchInstanceUseCase,
     private val cancelInstance: CancelInstanceUseCase,
+    private val cancelInstanceSetup: CancelInstanceSetupUseCase,
     private val stopInstance: StopInstanceUseCase,
     private val killInstance: KillInstanceUseCase,
     private val deleteInstance: DeleteInstanceUseCase,
@@ -72,7 +75,9 @@ class InstanceDetailsPresenter(
     private val updateInstance: UpdateInstanceUseCase,
     private val observeGameVersionList: ObserveGameVersionListUseCase,
     private val getAvailableLoaders: GetAvailableLoadersUseCase,
-    private val getLoaderVersions: GetLoaderVersionsUseCase
+    private val getLoaderVersions: GetLoaderVersionsUseCase,
+    private val observeManualDownloadItems: ObserveManualDownloadItemsUseCase,
+    private val copyToClipboard: CopyToClipboardUseCase
 ) : Presenter<InstanceDetailsState, InstanceDetailsEvent> {
     @OptIn(ExperimentalProgressiveRaiseApi::class)
     @Composable
@@ -86,6 +91,10 @@ class InstanceDetailsPresenter(
         val (promptDeleteConfirmation, setPromptDeleteConfirmation) = rememberSaveable { mutableStateOf(false) }
         val (promptRemoveConfirmation, setPromptRemoveConfirmation) =
             remember { mutableStateOf<PendingRemoval?>(null) }
+        val (promptFinishInstallation, setPromptFinishInstallation) = rememberSaveable { mutableStateOf(false) }
+        val finishInstallationDialog = remember(screen.instanceId) {
+            FinishInstallationDialog(screen.instanceId, observeManualDownloadItems) { url -> copyToClipboard(url) }
+        }
         val (selectedTab, setSelectedTab) = rememberSaveable { mutableStateOf(InstanceDetailsTab.Options) }
         val (editedInstance, setEditedInstance) = rememberSaveable { mutableStateOf(InstanceEditState()) }
         val loaderList = remember { mutableProgressiveStateOf<LoaderError, List<ModLoaderType>>() }
@@ -138,7 +147,9 @@ class InstanceDetailsPresenter(
             installedMods = installedMods,
             installedResourcePacks = installedResourcePacks,
             installedShaderPacks = installedShaderPacks,
-            promptRemoveConfirmation = promptRemoveConfirmation
+            promptRemoveConfirmation = promptRemoveConfirmation,
+            promptFinishInstallation = promptFinishInstallation,
+            finishInstallationDialog = finishInstallationDialog
         ) + { event ->
             handleEvent(
                 event = event,
@@ -148,7 +159,8 @@ class InstanceDetailsPresenter(
                 editedInstance = editedInstance,
                 currentInstance = currentInstance,
                 promptRemoveConfirmation = promptRemoveConfirmation,
-                setPromptRemoveConfirmation = setPromptRemoveConfirmation
+                setPromptRemoveConfirmation = setPromptRemoveConfirmation,
+                setPromptFinishInstallation = setPromptFinishInstallation
             )
         }
     }
@@ -161,7 +173,8 @@ class InstanceDetailsPresenter(
         editedInstance: InstanceEditState,
         currentInstance: InstanceView?,
         promptRemoveConfirmation: PendingRemoval?,
-        setPromptRemoveConfirmation: (PendingRemoval?) -> Unit
+        setPromptRemoveConfirmation: (PendingRemoval?) -> Unit,
+        setPromptFinishInstallation: (Boolean) -> Unit
     ) {
         when (event) {
             InstanceDetailsEvent.Launch -> globalScope.launch {
@@ -183,6 +196,7 @@ class InstanceDetailsPresenter(
             }
 
             InstanceDetailsEvent.Cancel -> cancelInstance(screen.instanceId)
+            InstanceDetailsEvent.CancelSetup -> cancelInstanceSetup(screen.instanceId)
             InstanceDetailsEvent.Stop -> globalScope.launch { stopInstance(screen.instanceId) }
             InstanceDetailsEvent.Kill -> globalScope.launch { killInstance(screen.instanceId) }
 
@@ -241,6 +255,9 @@ class InstanceDetailsPresenter(
                     sourceInstanceId = screen.instanceId
                 )
             )
+
+            InstanceDetailsEvent.OnFinishInstallationClick -> setPromptFinishInstallation(true)
+            InstanceDetailsEvent.OnFinishInstallationDismiss -> setPromptFinishInstallation(false)
 
             InstanceDetailsEvent.CancelEdit -> setEditedInstance(InstanceEditState())
             InstanceDetailsEvent.SaveInstance -> globalScope.launch {

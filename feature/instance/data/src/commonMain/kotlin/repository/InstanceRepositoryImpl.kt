@@ -57,6 +57,9 @@ class InstanceRepositoryImpl(
     private val _logs = MutableStateFlow<Map<InstanceId, List<InstanceLogEvent>>>(emptyMap())
     override val logs = _logs.asStateFlow()
 
+    private val _manualDownloads = MutableStateFlow<Map<InstanceId, List<ManualDownloadItem>>>(emptyMap())
+    override val manualDownloads = _manualDownloads.asStateFlow()
+
     context(_: Raise<InstanceValidationError>)
     override suspend fun saveInstance(instance: Instance) {
         ensure(instance.id.isNotEmpty()) { InstanceValidationError.EmptyInstanceId }
@@ -117,5 +120,10 @@ class InstanceRepositoryImpl(
 
     override fun clearInstanceLogs(id: InstanceId) {
         _logs.update { it - id }
+    }
+
+    override fun updateManualDownloadItems(id: InstanceId, items: List<ManualDownloadItem>) {
+        if (items.isEmpty()) _manualDownloads.update { it - id }
+        else _manualDownloads.update { it + (id to items) }
     }
 }

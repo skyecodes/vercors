@@ -4,16 +4,9 @@ import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import app.vercors.feature.instance.domain.model.InstanceId
-import app.vercors.feature.instance.domain.usecase.CreateInstanceUseCase
-import app.vercors.feature.instance.domain.usecase.DeleteInstanceFilesUseCase
-import app.vercors.feature.instance.domain.usecase.DeleteInstanceUseCase
-import app.vercors.feature.instance.domain.usecase.RecordInstalledContentOriginUseCase
+import app.vercors.feature.instance.domain.usecase.*
 import app.vercors.feature.project.domain.model.ProjectId
-import app.vercors.feature.project.domain.usecase.AwaitManualDownloadUseCase
-import app.vercors.feature.project.domain.usecase.GetModpackManifestUseCase
-import app.vercors.feature.project.domain.usecase.GetProjectFilesUseCase
-import app.vercors.feature.project.domain.usecase.InstallModpackFilesUseCase
-import app.vercors.shared.domain.usecase.CopyToClipboardUseCase
+import app.vercors.feature.project.domain.usecase.*
 import app.vercors.shared.ui.SnackbarService
 import app.vercors.shared.ui.overlay.DialogOverlay
 import com.slack.circuit.overlay.OverlayNavigator
@@ -35,13 +28,16 @@ class InstallModpackDialog(
     private val globalScope: CoroutineScope,
     private val getProjectFiles: GetProjectFilesUseCase,
     private val getModpackManifest: GetModpackManifestUseCase,
+    private val resolveModpackManifestFiles: ResolveModpackManifestFilesUseCase,
     private val createInstance: CreateInstanceUseCase,
     private val installModpackFiles: InstallModpackFilesUseCase,
     private val awaitManualDownload: AwaitManualDownloadUseCase,
     private val recordInstalledContentOrigin: RecordInstalledContentOriginUseCase,
     private val deleteInstance: DeleteInstanceUseCase,
     private val deleteInstanceFiles: DeleteInstanceFilesUseCase,
-    private val copyToClipboard: CopyToClipboardUseCase,
+    private val updateInstanceStatus: UpdateInstanceStatusUseCase,
+    private val updateInstanceJob: UpdateInstanceJobUseCase,
+    private val updateManualDownloadItems: UpdateManualDownloadItemsUseCase,
     private val snackbarService: SnackbarService
 ) : DialogOverlay<InstallModpackResult>() {
     @Composable
@@ -57,13 +53,16 @@ class InstallModpackDialog(
                 globalScope = globalScope,
                 getProjectFiles = getProjectFiles,
                 getModpackManifest = getModpackManifest,
+                resolveModpackManifestFiles = resolveModpackManifestFiles,
                 createInstance = createInstance,
                 installModpackFiles = installModpackFiles,
                 awaitManualDownload = awaitManualDownload,
                 recordInstalledContentOrigin = recordInstalledContentOrigin,
                 deleteInstance = deleteInstance,
                 deleteInstanceFiles = deleteInstanceFiles,
-                copyToClipboard = copyToClipboard,
+                updateInstanceStatus = updateInstanceStatus,
+                updateInstanceJob = updateInstanceJob,
+                updateManualDownloadItems = updateManualDownloadItems,
                 snackbarService = snackbarService
             )
         }

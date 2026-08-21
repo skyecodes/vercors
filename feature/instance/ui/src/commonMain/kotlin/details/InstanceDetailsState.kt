@@ -6,6 +6,7 @@ import app.vercors.feature.game.domain.model.ModLoaderType
 import app.vercors.feature.game.ui.GameVersionView
 import app.vercors.feature.game.ui.displayName
 import app.vercors.feature.instance.domain.model.*
+import app.vercors.feature.instance.ui.install.FinishInstallationDialog
 import opensavvy.state.progressive.ProgressiveOutcome
 import opensavvy.state.progressive.valueOrNull
 import kotlin.time.Instant
@@ -24,6 +25,8 @@ data class InstanceDetailsState(
     val installedResourcePacks: List<InstalledContentFileView>?,
     val installedShaderPacks: List<InstalledContentFileView>?,
     val promptRemoveConfirmation: PendingRemoval?,
+    val promptFinishInstallation: Boolean,
+    val finishInstallationDialog: FinishInstallationDialog,
 ) {
     val isNameEdited = instance.valueOrNull?.let {
         editedInstance.name != null && editedInstance.name != it.name

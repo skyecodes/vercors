@@ -2,13 +2,16 @@ package app.vercors.feature.project.ui.details
 
 import androidx.compose.runtime.*
 import app.vercors.core.ui.state.produceProgressiveState
+import app.vercors.feature.instance.ui.details.InstanceDetailsScreen
 import app.vercors.feature.project.domain.model.ProjectType
 import app.vercors.feature.project.domain.usecase.GetProjectUseCase
 import app.vercors.feature.project.ui.install.InstallModpackDialog
+import app.vercors.feature.project.ui.install.InstallModpackResult
 import app.vercors.feature.project.ui.install.InstallProjectDialog
 import app.vercors.shared.ui.Presenter
 import app.vercors.shared.ui.Store
 import com.slack.circuit.codegen.annotations.CircuitInject
+import com.slack.circuit.runtime.Navigator
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedFactory
@@ -20,6 +23,7 @@ import opensavvy.state.progressive.valueOrNull
 @AssistedInject
 class ProjectDetailsPresenter(
     @Assisted private val screen: ProjectDetailsScreen,
+    @Assisted private val navigator: Navigator,
     private val getProject: GetProjectUseCase,
     private val installProjectDialogFactory: InstallProjectDialog.Factory,
     private val installModpackDialogFactory: InstallModpackDialog.Factory,
@@ -63,6 +67,9 @@ class ProjectDetailsPresenter(
 
                 is ProjectDetailsEvent.OnInstallModpackResult -> {
                     promptInstall = false
+                    if (event.result is InstallModpackResult.Installed) {
+                        navigator.goTo(InstanceDetailsScreen(event.result.instanceId))
+                    }
                 }
             }
         }
@@ -71,6 +78,6 @@ class ProjectDetailsPresenter(
     @CircuitInject(ProjectDetailsScreen::class, AppScope::class)
     @AssistedFactory
     fun interface Factory {
-        fun create(screen: ProjectDetailsScreen): ProjectDetailsPresenter
+        fun create(screen: ProjectDetailsScreen, navigator: Navigator): ProjectDetailsPresenter
     }
 }

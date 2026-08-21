@@ -9,6 +9,7 @@ import app.vercors.shared.ui.Event
 sealed interface InstanceDetailsEvent : Event {
     data object Launch : InstanceDetailsEvent
     data object Cancel : InstanceDetailsEvent
+    data object CancelSetup : InstanceDetailsEvent
     data object Stop : InstanceDetailsEvent
     data object Kill : InstanceDetailsEvent
     data object Delete : InstanceDetailsEvent
@@ -26,4 +27,6 @@ sealed interface InstanceDetailsEvent : Event {
     data class OnConfirmRemove(val result: Boolean) : InstanceDetailsEvent
     data class OnOpenProjectClick(val platformId: String, val projectId: String) : InstanceDetailsEvent
     data class OnAddContentClick(val type: ProjectType) : InstanceDetailsEvent
+    data object OnFinishInstallationClick : InstanceDetailsEvent
+    data object OnFinishInstallationDismiss : InstanceDetailsEvent
 }

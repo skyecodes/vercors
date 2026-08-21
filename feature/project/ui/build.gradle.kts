@@ -8,6 +8,7 @@ dependencies {
     commonMainImplementation(projects.feature.game.ui)
     commonMainImplementation(projects.feature.config.domain)
     commonMainImplementation(projects.feature.instance.domain)
+    commonMainImplementation(projects.feature.instance.ui)
     commonMainImplementation(libs.human.readable)
 }
 

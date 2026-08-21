@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.sp
 import app.vercors.core.ui.CoreRes
 import app.vercors.core.ui.animation.AppAnimatedVisibility
 import app.vercors.core.ui.animation.appAnimateColorAsState
+import app.vercors.core.ui.animation.appAnimateFloatAsState
 import app.vercors.core.ui.component.*
 import app.vercors.core.ui.layout.AppError
 import app.vercors.core.ui.layout.AppLoading
@@ -94,6 +95,13 @@ fun InstanceDetails(
             OverlayEffect(pending) {
                 val result = show(ConfirmRemoveDialog(pending.title))
                 eventSink(InstanceDetailsEvent.OnConfirmRemove(result))
+            }
+        }
+
+        if (state.promptFinishInstallation) {
+            OverlayEffect {
+                show(state.finishInstallationDialog)
+                eventSink(InstanceDetailsEvent.OnFinishInstallationDismiss)
             }
         }
     }
@@ -208,15 +216,30 @@ private fun InstanceHeader(instance: InstanceView, isInstanceEdited: Boolean) = 
             }
         }
 
-        if (instance.status is InstanceStatus.Launching) {
+        if (instance.status is InstanceStatus.Launching || instance.status is InstanceStatus.Installing) {
             Column(
                 modifier = Modifier.width(200.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterVertically)
             ) {
-                AppText(
-                    text = instance.status.text
-                )
+                if (instance.status is InstanceStatus.Installing.AwaitingManualDownloads) {
+                    AppIconTextButton(
+                        onClick = { eventSink(InstanceDetailsEvent.OnFinishInstallationClick) },
+                        text = stringResource(InstanceRes.string.finishInstallation),
+                        imageVector = Lucide.Download,
+                    )
+                } else {
+                    AppText(
+                        text = instance.status.text
+                    )
+                    instance.status.progress?.let {
+                        val progress by appAnimateFloatAsState(it)
+                        AppProgressIndicator(
+                            progress = progress,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
             }
         }
 
@@ -265,6 +288,15 @@ private fun InstanceHeader(instance: InstanceView, isInstanceEdited: Boolean) = 
                     imageVector = Lucide.Square,
                 )
 
+                is InstanceStatus.Installing -> AppIconTextButton(
+                    onClick = {},
+                    text = stringResource(InstanceRes.string.launch),
+                    backgroundColor = Theme[colors][success],
+                    contentColor = Theme[colors][onSuccess],
+                    imageVector = Lucide.Play,
+                    enabled = false,
+                )
+
                 is InstanceStatus.Running -> AppIconTextButton(
                     onClick = { eventSink(InstanceDetailsEvent.Stop) },
                     text = stringResource(InstanceRes.string.stop),
@@ -289,6 +321,14 @@ private fun InstanceHeader(instance: InstanceView, isInstanceEdited: Boolean) = 
             menuModifier = Modifier.offset(y = 4.dp),
             anchor = AppDropdownPanelAnchor.BottomEnd,
             menuContent = {
+                if (instance.status is InstanceStatus.Installing) {
+                    AppMenuItem(
+                        onClick = { eventSink(InstanceDetailsEvent.CancelSetup) },
+                        text = stringResource(InstanceRes.string.cancelSetup),
+                        imageVector = Lucide.X,
+                        contentColor = Theme[colors][error]
+                    )
+                }
                 AppMenuItem(
                     onClick = { eventSink(InstanceDetailsEvent.Delete) },
                     text = stringResource(SharedRes.string.delete),
@@ -757,9 +797,21 @@ private val InstanceStatus.text: String
         is InstanceStatus.Launching.LoadingMetadata -> stringResource(InstanceRes.string.loadingMetadata)
         is InstanceStatus.Launching.ValidatingFiles -> stringResource(InstanceRes.string.validatingFiles)
         is InstanceStatus.Launching.DownloadingFiles -> stringResource(InstanceRes.string.downloadingFiles)
+        is InstanceStatus.Installing.ResolvingFiles -> stringResource(InstanceRes.string.resolvingFiles)
+        is InstanceStatus.Installing.DownloadingFiles -> stringResource(InstanceRes.string.downloadingFiles)
+        is InstanceStatus.Installing.AwaitingManualDownloads -> stringResource(InstanceRes.string.awaitingManualDownloads)
         is InstanceStatus.Running -> stringResource(InstanceRes.string.running)
         is InstanceStatus.Stopping -> stringResource(InstanceRes.string.stopping)
         is InstanceStatus.Failed -> stringResource(InstanceRes.string.failed)
+    }
+
+private val InstanceStatus.progress: Float?
+    get() = when (this) {
+        is InstanceStatus.Launching.ValidatingFiles -> progress
+        is InstanceStatus.Launching.DownloadingFiles -> progress
+        is InstanceStatus.Installing.ResolvingFiles -> progress
+        is InstanceStatus.Installing.DownloadingFiles -> progress
+        else -> null
     }
 
 private val InstanceDetailsTab.icon: ImageVector

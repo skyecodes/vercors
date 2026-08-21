@@ -1,7 +1,7 @@
 package app.vercors.feature.project.ui.install
 
-import androidx.compose.runtime.Immutable
 import app.vercors.feature.instance.domain.model.InstanceId
+import app.vercors.feature.instance.domain.model.ManualDownloadItem
 import app.vercors.feature.project.domain.model.ManualDownloadError
 import app.vercors.feature.project.domain.model.ProjectType
 import app.vercors.feature.project.domain.usecase.AwaitManualDownloadUseCase
@@ -14,15 +14,6 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-
-enum class ManualDownloadStatus { Waiting, Downloaded }
-
-@Immutable
-data class ManualDownloadItemView(
-    val fileName: String,
-    val downloadUrl: String,
-    val status: ManualDownloadStatus,
-)
 
 internal data class ManualDownloadCandidate(
     val fileName: String,
@@ -42,12 +33,12 @@ internal suspend fun runManualDownloads(
     candidates: List<ManualDownloadCandidate>,
     awaitManualDownload: AwaitManualDownloadUseCase,
     snackbarService: SnackbarService,
-    onItemsChanged: (List<ManualDownloadItemView>) -> Unit
+    onItemsChanged: (List<ManualDownloadItem>) -> Unit
 ): Boolean {
     if (candidates.isEmpty()) return true
 
     val mutex = Mutex()
-    var items = candidates.map { ManualDownloadItemView(it.fileName, it.downloadUrl, ManualDownloadStatus.Waiting) }
+    var items = candidates.map { ManualDownloadItem(it.fileName, it.downloadUrl, downloaded = false) }
     onItemsChanged(items)
 
     val results = coroutineScope {
@@ -64,7 +55,7 @@ internal suspend fun runManualDownloads(
                     candidate.recordOrigin()
                     mutex.withLock {
                         items = items.map {
-                            if (it.fileName == candidate.fileName) it.copy(status = ManualDownloadStatus.Downloaded) else it
+                            if (it.fileName == candidate.fileName) it.copy(downloaded = true) else it
                         }
                         onItemsChanged(items)
                     }

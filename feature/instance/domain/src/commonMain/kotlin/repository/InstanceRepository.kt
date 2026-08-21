@@ -11,6 +11,7 @@ interface InstanceRepository {
     val instances: ProgressiveStateFlow<Nothing, Map<InstanceId, Either<InstanceLoadingError, Instance>>>
     val statuses: StateFlow<Map<InstanceId, InstanceStatus>>
     val logs: StateFlow<Map<InstanceId, List<InstanceLogEvent>>>
+    val manualDownloads: StateFlow<Map<InstanceId, List<ManualDownloadItem>>>
 
     context(_: Raise<InstanceValidationError>)
     suspend fun saveInstance(instance: Instance)
@@ -38,4 +39,6 @@ interface InstanceRepository {
     fun addInstanceLog(id: InstanceId, logEvent: InstanceLogEvent)
 
     fun clearInstanceLogs(id: InstanceId)
+
+    fun updateManualDownloadItems(id: InstanceId, items: List<ManualDownloadItem>)
 }

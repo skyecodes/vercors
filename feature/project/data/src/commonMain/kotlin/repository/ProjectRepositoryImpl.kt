@@ -235,6 +235,16 @@ class ProjectRepositoryImpl(
         return parser.parse(zipPath, projectId, fileId)
     }
 
+    context(_: Raise<ModpackResolutionError>)
+    override suspend fun resolveModpackManifestFiles(
+        manifest: ModpackManifest,
+        onProgress: (Progress) -> Unit
+    ): ModpackManifest {
+        val zipPath = modpackZipPath(manifest.platformId, manifest.projectId, manifest.fileId)
+        val parser = ensureNotNull(modpackParsers[manifest.platformId]) { ModpackUnsupportedPlatform }
+        return parser.resolveFiles(zipPath, manifest, onProgress)
+    }
+
     context(_: Raise<ModpackInstallError>)
     override suspend fun installModpackFiles(
         manifest: ModpackManifest,

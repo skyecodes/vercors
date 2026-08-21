@@ -180,12 +180,12 @@ class LaunchInstanceUseCase(
         when (event) {
             is InstanceLaunchEvent.Validating -> instanceRepository.updateInstanceStatus(
                 instanceId,
-                InstanceStatus.Launching.ValidatingFiles
+                InstanceStatus.Launching.ValidatingFiles(event.progress)
             )
 
             is InstanceLaunchEvent.Downloading -> instanceRepository.updateInstanceStatus(
                 instanceId,
-                InstanceStatus.Launching.DownloadingFiles
+                InstanceStatus.Launching.DownloadingFiles(event.progress)
             )
 
             is InstanceLaunchEvent.Running -> instanceRepository.updateInstanceStatus(

@@ -12,7 +12,7 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.dp
 import app.vercors.core.ui.theme.colors
 import app.vercors.core.ui.theme.primary
-import app.vercors.core.ui.theme.surface
+import app.vercors.core.ui.theme.surface2
 import com.composeunstyled.Indicator
 import com.composeunstyled.UnstyledProgress
 import com.composeunstyled.theme.Theme
@@ -22,7 +22,7 @@ fun AppProgressIndicator(
     @FloatRange(from = 0.0, to = 1.0) progress: Float,
     modifier: Modifier = Modifier,
     shape: Shape = RoundedCornerShape(4.dp),
-    backgroundColor: Color = Theme[colors][surface],
+    backgroundColor: Color = Theme[colors][surface2],
     contentColor: Color = Theme[colors][primary]
 ) {
     UnstyledProgress(
@@ -31,6 +31,6 @@ fun AppProgressIndicator(
             .clip(shape)
             .background(backgroundColor)
     ) {
-        Indicator(modifier.background(contentColor))
+        Indicator(Modifier.background(contentColor))
     }
 }

@@ -27,6 +27,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.launch
 import kotlinx.io.files.Path
+import opensavvy.progress.Progress
 import kotlin.coroutines.CoroutineContext
 
 private val logger = KotlinLogging.logger {}
@@ -67,14 +68,21 @@ class LauncherServiceImpl(
         logger.info { "Instance ${instance.name} finished" }
     }
 
-    context(_: ProducerScope<InstanceLaunchEvent>, _: Raise<NonEmptyList<FileValidationFailure>>)
+    context(scope: ProducerScope<InstanceLaunchEvent>, _: Raise<NonEmptyList<FileValidationFailure>>)
     private suspend fun InstanceDependencyList.validate() {
         logger.info { "Validating dependencies..." }
-        fileValidationService.submit(allDependencies) {
-
+        scope.send(InstanceLaunchEvent.Validating(null))
+        fileValidationService.submit(allDependencies) { progress ->
+            scope.trySend(InstanceLaunchEvent.Downloading(progress.toFractionOrNull()))
         }
         logger.info { "Dependencies validated" }
     }
+}
+
+private fun Progress.toFractionOrNull(): Float? = when (this) {
+    is Progress.Loading.Quantified -> normalized.toFloat()
+    Progress.Done -> 1f
+    Progress.Loading.Unquantified -> null
 }
 
 internal expect val platformPathSeparator: String

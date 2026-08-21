@@ -11,7 +11,6 @@ data class InstallModpackState(
     val selectedFileId: String?,
     val instanceName: String,
     val installing: Boolean,
-    val manualDownloadItems: List<ManualDownloadItemView> = emptyList(),
 ) {
     val fileList = files.valueOrNull ?: emptyList()
     val selectedFile = fileList.find { it.id == selectedFileId }

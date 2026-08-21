@@ -15,6 +15,8 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.io.files.Path
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import opensavvy.progress.Progress
+import opensavvy.progress.done
 
 private const val MODRINTH_PLATFORM_ID = "modrinth"
 
@@ -79,6 +81,17 @@ class ModrinthModpackParser(private val json: Json) : ModpackManifestParser {
             files = files,
             overridesDirs = listOf("overrides", "client-overrides")
         )
+    }
+
+    // .mrpack files already embed each entry's filename/hash/download URL, so parse() resolves everything upfront.
+    context(_: Raise<ModpackResolutionError>)
+    override suspend fun resolveFiles(
+        zipPath: Path,
+        manifest: ModpackManifest,
+        onProgress: (Progress) -> Unit
+    ): ModpackManifest {
+        onProgress(done())
+        return manifest
     }
 
     context(_: Raise<ModpackResolutionError>)

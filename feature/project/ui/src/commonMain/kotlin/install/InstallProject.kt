@@ -84,7 +84,7 @@ fun InstallProject(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         AppText(text = item.fileName, modifier = Modifier.weight(1f))
-                        if (item.status == ManualDownloadStatus.Downloaded) {
+                        if (item.downloaded) {
                             AppIcon(
                                 imageVector = Lucide.Check,
                                 contentDescription = null,

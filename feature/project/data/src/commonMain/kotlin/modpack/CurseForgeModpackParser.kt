@@ -16,6 +16,12 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.io.files.Path
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import opensavvy.progress.Progress
+import opensavvy.progress.done
+import opensavvy.progress.loading
+import kotlin.concurrent.atomics.AtomicInt
+import kotlin.concurrent.atomics.ExperimentalAtomicApi
+import kotlin.concurrent.atomics.incrementAndFetch
 
 private const val CURSEFORGE_PLATFORM_ID = "curseforge"
 private const val RESOLVE_CONCURRENCY = 5
@@ -61,15 +67,41 @@ class CurseForgeModpackParser(
             ?: manifest.minecraft.modLoaders.firstOrNull()
         val (loaderType, loaderVersion) = primaryLoader?.id?.toModLoaderTypeAndVersionOrNull() ?: (null to null)
 
-        val fileResolutions = manifest.files.parMap(concurrency = RESOLVE_CONCURRENCY) { entry ->
+        return ModpackManifest(
+            platformId = projectId.platform,
+            projectId = projectId.id,
+            fileId = fileId,
+            name = manifest.name,
+            gameVersion = manifest.minecraft.version,
+            loaderType = loaderType,
+            loaderVersion = loaderVersion,
+            // Resolved separately by resolveFiles — CurseForge's own manifest only lists project/file ID pairs,
+            // each requiring its own network lookup to get a real filename/hash/download URL.
+            files = emptyList(),
+            overridesDirs = listOf(manifest.overrides)
+        )
+    }
+
+    @OptIn(ExperimentalAtomicApi::class)
+    context(_: Raise<ModpackResolutionError>)
+    override suspend fun resolveFiles(
+        zipPath: Path,
+        manifest: ModpackManifest,
+        onProgress: (Progress) -> Unit
+    ): ModpackManifest {
+        val entries = readManifest(zipPath).files
+        onProgress(loading(0.0))
+        val total = entries.size.toDouble()
+        val resolved = AtomicInt(0)
+        val fileResolutions = entries.parMap(concurrency = RESOLVE_CONCURRENCY) { entry ->
             either {
                 projectRepository.value.getProjectFile(
                     ProjectId(entry.projectID.toString(), CURSEFORGE_PLATFORM_ID),
                     entry.fileID.toString()
                 )
-            }
+            }.also { onProgress(loading(resolved.incrementAndFetch() / total)) }
         }
-        val files = manifest.files.zip(fileResolutions).map { (entry, resolution) ->
+        val files = entries.zip(fileResolutions).map { (entry, resolution) ->
             val file = resolution.mapLeft { ModpackFileResolutionFailed }.bind()
             ModpackManifestFile(
                 targetPath = "mods/${file.fileName}",
@@ -82,18 +114,8 @@ class CurseForgeModpackParser(
                 manualDownloadUrl = file.manualDownloadUrl
             )
         }
-
-        return ModpackManifest(
-            platformId = projectId.platform,
-            projectId = projectId.id,
-            fileId = fileId,
-            name = manifest.name,
-            gameVersion = manifest.minecraft.version,
-            loaderType = loaderType,
-            loaderVersion = loaderVersion,
-            files = files,
-            overridesDirs = listOf(manifest.overrides)
-        )
+        onProgress(done())
+        return manifest.copy(files = files)
     }
 
     context(_: Raise<ModpackResolutionError>)

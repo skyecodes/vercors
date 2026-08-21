@@ -51,6 +51,12 @@ interface ProjectRepository {
     context(_: Raise<ModpackResolutionError>)
     suspend fun getModpackManifest(projectId: ProjectId, fileId: String): ModpackManifest
 
+    context(_: Raise<ModpackResolutionError>)
+    suspend fun resolveModpackManifestFiles(
+        manifest: ModpackManifest,
+        onProgress: (Progress) -> Unit = {}
+    ): ModpackManifest
+
     context(_: Raise<ModpackInstallError>)
     suspend fun installModpackFiles(
         manifest: ModpackManifest,
