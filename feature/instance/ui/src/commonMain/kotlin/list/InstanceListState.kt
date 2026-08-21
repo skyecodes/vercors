@@ -19,6 +19,7 @@ data class InstanceListState(
     private val loadedInstances = instances.valueOrNull ?: emptyList()
     val filteredInstances = loadedInstances.filter {
         it.name.contains(nameFilter, ignoreCase = true) &&
+                (typeFilter.isBlank() || it.type == typeFilter) &&
                 (versionFilter.isBlank() || it.version == versionFilter) &&
                 (loaderFilter.isBlank() || it.loader == loaderFilter)
     }
