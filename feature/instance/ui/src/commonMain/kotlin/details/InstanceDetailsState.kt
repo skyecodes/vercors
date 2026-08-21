@@ -65,6 +65,7 @@ data class InstanceView(
     val loaderVersion: String?,
     val type: String,
     val status: InstanceStatus,
+    val modpackInfo: InstanceModpackInfo?,
 )
 
 @Immutable
@@ -103,7 +104,8 @@ fun InstanceAndStatus.toView(): InstanceView = InstanceView(
     loaderType = instance.modLoader?.type,
     loaderVersion = instance.modLoader?.version,
     type = instance.displayType,
-    status = status
+    status = status,
+    modpackInfo = instance.modpackInfo
 )
 
 val Instance.displayType: String get() = if (modpackInfo != null) "Modpack" else "Custom"

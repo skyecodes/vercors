@@ -34,6 +34,7 @@ import app.vercors.core.ui.component.*
 import app.vercors.core.ui.layout.AppError
 import app.vercors.core.ui.layout.AppLoading
 import app.vercors.core.ui.layout.AppTabGroup
+import app.vercors.core.ui.layout.AppTabScope
 import app.vercors.core.ui.modifier.appCard
 import app.vercors.core.ui.search
 import app.vercors.core.ui.theme.*
@@ -127,45 +128,52 @@ private fun InstanceDetails(
             onSelectedTabChange = { eventSink(InstanceDetailsEvent.SelectTab(it)) },
             tabs = InstanceDetailsTab.entries.filter { it != InstanceDetailsTab.Logs || state.logs != null },
             orientation = Orientation.Vertical,
-            tabTitle = { tab ->
-                val backgroundColor by appAnimateColorAsState(if (selected) Theme[colors][surface2] else Theme[colors][surface])
-                Row(
-                    modifier = Modifier
-                        .background(backgroundColor)
-                        .fillMaxWidth()
-                        .pointerHoverIcon(PointerIcon.Hand, true)
-                        .padding(8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    val installedFiles = when (tab) {
-                        InstanceDetailsTab.Mods -> state.installedMods
-                        InstanceDetailsTab.ResourcePacks -> state.installedResourcePacks
-                        InstanceDetailsTab.ShaderPacks -> state.installedShaderPacks
-                        else -> null
-                    }
-                    val title = if (installedFiles != null) {
-                        "${tab.title} (${installedFiles.count { it.enabled }})"
-                    } else {
-                        tab.title
-                    }
-                    AppIconTextButtonContent(
-                        text = title,
-                        imageVector = tab.icon
-                    )
-                }
-            }
-        ) {
-            when (it) {
-                InstanceDetailsTab.Options -> InstanceOptionsTab(instance, state)
-                InstanceDetailsTab.Mods -> InstanceModsTab(state)
-                InstanceDetailsTab.ResourcePacks -> InstanceResourcePacksTab(state)
-                InstanceDetailsTab.ShaderPacks -> InstanceShaderPacksTab(state)
-                InstanceDetailsTab.DataPacks -> InstanceDataPacksTab(state)
-                InstanceDetailsTab.Worlds -> InstanceWorldsTab(state)
-                InstanceDetailsTab.Logs -> state.logs?.let { logs -> InstanceLogsTab(logs) }
-            }
+            tabTitle = { tab -> InstanceDetailsTabTitle(tab, state) }
+        ) { tab -> InstanceDetailsTabContent(tab, instance, state) }
+    }
+}
+
+@Composable
+private fun AppTabScope.InstanceDetailsTabTitle(tab: InstanceDetailsTab, state: InstanceDetailsState) {
+    val backgroundColor by appAnimateColorAsState(if (selected) Theme[colors][surface2] else Theme[colors][surface])
+    Row(
+        modifier = Modifier
+            .background(backgroundColor)
+            .fillMaxWidth()
+            .pointerHoverIcon(PointerIcon.Hand, true)
+            .padding(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        val installedFiles = when (tab) {
+            InstanceDetailsTab.Mods -> state.installedMods
+            InstanceDetailsTab.ResourcePacks -> state.installedResourcePacks
+            InstanceDetailsTab.ShaderPacks -> state.installedShaderPacks
+            else -> null
         }
+        val title = if (installedFiles != null) {
+            "${tab.title} (${installedFiles.count { it.enabled }})"
+        } else {
+            tab.title
+        }
+        AppIconTextButtonContent(
+            text = title,
+            imageVector = tab.icon
+        )
+    }
+}
+
+@Composable
+context(eventSink: EventSink<InstanceDetailsEvent>)
+private fun InstanceDetailsTabContent(tab: InstanceDetailsTab, instance: InstanceView, state: InstanceDetailsState) {
+    when (tab) {
+        InstanceDetailsTab.Options -> InstanceOptionsTab(instance, state)
+        InstanceDetailsTab.Mods -> InstanceModsTab(state)
+        InstanceDetailsTab.ResourcePacks -> InstanceResourcePacksTab(state)
+        InstanceDetailsTab.ShaderPacks -> InstanceShaderPacksTab(state)
+        InstanceDetailsTab.DataPacks -> InstanceDataPacksTab(state)
+        InstanceDetailsTab.Worlds -> InstanceWorldsTab(state)
+        InstanceDetailsTab.Logs -> state.logs?.let { logs -> InstanceLogsTab(logs) }
     }
 }
 
@@ -179,165 +187,210 @@ private fun InstanceHeader(instance: InstanceView, isInstanceEdited: Boolean) = 
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        AppIcon(
-            imageVector = Lucide.Gamepad2,
-            contentDescription = instance.name,
-            modifier = Modifier.size(48.dp).instanceSharedElement(instance.id, "icon")
-        )
+        InstanceHeaderIcon(instance)
+        InstanceHeaderInfo(instance)
+        InstanceHeaderStatus(instance)
+        InstanceHeaderEditActions(isInstanceEdited)
+        InstanceHeaderActionButton(instance, isInstanceEdited)
+        InstanceHeaderMenu(instance)
+    }
+}
 
-        Column(
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
+@Composable
+context(_: SharedElementTransitionScope)
+private fun InstanceHeaderIcon(instance: InstanceView) {
+    AppIcon(
+        imageVector = Lucide.Gamepad2,
+        contentDescription = instance.name,
+        modifier = Modifier.size(48.dp).instanceSharedElement(instance.id, "icon")
+    )
+}
+
+@Composable
+context(_: SharedElementTransitionScope)
+private fun RowScope.InstanceHeaderInfo(instance: InstanceView) {
+    Column(
+        modifier = Modifier.weight(1f),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        AppText(
+            text = instance.name,
+            fontWeight = FontWeight.SemiBold,
+            singleLine = true,
+            modifier = Modifier.instanceSharedElement(instance.id, "title")
+        )
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(3.dp)
         ) {
             AppText(
-                text = instance.name,
-                fontWeight = FontWeight.SemiBold,
-                singleLine = true,
-                modifier = Modifier.instanceSharedElement(instance.id, "title")
+                text = "${instance.type} -",
+                fontSize = 12.sp,
+                modifier = Modifier.instanceSharedElement(instance.id, "type")
             )
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(3.dp)
-            ) {
-                AppText(
-                    text = "${instance.type} -",
-                    fontSize = 12.sp,
-                    modifier = Modifier.instanceSharedElement(instance.id, "type")
-                )
-                AppText(
-                    text = instance.loader,
-                    fontSize = 12.sp,
-                    modifier = Modifier.instanceSharedElement(instance.id, "loader")
-                )
-                AppText(
-                    text = instance.gameVersion,
-                    fontSize = 12.sp,
-                    modifier = Modifier.instanceSharedElement(instance.id, "version")
+            AppText(
+                text = instance.loader,
+                fontSize = 12.sp,
+                modifier = Modifier.instanceSharedElement(instance.id, "loader")
+            )
+            AppText(
+                text = instance.gameVersion,
+                fontSize = 12.sp,
+                modifier = Modifier.instanceSharedElement(instance.id, "version")
+            )
+        }
+    }
+}
+
+@Composable
+context(eventSink: EventSink<InstanceDetailsEvent>)
+private fun InstanceHeaderStatus(instance: InstanceView) {
+    if (instance.status !is InstanceStatus.Launching && instance.status !is InstanceStatus.Installing) return
+
+    Column(
+        modifier = Modifier.width(200.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterVertically)
+    ) {
+        if (instance.status is InstanceStatus.Installing.AwaitingManualDownloads) {
+            AppIconTextButton(
+                onClick = { eventSink(InstanceDetailsEvent.OnFinishInstallationClick) },
+                text = stringResource(InstanceRes.string.finishInstallation),
+                imageVector = Lucide.Download,
+            )
+        } else {
+            AppText(
+                text = instance.status.text
+            )
+            instance.status.progress?.let {
+                val progress by appAnimateFloatAsState(it)
+                AppProgressIndicator(
+                    progress = progress,
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
         }
+    }
+}
 
-        if (instance.status is InstanceStatus.Launching || instance.status is InstanceStatus.Installing) {
-            Column(
-                modifier = Modifier.width(200.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterVertically)
-            ) {
-                if (instance.status is InstanceStatus.Installing.AwaitingManualDownloads) {
-                    AppIconTextButton(
-                        onClick = { eventSink(InstanceDetailsEvent.OnFinishInstallationClick) },
-                        text = stringResource(InstanceRes.string.finishInstallation),
-                        imageVector = Lucide.Download,
-                    )
-                } else {
-                    AppText(
-                        text = instance.status.text
-                    )
-                    instance.status.progress?.let {
-                        val progress by appAnimateFloatAsState(it)
-                        AppProgressIndicator(
-                            progress = progress,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-                }
-            }
+@Composable
+context(eventSink: EventSink<InstanceDetailsEvent>)
+private fun InstanceHeaderEditActions(isInstanceEdited: Boolean) {
+    AppAnimatedVisibility(isInstanceEdited) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            AppText(
+                text = stringResource(InstanceRes.string.changes),
+            )
+
+            AppIconTextButton(
+                onClick = { eventSink(InstanceDetailsEvent.CancelEdit) },
+                text = stringResource(SharedRes.string.cancel),
+                backgroundColor = Theme[colors][surface2],
+                contentColor = Theme[colors][onBackground],
+                imageVector = Lucide.X,
+            )
+
+            AppIconTextButton(
+                onClick = { eventSink(InstanceDetailsEvent.SaveInstance) },
+                text = stringResource(SharedRes.string.save),
+                backgroundColor = Theme[colors][success],
+                contentColor = Theme[colors][onSuccess],
+                imageVector = Lucide.Save,
+            )
         }
+    }
+}
 
-        AppAnimatedVisibility(isInstanceEdited) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                AppText(
-                    text = stringResource(InstanceRes.string.changes),
-                )
+@Composable
+context(eventSink: EventSink<InstanceDetailsEvent>)
+private fun InstanceHeaderActionButton(instance: InstanceView, isInstanceEdited: Boolean) {
+    AppAnimatedVisibility(!isInstanceEdited) {
+        when (instance.status) {
+            is InstanceStatus.Idle, is InstanceStatus.Failed -> AppIconTextButton(
+                onClick = { eventSink(InstanceDetailsEvent.Launch) },
+                text = stringResource(InstanceRes.string.launch),
+                backgroundColor = Theme[colors][success],
+                contentColor = Theme[colors][onSuccess],
+                imageVector = Lucide.Play,
+            )
 
-                AppIconTextButton(
-                    onClick = { eventSink(InstanceDetailsEvent.CancelEdit) },
-                    text = stringResource(SharedRes.string.cancel),
-                    backgroundColor = Theme[colors][surface2],
-                    contentColor = Theme[colors][onBackground],
-                    imageVector = Lucide.X,
-                )
+            is InstanceStatus.Launching -> AppIconTextButton(
+                onClick = { eventSink(InstanceDetailsEvent.Stop) },
+                text = stringResource(SharedRes.string.cancel),
+                backgroundColor = Theme[colors][error],
+                contentColor = Theme[colors][onError],
+                imageVector = Lucide.Square,
+            )
 
-                AppIconTextButton(
-                    onClick = { eventSink(InstanceDetailsEvent.SaveInstance) },
-                    text = stringResource(SharedRes.string.save),
-                    backgroundColor = Theme[colors][success],
-                    contentColor = Theme[colors][onSuccess],
-                    imageVector = Lucide.Save,
-                )
-            }
+            is InstanceStatus.Installing -> AppIconTextButton(
+                onClick = {},
+                text = stringResource(InstanceRes.string.launch),
+                backgroundColor = Theme[colors][success],
+                contentColor = Theme[colors][onSuccess],
+                imageVector = Lucide.Play,
+                enabled = false,
+            )
+
+            is InstanceStatus.Running -> AppIconTextButton(
+                onClick = { eventSink(InstanceDetailsEvent.Stop) },
+                text = stringResource(InstanceRes.string.stop),
+                backgroundColor = Theme[colors][error],
+                contentColor = Theme[colors][onError],
+                imageVector = Lucide.Square,
+            )
+
+            is InstanceStatus.Stopping -> AppIconTextButton(
+                onClick = { eventSink(InstanceDetailsEvent.Kill) },
+                text = stringResource(InstanceRes.string.kill),
+                backgroundColor = Theme[colors][error],
+                contentColor = Theme[colors][onError],
+                imageVector = Lucide.X,
+            )
         }
+    }
+}
 
-        AppAnimatedVisibility(!isInstanceEdited) {
-            when (instance.status) {
-                is InstanceStatus.Idle, is InstanceStatus.Failed -> AppIconTextButton(
-                    onClick = { eventSink(InstanceDetailsEvent.Launch) },
-                    text = stringResource(InstanceRes.string.launch),
-                    backgroundColor = Theme[colors][success],
-                    contentColor = Theme[colors][onSuccess],
-                    imageVector = Lucide.Play,
-                )
-
-                is InstanceStatus.Launching -> AppIconTextButton(
-                    onClick = { eventSink(InstanceDetailsEvent.Stop) },
-                    text = stringResource(SharedRes.string.cancel),
-                    backgroundColor = Theme[colors][error],
-                    contentColor = Theme[colors][onError],
-                    imageVector = Lucide.Square,
-                )
-
-                is InstanceStatus.Installing -> AppIconTextButton(
-                    onClick = {},
-                    text = stringResource(InstanceRes.string.launch),
-                    backgroundColor = Theme[colors][success],
-                    contentColor = Theme[colors][onSuccess],
-                    imageVector = Lucide.Play,
-                    enabled = false,
-                )
-
-                is InstanceStatus.Running -> AppIconTextButton(
-                    onClick = { eventSink(InstanceDetailsEvent.Stop) },
-                    text = stringResource(InstanceRes.string.stop),
-                    backgroundColor = Theme[colors][error],
-                    contentColor = Theme[colors][onError],
-                    imageVector = Lucide.Square,
-                )
-
-                is InstanceStatus.Stopping -> AppIconTextButton(
-                    onClick = { eventSink(InstanceDetailsEvent.Kill) },
-                    text = stringResource(InstanceRes.string.kill),
-                    backgroundColor = Theme[colors][error],
-                    contentColor = Theme[colors][onError],
-                    imageVector = Lucide.X,
-                )
-            }
-        }
-
-        AppMenuButton(
-            imageVector = Lucide.EllipsisVertical,
-            backgroundColor = Theme[colors][surface2],
-            menuModifier = Modifier.offset(y = 4.dp),
-            anchor = AppDropdownPanelAnchor.BottomEnd,
-            menuContent = {
-                if (instance.status is InstanceStatus.Installing) {
-                    AppMenuItem(
-                        onClick = { eventSink(InstanceDetailsEvent.CancelSetup) },
-                        text = stringResource(InstanceRes.string.cancelSetup),
-                        imageVector = Lucide.X,
-                        contentColor = Theme[colors][error]
-                    )
-                }
+@Composable
+context(eventSink: EventSink<InstanceDetailsEvent>)
+private fun InstanceHeaderMenu(instance: InstanceView) {
+    AppMenuButton(
+        imageVector = Lucide.EllipsisVertical,
+        backgroundColor = Theme[colors][surface2],
+        menuModifier = Modifier.offset(y = 4.dp),
+        anchor = AppDropdownPanelAnchor.BottomEnd,
+        menuContent = {
+            if (instance.status is InstanceStatus.Installing) {
                 AppMenuItem(
-                    onClick = { eventSink(InstanceDetailsEvent.Delete) },
-                    text = stringResource(SharedRes.string.delete),
-                    imageVector = Lucide.Trash,
+                    onClick = { eventSink(InstanceDetailsEvent.CancelSetup) },
+                    text = stringResource(InstanceRes.string.cancelSetup),
+                    imageVector = Lucide.X,
                     contentColor = Theme[colors][error]
                 )
             }
-        )
-    }
+            instance.modpackInfo?.let { modpackInfo ->
+                AppMenuItem(
+                    onClick = {
+                        eventSink(
+                            InstanceDetailsEvent.OnOpenProjectClick(modpackInfo.platformId, modpackInfo.projectId)
+                        )
+                    },
+                    text = stringResource(
+                        InstanceRes.string.openProject,
+                        modpackInfo.platformId.toPlatformDisplayName()
+                    ),
+                    imageVector = Lucide.ArrowRight
+                )
+            }
+            AppMenuItem(
+                onClick = { eventSink(InstanceDetailsEvent.Delete) },
+                text = stringResource(SharedRes.string.delete),
+                imageVector = Lucide.Trash,
+                contentColor = Theme[colors][error]
+            )
+        }
+    )
 }
 
 @Composable
@@ -489,8 +542,12 @@ private fun LazyListScope.InstanceTabRow(
     }
 }
 
-private const val MODRINTH_PLATFORM_ID = "modrinth"
-private const val CURSEFORGE_PLATFORM_ID = "curseforge"
+/** Platform names aren't translated, so this is a plain lookup rather than a string resource. */
+private fun String.toPlatformDisplayName(): String = when (this) {
+    "modrinth" -> "Modrinth"
+    "curseforge" -> "CurseForge"
+    else -> this
+}
 
 @Composable
 context(eventSink: EventSink<InstanceDetailsEvent>)
@@ -630,21 +687,15 @@ private fun InstalledContentFileRow(
                     imageVector = Lucide.Trash,
                     contentColor = Theme[colors][error]
                 )
-                file.providers.find { it.platformId == MODRINTH_PLATFORM_ID }?.let { provider ->
+                file.providers.forEach { provider ->
                     AppMenuItem(
                         onClick = {
                             eventSink(InstanceDetailsEvent.OnOpenProjectClick(provider.platformId, provider.projectId))
                         },
-                        text = stringResource(InstanceRes.string.openModrinthProject),
-                        imageVector = Lucide.ArrowRight
-                    )
-                }
-                file.providers.find { it.platformId == CURSEFORGE_PLATFORM_ID }?.let { provider ->
-                    AppMenuItem(
-                        onClick = {
-                            eventSink(InstanceDetailsEvent.OnOpenProjectClick(provider.platformId, provider.projectId))
-                        },
-                        text = stringResource(InstanceRes.string.openCurseForgeProject),
+                        text = stringResource(
+                            InstanceRes.string.openProject,
+                            provider.platformId.toPlatformDisplayName()
+                        ),
                         imageVector = Lucide.ArrowRight
                     )
                 }
