@@ -6,6 +6,7 @@ import app.vercors.feature.game.domain.model.GameVersionDetails
 import app.vercors.feature.instance.domain.model.Instance
 import app.vercors.feature.launcher.domain.model.InstanceLaunchEvent
 import app.vercors.feature.launcher.domain.model.InstanceLaunchFeature
+import app.vercors.shared.domain.model.JvmMemoryOptions
 import kotlinx.coroutines.flow.Flow
 
 interface LauncherService {
@@ -14,6 +15,8 @@ interface LauncherService {
         account: Account,
         version: GameVersionDetails,
         assetIndex: GameAssetIndex,
-        features: List<InstanceLaunchFeature>
+        features: List<InstanceLaunchFeature>,
+        javaExecutable: String,
+        jvmMemoryOptions: JvmMemoryOptions
     ): Flow<InstanceLaunchEvent>
 }

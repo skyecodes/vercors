@@ -261,14 +261,12 @@ fun LoginDisplay(
                 AppIconTextButton(
                     onClick = { uriHandler.openUri(it) },
                     text = stringResource(SharedRes.string.openInBrowser),
-                    imageVector = Lucide.ExternalLink,
-                    backgroundColor = Theme[colors][surface2]
+                    imageVector = Lucide.ExternalLink
                 )
                 AppIconTextButton(
                     onClick = { eventSink(AccountListEvent.CopyToClipboard(it)) },
                     text = stringResource(SharedRes.string.copyLink),
-                    imageVector = Lucide.Link,
-                    backgroundColor = Theme[colors][surface2]
+                    imageVector = Lucide.Link
                 )
             }
         }

@@ -41,6 +41,23 @@
     <string name="errorLoading">Instance with ID "%1$s" failed to load: %2$s</string>
     <string name="errorImportFailed">Failed to import file</string>
     <string name="errorOpenFolderFailed">Failed to open folder</string>
+    <string name="errorNoCompatibleJava">No compatible Java %1$d installation found</string>
+    <string name="promptInstallJavaTitle">Java %1$d required</string>
+    <string name="promptInstallJavaMessage">This instance requires Java %1$d, but no compatible installation was found. Install one automatically?</string>
+    <string name="installJava">Install Java</string>
+    <string name="javaOverride">Java installation</string>
+    <string name="useDefaultJava">Use default</string>
+    <string name="javaInstallStarted">Installing Java %1$d…</string>
+    <string name="javaInstallFailed">Failed to install Java %1$d: %2$s</string>
+    <string name="javaInstallSucceeded">Java %1$d installed</string>
+
+    <string name="maxMemory">Max memory</string>
+    <string name="maxMemoryDesc">The maximum amount of memory the game is allowed to use (-Xmx).</string>
+    <string name="minMemory">Min memory</string>
+    <string name="minMemoryDesc">The amount of memory allocated to the game on startup (-Xms).</string>
+    <string name="extraJvmArgs">Extra JVM arguments</string>
+    <string name="extraJvmArgsDesc">Additional arguments passed to the JVM when launching the game.</string>
+    <string name="megabytes">MB</string>
 
     <string name="editInstance">Edit instance</string>
     <string name="deleteInstanceConfirmation">Are you sure you want to delete this instance?\nAll instance data (worlds, mods, etc.) will be permanently removed.</string>

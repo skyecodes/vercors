@@ -20,8 +20,25 @@ actual suspend fun Path.createLink(target: Path, context: CoroutineContext, isSy
     return true
 }
 
-actual suspend fun Path.lastModifiedOrNull(context: CoroutineContext): Instant? = withContext(context) {
-    runCatching { JvmPath(toString()).getLastModifiedTime().toMillis() }
-        .getOrNull()
-        ?.let { Instant.fromEpochMilliseconds(it) }
+actual suspend fun Path.lastModifiedOrNull(context: CoroutineContext): Instant? {
+    val jvmPath = JvmPath(toString())
+    return withContext(context) {
+        runCatching { jvmPath.getLastModifiedTime().toMillis() }
+            .getOrNull()
+            ?.let { Instant.fromEpochMilliseconds(it) }
+    }
+}
+
+actual suspend fun Path.setExecutable(context: CoroutineContext): Boolean {
+    val jvmPath = JvmPath(toString())
+    return withContext(context) {
+        jvmPath.toFile().setExecutable(true)
+    }
+}
+
+actual suspend fun Path.realPath(context: CoroutineContext): Path? {
+    val jvmPath = JvmPath(toString())
+    return withContext(context) {
+        runCatching { Path(jvmPath.toRealPath().toString()) }.getOrNull()
+    }
 }

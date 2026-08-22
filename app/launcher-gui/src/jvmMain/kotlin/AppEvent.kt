@@ -4,4 +4,5 @@ import app.vercors.shared.ui.Event
 
 sealed interface AppEvent : Event {
     data object ToggleDrawer : AppEvent
+    data object DismissSnackbar : AppEvent
 }

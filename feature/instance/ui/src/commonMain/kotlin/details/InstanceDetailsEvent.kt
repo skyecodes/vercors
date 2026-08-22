@@ -19,6 +19,9 @@ sealed interface InstanceDetailsEvent : Event {
     data class UpdateInstance(val update: (InstanceEditState) -> InstanceEditState) : InstanceDetailsEvent
     data class OnLoaderChange(val loader: ModLoaderType?) : InstanceDetailsEvent
     data class OnLoaderVersionChange(val version: String) : InstanceDetailsEvent
+    data class OnJavaOverrideChange(val installationId: String?) : InstanceDetailsEvent
+    data object OnInstallJavaConfirm : InstanceDetailsEvent
+    data object OnInstallJavaDismiss : InstanceDetailsEvent
     data object SaveInstance : InstanceDetailsEvent
     data object CancelEdit : InstanceDetailsEvent
     data class OnModEnabledChange(val fileName: String, val enabled: Boolean) : InstanceDetailsEvent

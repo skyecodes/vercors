@@ -107,7 +107,6 @@ private fun ProjectListHeader(
                     icon = value.icon
                 )
             },
-            backgroundColor = Theme[colors][surface2],
             modifier = Modifier.width(150.dp)
         )
 
@@ -121,7 +120,6 @@ private fun ProjectListHeader(
                     icon = value.icon
                 )
             },
-            backgroundColor = Theme[colors][surface2],
             modifier = Modifier.width(175.dp)
         )
 
@@ -131,7 +129,6 @@ private fun ProjectListHeader(
             onValueChange = { eventSink(ProjectListEvent.OnSearchQueryChange(it)) },
             debounceMillis = 750,
             imeAction = ImeAction.Search,
-            backgroundColor = Theme[colors][surface2],
             modifier = Modifier.weight(1f)
         )
     }
@@ -189,7 +186,6 @@ private fun ProjectLoaderFilter(selectedLoaders: List<ModLoaderType>) {
                     onClick = { eventSink(ProjectListEvent.OnLoaderClick(loader)) },
                     imageVector = loader.icon,
                     text = loader.name,
-                    backgroundColor = Theme[colors][surface2],
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     contentPadding = ThinButtonContentPadding
                 )
@@ -225,7 +221,6 @@ private fun ProjectVersionFilter(state: ProjectListState) {
                 AppIconTextButton(
                     onClick = { eventSink(ProjectListEvent.OnGameVersionClick(it)) },
                     imageVector = null,
-                    backgroundColor = Theme[colors][surface2],
                     text = it.id,
                     horizontalArrangement = Arrangement.aligned(Alignment.Start),
                     contentPadding = ThinButtonContentPadding
@@ -239,7 +234,6 @@ private fun ProjectVersionFilter(state: ProjectListState) {
             initialValue = state.gameVersionSearchQuery,
             onValueChange = { eventSink(ProjectListEvent.OnGameVersionSearchQueryChange(it)) },
             placeholder = { AppText(stringResource(CoreRes.string.search)) },
-            backgroundColor = Theme[colors][surface2],
             modifier = Modifier.fillMaxWidth()
         )
         Row(
@@ -297,7 +291,6 @@ private fun ProjectCategoryFilter(
                     onClick = { eventSink(ProjectListEvent.OnCategoryClick(it)) },
                     painter = it.iconView?.painter,
                     text = translateCategory(it),
-                    backgroundColor = Theme[colors][surface2],
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     contentPadding = ThinButtonContentPadding
                 )
@@ -405,7 +398,6 @@ private fun ProjectListPagination(filter: ProjectListFilter, totalElements: Int?
                             else value.displayName,
                     )
                 },
-                backgroundColor = Theme[colors][surface2],
                 modifier = Modifier.width(200.dp)
             )
             AppSelectField(
@@ -419,7 +411,6 @@ private fun ProjectListPagination(filter: ProjectListFilter, totalElements: Int?
                             else "$value",
                     )
                 },
-                backgroundColor = Theme[colors][surface2],
                 modifier = Modifier.width(115.dp)
             )
             totalElements?.let { totalElements ->
@@ -442,7 +433,6 @@ private fun ProjectListPagination(filter: ProjectListFilter, totalElements: Int?
                         onClick = { eventSink(ProjectListEvent.OnLoaderClick(loader)) },
                         imageVector = Lucide.X,
                         text = loader.name,
-                        backgroundColor = Theme[colors][surface2],
                         contentPadding = ThinButtonContentPadding
                     )
                 }
@@ -451,7 +441,6 @@ private fun ProjectListPagination(filter: ProjectListFilter, totalElements: Int?
                         onClick = { eventSink(ProjectListEvent.OnGameVersionClick(version)) },
                         imageVector = Lucide.X,
                         text = version.id,
-                        backgroundColor = Theme[colors][surface2],
                         contentPadding = ThinButtonContentPadding
                     )
                 }
@@ -460,7 +449,6 @@ private fun ProjectListPagination(filter: ProjectListFilter, totalElements: Int?
                         onClick = { eventSink(ProjectListEvent.OnCategoryClick(category)) },
                         imageVector = Lucide.X,
                         text = translateCategory(category),
-                        backgroundColor = Theme[colors][surface2],
                         contentPadding = ThinButtonContentPadding
                     )
                 }

@@ -2,13 +2,16 @@ package app.vercors.feature.project.ui.details
 
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.foundation.*
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.PointerIcon
@@ -148,19 +151,13 @@ private fun ProjectDetailsHeader(projectId: ProjectId, project: ProjectDetailsVi
         }
 
         val uriHandler = LocalUriHandler.current
-        AppMenuButton(
-            imageVector = Lucide.EllipsisVertical,
-            backgroundColor = Theme[colors][surface2],
-            menuModifier = Modifier.offset(y = 4.dp),
-            anchor = AppDropdownPanelAnchor.BottomEnd,
-            menuContent = {
-                AppMenuItem(
-                    onClick = { uriHandler.openUri(project.url) },
-                    text = stringResource(SharedRes.string.openInBrowser),
-                    imageVector = Lucide.ExternalLink
-                )
-            }
-        )
+        AppMenuButton {
+            AppMenuItem(
+                onClick = { uriHandler.openUri(project.url) },
+                text = stringResource(SharedRes.string.openInBrowser),
+                imageVector = Lucide.ExternalLink
+            )
+        }
     }
 }
 
@@ -279,8 +276,9 @@ private fun ProjectLinkRow(imageVector: ImageVector, label: String, url: String)
         onClick = { uriHandler.openUri(url) },
         text = label,
         imageVector = imageVector,
+        backgroundColor = Color.Unspecified,
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.Start),
+        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.Start)
     )
 }
 
@@ -288,14 +286,16 @@ private fun ProjectLinkRow(imageVector: ImageVector, label: String, url: String)
 private fun ProjectAuthorRow(author: ProjectAuthorView) {
     val url = author.url
     val uriHandler = LocalUriHandler.current
+    val interactionSource = remember { MutableInteractionSource() }
     Row(
         modifier = Modifier.fillMaxWidth()
             .let {
-                if (url != null) it.clickable(
-                    interactionSource = null,
-                    indication = null,
-                    onClick = { uriHandler.openUri(url) }
-                ).pointerHoverIcon(PointerIcon.Hand) else it
+                if (url != null) it.clip(RoundedCornerShape(4.dp))
+                    .clickable(
+                        interactionSource = interactionSource,
+                        onClick = { uriHandler.openUri(url) }
+                    ).pointerHoverIcon(PointerIcon.Hand) else it
+
             }
             .padding(4.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),

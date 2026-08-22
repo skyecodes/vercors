@@ -7,6 +7,8 @@ import app.vercors.feature.game.ui.GameVersionView
 import app.vercors.feature.game.ui.displayName
 import app.vercors.feature.instance.domain.model.*
 import app.vercors.feature.instance.ui.install.FinishInstallationDialog
+import app.vercors.shared.domain.model.JavaInstallation
+import app.vercors.shared.domain.model.JvmMemoryOptions
 import opensavvy.state.progressive.ProgressiveOutcome
 import opensavvy.state.progressive.valueOrNull
 import kotlin.time.Instant
@@ -18,6 +20,9 @@ data class InstanceDetailsState(
     val gameVersionList: List<GameVersionView>,
     val loaderList: List<ModLoaderType>,
     val loaderVersionList: List<LoaderVersion>,
+    val availableJavaInstallations: List<JavaInstallation>,
+    val promptInstallJava: Int?,
+    val totalMemoryMb: Int,
     val selectedTab: InstanceDetailsTab,
     val promptDeleteConfirmation: Boolean,
     val logs: List<InstanceLogEventView>?,
@@ -42,7 +47,18 @@ data class InstanceDetailsState(
         editedInstance.modLoaderVersion != null && editedInstance.modLoaderVersion != it.loaderVersion
     } ?: false
     val isModLoaderEdited = isLoaderTypeEdited || isLoaderVersionEdited
-    val isInstanceEdited: Boolean = isNameEdited || isGameVersionEdited || isModLoaderEdited
+    val isJavaOverrideEdited = instance.valueOrNull?.let {
+        val current: JavaOverrideEdit =
+            it.javaInstallationId?.let(JavaOverrideEdit::Specific) ?: JavaOverrideEdit.UseDefault
+        editedInstance.javaOverride != null && editedInstance.javaOverride != current
+    } ?: false
+    val isJvmMemoryOptionsEdited = instance.valueOrNull?.let {
+        val current: JvmMemoryOptionsEdit =
+            it.jvmMemoryOptions?.let(JvmMemoryOptionsEdit::Custom) ?: JvmMemoryOptionsEdit.UseDefault
+        editedInstance.jvmMemoryOptionsEdit != null && editedInstance.jvmMemoryOptionsEdit != current
+    } ?: false
+    val isInstanceEdited: Boolean =
+        isNameEdited || isGameVersionEdited || isModLoaderEdited || isJavaOverrideEdited || isJvmMemoryOptionsEdited
 }
 
 enum class InstanceDetailsTab {
@@ -67,6 +83,8 @@ data class InstanceView(
     val status: InstanceStatus,
     val modpackInfo: InstanceModpackInfo?,
     val iconFilePath: String?,
+    val javaInstallationId: String?,
+    val jvmMemoryOptions: JvmMemoryOptions?,
     /** Bumped whenever the icon changes — used to bust the image cache when [iconFilePath] is reused unchanged. */
     val updatedAt: Instant,
 )
@@ -77,6 +95,8 @@ data class InstanceEditState(
     val gameVersion: String? = null,
     val modLoaderType: ModLoaderTypeEdit? = null,
     val modLoaderVersion: String? = null,
+    val javaOverride: JavaOverrideEdit? = null,
+    val jvmMemoryOptionsEdit: JvmMemoryOptionsEdit? = null,
 )
 
 @Immutable
@@ -85,6 +105,22 @@ sealed interface ModLoaderTypeEdit {
 
     @JvmInline
     value class Loader(val type: ModLoaderType) : ModLoaderTypeEdit
+}
+
+@Immutable
+sealed interface JavaOverrideEdit {
+    data object UseDefault : JavaOverrideEdit
+
+    @JvmInline
+    value class Specific(val installationId: String) : JavaOverrideEdit
+}
+
+@Immutable
+sealed interface JvmMemoryOptionsEdit {
+    data object UseDefault : JvmMemoryOptionsEdit
+
+    @JvmInline
+    value class Custom(val options: JvmMemoryOptions) : JvmMemoryOptionsEdit
 }
 
 @Immutable
@@ -110,6 +146,8 @@ fun InstanceAndStatus.toView(): InstanceView = InstanceView(
     status = status,
     modpackInfo = instance.modpackInfo,
     iconFilePath = instance.iconFilePath,
+    javaInstallationId = instance.javaInstallationId,
+    jvmMemoryOptions = instance.jvmMemoryOptions,
     updatedAt = instance.updatedAt
 )
 

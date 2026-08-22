@@ -1,5 +1,8 @@
 package app.vercors.feature.config.domain.model
 
+import app.vercors.shared.domain.model.JavaInstallation
+import app.vercors.shared.domain.model.JvmMemoryOptions
+
 data class Configuration(
     val metaApiUrl: String,
     val parallelDownloads: Int,
@@ -10,6 +13,9 @@ data class Configuration(
     val homeCategories: List<HomeCategoryConfig>,
     val selectedThemeId: String,
     val selectedAccent: String,
+    val preferredJavaByMajorVersion: Map<Int, String> = emptyMap(),
+    val javaInstallations: List<JavaInstallation> = emptyList(),
+    val jvmMemoryOptions: JvmMemoryOptions = JvmMemoryOptions(),
 ) {
     companion object {
         const val DEFAULT_THEME_ID = "catppuccin_mocha"
@@ -25,6 +31,9 @@ data class Configuration(
             homeCategories = HomeCategoryConfig.entries,
             selectedThemeId = DEFAULT_THEME_ID,
             selectedAccent = DEFAULT_ACCENT,
+            preferredJavaByMajorVersion = emptyMap(),
+            javaInstallations = emptyList(),
+            jvmMemoryOptions = JvmMemoryOptions(),
         )
     }
 }

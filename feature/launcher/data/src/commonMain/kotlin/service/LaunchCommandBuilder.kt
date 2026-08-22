@@ -7,6 +7,7 @@ import app.vercors.feature.launcher.domain.model.LaunchVariables
 import app.vercors.feature.launcher.domain.service.resolve
 import app.vercors.feature.launcher.domain.service.substituteVariables
 import app.vercors.shared.data.AppPaths
+import app.vercors.shared.domain.model.JvmMemoryOptions
 import dev.zacsweers.metro.Inject
 
 /** Assembles the process command line for an instance whose dependencies are already resolved. */
@@ -16,7 +17,9 @@ class LaunchCommandBuilder(private val appPaths: AppPaths) {
         dependencyList: InstanceDependencyList,
         account: Account,
         instance: Instance,
-        version: GameVersionDetails
+        version: GameVersionDetails,
+        javaExecutable: String,
+        jvmMemoryOptions: JvmMemoryOptions
     ): List<String> {
         val nativesDir = appPaths.nativesDir(instance.id)
         val classpath = buildList {
@@ -41,8 +44,9 @@ class LaunchCommandBuilder(private val appPaths: AppPaths) {
             variables = mapOf("path" to dependencyList.logging!!.path.toString())
         )
         return buildList {
-            add("java")
+            add(javaExecutable)
             logConfigArg?.let { add(it) }
+            addAll(jvmMemoryOptions.toJvmArgs())
             jvmArgs?.let { addAll(it) } ?: run {
                 add("-Djava.library.path=$nativesDir")
                 add("-cp")
@@ -52,4 +56,10 @@ class LaunchCommandBuilder(private val appPaths: AppPaths) {
             gameArgs?.let { addAll(it) }
         }
     }
+}
+
+private fun JvmMemoryOptions.toJvmArgs(): List<String> = buildList {
+    minMemoryMb?.let { add("-Xms${it}M") }
+    maxMemoryMb?.let { add("-Xmx${it}M") }
+    addAll(extraArgs.trim().split(Regex("\\s+")).filter(String::isNotBlank))
 }

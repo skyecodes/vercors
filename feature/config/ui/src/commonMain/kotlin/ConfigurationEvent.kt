@@ -10,4 +10,17 @@ sealed interface ConfigurationEvent : Event {
     value class SelectAccent(val accentId: String) : ConfigurationEvent
 
     data object ToggleAnimations : ConfigurationEvent
+
+    @JvmInline
+    value class AddJavaInstallation(val path: String) : ConfigurationEvent
+
+    data object RescanJavaInstallations : ConfigurationEvent
+
+    data class SetPreferredJava(val majorVersion: Int, val installationId: String) : ConfigurationEvent
+
+    data object DismissJavaAddError : ConfigurationEvent
+
+    data class SetMinMemoryMb(val value: Int?) : ConfigurationEvent
+    data class SetMaxMemoryMb(val value: Int?) : ConfigurationEvent
+    data class SetExtraJvmArgs(val value: String) : ConfigurationEvent
 }

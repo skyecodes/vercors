@@ -22,7 +22,6 @@ import app.vercors.core.ui.modifier.appCard
 import app.vercors.core.ui.search
 import app.vercors.core.ui.theme.colors
 import app.vercors.core.ui.theme.onBackground
-import app.vercors.core.ui.theme.surface
 import app.vercors.core.ui.theme.surface2
 import com.composables.icons.lucide.ChevronDown
 import com.composables.icons.lucide.ChevronUp
@@ -37,7 +36,7 @@ fun <T> AppSelectField(
     items: List<T>,
     onValueChange: (T) -> Unit,
     label: String? = null,
-    backgroundColor: Color = Theme[colors][surface],
+    backgroundColor: Color = Theme[colors][surface2],
     itemRenderer: @Composable RowScope.(value: T, isButton: Boolean) -> Unit = { value, _ -> AppSelectItem(value.toString()) },
     searchable: Boolean = false,
     search: String = "",

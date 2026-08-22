@@ -21,6 +21,10 @@ val InstanceLaunchError.message: String
             is InstanceLaunchError.GameVersion -> stringResource(InstanceRes.string.errorGameVersion, cause)
             is InstanceLaunchError.ModLoaderInstall -> stringResource(InstanceRes.string.errorModLoaderInstall, cause)
             is InstanceLaunchError.InstanceNotFound -> stringResource(InstanceRes.string.errorNotFound, id)
+            is InstanceLaunchError.NoCompatibleJava -> stringResource(
+                InstanceRes.string.errorNoCompatibleJava,
+                majorVersion
+            )
         }
     )
 

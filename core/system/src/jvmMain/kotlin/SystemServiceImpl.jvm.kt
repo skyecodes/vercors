@@ -5,6 +5,7 @@ import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
 import dev.zacsweers.metro.SingleIn
 import io.github.oshai.kotlinlogging.KotlinLogging
+import oshi.SystemInfo
 import java.awt.Desktop
 import java.awt.Toolkit
 import java.awt.datatransfer.StringSelection
@@ -39,6 +40,10 @@ actual class SystemServiceImpl : SystemService {
 
     actual override val canOpenFileManager: Boolean by lazy {
         Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.OPEN)
+    }
+
+    actual override val totalPhysicalMemoryBytes: Long? by lazy {
+        runCatching { SystemInfo().hardware.memory.total }.getOrNull()
     }
 
     actual override fun copyToClipboard(text: String) = canCopyToClipboard && catch({

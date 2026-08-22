@@ -13,19 +13,21 @@ import androidx.compose.ui.unit.dp
 import app.vercors.core.ui.modifier.appCard
 import app.vercors.core.ui.theme.colors
 import app.vercors.core.ui.theme.surface2
+import com.composables.icons.lucide.EllipsisVertical
+import com.composables.icons.lucide.Lucide
 import com.composeunstyled.*
 import com.composeunstyled.theme.Theme
 
 @Composable
 fun AppMenuButton(
     text: String? = null,
-    imageVector: ImageVector? = null,
-    backgroundColor: Color = Color.Unspecified,
-    menuContent: @Composable () -> Unit,
+    imageVector: ImageVector? = Lucide.EllipsisVertical,
+    backgroundColor: Color = Theme[colors][surface2],
     contentPadding: PaddingValues = NormalButtonContentPadding,
     modifier: Modifier = Modifier,
-    menuModifier: Modifier = Modifier,
-    anchor: AppDropdownPanelAnchor = AppDropdownPanelAnchor.BottomStart
+    menuModifier: Modifier = Modifier.offset(y = 4.dp),
+    anchor: AppDropdownPanelAnchor = AppDropdownPanelAnchor.BottomEnd,
+    menuContent: @Composable () -> Unit,
 ) {
     var expanded by remember { mutableStateOf(false) }
 
@@ -37,7 +39,7 @@ fun AppMenuButton(
         alignment = anchor.alignment,
         panel = {
             DropdownMenuPanel(
-                modifier = menuModifier.appCard(backgroundColor = Theme[colors][surface2])
+                modifier = menuModifier.appCard(backgroundColor = backgroundColor)
                     .width(IntrinsicSize.Max),
             ) {
                 menuContent()

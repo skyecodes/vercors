@@ -2,6 +2,8 @@ package app.vercors.feature.config.ui
 
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color
+import app.vercors.shared.domain.model.JavaInstallation
+import app.vercors.shared.domain.model.JvmMemoryOptions
 
 @Immutable
 data class ConfigurationState(
@@ -9,6 +11,12 @@ data class ConfigurationState(
     val themeList: List<ThemeView>,
     val selectedAccent: ThemeNamedColorView?,
     val animations: Boolean?,
+    val javaInstallations: List<JavaInstallation>,
+    val preferredJavaByMajorVersion: Map<Int, String>,
+    val javaAddError: String?,
+    val javaScanInProgress: Boolean,
+    val jvmMemoryOptions: JvmMemoryOptions,
+    val totalMemoryMb: Int,
 )
 
 @Immutable

@@ -39,5 +39,7 @@ class LaunchCommand(private val launchInstance: LaunchInstanceUseCase) : Abstrac
                 }
             }"
             is InstanceLaunchError.ModLoaderInstall -> "Mod loader install error: $cause"
+            is InstanceLaunchError.NoCompatibleJava ->
+                "No Java $majorVersion installation found. Run 'vercors java-install $majorVersion' or add one via the Settings screen."
         }
 }

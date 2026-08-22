@@ -1,24 +1,31 @@
 package app.vercors.feature.config.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import app.vercors.core.ui.component.AppCheckbox
-import app.vercors.core.ui.component.AppSelectField
-import app.vercors.core.ui.component.AppText
-import app.vercors.core.ui.theme.label
-import app.vercors.core.ui.theme.textStyles
-import app.vercors.core.ui.theme.title
+import androidx.compose.ui.unit.sp
+import app.vercors.core.ui.component.*
+import app.vercors.core.ui.modifier.appCard
+import app.vercors.core.ui.theme.*
+import app.vercors.shared.domain.model.JavaInstallation
 import app.vercors.shared.ui.EventSink
 import app.vercors.shared.ui.Store
+import com.composables.icons.lucide.*
 import com.composeunstyled.theme.Theme
 import com.slack.circuit.codegen.annotations.CircuitInject
 import dev.zacsweers.metro.AppScope
+import io.github.vinceglb.filekit.dialogs.compose.rememberDirectoryPickerLauncher
+import io.github.vinceglb.filekit.path
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 
@@ -30,23 +37,37 @@ fun Configuration(
 ) {
     val (state, eventSink) = store
     with(eventSink) {
-        LazyColumn(
-            modifier = modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            contentPadding = PaddingValues(vertical = 8.dp)
+        Column(
+            modifier = modifier.padding(horizontal = 8.dp)
+                .fillMaxWidth()
+                .scrollable(state = rememberScrollState(), orientation = Orientation.Horizontal),
         ) {
-            UIConfigurationCategory(
-                state = state
-            )
+            LazyColumn(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                contentPadding = PaddingValues(vertical = 8.dp)
+            ) {
+                item("ui") {
+                    UIConfigurationCategory(
+                        state = state
+                    )
+                }
+                item("java") {
+                    JavaConfigurationCategory(
+                        state = state
+                    )
+                }
+            }
         }
     }
 }
 
+@Composable
 context(eventSink: EventSink<ConfigurationEvent>)
-private fun LazyListScope.UIConfigurationCategory(
+private fun UIConfigurationCategory(
     state: ConfigurationState
 ) {
     ConfigurationCategory(
+        icon = Lucide.Eye,
         titleRes = ConfigRes.string.ui,
     ) {
         if (state.selectedTheme != null) {
@@ -96,38 +117,242 @@ private fun LazyListScope.UIConfigurationCategory(
     }
 }
 
-private fun LazyListScope.ConfigurationCategory(
-    titleRes: StringResource,
-    content: LazyListScope.() -> Unit
+@Composable
+context(eventSink: EventSink<ConfigurationEvent>)
+private fun JavaConfigurationCategory(
+    state: ConfigurationState
 ) {
-    stickyHeader(titleRes) {
-        AppText(
-            text = stringResource(titleRes),
-            style = Theme[textStyles][title],
-            modifier = Modifier.padding(start = 16.dp)
-        )
-    }
-    content()
-}
+    ConfigurationCategory(
+        icon = Lucide.Coffee,
+        titleRes = ConfigRes.string.java,
+    ) {
 
-private fun LazyListScope.ConfigurationRow(
-    title: StringResource,
-    description: StringResource,
-    content: @Composable RowScope.() -> Unit
-) {
-    item(title.key) {
+
+        val pickerLauncher = rememberDirectoryPickerLauncher { directory ->
+            directory?.let { eventSink(ConfigurationEvent.AddJavaInstallation(it.path)) }
+        }
+
         Row(
-            modifier = Modifier.padding(horizontal = 8.dp).fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Column(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(2.dp)
             ) {
-                AppText(text = stringResource(title), fontWeight = FontWeight.SemiBold)
-                AppText(text = stringResource(description), style = Theme[textStyles][label])
+                AppText(text = stringResource(ConfigRes.string.javaInstallations), fontWeight = FontWeight.SemiBold)
+                AppText(text = stringResource(ConfigRes.string.javaInstallationsDesc), style = Theme[textStyles][label])
             }
+            AppIconTextButton(
+                onClick = pickerLauncher::launch,
+                text = stringResource(ConfigRes.string.addInstallation),
+                imageVector = Lucide.Plus,
+            )
+            AppIconTextButton(
+                onClick = { eventSink(ConfigurationEvent.RescanJavaInstallations) },
+                text = stringResource(if (state.javaScanInProgress) ConfigRes.string.rescanning else ConfigRes.string.rescan),
+                imageVector = Lucide.RefreshCw,
+                enabled = !state.javaScanInProgress,
+            )
+        }
+
+        state.javaInstallations.groupBy { it.majorVersion }.toSortedMap().forEach { (majorVersion, installations) ->
+            JavaVersionGroup(majorVersion, installations, state.preferredJavaByMajorVersion[majorVersion])
+        }
+
+        state.javaAddError?.let { path ->
+            AppText(
+                text = stringResource(ConfigRes.string.javaAddFailed, path),
+                color = Theme[colors][error],
+                modifier = Modifier.padding(horizontal = 8.dp)
+                    .clickable { eventSink(ConfigurationEvent.DismissJavaAddError) }
+            )
+        }
+
+        val defaultMax = defaultMaxMemoryMb(state.totalMemoryMb)
+
+        ConfigurationRow(title = ConfigRes.string.maxMemory, description = ConfigRes.string.maxMemoryDesc) {
+            MemorySliderControl(
+                value = state.jvmMemoryOptions.maxMemoryMb,
+                defaultValue = defaultMax,
+                valueRange = 512..state.totalMemoryMb,
+                stepSize = 128,
+                onCheckedChange = { checked -> eventSink(ConfigurationEvent.SetMaxMemoryMb(if (checked) defaultMax else null)) },
+                onValueChange = { eventSink(ConfigurationEvent.SetMaxMemoryMb(it)) },
+            )
+        }
+        ConfigurationRow(title = ConfigRes.string.minMemory, description = ConfigRes.string.minMemoryDesc) {
+            MemorySliderControl(
+                value = state.jvmMemoryOptions.minMemoryMb,
+                defaultValue = defaultMinMemoryMb(),
+                valueRange = 256..(state.jvmMemoryOptions.maxMemoryMb ?: defaultMax),
+                stepSize = 32,
+                onCheckedChange = { checked -> eventSink(ConfigurationEvent.SetMinMemoryMb(if (checked) defaultMinMemoryMb() else null)) },
+                onValueChange = { eventSink(ConfigurationEvent.SetMinMemoryMb(it)) },
+            )
+        }
+        ConfigurationRow(title = ConfigRes.string.extraJvmArgs, description = ConfigRes.string.extraJvmArgsDesc) {
+            AppTextField(
+                initialValue = state.jvmMemoryOptions.extraArgs,
+                onValueChange = { eventSink(ConfigurationEvent.SetExtraJvmArgs(it)) },
+                debounceMillis = 500,
+                backgroundColor = Theme[colors][surface2],
+                modifier = Modifier.weight(1f)
+            )
+        }
+    }
+}
+
+@Composable
+private fun RowScope.MemorySliderControl(
+    value: Int?,
+    defaultValue: Int,
+    valueRange: IntRange,
+    stepSize: Int,
+    onCheckedChange: (Boolean) -> Unit,
+    onValueChange: (Int) -> Unit,
+) {
+    val checked = value != null
+    val displayValue = (value ?: defaultValue).coerceIn(valueRange)
+    Row(
+        modifier = Modifier.weight(1f),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        AppCheckbox(checked = checked, onCheckedChange = onCheckedChange)
+        AppSlider(
+            value = displayValue,
+            onValueChange = onValueChange,
+            valueRange = valueRange,
+            stepSize = stepSize,
+            enabled = checked,
+            modifier = Modifier.weight(1f)
+        )
+        AppNumberField(
+            value = displayValue,
+            onValueChange = onValueChange,
+            valueRange = valueRange,
+            enabled = checked,
+        )
+        AppText(text = stringResource(ConfigRes.string.megabytes), style = Theme[textStyles][label])
+    }
+}
+
+private fun defaultMaxMemoryMb(totalMemoryMb: Int): Int = (((totalMemoryMb / 4).coerceIn(1024, 4096)) / 128) * 128
+private fun defaultMinMemoryMb(): Int = 512
+
+@Composable
+context(eventSink: EventSink<ConfigurationEvent>)
+private fun JavaVersionGroup(majorVersion: Int, installations: List<JavaInstallation>, preferredId: String?) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            AppIcon(
+                imageVector = Lucide.Dot,
+                contentDescription = null
+            )
+            AppText(
+                text = stringResource(ConfigRes.string.javaMajorVersion, majorVersion),
+                fontWeight = FontWeight.SemiBold
+            )
+        }
+        AppRadioGroup(
+            value = preferredId,
+            onValueChange = { id -> eventSink(ConfigurationEvent.SetPreferredJava(majorVersion, id)) },
+        ) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                installations.forEach { installation ->
+                    JavaInstallationRow(installation = installation, isSelected = installation.id == preferredId)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun AppRadioGroupScope.JavaInstallationRow(installation: JavaInstallation, isSelected: Boolean) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
+            AppText(
+                text = "${installation.versionString} (${installation.vendor}, ${installation.arch})",
+                fontSize = 12.sp
+            )
+            AppText(
+                text = installation.path,
+                style = Theme[textStyles][label],
+                color = Theme[colors][onBackground].copy(alpha = 0.6f)
+            )
+        }
+        AppRadioButton(
+            value = installation.id,
+            label = if (isSelected) stringResource(ConfigRes.string.preferred) else null,
+        )
+    }
+}
+
+@Composable
+private fun ConfigurationCategory(
+    titleRes: StringResource,
+    icon: ImageVector,
+    content: @Composable () -> Unit
+) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            AppIcon(
+                imageVector = icon,
+                contentDescription = null
+            )
+            AppText(
+                text = stringResource(titleRes),
+                style = Theme[textStyles][title]
+            )
+        }
+
+        Column(
+            modifier = Modifier.appCard().padding(8.dp).fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
             content()
         }
+    }
+}
+
+@Composable
+private fun ConfigurationRow(
+    title: StringResource,
+    description: StringResource,
+    content: @Composable RowScope.() -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
+            AppText(text = stringResource(title), fontWeight = FontWeight.SemiBold)
+            AppText(text = stringResource(description), style = Theme[textStyles][label])
+        }
+        content()
     }
 }

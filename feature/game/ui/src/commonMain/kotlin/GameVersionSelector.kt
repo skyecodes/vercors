@@ -13,7 +13,7 @@ import app.vercors.core.ui.component.AppCheckbox
 import app.vercors.core.ui.component.AppSelectField
 import app.vercors.core.ui.component.AppSelectItem
 import app.vercors.core.ui.theme.colors
-import app.vercors.core.ui.theme.surface
+import app.vercors.core.ui.theme.surface2
 import com.composables.icons.lucide.Bug
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Star
@@ -25,7 +25,7 @@ fun GameVersionSelector(
     selectedVersion: GameVersionView?,
     versionList: List<GameVersionView>,
     onVersionChange: (GameVersionView?) -> Unit,
-    backgroundColor: Color = Theme[colors][surface],
+    backgroundColor: Color = Theme[colors][surface2],
     label: String = stringResource(GameRes.string.gameVersion)
 ) {
     var versionSearch by remember { mutableStateOf("") }

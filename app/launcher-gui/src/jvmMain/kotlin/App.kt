@@ -68,6 +68,10 @@ fun App(
                                 AppContent(navStack, navigator)
                             }
                         }
+                        AppSnackbarHost(
+                            message = state.snackbarMessage,
+                            onDismiss = { eventSink(AppEvent.DismissSnackbar) },
+                        )
                     }
                 }
             }

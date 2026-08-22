@@ -3,8 +3,12 @@ package app.vercors.feature.instance.ui.details
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.foundation.*
 import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.runtime.*
@@ -40,6 +44,7 @@ import app.vercors.feature.instance.ui.*
 import app.vercors.feature.instance.ui.delete.ConfirmDeleteDialog
 import app.vercors.feature.instance.ui.delete.ConfirmRemoveDialog
 import app.vercors.feature.project.domain.model.ProjectType
+import app.vercors.shared.domain.model.JvmMemoryOptions
 import app.vercors.shared.ui.*
 import coil3.compose.rememberAsyncImagePainter
 import com.composables.icons.lucide.*
@@ -103,6 +108,14 @@ fun InstanceDetails(
             OverlayEffect {
                 show(state.finishInstallationDialog)
                 eventSink(InstanceDetailsEvent.OnFinishInstallationDismiss)
+            }
+        }
+
+        state.promptInstallJava?.let { majorVersion ->
+            OverlayEffect(majorVersion) {
+                val result = show(ConfirmInstallJavaDialog(majorVersion))
+                if (result) eventSink(InstanceDetailsEvent.OnInstallJavaConfirm)
+                else eventSink(InstanceDetailsEvent.OnInstallJavaDismiss)
             }
         }
     }
@@ -306,7 +319,6 @@ private fun InstanceHeaderEditActions(isInstanceEdited: Boolean) {
             AppIconTextButton(
                 onClick = { eventSink(InstanceDetailsEvent.CancelEdit) },
                 text = stringResource(SharedRes.string.cancel),
-                backgroundColor = Theme[colors][surface2],
                 contentColor = Theme[colors][onBackground],
                 imageVector = Lucide.X,
             )
@@ -374,112 +386,112 @@ private fun InstanceHeaderActionButton(instance: InstanceView, isInstanceEdited:
 @Composable
 context(eventSink: EventSink<InstanceDetailsEvent>)
 private fun InstanceHeaderMenu(instance: InstanceView) {
-    AppMenuButton(
-        imageVector = Lucide.EllipsisVertical,
-        backgroundColor = Theme[colors][surface2],
-        menuModifier = Modifier.offset(y = 4.dp),
-        anchor = AppDropdownPanelAnchor.BottomEnd,
-        menuContent = {
-            if (instance.status is InstanceStatus.Installing) {
-                AppMenuItem(
-                    onClick = { eventSink(InstanceDetailsEvent.CancelSetup) },
-                    text = stringResource(InstanceRes.string.cancelSetup),
-                    imageVector = Lucide.X,
-                    contentColor = Theme[colors][error]
-                )
-            }
+    AppMenuButton {
+        if (instance.status is InstanceStatus.Installing) {
             AppMenuItem(
-                onClick = { eventSink(InstanceDetailsEvent.OnOpenInstanceFolderClick(InstanceFolder.Root)) },
-                text = stringResource(InstanceRes.string.openInstanceFolder),
-                imageVector = Lucide.FolderOpen
-            )
-            instance.modpackInfo?.let { modpackInfo ->
-                AppMenuItem(
-                    onClick = {
-                        eventSink(
-                            InstanceDetailsEvent.OnOpenProjectClick(modpackInfo.platformId, modpackInfo.projectId)
-                        )
-                    },
-                    text = stringResource(
-                        InstanceRes.string.openProject,
-                        modpackInfo.platformId.toPlatformDisplayName()
-                    ),
-                    imageVector = Lucide.ArrowRight
-                )
-            }
-            if (instance.iconFilePath != null) {
-                AppMenuItem(
-                    onClick = { eventSink(InstanceDetailsEvent.OnRemoveIconClick) },
-                    text = stringResource(InstanceRes.string.removeIcon),
-                    imageVector = Lucide.ImageOff
-                )
-            }
-            AppMenuItem(
-                onClick = { eventSink(InstanceDetailsEvent.Delete) },
-                text = stringResource(SharedRes.string.delete),
-                imageVector = Lucide.Trash,
+                onClick = { eventSink(InstanceDetailsEvent.CancelSetup) },
+                text = stringResource(InstanceRes.string.cancelSetup),
+                imageVector = Lucide.X,
                 contentColor = Theme[colors][error]
             )
         }
-    )
+        AppMenuItem(
+            onClick = { eventSink(InstanceDetailsEvent.OnOpenInstanceFolderClick(InstanceFolder.Root)) },
+            text = stringResource(InstanceRes.string.openInstanceFolder),
+            imageVector = Lucide.FolderOpen
+        )
+        instance.modpackInfo?.let { modpackInfo ->
+            AppMenuItem(
+                onClick = {
+                    eventSink(
+                        InstanceDetailsEvent.OnOpenProjectClick(modpackInfo.platformId, modpackInfo.projectId)
+                    )
+                },
+                text = stringResource(
+                    InstanceRes.string.openProject,
+                    modpackInfo.platformId.toPlatformDisplayName()
+                ),
+                imageVector = Lucide.ArrowRight
+            )
+        }
+        if (instance.iconFilePath != null) {
+            AppMenuItem(
+                onClick = { eventSink(InstanceDetailsEvent.OnRemoveIconClick) },
+                text = stringResource(InstanceRes.string.removeIcon),
+                imageVector = Lucide.ImageOff
+            )
+        }
+        AppMenuItem(
+            onClick = { eventSink(InstanceDetailsEvent.Delete) },
+            text = stringResource(SharedRes.string.delete),
+            imageVector = Lucide.Trash,
+            contentColor = Theme[colors][error]
+        )
+    }
 }
 
 @Composable
 context(eventSink: EventSink<InstanceDetailsEvent>)
 private fun InstanceOptionsTab(instance: InstanceView, state: InstanceDetailsState) {
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-        contentPadding = PaddingValues(8.dp)
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .scrollable(state = rememberScrollState(), orientation = Orientation.Horizontal),
     ) {
-        InstanceGeneralOptionsSection(instance, state)
-        InstanceJavaOptionsSection(state)
+        LazyColumn(
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = PaddingValues(8.dp)
+        ) {
+            item {
+                InstanceGeneralOptionsSection(instance, state)
+            }
+            item {
+                InstanceJavaOptionsSection(instance, state)
+            }
+        }
     }
 }
 
+@Composable
 context(eventSink: EventSink<InstanceDetailsEvent>)
-private fun LazyListScope.InstanceGeneralOptionsSection(instance: InstanceView, state: InstanceDetailsState) {
+private fun InstanceGeneralOptionsSection(instance: InstanceView, state: InstanceDetailsState) {
     InstanceTabSection(
         titleRes = InstanceRes.string.general,
         icon = Lucide.Info
     ) {
-        item(InstanceRes.string.instanceName) {
-            AppTextField(
-                label = stringResource(InstanceRes.string.instanceName) + if (state.isNameEdited) "*" else "",
-                initialValue = state.editedInstance.name ?: instance.name,
-                onValueChange = { eventSink(InstanceDetailsEvent.UpdateInstance { state -> state.copy(name = it) }) },
-                backgroundColor = Theme[colors][surface2],
-                modifier = Modifier.widthIn(min = 300.dp)
-            )
-        }
-        item(GameRes.string.gameVersion) {
-            val gameVersion = remember(state.gameVersionList, state.editedInstance.gameVersion, instance.gameVersion) {
-                state.gameVersionList.find { it.id == (state.editedInstance.gameVersion ?: instance.gameVersion) }
-            }
+        AppTextField(
+            label = stringResource(InstanceRes.string.instanceName) + if (state.isNameEdited) "*" else "",
+            initialValue = state.editedInstance.name ?: instance.name,
+            onValueChange = { eventSink(InstanceDetailsEvent.UpdateInstance { state -> state.copy(name = it) }) },
+            modifier = Modifier.widthIn(min = 300.dp)
+        )
 
-            GameVersionSelector(
-                selectedVersion = gameVersion,
-                versionList = state.gameVersionList,
-                onVersionChange = {
-                    it?.let {
-                        eventSink(InstanceDetailsEvent.UpdateInstance { state ->
-                            state.copy(
-                                gameVersion = it.id
-                            )
-                        })
-                    }
-                },
-                backgroundColor = Theme[colors][surface2],
-                label = stringResource(GameRes.string.gameVersion) + if (state.isGameVersionEdited) "*" else ""
-            )
+        val gameVersion = remember(state.gameVersionList, state.editedInstance.gameVersion, instance.gameVersion) {
+            state.gameVersionList.find { it.id == (state.editedInstance.gameVersion ?: instance.gameVersion) }
         }
+
+        GameVersionSelector(
+            selectedVersion = gameVersion,
+            versionList = state.gameVersionList,
+            onVersionChange = {
+                it?.let {
+                    eventSink(InstanceDetailsEvent.UpdateInstance { state ->
+                        state.copy(
+                            gameVersion = it.id
+                        )
+                    })
+                }
+            },
+            label = stringResource(GameRes.string.gameVersion) + if (state.isGameVersionEdited) "*" else ""
+        )
 
         InstanceGeneralOptionsLoader(state, instance)
     }
 }
 
+@Composable
 context(eventSink: EventSink<InstanceDetailsEvent>)
-private fun LazyListScope.InstanceGeneralOptionsLoader(
+private fun InstanceGeneralOptionsLoader(
     state: InstanceDetailsState,
     instance: InstanceView
 ) {
@@ -489,49 +501,160 @@ private fun LazyListScope.InstanceGeneralOptionsLoader(
         null -> instance.loaderType
     }
 
-    item(GameRes.string.loader) {
-        LoaderSelector(
-            selectedLoader = loaderType,
-            availableLoaders = state.loaderList,
-            onLoaderChange = { eventSink(InstanceDetailsEvent.OnLoaderChange(it)) },
-            backgroundColor = Theme[colors][surface2],
-            label = stringResource(GameRes.string.loader) + if (state.isLoaderTypeEdited) "*" else ""
-        )
-    }
+    LoaderSelector(
+        selectedLoader = loaderType,
+        availableLoaders = state.loaderList,
+        onLoaderChange = { eventSink(InstanceDetailsEvent.OnLoaderChange(it)) },
+        label = stringResource(GameRes.string.loader) + if (state.isLoaderTypeEdited) "*" else ""
+    )
+
 
     if (loaderType != null) {
-        item(GameRes.string.loaderVersion) {
-            val versionString = state.editedInstance.modLoaderVersion ?: instance.loaderVersion
-            val selectedVersion = remember(state.loaderVersionList, versionString) {
-                state.loaderVersionList.find { it.version == versionString }
-            }
+        val versionString = state.editedInstance.modLoaderVersion ?: instance.loaderVersion
+        val selectedVersion = remember(state.loaderVersionList, versionString) {
+            state.loaderVersionList.find { it.version == versionString }
+        }
 
-            LoaderVersionSelector(
-                selectedVersion = selectedVersion,
-                versionList = state.loaderVersionList,
-                onVersionChange = { it?.let { eventSink(InstanceDetailsEvent.OnLoaderVersionChange(it.version)) } },
+        LoaderVersionSelector(
+            selectedVersion = selectedVersion,
+            versionList = state.loaderVersionList,
+            onVersionChange = { it?.let { eventSink(InstanceDetailsEvent.OnLoaderVersionChange(it.version)) } },
+            label = stringResource(GameRes.string.loaderVersion) + if (state.isLoaderVersionEdited) "*" else ""
+        )
+    }
+}
+
+@Composable
+context(eventSink: EventSink<InstanceDetailsEvent>)
+private fun InstanceJavaOptionsSection(instance: InstanceView, state: InstanceDetailsState) {
+    InstanceTabSection(
+        titleRes = InstanceRes.string.java,
+        icon = Lucide.Coffee
+    ) {
+        val selectedId = when (val edit = state.editedInstance.javaOverride) {
+            is JavaOverrideEdit.Specific -> edit.installationId
+            JavaOverrideEdit.UseDefault -> null
+            null -> instance.javaInstallationId
+        }
+        val selected = state.availableJavaInstallations.find { it.id == selectedId }
+        val defaultLabel = stringResource(InstanceRes.string.useDefaultJava)
+
+        AppSelectField(
+            value = selected,
+            items = listOf(null) + state.availableJavaInstallations,
+            onValueChange = { eventSink(InstanceDetailsEvent.OnJavaOverrideChange(it?.id)) },
+            label = stringResource(InstanceRes.string.javaOverride) + if (state.isJavaOverrideEdited) "*" else "",
+            itemRenderer = { value, _ ->
+                AppSelectItem(value?.path ?: defaultLabel)
+            }
+        )
+
+        val effectiveCustomOptions: JvmMemoryOptions? = when (val edit = state.editedInstance.jvmMemoryOptionsEdit) {
+            is JvmMemoryOptionsEdit.Custom -> edit.options
+            JvmMemoryOptionsEdit.UseDefault -> null
+            null -> instance.jvmMemoryOptions
+        }
+        val currentOptions = effectiveCustomOptions ?: JvmMemoryOptions()
+        val defaultMax = defaultMaxMemoryMb(state.totalMemoryMb)
+
+        fun updateOptions(update: (JvmMemoryOptions) -> JvmMemoryOptions) {
+            eventSink(InstanceDetailsEvent.UpdateInstance { s ->
+                s.copy(jvmMemoryOptionsEdit = JvmMemoryOptionsEdit.Custom(update(currentOptions)))
+            })
+        }
+
+        InstanceMemorySliderRow(
+            title = InstanceRes.string.maxMemory,
+            description = InstanceRes.string.maxMemoryDesc,
+            value = currentOptions.maxMemoryMb,
+            defaultValue = defaultMax,
+            valueRange = 512..state.totalMemoryMb,
+            stepSize = 128,
+            onCheckedChange = { checked -> updateOptions { it.copy(maxMemoryMb = if (checked) defaultMax else null) } },
+            onValueChange = { newValue ->
+                updateOptions { opts ->
+                    val clampedMin = opts.minMemoryMb?.let { min -> minOf(min, newValue) }
+                    opts.copy(maxMemoryMb = newValue, minMemoryMb = clampedMin)
+                }
+            },
+        )
+        InstanceMemorySliderRow(
+            title = InstanceRes.string.minMemory,
+            description = InstanceRes.string.minMemoryDesc,
+            value = currentOptions.minMemoryMb,
+            defaultValue = defaultMinMemoryMb(),
+            valueRange = 256..(currentOptions.maxMemoryMb ?: defaultMax),
+            stepSize = 32,
+            onCheckedChange = { checked -> updateOptions { it.copy(minMemoryMb = if (checked) defaultMinMemoryMb() else null) } },
+            onValueChange = { newValue -> updateOptions { it.copy(minMemoryMb = newValue) } },
+        )
+        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            AppText(text = stringResource(InstanceRes.string.extraJvmArgs), fontWeight = FontWeight.SemiBold)
+            AppText(text = stringResource(InstanceRes.string.extraJvmArgsDesc), style = Theme[textStyles][label])
+            AppTextField(
+                initialValue = currentOptions.extraArgs,
+                onValueChange = { newValue -> updateOptions { it.copy(extraArgs = newValue) } },
+                debounceMillis = 500,
                 backgroundColor = Theme[colors][surface2],
-                label = stringResource(GameRes.string.loaderVersion) + if (state.isLoaderVersionEdited) "*" else ""
+                modifier = Modifier.fillMaxWidth()
             )
         }
     }
 }
 
-private fun LazyListScope.InstanceJavaOptionsSection(state: InstanceDetailsState) {
-    InstanceTabSection(
-        titleRes = InstanceRes.string.java,
-        icon = Lucide.Coffee
-    ) {
-
+@Composable
+private fun InstanceMemorySliderRow(
+    title: StringResource,
+    description: StringResource,
+    value: Int?,
+    defaultValue: Int,
+    valueRange: IntRange,
+    stepSize: Int,
+    onCheckedChange: (Boolean) -> Unit,
+    onValueChange: (Int) -> Unit,
+) {
+    val checked = value != null
+    val displayValue = (value ?: defaultValue).coerceIn(valueRange)
+    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        AppText(text = stringResource(title), fontWeight = FontWeight.SemiBold)
+        AppText(text = stringResource(description), style = Theme[textStyles][label])
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            AppCheckbox(checked = checked, onCheckedChange = onCheckedChange)
+            AppSlider(
+                value = displayValue,
+                onValueChange = onValueChange,
+                valueRange = valueRange,
+                stepSize = stepSize,
+                enabled = checked,
+                modifier = Modifier.weight(1f)
+            )
+            AppNumberField(
+                value = displayValue,
+                onValueChange = onValueChange,
+                valueRange = valueRange,
+                enabled = checked,
+            )
+            AppText(text = stringResource(InstanceRes.string.megabytes), style = Theme[textStyles][label])
+        }
     }
 }
 
-private fun LazyListScope.InstanceTabSection(
+private fun defaultMaxMemoryMb(totalMemoryMb: Int): Int = (((totalMemoryMb / 4).coerceIn(1024, 4096)) / 128) * 128
+private fun defaultMinMemoryMb(): Int = 512
+
+@Composable
+private fun InstanceTabSection(
     titleRes: StringResource,
     icon: ImageVector,
-    content: LazyListScope.() -> Unit
+    content: @Composable () -> Unit
 ) {
-    stickyHeader(titleRes) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
         Row(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -539,35 +662,16 @@ private fun LazyListScope.InstanceTabSection(
             AppIcon(
                 imageVector = icon,
                 contentDescription = null,
-                modifier = Modifier.size(20.dp)
             )
             AppText(
                 text = stringResource(titleRes),
                 style = Theme[textStyles][title],
             )
         }
-    }
-    content()
-}
-
-private fun LazyListScope.InstanceTabRow(
-    title: StringResource,
-    description: StringResource? = null,
-    content: @Composable RowScope.() -> Unit
-) {
-    item(title.key) {
-        Row(
-            modifier = Modifier.padding(horizontal = 8.dp).fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically
+        Column(
+            modifier = Modifier.appCard().padding(8.dp).fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(2.dp)
-            ) {
-                AppText(text = stringResource(title), fontWeight = FontWeight.SemiBold)
-                description?.let { AppText(text = stringResource(it), style = Theme[textStyles][label]) }
-            }
             content()
         }
     }
@@ -617,7 +721,7 @@ private fun InstalledContentFileList(
         listState.scrollToItem(0)
     }
 
-    Column(modifier = Modifier.fillMaxSize()) {
+    Column(modifier = Modifier.fillMaxSize().appCard()) {
         InstalledContentFileListHeader(
             searchQuery = searchQuery,
             onSearchQueryChange = { searchQuery = it },
@@ -674,7 +778,6 @@ private fun InstalledContentFileListHeader(
             initialValue = searchQuery,
             placeholder = { AppText(stringResource(CoreRes.string.search)) },
             onValueChange = onSearchQueryChange,
-            backgroundColor = Theme[colors][surface2],
             modifier = Modifier.weight(1f)
         )
         AppCheckbox(
@@ -692,7 +795,6 @@ private fun InstalledContentFileListHeader(
                     else value.displayName
                 )
             },
-            backgroundColor = Theme[colors][surface2],
             modifier = Modifier.width(200.dp)
         )
         InstalledContentFileListMenu(
@@ -723,38 +825,32 @@ private fun InstalledContentFileListMenu(
     val importPickerLauncher = rememberFilePickerLauncher(type = FileKitType.File(importExtension)) { file ->
         file?.let { eventSink(InstanceDetailsEvent.OnImportContentClick(removalKind, it.path)) }
     }
-    AppMenuButton(
-        imageVector = Lucide.EllipsisVertical,
-        backgroundColor = Theme[colors][surface2],
-        menuModifier = Modifier.offset(y = 4.dp),
-        anchor = AppDropdownPanelAnchor.BottomEnd,
-        menuContent = {
+    AppMenuButton {
+        AppMenuItem(
+            onClick = onAddClick,
+            text = stringResource(addLabel),
+            imageVector = Lucide.Plus,
+            enabled = addEnabled
+        )
+        AppMenuItem(
+            onClick = importPickerLauncher::launch,
+            text = stringResource(importLabel),
+            imageVector = Lucide.FileUp,
+            enabled = addEnabled
+        )
+        AppMenuItem(
+            onClick = { eventSink(InstanceDetailsEvent.OnOpenInstanceFolderClick(contentFolder)) },
+            text = stringResource(openFolderLabel),
+            imageVector = Lucide.FolderOpen
+        )
+        if (contentFolder == InstanceFolder.Mods) {
             AppMenuItem(
-                onClick = onAddClick,
-                text = stringResource(addLabel),
-                imageVector = Lucide.Plus,
-                enabled = addEnabled
+                onClick = { eventSink(InstanceDetailsEvent.OnOpenInstanceFolderClick(InstanceFolder.Config)) },
+                text = stringResource(InstanceRes.string.openConfigFolder),
+                imageVector = Lucide.FolderCog
             )
-            AppMenuItem(
-                onClick = importPickerLauncher::launch,
-                text = stringResource(importLabel),
-                imageVector = Lucide.FileUp,
-                enabled = addEnabled
-            )
-            AppMenuItem(
-                onClick = { eventSink(InstanceDetailsEvent.OnOpenInstanceFolderClick(contentFolder)) },
-                text = stringResource(openFolderLabel),
-                imageVector = Lucide.FolderOpen
-            )
-            if (contentFolder == InstanceFolder.Mods) {
-                AppMenuItem(
-                    onClick = { eventSink(InstanceDetailsEvent.OnOpenInstanceFolderClick(InstanceFolder.Config)) },
-                    text = stringResource(InstanceRes.string.openConfigFolder),
-                    imageVector = Lucide.FolderCog
-                )
-            }
         }
-    )
+    }
 }
 
 private fun List<InstalledContentFileView>.filteredAndSorted(
@@ -861,39 +957,33 @@ private fun InstalledContentFileRow(
             }
         }
 
-        AppMenuButton(
-            imageVector = Lucide.EllipsisVertical,
-            backgroundColor = Theme[colors][surface2],
-            menuModifier = Modifier.offset(y = 4.dp),
-            anchor = AppDropdownPanelAnchor.BottomEnd,
-            menuContent = {
-                AppMenuItem(
-                    onClick = { eventSink(onEnabledChange(file.fileName, !file.enabled)) },
-                    text = stringResource(if (file.enabled) InstanceRes.string.disable else InstanceRes.string.enable),
-                    imageVector = if (file.enabled) Lucide.EyeOff else Lucide.Eye
-                )
+        AppMenuButton {
+            AppMenuItem(
+                onClick = { eventSink(onEnabledChange(file.fileName, !file.enabled)) },
+                text = stringResource(if (file.enabled) InstanceRes.string.disable else InstanceRes.string.enable),
+                imageVector = if (file.enabled) Lucide.EyeOff else Lucide.Eye
+            )
+            AppMenuItem(
+                onClick = {
+                    eventSink(InstanceDetailsEvent.OnRemoveClick(removalKind, file.fileName, file.title))
+                },
+                text = stringResource(InstanceRes.string.remove),
+                imageVector = Lucide.Trash,
+                contentColor = Theme[colors][error]
+            )
+            file.providers.forEach { provider ->
                 AppMenuItem(
                     onClick = {
-                        eventSink(InstanceDetailsEvent.OnRemoveClick(removalKind, file.fileName, file.title))
+                        eventSink(InstanceDetailsEvent.OnOpenProjectClick(provider.platformId, provider.projectId))
                     },
-                    text = stringResource(InstanceRes.string.remove),
-                    imageVector = Lucide.Trash,
-                    contentColor = Theme[colors][error]
+                    text = stringResource(
+                        InstanceRes.string.openProject,
+                        provider.platformId.toPlatformDisplayName()
+                    ),
+                    imageVector = Lucide.ArrowRight
                 )
-                file.providers.forEach { provider ->
-                    AppMenuItem(
-                        onClick = {
-                            eventSink(InstanceDetailsEvent.OnOpenProjectClick(provider.platformId, provider.projectId))
-                        },
-                        text = stringResource(
-                            InstanceRes.string.openProject,
-                            provider.platformId.toPlatformDisplayName()
-                        ),
-                        imageVector = Lucide.ArrowRight
-                    )
-                }
             }
-        )
+        }
     }
 }
 

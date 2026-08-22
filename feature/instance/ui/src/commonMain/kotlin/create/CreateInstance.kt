@@ -46,7 +46,6 @@ fun CreateInstance(
                 label = stringResource(InstanceRes.string.instanceName),
                 initialValue = state.instanceName,
                 onValueChange = { eventSink(CreateInstanceEvent.OnInstanceNameChange(it)) },
-                backgroundColor = Theme[colors][surface2],
                 modifier = Modifier.width(300.dp),
             )
 
@@ -54,14 +53,12 @@ fun CreateInstance(
                 selectedVersion = state.selectedGameVersion,
                 versionList = state.gameVersionList.valueOrNull ?: emptyList(),
                 onVersionChange = { eventSink(CreateInstanceEvent.OnGameVersionChange(it)) },
-                backgroundColor = Theme[colors][surface2],
             )
 
             LoaderSelector(
                 selectedLoader = state.selectedLoader,
                 availableLoaders = state.loaderList.valueOrNull ?: emptyList(),
                 onLoaderChange = { eventSink(CreateInstanceEvent.OnLoaderChange(it)) },
-                backgroundColor = Theme[colors][surface2],
             )
 
             if (state.selectedLoader != null) {
@@ -69,7 +66,6 @@ fun CreateInstance(
                     selectedVersion = state.selectedLoaderVersion,
                     versionList = state.loaderVersionList.valueOrNull ?: emptyList(),
                     onVersionChange = { eventSink(CreateInstanceEvent.OnLoaderVersionChange(it)) },
-                    backgroundColor = Theme[colors][surface2],
                 )
             }
 

@@ -203,3 +203,12 @@ expect suspend fun Path.createLink(
 
 /** The file's last-modified time, or `null` if it doesn't exist or the platform can't report one. */
 expect suspend fun Path.lastModifiedOrNull(context: CoroutineContext = Dispatchers.IO): Instant?
+
+/** Marks the file as executable (`chmod +x` on POSIX; a no-op on Windows, which has no executable bit). */
+expect suspend fun Path.setExecutable(context: CoroutineContext = Dispatchers.IO): Boolean
+
+/** Resolves symlinks (and, on Windows, junctions/reparse points) to the canonical absolute path, or `null` if the
+ *  path doesn't exist or can't be resolved. Useful for deduplicating candidates that are really the same file
+ *  reached through different symlinked paths (e.g. Linux distros symlinking `/usr/lib/jvm/default` to a specific
+ *  JDK, or `lib64` to `lib`). */
+expect suspend fun Path.realPath(context: CoroutineContext = Dispatchers.IO): Path?

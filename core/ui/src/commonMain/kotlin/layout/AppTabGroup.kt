@@ -97,7 +97,7 @@ fun <T> AppTabGroup(
                 tabs.forEach { tab ->
                     TabPanel(
                         key = tab,
-                        modifier = Modifier.fillMaxSize().appCard()
+                        modifier = Modifier.fillMaxSize()
                     ) {
                         tabContent(tab)
                     }

@@ -31,6 +31,7 @@ class AppPaths(root: Path) {
     val assetObjects = Path(assets, "objects")
     val loggingConfigs = Path(data, "logging")
     val gameDirs = Path(data, "instances")
+    val javaRuntimeManifestFile = Path(data, "java", "runtime-manifest.json")
     val imageCache = Path(data, "cache", "image")
     val metadataCacheRoot = Path(data, "cache", "metadata")
     val iconCacheRoot = Path(data, "cache", "icon")
@@ -78,6 +79,8 @@ class AppPaths(root: Path) {
     fun iconCache(kind: String): Path = Path(iconCacheRoot, kind)
 
     fun instanceIconFile(instanceId: String, extension: String): Path = Path(gameDir(instanceId), "icon.$extension")
+
+    fun javaRuntimeDir(component: String): Path = Path(data, "java", "runtimes", component)
 
     private fun String.pathSegments(): Array<String> = split('/').filter { it.isNotBlank() }.toTypedArray()
 }

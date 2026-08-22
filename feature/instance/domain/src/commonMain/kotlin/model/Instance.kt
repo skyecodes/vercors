@@ -1,6 +1,7 @@
 package app.vercors.feature.instance.domain.model
 
 import app.vercors.core.domain.toSlug
+import app.vercors.shared.domain.model.JvmMemoryOptions
 import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.time.Instant
@@ -12,6 +13,8 @@ data class Instance(
     val modLoader: InstanceModLoader? = null,
     val modpackInfo: InstanceModpackInfo? = null,
     val iconFilePath: String? = null,
+    val javaInstallationId: String? = null,
+    val jvmMemoryOptions: JvmMemoryOptions? = null,
     val createdAt: Instant = Clock.System.now(),
     val updatedAt: Instant = Clock.System.now(),
     val lastPlayedAt: Instant? = null,

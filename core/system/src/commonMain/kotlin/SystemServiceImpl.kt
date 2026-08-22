@@ -7,6 +7,7 @@ expect class SystemServiceImpl : SystemService {
     override val canCopyToClipboard: Boolean
     override val canOpenUrlInBrowser: Boolean
     override val canOpenFileManager: Boolean
+    override val totalPhysicalMemoryBytes: Long?
 
     override fun copyToClipboard(text: String): Boolean
     override fun downloadsDir(): String?

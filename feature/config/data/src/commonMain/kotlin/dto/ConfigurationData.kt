@@ -2,6 +2,9 @@ package app.vercors.feature.config.data.dto
 
 import app.vercors.feature.config.domain.model.Configuration
 import app.vercors.feature.config.domain.model.HomeCategoryConfig
+import app.vercors.shared.data.dto.JvmMemoryOptionsData
+import app.vercors.shared.data.dto.toData
+import app.vercors.shared.data.dto.toDomain
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -15,7 +18,10 @@ data class ConfigurationData(
     val preferredPlatform: String,
     val homeCategories: List<HomeCategoryConfigData>,
     val selectedThemeId: String,
-    val selectedAccent: String
+    val selectedAccent: String,
+    val preferredJavaByMajorVersion: Map<Int, String> = emptyMap(),
+    val javaInstallations: List<JavaInstallationData> = emptyList(),
+    val jvmMemoryOptions: JvmMemoryOptionsData = JvmMemoryOptionsData(),
 )
 
 internal fun ConfigurationData.toDomain(): Configuration = Configuration(
@@ -28,6 +34,9 @@ internal fun ConfigurationData.toDomain(): Configuration = Configuration(
     homeCategories = homeCategories.map { it.toDomain() },
     selectedThemeId = selectedThemeId,
     selectedAccent = selectedAccent,
+    preferredJavaByMajorVersion = preferredJavaByMajorVersion,
+    javaInstallations = javaInstallations.map { it.toDomain() },
+    jvmMemoryOptions = jvmMemoryOptions.toDomain(),
 )
 
 internal fun Configuration.toData(): ConfigurationData = ConfigurationData(
@@ -40,6 +49,9 @@ internal fun Configuration.toData(): ConfigurationData = ConfigurationData(
     homeCategories = homeCategories.map { it.toData() },
     selectedThemeId = selectedThemeId,
     selectedAccent = selectedAccent,
+    preferredJavaByMajorVersion = preferredJavaByMajorVersion,
+    javaInstallations = javaInstallations.map { it.toData() },
+    jvmMemoryOptions = jvmMemoryOptions.toData(),
 )
 
 @Serializable

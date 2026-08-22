@@ -10,6 +10,7 @@ import app.vercors.feature.game.domain.model.GameAssetIndex
 import app.vercors.feature.game.domain.model.GameVersionDetails
 import app.vercors.feature.game.domain.repository.GameRepository
 import app.vercors.feature.game.domain.service.ModLoaderInstallerService
+import app.vercors.feature.game.domain.usecase.ResolveJavaInstallationUseCase
 import app.vercors.feature.instance.domain.model.Instance
 import app.vercors.feature.instance.domain.model.InstanceId
 import app.vercors.feature.instance.domain.model.InstanceLogEvent
@@ -18,7 +19,9 @@ import app.vercors.feature.instance.domain.repository.InstanceRepository
 import app.vercors.feature.launcher.domain.model.InstanceLaunchError
 import app.vercors.feature.launcher.domain.model.InstanceLaunchEvent
 import app.vercors.feature.launcher.domain.service.LauncherService
+import app.vercors.shared.domain.model.JvmMemoryOptions
 import arrow.core.raise.Raise
+import arrow.core.raise.context.raise
 import arrow.core.raise.context.withError
 import dev.zacsweers.metro.Inject
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -37,6 +40,8 @@ class LaunchInstanceUseCase(
     private val refreshTokenUseCase: RefreshTokenUseCase,
     private val gameRepository: GameRepository,
     private val modLoaderInstallerService: ModLoaderInstallerService,
+    private val resolveJavaInstallation: ResolveJavaInstallationUseCase,
+    private val resolveJvmMemoryOptions: ResolveJvmMemoryOptionsUseCase,
     private val launcherService: LauncherService,
     private val coroutineScope: CoroutineScope,
 ) {
@@ -45,14 +50,16 @@ class LaunchInstanceUseCase(
         val job = coroutineScope.async { prepareInstance(instanceId) }
         job.invokeOnCompletion { instanceRepository.updateInstanceJob(instanceId, null) }
         instanceRepository.updateInstanceJob(instanceId, job)
-        val (instance, account, version, assetIndex) = job.await() ?: return
+        val (instance, account, version, assetIndex, javaExecutable, jvmMemoryOptions) = job.await() ?: return
 
         launcherService.launch(
             instance = instance,
             account = account,
             version = version,
             assetIndex = assetIndex,
-            features = emptyList()
+            features = emptyList(),
+            javaExecutable = javaExecutable,
+            jvmMemoryOptions = jvmMemoryOptions
         ).catch {
             when (it) {
                 is CancellationException -> {
@@ -172,8 +179,13 @@ class LaunchInstanceUseCase(
         val assetIndex = withError({ InstanceLaunchError.GameVersion(it) }) {
             gameRepository.getAssetIndex(version.assetIndex)
         }
+        val javaExecutable = version.javaVersion?.let { javaVersion ->
+            resolveJavaInstallation(javaVersion.majorVersion, instance.javaInstallationId)?.path
+                ?: raise(InstanceLaunchError.NoCompatibleJava(javaVersion.majorVersion))
+        } ?: "java"
+        val jvmMemoryOptions = resolveJvmMemoryOptions(instance.jvmMemoryOptions)
 
-        return InstancePreparationResult(instance, finalAccount, version, assetIndex)
+        return InstancePreparationResult(instance, finalAccount, version, assetIndex, javaExecutable, jvmMemoryOptions)
     }
 
     private fun onLaunchEvent(event: InstanceLaunchEvent, instanceId: InstanceId) {
@@ -207,5 +219,7 @@ class LaunchInstanceUseCase(
         val account: Account,
         val version: GameVersionDetails,
         val assetIndex: GameAssetIndex,
+        val javaExecutable: String,
+        val jvmMemoryOptions: JvmMemoryOptions,
     )
 }

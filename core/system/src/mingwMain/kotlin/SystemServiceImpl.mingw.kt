@@ -5,6 +5,8 @@ import dev.zacsweers.metro.ContributesBinding
 import dev.zacsweers.metro.SingleIn
 import kotlinx.cinterop.*
 import platform.posix.*
+import platform.windows.GlobalMemoryStatusEx
+import platform.windows.MEMORYSTATUSEX
 
 private const val BUFFER_SIZE = 1024
 private val VERSION_REGEX = Regex("((\\d+\\.)+\\d+)")
@@ -35,6 +37,15 @@ actual class SystemServiceImpl : SystemService {
     actual override val canOpenUrlInBrowser: Boolean = false
 
     actual override val canOpenFileManager: Boolean = false
+
+    @OptIn(ExperimentalForeignApi::class)
+    actual override val totalPhysicalMemoryBytes: Long? by lazy {
+        memScoped {
+            val status = alloc<MEMORYSTATUSEX>()
+            status.dwLength = sizeOf<MEMORYSTATUSEX>().toUInt()
+            if (GlobalMemoryStatusEx(status.ptr) != 0) status.ullTotalPhys.toLong() else null
+        }
+    }
 
     actual override fun copyToClipboard(text: String): Boolean = false
 

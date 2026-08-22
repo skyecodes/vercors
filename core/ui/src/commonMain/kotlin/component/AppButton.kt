@@ -23,6 +23,8 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import app.vercors.core.ui.theme.button
+import app.vercors.core.ui.theme.colors
+import app.vercors.core.ui.theme.surface2
 import app.vercors.core.ui.theme.textStyles
 import com.composeunstyled.LocalContentColor
 import com.composeunstyled.ProvideContentColor
@@ -88,7 +90,7 @@ fun AppIconTextButton(
     imageVector: ImageVector? = null,
     enabled: Boolean = true,
     shape: Shape = RoundedCornerShape(4.dp),
-    backgroundColor: Color = Color.Unspecified,
+    backgroundColor: Color = Theme[colors][surface2],
     contentColor: Color = LocalContentColor.current,
     contentPadding: PaddingValues = NormalButtonContentPadding,
     borderColor: Color = Color.Unspecified,
@@ -154,7 +156,7 @@ fun AppIconTextButton(
     painter: Painter? = null,
     enabled: Boolean = true,
     shape: Shape = RoundedCornerShape(4.dp),
-    backgroundColor: Color = Color.Unspecified,
+    backgroundColor: Color = Theme[colors][surface2],
     contentColor: Color = LocalContentColor.current,
     contentPadding: PaddingValues = NormalButtonContentPadding,
     borderColor: Color = Color.Unspecified,

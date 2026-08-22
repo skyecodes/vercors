@@ -17,4 +17,7 @@ sealed interface InstanceLaunchError {
 
     @JvmInline
     value class ModLoaderInstall(val cause: ModLoaderInstallError) : InstanceLaunchError
+
+    @JvmInline
+    value class NoCompatibleJava(val majorVersion: Int) : InstanceLaunchError
 }

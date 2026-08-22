@@ -16,7 +16,6 @@ import app.vercors.core.ui.search
 import app.vercors.core.ui.theme.colors
 import app.vercors.core.ui.theme.onPrimary
 import app.vercors.core.ui.theme.primary
-import app.vercors.core.ui.theme.surface2
 import app.vercors.feature.instance.ui.*
 import app.vercors.shared.ui.EventSink
 import app.vercors.shared.ui.SharedRes
@@ -94,7 +93,6 @@ fun InstanceListFilterCard(state: InstanceListState) {
             items = state.typeList,
             onValueChange = { eventSink(InstanceListEvent.OnTypeFilterChange(it)) },
             itemRenderer = { value, _ -> AppSelectItem(value.ifBlank { stringResource(InstanceRes.string.anyType) }) },
-            backgroundColor = Theme[colors][surface2],
             modifier = Modifier.width(150.dp)
         )
 
@@ -103,7 +101,6 @@ fun InstanceListFilterCard(state: InstanceListState) {
             items = state.loaderList,
             onValueChange = { eventSink(InstanceListEvent.OnLoaderFilterChange(it)) },
             itemRenderer = { value, _ -> AppSelectItem(value.ifBlank { stringResource(InstanceRes.string.anyLoader) }) },
-            backgroundColor = Theme[colors][surface2],
             modifier = Modifier.width(150.dp)
         )
 
@@ -112,7 +109,6 @@ fun InstanceListFilterCard(state: InstanceListState) {
             items = state.versionList,
             onValueChange = { eventSink(InstanceListEvent.OnVersionFilterChange(it)) },
             itemRenderer = { value, _ -> AppSelectItem(value.ifBlank { stringResource(InstanceRes.string.anyVersion) }) },
-            backgroundColor = Theme[colors][surface2],
             modifier = Modifier.width(150.dp)
         )
 
@@ -121,7 +117,6 @@ fun InstanceListFilterCard(state: InstanceListState) {
             initialValue = state.nameFilter,
             onValueChange = { eventSink(InstanceListEvent.OnNameFilterChange(it)) },
             imeAction = ImeAction.Search,
-            backgroundColor = Theme[colors][surface2],
             modifier = Modifier.weight(1f)
         )
     }

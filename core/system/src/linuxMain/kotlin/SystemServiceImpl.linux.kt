@@ -4,9 +4,7 @@ import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
 import dev.zacsweers.metro.SingleIn
 import kotlinx.cinterop.*
-import platform.posix.getenv
-import platform.posix.uname
-import platform.posix.utsname
+import platform.posix.*
 
 @SingleIn(AppScope::class)
 @ContributesBinding(AppScope::class)
@@ -31,6 +29,27 @@ actual class SystemServiceImpl : SystemService {
     actual override val canOpenUrlInBrowser: Boolean = false
 
     actual override val canOpenFileManager: Boolean = false
+
+    @OptIn(ExperimentalForeignApi::class)
+    actual override val totalPhysicalMemoryBytes: Long? by lazy {
+        try {
+            val file = fopen("/proc/meminfo", "r") ?: return@lazy null
+            val buffer = ByteArray(256)
+            var result: Long? = null
+            while (true) {
+                val line = fgets(buffer.refTo(0), buffer.size, file) ?: break
+                val text = line.toKString()
+                if (text.startsWith("MemTotal:")) {
+                    result = Regex("\\d+").find(text)?.value?.toLongOrNull()?.times(1024)
+                    break
+                }
+            }
+            fclose(file)
+            result
+        } catch (_: Exception) {
+            null
+        }
+    }
 
     actual override fun copyToClipboard(text: String): Boolean = false
 

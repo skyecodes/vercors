@@ -9,7 +9,7 @@ import androidx.compose.ui.unit.dp
 import app.vercors.core.ui.component.AppSelectField
 import app.vercors.core.ui.component.AppSelectItem
 import app.vercors.core.ui.theme.colors
-import app.vercors.core.ui.theme.surface
+import app.vercors.core.ui.theme.surface2
 import app.vercors.feature.game.domain.model.LoaderVersion
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Star
@@ -21,7 +21,7 @@ fun LoaderVersionSelector(
     selectedVersion: LoaderVersion?,
     versionList: List<LoaderVersion>,
     onVersionChange: (LoaderVersion?) -> Unit,
-    backgroundColor: Color = Theme[colors][surface],
+    backgroundColor: Color = Theme[colors][surface2],
     label: String = stringResource(GameRes.string.loaderVersion)
 ) {
     val recommendedVersion = remember(versionList) { versionList.firstOrNull { it.stable } }

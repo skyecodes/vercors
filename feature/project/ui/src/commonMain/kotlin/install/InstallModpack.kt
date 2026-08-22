@@ -39,7 +39,6 @@ fun InstallModpack(
                 items = state.fileList,
                 onValueChange = { eventSink(InstallModpackEvent.OnFileSelected(it?.id)) },
                 itemRenderer = { value, _ -> AppSelectItem(text = value?.displayName ?: "") },
-                backgroundColor = Theme[colors][surface2],
                 modifier = Modifier.width(300.dp),
             )
 
@@ -47,7 +46,6 @@ fun InstallModpack(
                 label = stringResource(ProjectRes.string.instanceName),
                 initialValue = state.instanceName,
                 onValueChange = { eventSink(InstallModpackEvent.OnInstanceNameChange(it)) },
-                backgroundColor = Theme[colors][surface2],
                 modifier = Modifier.width(300.dp),
             )
 

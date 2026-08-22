@@ -8,6 +8,9 @@ interface SystemService {
     val canOpenUrlInBrowser: Boolean
     val canOpenFileManager: Boolean
 
+    /** Total installed physical RAM, in bytes, or `null` if it can't be determined. */
+    val totalPhysicalMemoryBytes: Long?
+
     fun copyToClipboard(text: String): Boolean
 
     /** The OS "Downloads" folder for the current user, or null if it can't be resolved. */

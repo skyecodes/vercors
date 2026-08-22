@@ -6,4 +6,24 @@
     <string name="accentDesc">The accent color used in the application.</string>
     <string name="animations">Animations</string>
     <string name="animationsDesc">Whether animations are enabled in the application.</string>
+
+    <string name="java">Java</string>
+    <string name="javaInstallations">Detected installations</string>
+    <string name="javaInstallationsDesc">Java installations detected on this computer.</string>
+    <string name="addInstallation">Add installation</string>
+    <string name="rescan">Rescan</string>
+    <string name="rescanning">Scanning…</string>
+    <string name="javaScanCompleted">Java installation scan completed</string>
+    <string name="preferredForMajorVersion">Preferred for Java %1$d</string>
+    <string name="preferred">Preferred</string>
+    <string name="javaMajorVersion">Java %1$d</string>
+    <string name="javaAddFailed">"%1$s" doesn\'t look like a valid Java installation</string>
+
+    <string name="maxMemory">Max memory</string>
+    <string name="maxMemoryDesc">The maximum amount of memory the game is allowed to use (-Xmx).</string>
+    <string name="minMemory">Min memory</string>
+    <string name="minMemoryDesc">The amount of memory allocated to the game on startup (-Xms).</string>
+    <string name="extraJvmArgs">Extra JVM arguments</string>
+    <string name="extraJvmArgsDesc">Additional arguments passed to the JVM when launching the game.</string>
+    <string name="megabytes">MB</string>
 </resources>
