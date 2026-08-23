@@ -22,7 +22,7 @@ data class Configuration(
         const val DEFAULT_ACCENT = "mauve"
 
         val Default = Configuration(
-            metaApiUrl = "https://meta.vercors.app/",
+            metaApiUrl = "https://meta.vercors.app",
             parallelDownloads = 10,
             parallelFilesystemOperations = 10,
             menuDrawerOpen = true,

@@ -77,7 +77,6 @@ include(":feature:instance:domain")
 include(":feature:instance:ui")
 include(":feature:instance:ui:screen")
 
-include(":feature:home:command")
 include(":feature:home:data")
 include(":feature:home:domain")
 include(":feature:home:ui")
