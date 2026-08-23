@@ -2,7 +2,7 @@ package app.vercors.feature.game.data.repository
 
 import app.vercors.core.filesystem.*
 import app.vercors.core.network.RemoteError
-import app.vercors.core.network.makeRequest
+import app.vercors.core.network.makeMetaApiRequest
 import app.vercors.feature.game.api.Game
 import app.vercors.feature.game.api.Loaders
 import app.vercors.feature.game.api.dto.LoaderTypeData
@@ -64,7 +64,7 @@ class LoaderRepositoryImpl(
 
             either {
                 withError(RemoteError::toLoaderError) {
-                    makeRequest {
+                    makeMetaApiRequest {
                         httpClient.request(
                             endpoint = ApiV1 / Game / Game.GameVersionId(gameVersion) / Loaders / Loaders.list,
                             configure = { expectSuccess = false }
@@ -97,7 +97,7 @@ class LoaderRepositoryImpl(
 
         either {
             withError(RemoteError::toLoaderError) {
-                makeRequest {
+                makeMetaApiRequest {
                     httpClient.request(
                         endpoint = ApiV1 / Game / Game.GameVersionId(gameVersion) / Loaders /
                                 Loaders.LoaderId(loader.wireId()) / Loaders.LoaderId.versions,

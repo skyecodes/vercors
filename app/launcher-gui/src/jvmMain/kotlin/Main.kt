@@ -14,6 +14,7 @@ import coil3.disk.DiskCache
 import com.slack.circuit.foundation.CircuitCompositionLocals
 import com.slack.circuit.foundation.CircuitContent
 import dev.zacsweers.metro.createGraphFactory
+import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.*
 import okio.Path.Companion.toPath
@@ -22,7 +23,7 @@ import java.awt.Dimension
 
 @OptIn(ExperimentalComposeUiApi::class)
 fun main() {
-    val logger = KotlinLogging.logger {}
+    lateinit var logger: KLogger
     val scope = CoroutineScope(
         SupervisorJob() + Dispatchers.Default + CoroutineExceptionHandler { _, e ->
             logger.error(e) { "Uncaught exception in background scope" }
@@ -30,6 +31,8 @@ fun main() {
     )
     val appGraph = createGraphFactory<AppGraph.Factory>().create(scope)
     System.setProperty("app.vercors.logDir", appGraph.appPaths.logs.toString())
+    appGraph.metaApiConnectivityPoller // force eager construction so its background poll loop starts now
+    logger = KotlinLogging.logger {}
     logger.info { "Hello World!" }
 
     application(exitProcessOnExit = false) {

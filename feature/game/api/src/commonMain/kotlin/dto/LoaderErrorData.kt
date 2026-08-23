@@ -5,5 +5,5 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class LoaderErrorData(
     val error: String,
-    val description: String?
+    val description: String? = null
 )

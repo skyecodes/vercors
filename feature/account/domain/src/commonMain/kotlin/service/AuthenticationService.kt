@@ -31,3 +31,12 @@ open class AuthenticationException(
     message: String? = "An authentication error has occurred",
     cause: Exception? = null
 ) : Exception(message, cause)
+
+/**
+ * Thrown when a Microsoft/Xbox/Mojang authentication call couldn't reach the server at all — as opposed to
+ * a request that reached the server and was rejected (expired/invalid token, revoked grant, malformed
+ * response). Callers can catch this specifically to fall back to offline play with the last-known account
+ * instead of forcing a re-login.
+ */
+class AuthServerUnreachableException(cause: Exception) :
+    AuthenticationException("Could not reach the authentication server", cause)

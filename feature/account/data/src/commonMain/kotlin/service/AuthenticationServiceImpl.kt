@@ -1,12 +1,10 @@
 package app.vercors.feature.account.data.service
 
 import app.vercors.core.cryptography.CryptographyService
+import app.vercors.core.network.isNetworkUnreachable
 import app.vercors.feature.account.data.MICROSOFT_CLIENT_ID
 import app.vercors.feature.account.domain.model.Account
-import app.vercors.feature.account.domain.service.AuthenticationException
-import app.vercors.feature.account.domain.service.AuthenticationService
-import app.vercors.feature.account.domain.service.LoginState
-import app.vercors.feature.account.domain.service.LoginStep
+import app.vercors.feature.account.domain.service.*
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
 import dev.zacsweers.metro.Inject
@@ -65,6 +63,7 @@ class AuthenticationServiceImpl(
             return true
         } catch (e: Exception) {
             currentCoroutineContext().ensureActive()
+            if (e.isNetworkUnreachable()) throw AuthServerUnreachableException(e)
             logger.warn(e) { "Failed to verify token" }
             return false
         }
@@ -72,8 +71,10 @@ class AuthenticationServiceImpl(
 
     override fun refreshToken(refreshToken: String): Flow<LoginState> = flow {
         emit(LoginState.Progress(LoginStep.MicrosoftToken))
-        val (msAccessToken, refreshToken) = refreshMicrosoftAccessToken(refreshToken)
-        runAuthProcess(msAccessToken, refreshToken)
+        val (msAccessToken, newRefreshToken) = refreshMicrosoftAccessToken(refreshToken)
+        runAuthProcess(msAccessToken, newRefreshToken)
+    }.catch { e ->
+        if (e is Exception && e.isNetworkUnreachable()) throw AuthServerUnreachableException(e) else throw e
     }
 
     private suspend fun FlowCollector<LoginState>.runAuthProcess(

@@ -3,6 +3,7 @@ package app.vercors.shared.data
 import app.vercors.core.cryptography.CryptographyService
 import app.vercors.core.filesystem.*
 import app.vercors.core.network.RemoteError
+import app.vercors.core.network.makeMetaApiRequest
 import app.vercors.core.network.makeRequest
 import arrow.core.NonEmptyList
 import arrow.core.raise.ExperimentalRaiseAccumulateApi
@@ -112,9 +113,17 @@ class FileValidationServiceImpl(
         // succeeded — a failed request (e.g. offline) must never destroy a previously cached, still-valid file.
         val tempPath = Path("$path.tmp")
         try {
-            makeRequest {
-                source.request(httpClient).use {
-                    tempPath.writeFromSource(it)
+            if (this is FileValidationRequest.Channel) {
+                makeMetaApiRequest {
+                    source.request(httpClient).use {
+                        tempPath.writeFromSource(it)
+                    }
+                }
+            } else {
+                makeRequest {
+                    source.request(httpClient).use {
+                        tempPath.writeFromSource(it)
+                    }
                 }
             }
             tempPath.moveTo(path)

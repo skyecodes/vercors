@@ -25,6 +25,24 @@ interface NetworkProviders {
             }
             install(HttpRequestRetry)
         }
+
+    /** Minimal, no-retry, short-timeout client used only for [MetaApiConnectivityPoller]'s health pings —
+     *  the main [provideHttpClient] client's retry/backoff would make the liveness probe itself slow to fail. */
+    @SingleIn(AppScope::class)
+    @Provides
+    @Named("metaHealthCheckHttpClient")
+    fun provideMetaHealthCheckHttpClient(@Named("metaApiUrl") metaApiUrl: String): HttpClient =
+        HttpClient(platformHttpClientEngineFactory) {
+            install(DefaultRequest) {
+                url(metaApiUrl)
+            }
+            install(HttpRequestRetry) {
+                maxRetries = 0
+            }
+            install(HttpTimeout) {
+                requestTimeoutMillis = 3000
+            }
+        }
 }
 
 internal expect val platformHttpClientEngineFactory: HttpClientEngineFactory<*>

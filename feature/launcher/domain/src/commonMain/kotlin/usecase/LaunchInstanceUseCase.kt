@@ -2,6 +2,7 @@ package app.vercors.feature.launcher.domain.usecase
 
 import app.vercors.feature.account.domain.model.Account
 import app.vercors.feature.account.domain.repository.AccountRepository
+import app.vercors.feature.account.domain.service.AuthServerUnreachableException
 import app.vercors.feature.account.domain.service.LoginState
 import app.vercors.feature.account.domain.usecase.RefreshTokenUseCase
 import app.vercors.feature.account.domain.usecase.TokenValidationResult
@@ -105,16 +106,20 @@ class LaunchInstanceUseCase(
 
         val finalAccount = when (val validateTokenResult = validateTokenUseCase(account)) {
             is TokenValidationResult.Error -> {
-                logger.error(validateTokenResult.error) { "Token validation error" }
-                instanceRepository.addInstanceLog(
-                    instanceId,
-                    InstanceLogEvent.Launcher("Token validation error, see logs for more details")
-                )
-                instanceRepository.updateInstanceStatus(
-                    instanceId,
-                    InstanceStatus.Failed.TokenValidation(validateTokenResult.error)
-                )
-                return null
+                if (validateTokenResult.error is AuthServerUnreachableException) {
+                    offlineFallback(instanceId, account)
+                } else {
+                    logger.error(validateTokenResult.error) { "Token validation error" }
+                    instanceRepository.addInstanceLog(
+                        instanceId,
+                        InstanceLogEvent.Launcher("Token validation error, see logs for more details")
+                    )
+                    instanceRepository.updateInstanceStatus(
+                        instanceId,
+                        InstanceStatus.Failed.TokenValidation(validateTokenResult.error)
+                    )
+                    return null
+                }
             }
 
             TokenValidationResult.Failure -> {
@@ -127,15 +132,17 @@ class LaunchInstanceUseCase(
                 val refreshTokenResult = refreshTokenUseCase(account.refreshToken).onEach {
                     when (it) {
                         is LoginState.Error -> {
-                            logger.error(it.error) { "Token refresh error" }
-                            instanceRepository.addInstanceLog(
-                                instanceId,
-                                InstanceLogEvent.Launcher("Token refresh error, see logs for more details")
-                            )
-                            instanceRepository.updateInstanceStatus(
-                                instanceId,
-                                InstanceStatus.Failed.TokenRefresh(it.error)
-                            )
+                            if (it.error !is AuthServerUnreachableException) {
+                                logger.error(it.error) { "Token refresh error" }
+                                instanceRepository.addInstanceLog(
+                                    instanceId,
+                                    InstanceLogEvent.Launcher("Token refresh error, see logs for more details")
+                                )
+                                instanceRepository.updateInstanceStatus(
+                                    instanceId,
+                                    InstanceStatus.Failed.TokenRefresh(it.error)
+                                )
+                            }
                         }
 
                         is LoginState.Progress -> instanceRepository.updateInstanceStatus(
@@ -156,10 +163,13 @@ class LaunchInstanceUseCase(
                     }
                 }.lastOrNull()
                 logger.info { "Refresh token result: $refreshTokenResult" }
-                if (refreshTokenResult is LoginState.Success)
-                    refreshTokenResult.account
-                else
-                    return null
+                when {
+                    refreshTokenResult is LoginState.Success -> refreshTokenResult.account
+                    refreshTokenResult is LoginState.Error && refreshTokenResult.error is AuthServerUnreachableException ->
+                        offlineFallback(instanceId, account)
+
+                    else -> return null
+                }
             }
 
             is TokenValidationResult.Success -> account
@@ -186,6 +196,15 @@ class LaunchInstanceUseCase(
         val jvmMemoryOptions = resolveJvmMemoryOptions(instance.jvmMemoryOptions)
 
         return InstancePreparationResult(instance, finalAccount, version, assetIndex, javaExecutable, jvmMemoryOptions)
+    }
+
+    private fun offlineFallback(instanceId: InstanceId, account: Account): Account {
+        logger.warn { "Could not reach the authentication server, launching offline with the last-known account" }
+        instanceRepository.addInstanceLog(
+            instanceId,
+            InstanceLogEvent.Launcher("Could not reach the authentication server, launching offline")
+        )
+        return account
     }
 
     private fun onLaunchEvent(event: InstanceLaunchEvent, instanceId: InstanceId) {
