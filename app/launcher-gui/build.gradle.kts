@@ -1,3 +1,5 @@
+import dev.nucleusframework.desktop.application.dsl.AppImageCategory
+import dev.nucleusframework.desktop.application.dsl.CompressionLevel
 import dev.nucleusframework.desktop.application.dsl.TargetFormat
 
 plugins {
@@ -59,8 +61,33 @@ nucleus.application {
 
     nativeDistributions {
         targetFormats(*TargetFormat.entries.toTypedArray())
-        packageName = "app.vercors.launcher"
+        packageName = "vercors"
         packageVersion = rootProject.version.toString()
+        description = "A modern Minecraft Launcher with mod support and much more!"
+        vendor = "skyecodes"
+        homepage = "https://vercors.app"
+        enableAotCache = true
+
+        linux {
+            shortcut = true
+            appCategory = "Game"
+            menuGroup = "Games"
+            debMaintainer = "skyecodes <contact@skye.codes>"
+            rpmLicenseType = "MIT"
+            startupWMClass = "vercors"
+            compressionLevel = CompressionLevel.Ultra
+
+            appImage {
+                category = AppImageCategory.Game
+            }
+
+            snap {
+            }
+
+            flatpak {
+                runtimeVersion = "25.08"
+            }
+        }
     }
 }
 
