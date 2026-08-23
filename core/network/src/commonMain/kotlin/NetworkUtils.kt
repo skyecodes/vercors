@@ -11,6 +11,7 @@ import kotlinx.io.IOException
 import kotlinx.io.Source
 import kotlinx.io.buffered
 import kotlinx.serialization.SerializationException
+import opensavvy.spine.client.SpineReceptionException
 
 private val logger = KotlinLogging.logger {}
 
@@ -21,6 +22,11 @@ suspend fun <T> makeRequest(callProducer: suspend () -> T): T = catch({ callProd
     logger.error(it) { "Failed to make a network request" }
     when (it) {
         is IOException -> err.raise(RemoteError.Network)
+        // Kotlin/Native's Curl HTTP engine reports connection failures (refused, unreachable, TLS,
+        // proxy handshake) as a plain IllegalStateException instead of an IOException subtype —
+        // see io.ktor.client.engine.curl.internal.CurlMultiApiHandler.collectFailedResponse. This
+        // catch is scoped to a single HTTP call (callProducer), so it can't mask unrelated app bugs.
+        is IllegalStateException -> err.raise(RemoteError.Network)
         is HttpRequestTimeoutException -> err.raise(RemoteError.Timeout)
         is ClientRequestException -> err.raise(
             RemoteError.Http.Client(
@@ -37,6 +43,12 @@ suspend fun <T> makeRequest(callProducer: suspend () -> T): T = catch({ callProd
         )
 
         is SerializationException, is ContentConvertException -> err.raise(RemoteError.Serialization)
+        is SpineReceptionException -> when (val status = it.response.status.value) {
+            in 400..499 -> err.raise(RemoteError.Http.Client(status, it.response.bodyAsText()))
+            in 500..599 -> err.raise(RemoteError.Http.Server(status, it.response.bodyAsText()))
+            else -> throw it
+        }
+
         else -> throw it
     }
 }

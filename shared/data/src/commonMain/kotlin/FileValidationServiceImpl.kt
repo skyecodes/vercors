@@ -18,6 +18,7 @@ import dev.zacsweers.metro.SingleIn
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.*
 import kotlinx.io.bytestring.toHexString
+import kotlinx.io.files.Path
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.json.Json
 import opensavvy.progress.Progress
@@ -104,15 +105,21 @@ class FileValidationServiceImpl(
     context(_: Raise<RemoteError>)
     override suspend fun FileValidationRequest.download() {
         // A blank URL means this file can only ever be produced locally (e.g. a mod loader installer's
-        // patched jar) — deleting a still-present copy before a request we know will fail would destroy
-        // the only copy of a file we can't redownload.
+        // patched jar) — there's nothing to fetch.
         ensure(this !is FileValidationRequest.Url || url.isNotBlank()) { RemoteError.Network }
         logger.trace { "Downloading file $this" }
-        if (path.exists()) path.deleteRecursively()
-        makeRequest {
-            source.request(httpClient).use {
-                path.writeFromSource(it)
+        // Download to a sibling temp file and only replace the existing copy once the download has fully
+        // succeeded — a failed request (e.g. offline) must never destroy a previously cached, still-valid file.
+        val tempPath = Path("$path.tmp")
+        try {
+            makeRequest {
+                source.request(httpClient).use {
+                    tempPath.writeFromSource(it)
+                }
             }
+            tempPath.moveTo(path)
+        } finally {
+            if (tempPath.exists()) tempPath.deleteRecursively()
         }
     }
 

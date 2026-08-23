@@ -1,15 +1,14 @@
 package app.vercors.feature.instance.ui.create
 
 import androidx.compose.runtime.*
-import app.vercors.core.ui.state.mutableProgressiveStateOf
 import app.vercors.core.ui.state.produceAndCollectAsProgressiveState
 import app.vercors.feature.game.domain.model.GameVersionError
 import app.vercors.feature.game.domain.model.LoaderError
 import app.vercors.feature.game.domain.model.LoaderVersion
 import app.vercors.feature.game.domain.model.ModLoaderType
-import app.vercors.feature.game.domain.usecase.GetAvailableLoadersUseCase
-import app.vercors.feature.game.domain.usecase.GetLoaderVersionsUseCase
+import app.vercors.feature.game.domain.usecase.ObserveAvailableLoadersUseCase
 import app.vercors.feature.game.domain.usecase.ObserveGameVersionListUseCase
+import app.vercors.feature.game.domain.usecase.ObserveLoaderVersionsUseCase
 import app.vercors.feature.game.ui.GameVersionView
 import app.vercors.feature.game.ui.toView
 import app.vercors.feature.instance.domain.model.Instance
@@ -23,10 +22,9 @@ import app.vercors.shared.ui.error
 import arrow.core.raise.recover
 import com.slack.circuit.overlay.OverlayNavigator
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-import opensavvy.state.ExperimentalProgressiveRaiseApi
-import opensavvy.state.arrow.progressive
 import opensavvy.state.progressive.ProgressiveOutcome
 import opensavvy.state.progressive.map
 import opensavvy.state.progressive.valueOrNull
@@ -40,12 +38,11 @@ class CreateInstancePresenter(
     private val navigator: OverlayNavigator<CreateInstanceResult>,
     private val globalScope: CoroutineScope,
     private val observeGameVersionList: ObserveGameVersionListUseCase,
-    private val getAvailableLoaders: GetAvailableLoadersUseCase,
-    private val getLoaderVersions: GetLoaderVersionsUseCase,
+    private val observeAvailableLoaders: ObserveAvailableLoadersUseCase,
+    private val observeLoaderVersions: ObserveLoaderVersionsUseCase,
     private val createInstance: CreateInstanceUseCase,
     private val snackbarService: SnackbarService
 ) : Presenter<CreateInstanceState, CreateInstanceEvent> {
-    @OptIn(ExperimentalProgressiveRaiseApi::class)
     @Composable
     override fun present(): Store<CreateInstanceState, CreateInstanceEvent> {
         val gameVersionList by observeGameVersionListView()
@@ -53,27 +50,13 @@ class CreateInstancePresenter(
         var selectedGameVersion by remember { mutableStateOf<GameVersionView?>(null) }
         var selectedLoader by remember { mutableStateOf<ModLoaderType?>(null) }
         var selectedLoaderVersion by remember { mutableStateOf<LoaderVersion?>(null) }
-        val loaderList = remember { mutableProgressiveStateOf<LoaderError, List<ModLoaderType>>() }
-        val loaderVersionList = remember { mutableProgressiveStateOf<LoaderError, List<LoaderVersion>>() }
+        val loaderList by observeAvailableLoadersView(selectedGameVersion?.id)
+        val loaderVersionList by observeLoaderVersionsView(selectedGameVersion?.id, selectedLoader)
 
-        LaunchedEffect(selectedGameVersion?.id) {
-            val gameVersion = selectedGameVersion
-            loaderList.value = ProgressiveOutcome.Incomplete()
-            if (gameVersion != null) {
-                loaderList.value = progressive { getAvailableLoaders(gameVersion.id) }
-            }
-        }
-
-        LaunchedEffect(selectedGameVersion?.id, selectedLoader) {
-            val gameVersion = selectedGameVersion
-            val loader = selectedLoader
-            loaderVersionList.value = ProgressiveOutcome.Incomplete()
-            if (gameVersion != null && loader != null) {
-                val outcome = progressive { getLoaderVersions(gameVersion.id, loader) }
-                loaderVersionList.value = outcome
-                val versions = outcome.valueOrNull
-                if (versions != null) {
-                    selectedLoaderVersion = versions.firstOrNull { it.stable } ?: versions.firstOrNull()
+        LaunchedEffect(loaderVersionList) {
+            if (selectedLoaderVersion == null) {
+                selectedLoaderVersion = loaderVersionList.valueOrNull?.let { versions ->
+                    versions.firstOrNull { it.stable } ?: versions.firstOrNull()
                 }
             }
         }
@@ -83,9 +66,9 @@ class CreateInstancePresenter(
             selectedGameVersion = selectedGameVersion,
             gameVersionList = gameVersionList,
             selectedLoader = selectedLoader,
-            loaderList = loaderList.value,
+            loaderList = loaderList,
             selectedLoaderVersion = selectedLoaderVersion,
-            loaderVersionList = loaderVersionList.value
+            loaderVersionList = loaderVersionList
         ) + {
             when (it) {
                 is CreateInstanceEvent.OnInstanceNameChange -> instanceName = it.name
@@ -112,6 +95,22 @@ class CreateInstancePresenter(
     private fun observeGameVersionListView(): State<ProgressiveOutcome<GameVersionError.InvalidManifest, List<GameVersionView>>> =
         produceAndCollectAsProgressiveState {
             observeGameVersionList().map { res -> res.map { it.toView() } }
+        }
+
+    @Composable
+    private fun observeAvailableLoadersView(gameVersion: String?): State<ProgressiveOutcome<LoaderError, List<ModLoaderType>>> =
+        produceAndCollectAsProgressiveState(gameVersion) {
+            gameVersion?.let { observeAvailableLoaders(it) } ?: flowOf(ProgressiveOutcome.Incomplete())
+        }
+
+    @Composable
+    private fun observeLoaderVersionsView(
+        gameVersion: String?,
+        loader: ModLoaderType?
+    ): State<ProgressiveOutcome<LoaderError, List<LoaderVersion>>> =
+        produceAndCollectAsProgressiveState(gameVersion, loader) {
+            if (gameVersion != null && loader != null) observeLoaderVersions(gameVersion, loader)
+            else flowOf(ProgressiveOutcome.Incomplete())
         }
 
     private fun createInstance(

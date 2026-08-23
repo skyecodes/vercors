@@ -45,6 +45,13 @@ class AppPaths(root: Path) {
 
     fun versionInfoFile(versionId: String): Path = Path(versionDir(versionId), "$versionId.json")
 
+    /** Where the list of mod loaders available for a given game version is cached. */
+    fun availableLoadersFile(gameVersion: String): Path = Path(versionDir(gameVersion), "loaders.json")
+
+    /** Where the list of available versions for a given mod loader on a given game version is cached. */
+    fun loaderVersionsFile(gameVersion: String, loaderType: String): Path =
+        Path(versionDir(gameVersion), "$loaderType-loader-versions.json")
+
     /** Where a mod loader's resolved profile (mainClass/libraries/args) is cached for a given game+loader version. */
     fun loaderProfileFile(gameVersion: String, loaderType: String, loaderVersion: String): Path =
         Path(versionDir("$gameVersion-$loaderType-$loaderVersion"), "profile.json")

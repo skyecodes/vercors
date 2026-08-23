@@ -1,6 +1,7 @@
 package app.vercors.launcher.gui
 
 import app.vercors.shared.data.AppPaths
+import app.vercors.shared.ui.SnackbarService
 import com.slack.circuit.foundation.Circuit
 import com.slack.circuit.foundation.animation.AnimatedNavDecorator
 import com.slack.circuit.runtime.navigation.NavArgument
@@ -16,6 +17,7 @@ import kotlinx.coroutines.CoroutineScope
 internal interface AppGraph {
     val appPaths: AppPaths
     val circuit: Circuit
+    val snackbarService: SnackbarService
 
     @Provides
     @SingleIn(AppScope::class)

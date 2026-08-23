@@ -3,9 +3,9 @@ package app.vercors.feature.instance.ui.create
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import app.vercors.feature.game.domain.usecase.GetAvailableLoadersUseCase
-import app.vercors.feature.game.domain.usecase.GetLoaderVersionsUseCase
+import app.vercors.feature.game.domain.usecase.ObserveAvailableLoadersUseCase
 import app.vercors.feature.game.domain.usecase.ObserveGameVersionListUseCase
+import app.vercors.feature.game.domain.usecase.ObserveLoaderVersionsUseCase
 import app.vercors.feature.instance.domain.model.InstanceId
 import app.vercors.feature.instance.domain.usecase.CreateInstanceUseCase
 import app.vercors.shared.ui.SnackbarService
@@ -25,8 +25,8 @@ sealed interface CreateInstanceResult {
 class CreateInstanceDialog(
     private val globalScope: CoroutineScope,
     private val observeGameVersionList: ObserveGameVersionListUseCase,
-    private val getAvailableLoaders: GetAvailableLoadersUseCase,
-    private val getLoaderVersions: GetLoaderVersionsUseCase,
+    private val observeAvailableLoaders: ObserveAvailableLoadersUseCase,
+    private val observeLoaderVersions: ObserveLoaderVersionsUseCase,
     private val createInstance: CreateInstanceUseCase,
     private val snackbarService: SnackbarService
 ) : DialogOverlay<CreateInstanceResult>() {
@@ -40,8 +40,8 @@ class CreateInstanceDialog(
                 navigator = navigator,
                 globalScope = globalScope,
                 observeGameVersionList = observeGameVersionList,
-                getAvailableLoaders = getAvailableLoaders,
-                getLoaderVersions = getLoaderVersions,
+                observeAvailableLoaders = observeAvailableLoaders,
+                observeLoaderVersions = observeLoaderVersions,
                 createInstance = createInstance,
                 snackbarService = snackbarService
             )

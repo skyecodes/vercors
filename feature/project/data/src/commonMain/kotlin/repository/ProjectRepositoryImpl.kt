@@ -2,6 +2,8 @@ package app.vercors.feature.project.data.repository
 
 import app.vercors.core.domain.Page
 import app.vercors.core.filesystem.*
+import app.vercors.core.network.RemoteError
+import app.vercors.core.network.makeRequest
 import app.vercors.core.system.SystemService
 import app.vercors.feature.game.domain.model.ModLoaderType
 import app.vercors.feature.project.api.Platforms
@@ -14,6 +16,7 @@ import app.vercors.feature.project.data.modpack.ModpackManifestParser
 import app.vercors.feature.project.data.projectFileDownloadRequest
 import app.vercors.feature.project.data.toData
 import app.vercors.feature.project.data.toDomain
+import app.vercors.feature.project.data.toPlatformError
 import app.vercors.feature.project.domain.model.*
 import app.vercors.feature.project.domain.model.modpack.*
 import app.vercors.feature.project.domain.repository.ProjectRepository
@@ -26,6 +29,7 @@ import arrow.core.NonEmptyList
 import arrow.core.raise.Raise
 import arrow.core.raise.context.ensureNotNull
 import arrow.core.raise.context.raise
+import arrow.core.raise.context.withError
 import arrow.core.raise.recover
 import de.jonasbroeckmann.kzip.Zip
 import de.jonasbroeckmann.kzip.forEachEntry
@@ -35,6 +39,7 @@ import dev.zacsweers.metro.ContributesBinding
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
 import io.ktor.client.*
+import io.ktor.client.plugins.*
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
@@ -67,9 +72,14 @@ class ProjectRepositoryImpl(
 
     context(_: Raise<PlatformError>)
     override suspend fun getPlatformList(): List<ProjectPlatform> =
-        httpClient.request(
-            endpoint = ApiV1 / Platforms / Platforms.list
-        ).handle(
+        withError(RemoteError::toPlatformError) {
+            makeRequest {
+                httpClient.request(
+                    endpoint = ApiV1 / Platforms / Platforms.list,
+                    configure = { expectSuccess = false }
+                )
+            }
+        }.handle(
             handle1 = { raise(it.toDomain()) },
             transform = { list -> list.map { it.toDomain() } }
         )
@@ -78,9 +88,14 @@ class ProjectRepositoryImpl(
     override suspend fun getFeaturedProjectList(
         platformId: PlatformId
     ): FeaturedProjectList =
-        httpClient.request(
-            endpoint = ApiV1 / Platforms / Platforms.PlatformId(platformId) / Platforms.PlatformId.featuredProjects
-        ).handle(
+        withError<PlatformError, RemoteError, _>(RemoteError::toPlatformError) {
+            makeRequest {
+                httpClient.request(
+                    endpoint = ApiV1 / Platforms / Platforms.PlatformId(platformId) / Platforms.PlatformId.featuredProjects,
+                    configure = { expectSuccess = false }
+                )
+            }
+        }.handle(
             handle1 = { raise(it.toDomain()) },
             handle2 = { raise(it.toDomain()) },
             transform = { map ->
@@ -101,22 +116,27 @@ class ProjectRepositoryImpl(
         sortBy: ProjectSortBy?,
         pageSize: Int?,
         offset: Int?
-    ): Page<BriefProject> = httpClient.request(
-        endpoint = ApiV1 / Platforms / Platforms.PlatformId(platformId) / Projects / Projects.search,
-        parameters = {
-            this.type = json.encodeToJsonElement(type.toData()).jsonPrimitive.content
-            loaders?.let { loaders ->
-                this.loaders =
-                    json.encodeToJsonElement(loaders.map { it.toMetaData() }).jsonArray.map { it.jsonPrimitive.content }
-            }
-            gameVersions?.let { this.gameVersions = it }
-            categories?.let { this.categories = it }
-            this.query = query
-            this.sortBy = sortBy?.let { json.encodeToJsonElement(it.toData()).jsonPrimitive.content }
-            this.pageSize = pageSize
-            this.offset = offset
+    ): Page<BriefProject> = withError(RemoteError::toPlatformError) {
+        makeRequest {
+            httpClient.request(
+                endpoint = ApiV1 / Platforms / Platforms.PlatformId(platformId) / Projects / Projects.search,
+                parameters = {
+                    this.type = json.encodeToJsonElement(type.toData()).jsonPrimitive.content
+                    loaders?.let { loaders ->
+                        this.loaders =
+                            json.encodeToJsonElement(loaders.map { it.toMetaData() }).jsonArray.map { it.jsonPrimitive.content }
+                    }
+                    gameVersions?.let { this.gameVersions = it }
+                    categories?.let { this.categories = it }
+                    this.query = query
+                    this.sortBy = sortBy?.let { json.encodeToJsonElement(it.toData()).jsonPrimitive.content }
+                    this.pageSize = pageSize
+                    this.offset = offset
+                },
+                configure = { expectSuccess = false }
+            )
         }
-    ).handle(
+    }.handle(
         handle1 = { raise(it.toDomain()) },
         handle2 = { raise(it.toDomain()) },
         handle3 = { raise(it.toDomain()) },
@@ -126,11 +146,16 @@ class ProjectRepositoryImpl(
     context(_: Raise<ProjectDetailsError>)
     override suspend fun getProject(
         projectId: ProjectId
-    ): Project = httpClient.request(
-        endpoint = ApiV1 / Platforms / Platforms.PlatformId(projectId.platform) / Projects / Projects.ProjectId(
-            projectId.id
-        ) / Projects.ProjectId.get
-    ).handle(
+    ): Project = withError(RemoteError::toPlatformError) {
+        makeRequest {
+            httpClient.request(
+                endpoint = ApiV1 / Platforms / Platforms.PlatformId(projectId.platform) / Projects / Projects.ProjectId(
+                    projectId.id
+                ) / Projects.ProjectId.get,
+                configure = { expectSuccess = false }
+            )
+        }
+    }.handle(
         handle1 = {
             when (it) {
                 is ProjectNotFoundData -> raise(it.toDomain())
@@ -146,15 +171,20 @@ class ProjectRepositoryImpl(
         projectId: ProjectId,
         gameVersion: String?,
         loader: ModLoaderType?
-    ): List<ProjectFile> = httpClient.request(
-        endpoint = ApiV1 / Platforms / Platforms.PlatformId(projectId.platform) / Projects / Projects.ProjectId(
-            projectId.id
-        ) / ProjectFiles / ProjectFiles.list,
-        parameters = {
-            this.gameVersion = gameVersion
-            this.loader = loader?.let { json.encodeToJsonElement(it.toMetaData()).jsonPrimitive.content }
+    ): List<ProjectFile> = withError(RemoteError::toPlatformError) {
+        makeRequest {
+            httpClient.request(
+                endpoint = ApiV1 / Platforms / Platforms.PlatformId(projectId.platform) / Projects / Projects.ProjectId(
+                    projectId.id
+                ) / ProjectFiles / ProjectFiles.list,
+                parameters = {
+                    this.gameVersion = gameVersion
+                    this.loader = loader?.let { json.encodeToJsonElement(it.toMetaData()).jsonPrimitive.content }
+                },
+                configure = { expectSuccess = false }
+            )
         }
-    ).handle(
+    }.handle(
         handle1 = {
             when (it) {
                 is ProjectNotFoundData -> raise(it.toDomain())

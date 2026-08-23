@@ -2,7 +2,6 @@ package app.vercors.feature.instance.ui.details
 
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
-import app.vercors.core.ui.state.mutableProgressiveStateOf
 import app.vercors.core.ui.state.produceAndCollectAsProgressiveState
 import app.vercors.feature.game.domain.model.GameVersionError
 import app.vercors.feature.game.domain.model.LoaderError
@@ -39,10 +38,9 @@ import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedFactory
 import dev.zacsweers.metro.AssistedInject
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-import opensavvy.state.ExperimentalProgressiveRaiseApi
-import opensavvy.state.arrow.progressive
 import opensavvy.state.progressive.ProgressiveOutcome
 import opensavvy.state.progressive.map
 import opensavvy.state.progressive.valueOrNull
@@ -74,8 +72,8 @@ class InstanceDetailsPresenter(
     private val snackbarService: SnackbarService,
     private val updateInstance: UpdateInstanceUseCase,
     private val observeGameVersionList: ObserveGameVersionListUseCase,
-    private val getAvailableLoaders: GetAvailableLoadersUseCase,
-    private val getLoaderVersions: GetLoaderVersionsUseCase,
+    private val observeAvailableLoaders: ObserveAvailableLoadersUseCase,
+    private val observeLoaderVersions: ObserveLoaderVersionsUseCase,
     private val observeJavaInstallations: ObserveJavaInstallationsUseCase,
     private val installJavaRuntime: InstallJavaRuntimeUseCase,
     private val observeManualDownloadItems: ObserveManualDownloadItemsUseCase,
@@ -88,7 +86,6 @@ class InstanceDetailsPresenter(
     private val openInstanceFolder: OpenInstanceFolderUseCase,
     private val getTotalPhysicalMemory: GetTotalPhysicalMemoryUseCase,
 ) : Presenter<InstanceDetailsState, InstanceDetailsEvent> {
-    @OptIn(ExperimentalProgressiveRaiseApi::class)
     @Composable
     override fun present(): Store<InstanceDetailsState, InstanceDetailsEvent> {
         val instance by observeInstanceView()
@@ -108,8 +105,6 @@ class InstanceDetailsPresenter(
         }
         val (selectedTab, setSelectedTab) = rememberSaveable { mutableStateOf(InstanceDetailsTab.Options) }
         val (editedInstance, setEditedInstance) = rememberSaveable { mutableStateOf(InstanceEditState()) }
-        val loaderList = remember { mutableProgressiveStateOf<LoaderError, List<ModLoaderType>>() }
-        val loaderVersionList = remember { mutableProgressiveStateOf<LoaderError, List<LoaderVersion>>() }
         val totalMemoryMb = remember {
             ((getTotalPhysicalMemory() ?: (16384L * 1024 * 1024)) / (1024 * 1024)).toInt()
         }
@@ -122,22 +117,11 @@ class InstanceDetailsPresenter(
             null -> currentInstance?.loaderType
         }
 
-        LaunchedEffect(effectiveGameVersion) {
-            loaderList.value = ProgressiveOutcome.Incomplete()
-            if (effectiveGameVersion != null) {
-                loaderList.value = progressive { getAvailableLoaders(effectiveGameVersion) }
-            }
-        }
+        val loaderList by observeAvailableLoadersView(effectiveGameVersion)
+        val loaderVersionList by observeLoaderVersionsView(effectiveGameVersion, effectiveLoaderType)
 
-        LaunchedEffect(effectiveGameVersion, effectiveLoaderType) {
-            loaderVersionList.value = ProgressiveOutcome.Incomplete()
-            if (effectiveGameVersion != null && effectiveLoaderType != null) {
-                loaderVersionList.value = progressive { getLoaderVersions(effectiveGameVersion, effectiveLoaderType) }
-            }
-        }
-
-        LaunchedEffect(editedInstance.modLoaderType, editedInstance.modLoaderVersion, loaderVersionList.value) {
-            val versions = loaderVersionList.value.valueOrNull
+        LaunchedEffect(editedInstance.modLoaderType, editedInstance.modLoaderVersion, loaderVersionList) {
+            val versions = loaderVersionList.valueOrNull
             if (editedInstance.modLoaderType is ModLoaderTypeEdit.Loader &&
                 editedInstance.modLoaderVersion == null &&
                 versions != null
@@ -153,8 +137,8 @@ class InstanceDetailsPresenter(
             instance = instance,
             editedInstance = editedInstance,
             gameVersionList = gameVersionList.valueOrNull ?: emptyList(),
-            loaderList = loaderList.value.valueOrNull ?: emptyList(),
-            loaderVersionList = loaderVersionList.value.valueOrNull ?: emptyList(),
+            loaderList = loaderList.valueOrNull ?: emptyList(),
+            loaderVersionList = loaderVersionList.valueOrNull ?: emptyList(),
             availableJavaInstallations = javaInstallations.valueOrNull ?: emptyList(),
             promptInstallJava = promptInstallJava,
             totalMemoryMb = totalMemoryMb,
@@ -505,6 +489,22 @@ class InstanceDetailsPresenter(
     private fun observeGameVersionListView(): State<ProgressiveOutcome<GameVersionError.InvalidManifest, List<GameVersionView>>> =
         produceAndCollectAsProgressiveState {
             observeGameVersionList().map { res -> res.map { it.toView() } }
+        }
+
+    @Composable
+    private fun observeAvailableLoadersView(gameVersion: String?): State<ProgressiveOutcome<LoaderError, List<ModLoaderType>>> =
+        produceAndCollectAsProgressiveState(gameVersion) {
+            gameVersion?.let { observeAvailableLoaders(it) } ?: flowOf(ProgressiveOutcome.Incomplete())
+        }
+
+    @Composable
+    private fun observeLoaderVersionsView(
+        gameVersion: String?,
+        loader: ModLoaderType?
+    ): State<ProgressiveOutcome<LoaderError, List<LoaderVersion>>> =
+        produceAndCollectAsProgressiveState(gameVersion, loader) {
+            if (gameVersion != null && loader != null) observeLoaderVersions(gameVersion, loader)
+            else flowOf(ProgressiveOutcome.Incomplete())
         }
 
     @CircuitInject(InstanceDetailsScreen::class, AppScope::class)
