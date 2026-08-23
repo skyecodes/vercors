@@ -42,17 +42,28 @@ class AccountListPresenter(
         val accountList by observeAccountListView()
         var loginJob by remember { mutableStateOf<Job?>(null) }
         val loginState = remember { mutableStateOf(LoginStateView()) }
+        val (promptLogin, setPromptLogin) = remember { mutableStateOf(false) }
+        val loginDialog = remember { LoginDialog(loginState) { url -> copyToClipboard(url) } }
 
         return AccountListState(
             accountList = accountList,
-            loginState = loginState.value
+            promptLogin = promptLogin,
+            loginDialog = loginDialog,
         ) + { event ->
             when (event) {
-                AccountListEvent.CancelLogin -> loginJob?.cancel(CancellationException("Login cancelled by user"))
+                AccountListEvent.CancelLogin -> {
+                    loginJob?.cancel(CancellationException("Login cancelled by user"))
+                    setPromptLogin(false)
+                }
+
                 is AccountListEvent.CopyToClipboard -> copyToClipboard(event.data)
-                AccountListEvent.Login -> loginJob = presenterScope.launch { collectLoginState(loginState) }.apply {
-                    invokeOnCompletion {
-                        if (it != null) onFailure(it, loginState)
+                AccountListEvent.Login -> {
+                    loginState.value = LoginStateView()
+                    setPromptLogin(true)
+                    loginJob = presenterScope.launch { collectLoginState(loginState) }.apply {
+                        invokeOnCompletion {
+                            if (it != null && it !is CancellationException) onFailure(it, loginState)
+                        }
                     }
                 }
 
@@ -87,7 +98,9 @@ class AccountListPresenter(
         }
     }
 
-    private suspend fun collectLoginState(state: MutableState<LoginStateView>) = login().collect {
+    private suspend fun collectLoginState(
+        state: MutableState<LoginStateView>,
+    ) = login().collect {
         when (it) {
             is LoginState.RequireLogin -> {
                 state.update {
@@ -111,6 +124,7 @@ class AccountListPresenter(
                     isLoggingIn = false,
                     url = null,
                     progress = null,
+                    success = true,
                 )
             }
 

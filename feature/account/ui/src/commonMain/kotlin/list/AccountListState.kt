@@ -9,7 +9,8 @@ import opensavvy.state.progressive.ProgressiveOutcome
 @Immutable
 data class AccountListState(
     val accountList: ProgressiveOutcome<AccountLoadingError, AccountListView> = ProgressiveOutcome.Incomplete(),
-    val loginState: LoginStateView = LoginStateView(),
+    val promptLogin: Boolean = false,
+    val loginDialog: LoginDialog,
 )
 
 @Immutable
@@ -33,4 +34,5 @@ data class LoginStateView(
     val url: String? = null,
     val progress: Float? = null,
     val error: Throwable? = null,
+    val success: Boolean = false,
 )

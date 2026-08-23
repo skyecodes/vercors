@@ -9,12 +9,12 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
-import app.vercors.core.ui.animation.*
+import app.vercors.core.ui.animation.AppAnimatedContent
+import app.vercors.core.ui.animation.AppAnimatedVisibility
+import app.vercors.core.ui.animation.appAnimateItem
 import app.vercors.core.ui.component.*
 import app.vercors.core.ui.layout.AppError
 import app.vercors.core.ui.layout.AppLoading
@@ -28,8 +28,8 @@ import coil3.compose.rememberAsyncImagePainter
 import com.composables.icons.lucide.*
 import com.composeunstyled.theme.Theme
 import com.slack.circuit.codegen.annotations.CircuitInject
+import com.slack.circuit.overlay.OverlayEffect
 import dev.zacsweers.metro.AppScope
-import kotlinx.coroutines.CancellationException
 import opensavvy.state.progressive.ProgressiveOutcome
 import org.jetbrains.compose.resources.stringResource
 
@@ -41,15 +41,20 @@ fun AccountList(
 ) {
     val (state, eventSink) = store
     with(eventSink) {
+        if (state.promptLogin) {
+            OverlayEffect {
+                show(state.loginDialog)
+                eventSink(AccountListEvent.CancelLogin)
+            }
+        }
+
         when (val outcome = state.accountList) {
             is ProgressiveOutcome.Success -> AppAnimatedContent(outcome.value, contentKey = { it.accounts.isEmpty() }) {
                 if (it.accounts.isEmpty()) NoAccountsFoundDisplay(
-                    loginState = state.loginState,
                     modifier = modifier
                 )
                 else AccountList(
                     accountList = it,
-                    loginState = state.loginState,
                     modifier = modifier
                 )
             }
@@ -63,7 +68,6 @@ fun AccountList(
 @Composable
 context(_: EventSink<AccountListEvent>)
 private fun NoAccountsFoundDisplay(
-    loginState: LoginStateView,
     modifier: Modifier
 ) {
     Column(
@@ -75,9 +79,7 @@ private fun NoAccountsFoundDisplay(
             text = stringResource(AccountRes.string.noAccountFound)
         )
 
-        LoginDisplay(
-            loginState = loginState
-        )
+        LoginButton()
     }
 }
 
@@ -85,7 +87,6 @@ private fun NoAccountsFoundDisplay(
 context(_: EventSink<AccountListEvent>)
 private fun AccountList(
     accountList: AccountListView,
-    loginState: LoginStateView,
     modifier: Modifier
 ) {
     Column(
@@ -109,11 +110,20 @@ private fun AccountList(
         ) {
             accountList.selectedAccount?.let { currentAccount ->
                 item("selected") {
-                    AppText(
-                        text = stringResource(AccountRes.string.selectedAccount),
-                        style = Theme[textStyles][title],
-                        modifier = Modifier.padding(start = 16.dp, top = 8.dp)
-                    )
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(start = 8.dp, top = 8.dp)
+                    ) {
+                        AppIcon(
+                            imageVector = Lucide.UserCheck,
+                            contentDescription = null,
+                        )
+                        AppText(
+                            text = stringResource(AccountRes.string.selectedAccount),
+                            style = Theme[textStyles][title]
+                        )
+                    }
                 }
                 item(currentAccount.id) {
                     AccountCard(
@@ -139,10 +149,14 @@ private fun AccountList(
                 }
             }
         }
-        LoginDisplay(
-            loginState = loginState,
-            modifier = Modifier.padding(bottom = 16.dp, top = 8.dp)
-        )
+        Box(
+            modifier = Modifier.fillMaxWidth(),
+            contentAlignment = Alignment.Center
+        ) {
+            LoginButton(
+                modifier = Modifier.padding(bottom = 16.dp, top = 8.dp)
+            )
+        }
     }
 }
 
@@ -224,64 +238,15 @@ private fun LazyItemScope.AccountCard(
 
 @Composable
 context(eventSink: EventSink<AccountListEvent>)
-fun LoginDisplay(
-    loginState: LoginStateView,
+private fun LoginButton(
     modifier: Modifier = Modifier,
 ) {
-    Column(
-        modifier = modifier.fillMaxWidth().appAnimateContentSize(),
-        verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        if (!loginState.isLoggingIn) {
-            AppIconTextButton(
-                onClick = { eventSink(AccountListEvent.Login) },
-                text = stringResource(AccountRes.string.logIn),
-                imageVector = Lucide.LogIn,
-                backgroundColor = Theme[colors][primary],
-                contentColor = Theme[colors][onPrimary]
-            )
-        } else {
-            AppIconTextButton(
-                onClick = { eventSink(AccountListEvent.CancelLogin) },
-                text = stringResource(SharedRes.string.cancel),
-                imageVector = Lucide.X,
-                backgroundColor = Theme[colors][error],
-                contentColor = Theme[colors][onError]
-            )
-        }
-
-        loginState.url?.let {
-            AppText(
-                text = stringResource(AccountRes.string.requireMicrosoftLogin),
-                modifier = Modifier.widthIn(max = 500.dp)
-            )
-            Row {
-                val uriHandler = LocalUriHandler.current
-                AppIconTextButton(
-                    onClick = { uriHandler.openUri(it) },
-                    text = stringResource(SharedRes.string.openInBrowser),
-                    imageVector = Lucide.ExternalLink
-                )
-                AppIconTextButton(
-                    onClick = { eventSink(AccountListEvent.CopyToClipboard(it)) },
-                    text = stringResource(SharedRes.string.copyLink),
-                    imageVector = Lucide.Link
-                )
-            }
-        }
-
-        loginState.progress?.let {
-            val progress by appAnimateFloatAsState(it)
-
-            AppProgressIndicator(
-                progress = progress,
-                modifier = Modifier.width(500.dp),
-            )
-        }
-
-        loginState.error?.let {
-            if (it !is CancellationException) AppError(it)
-        }
-    }
+    AppIconTextButton(
+        onClick = { eventSink(AccountListEvent.Login) },
+        text = stringResource(AccountRes.string.logIn),
+        imageVector = Lucide.LogIn,
+        backgroundColor = Theme[colors][primary],
+        contentColor = Theme[colors][onPrimary],
+        modifier = modifier
+    )
 }

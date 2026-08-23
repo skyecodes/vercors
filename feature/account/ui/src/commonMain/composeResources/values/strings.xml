@@ -5,6 +5,7 @@
     <string name="selectedAccount">Selected account</string>
     <string name="otherAccounts">Other accounts</string>
     <string name="logOut">Log out</string>
+    <string name="accountAddedSuccessfully">Account added successfully!</string>
     <string name="errorAccountLoadingFailed">Failed to load accounts.</string>
     <string name="errorAccountNotFound">Account not found.</string>
 </resources>
