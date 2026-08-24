@@ -42,6 +42,7 @@
     <string name="errorImportFailed">Failed to import file</string>
     <string name="errorOpenFolderFailed">Failed to open folder</string>
     <string name="errorNoCompatibleJava">No compatible Java %1$d installation found</string>
+    <string name="errorLoginRequired">No account selected, please log in</string>
     <string name="promptInstallJavaTitle">Java %1$d required</string>
     <string name="promptInstallJavaMessage">This instance requires Java %1$d, but no compatible installation was found. Install one automatically?</string>
     <string name="installJava">Install Java</string>

@@ -16,10 +16,15 @@ data class MojangJavaInfo(
         @Serializable
         @SerialName("file")
         data class Normal(
-            val lzma: Download,
-            val raw: Download,
+            val downloads: Downloads,
             val executable: Boolean,
         ) : File
+
+        @Serializable
+        data class Downloads(
+            val lzma: Download? = null,
+            val raw: Download,
+        )
 
         @Serializable
         data class Download(

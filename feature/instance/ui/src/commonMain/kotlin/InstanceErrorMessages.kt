@@ -25,6 +25,7 @@ val InstanceLaunchError.message: String
                 InstanceRes.string.errorNoCompatibleJava,
                 majorVersion
             )
+            InstanceLaunchError.LoginRequired -> stringResource(InstanceRes.string.errorLoginRequired)
         }
     )
 

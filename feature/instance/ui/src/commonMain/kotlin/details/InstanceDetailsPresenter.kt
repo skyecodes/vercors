@@ -3,10 +3,12 @@ package app.vercors.feature.instance.ui.details
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import app.vercors.core.ui.state.produceAndCollectAsProgressiveState
-import app.vercors.feature.game.domain.model.GameVersionError
-import app.vercors.feature.game.domain.model.LoaderError
-import app.vercors.feature.game.domain.model.LoaderVersion
-import app.vercors.feature.game.domain.model.ModLoaderType
+import app.vercors.core.ui.state.update
+import app.vercors.feature.account.domain.service.LoginState
+import app.vercors.feature.account.domain.usecase.LoginUseCase
+import app.vercors.feature.account.ui.list.LoginDialog
+import app.vercors.feature.account.ui.list.LoginStateView
+import app.vercors.feature.game.domain.model.*
 import app.vercors.feature.game.domain.usecase.*
 import app.vercors.feature.game.ui.GameVersionView
 import app.vercors.feature.game.ui.toView
@@ -28,7 +30,10 @@ import app.vercors.feature.project.ui.list.ProjectListScreen
 import app.vercors.shared.domain.model.JavaInstallation
 import app.vercors.shared.domain.usecase.CopyToClipboardUseCase
 import app.vercors.shared.domain.usecase.GetTotalPhysicalMemoryUseCase
-import app.vercors.shared.ui.*
+import app.vercors.shared.ui.Presenter
+import app.vercors.shared.ui.SnackbarService
+import app.vercors.shared.ui.Store
+import app.vercors.shared.ui.error
 import arrow.core.raise.context.either
 import com.slack.circuit.codegen.annotations.CircuitInject
 import com.slack.circuit.retained.produceAndCollectAsRetainedState
@@ -37,10 +42,9 @@ import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedFactory
 import dev.zacsweers.metro.AssistedInject
-import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.launch
 import opensavvy.state.progressive.ProgressiveOutcome
 import opensavvy.state.progressive.map
 import opensavvy.state.progressive.valueOrNull
@@ -76,7 +80,9 @@ class InstanceDetailsPresenter(
     private val observeLoaderVersions: ObserveLoaderVersionsUseCase,
     private val observeJavaInstallations: ObserveJavaInstallationsUseCase,
     private val installJavaRuntime: InstallJavaRuntimeUseCase,
+    private val observeJavaRuntimeInstallProgress: ObserveJavaRuntimeInstallProgressUseCase,
     private val observeManualDownloadItems: ObserveManualDownloadItemsUseCase,
+    private val login: LoginUseCase,
     private val copyToClipboard: CopyToClipboardUseCase,
     private val setInstanceIcon: SetInstanceIconUseCase,
     private val removeInstanceIcon: RemoveInstanceIconUseCase,
@@ -103,6 +109,14 @@ class InstanceDetailsPresenter(
         val finishInstallationDialog = remember(screen.instanceId) {
             FinishInstallationDialog(screen.instanceId, observeManualDownloadItems) { url -> copyToClipboard(url) }
         }
+        val loginState = remember { mutableStateOf(LoginStateView()) }
+        val (promptLogin, setPromptLogin) = remember { mutableStateOf(false) }
+        val loginDialog = remember { LoginDialog(loginState) { url -> copyToClipboard(url) } }
+        val (loginJob, setLoginJob) = remember { mutableStateOf<Job?>(null) }
+        val javaInstallState = remember { mutableStateOf(JavaInstallProgressView()) }
+        val (promptJavaInstall, setPromptJavaInstall) = remember { mutableStateOf(false) }
+        val installJavaProgressDialog = remember { InstallJavaProgressDialog(javaInstallState) }
+        val (javaInstallJob, setJavaInstallJob) = remember { mutableStateOf<Job?>(null) }
         val (selectedTab, setSelectedTab) = rememberSaveable { mutableStateOf(InstanceDetailsTab.Options) }
         val (editedInstance, setEditedInstance) = rememberSaveable { mutableStateOf(InstanceEditState()) }
         val totalMemoryMb = remember {
@@ -150,7 +164,11 @@ class InstanceDetailsPresenter(
             installedShaderPacks = installedShaderPacks,
             promptRemoveConfirmation = promptRemoveConfirmation,
             promptFinishInstallation = promptFinishInstallation,
-            finishInstallationDialog = finishInstallationDialog
+            finishInstallationDialog = finishInstallationDialog,
+            promptLogin = promptLogin,
+            loginDialog = loginDialog,
+            promptJavaInstall = promptJavaInstall,
+            installJavaProgressDialog = installJavaProgressDialog
         ) + { event ->
             handleEvent(
                 event = event,
@@ -163,7 +181,15 @@ class InstanceDetailsPresenter(
                 setPromptRemoveConfirmation = setPromptRemoveConfirmation,
                 setPromptFinishInstallation = setPromptFinishInstallation,
                 promptInstallJava = promptInstallJava,
-                setPromptInstallJava = setPromptInstallJava
+                setPromptInstallJava = setPromptInstallJava,
+                loginState = loginState,
+                setPromptLogin = setPromptLogin,
+                loginJob = loginJob,
+                setLoginJob = setLoginJob,
+                javaInstallState = javaInstallState,
+                setPromptJavaInstall = setPromptJavaInstall,
+                javaInstallJob = javaInstallJob,
+                setJavaInstallJob = setJavaInstallJob
             )
         }
     }
@@ -179,14 +205,30 @@ class InstanceDetailsPresenter(
         setPromptRemoveConfirmation: (PendingRemoval?) -> Unit,
         setPromptFinishInstallation: (Boolean) -> Unit,
         promptInstallJava: Int?,
-        setPromptInstallJava: (Int?) -> Unit
+        setPromptInstallJava: (Int?) -> Unit,
+        loginState: MutableState<LoginStateView>,
+        setPromptLogin: (Boolean) -> Unit,
+        loginJob: Job?,
+        setLoginJob: (Job?) -> Unit,
+        javaInstallState: MutableState<JavaInstallProgressView>,
+        setPromptJavaInstall: (Boolean) -> Unit,
+        javaInstallJob: Job?,
+        setJavaInstallJob: (Job?) -> Unit
     ) {
         if (handleLifecycleEvent(
                 event,
                 setSelectedTab,
                 setPromptDeleteConfirmation,
                 promptInstallJava,
-                setPromptInstallJava
+                setPromptInstallJava,
+                loginState,
+                setPromptLogin,
+                loginJob,
+                setLoginJob,
+                javaInstallState,
+                setPromptJavaInstall,
+                javaInstallJob,
+                setJavaInstallJob
             )
         ) return
         if (handleEditEvent(event, editedInstance, setEditedInstance, setSelectedTab)) return
@@ -200,16 +242,50 @@ class InstanceDetailsPresenter(
         setSelectedTab: (InstanceDetailsTab) -> Unit,
         setPromptDeleteConfirmation: (Boolean) -> Unit,
         promptInstallJava: Int?,
-        setPromptInstallJava: (Int?) -> Unit
+        setPromptInstallJava: (Int?) -> Unit,
+        loginState: MutableState<LoginStateView>,
+        setPromptLogin: (Boolean) -> Unit,
+        loginJob: Job?,
+        setLoginJob: (Job?) -> Unit,
+        javaInstallState: MutableState<JavaInstallProgressView>,
+        setPromptJavaInstall: (Boolean) -> Unit,
+        javaInstallJob: Job?,
+        setJavaInstallJob: (Job?) -> Unit
     ): Boolean {
         when (event) {
-            InstanceDetailsEvent.Launch -> handleLaunch(setSelectedTab, setPromptInstallJava)
+            InstanceDetailsEvent.Launch -> handleLaunch(
+                setSelectedTab, setPromptInstallJava, loginState, setPromptLogin, setLoginJob
+            )
+
             InstanceDetailsEvent.OnInstallJavaConfirm -> handleInstallJavaConfirm(
                 promptInstallJava,
-                setPromptInstallJava
+                setPromptInstallJava,
+                javaInstallState,
+                setPromptJavaInstall,
+                setJavaInstallJob
             )
 
             InstanceDetailsEvent.OnInstallJavaDismiss -> setPromptInstallJava(null)
+            InstanceDetailsEvent.OnJavaInstallDialogDismiss -> handleJavaInstallDialogDismiss(
+                javaInstallJob,
+                javaInstallState,
+                setPromptJavaInstall,
+                setSelectedTab,
+                setPromptInstallJava,
+                loginState,
+                setPromptLogin,
+                setLoginJob
+            )
+
+            InstanceDetailsEvent.CancelLogin -> handleCancelLogin(
+                loginJob,
+                loginState,
+                setPromptLogin,
+                setLoginJob,
+                setSelectedTab,
+                setPromptInstallJava
+            )
+
             InstanceDetailsEvent.Delete -> setPromptDeleteConfirmation(true)
             is InstanceDetailsEvent.ConfirmDelete -> handleConfirmDelete(event, setPromptDeleteConfirmation)
             InstanceDetailsEvent.Cancel -> cancelInstance(screen.instanceId)
@@ -333,37 +409,131 @@ class InstanceDetailsPresenter(
 
     private fun handleLaunch(
         setSelectedTab: (InstanceDetailsTab) -> Unit,
-        setPromptInstallJava: (Int?) -> Unit
+        setPromptInstallJava: (Int?) -> Unit,
+        loginState: MutableState<LoginStateView>,
+        setPromptLogin: (Boolean) -> Unit,
+        setLoginJob: (Job?) -> Unit,
     ) = globalScope.launch {
         setSelectedTab(InstanceDetailsTab.Logs)
         either { launchInstance(screen.instanceId) }.onLeft { error ->
-            if (error is InstanceLaunchError.NoCompatibleJava) setPromptInstallJava(error.majorVersion)
-            else snackbarService.error { error.message }
+            when (error) {
+                is InstanceLaunchError.NoCompatibleJava -> setPromptInstallJava(error.majorVersion)
+                InstanceLaunchError.LoginRequired -> startLogin(loginState, setPromptLogin, setLoginJob)
+                else -> snackbarService.error { error.message }
+            }
         }
     }
 
-    private fun handleInstallJavaConfirm(promptInstallJava: Int?, setPromptInstallJava: (Int?) -> Unit) {
+    private fun startLogin(
+        loginState: MutableState<LoginStateView>,
+        setPromptLogin: (Boolean) -> Unit,
+        setLoginJob: (Job?) -> Unit,
+    ) {
+        loginState.value = LoginStateView()
+        setPromptLogin(true)
+        val job = globalScope.launch { collectLoginState(loginState) }
+        job.invokeOnCompletion { if (it != null && it !is CancellationException) onLoginFailure(it, loginState) }
+        setLoginJob(job)
+    }
+
+    private suspend fun collectLoginState(state: MutableState<LoginStateView>) = login().collect {
+        when (it) {
+            is LoginState.RequireLogin -> state.update { copy(isLoggingIn = true, url = it.url) }
+            is LoginState.Progress -> state.update { copy(isLoggingIn = true, url = null, progress = it.step.progress) }
+            is LoginState.Success -> state.update {
+                copy(
+                    isLoggingIn = false,
+                    url = null,
+                    progress = null,
+                    success = true
+                )
+            }
+
+            is LoginState.Error -> state.update {
+                copy(
+                    isLoggingIn = false,
+                    url = null,
+                    progress = null,
+                    error = it.error
+                )
+            }
+        }
+    }
+
+    private fun onLoginFailure(error: Throwable, state: MutableState<LoginStateView>) {
+        state.update { copy(isLoggingIn = false, url = null, progress = null, error = error) }
+    }
+
+    private fun handleCancelLogin(
+        loginJob: Job?,
+        loginState: MutableState<LoginStateView>,
+        setPromptLogin: (Boolean) -> Unit,
+        setLoginJob: (Job?) -> Unit,
+        setSelectedTab: (InstanceDetailsTab) -> Unit,
+        setPromptInstallJava: (Int?) -> Unit,
+    ) {
+        loginJob?.cancel(CancellationException("Login cancelled by user"))
+        setPromptLogin(false)
+        if (loginState.value.success) {
+            handleLaunch(setSelectedTab, setPromptInstallJava, loginState, setPromptLogin, setLoginJob)
+        }
+    }
+
+    private fun handleInstallJavaConfirm(
+        promptInstallJava: Int?,
+        setPromptInstallJava: (Int?) -> Unit,
+        javaInstallState: MutableState<JavaInstallProgressView>,
+        setPromptJavaInstall: (Boolean) -> Unit,
+        setJavaInstallJob: (Job?) -> Unit,
+    ) {
         setPromptInstallJava(null)
         val majorVersion = promptInstallJava ?: return
-        globalScope.launch {
-            either { installJavaRuntime(majorVersion) }
-                .onLeft { error ->
-                    snackbarService.error {
-                        stringResource(
-                            InstanceRes.string.javaInstallFailed,
-                            majorVersion,
-                            error.toString()
-                        )
+        javaInstallState.value = JavaInstallProgressView(majorVersion = majorVersion)
+        setPromptJavaInstall(true)
+        val job = globalScope.launch {
+            coroutineScope {
+                val progressJob = launch {
+                    observeJavaRuntimeInstallProgress().collect { byVersion ->
+                        val status = byVersion[majorVersion]
+                        if (status is JavaRuntimeInstallStatus.Downloading) {
+                            javaInstallState.update { copy(progress = status.fraction) }
+                        }
                     }
                 }
-                .onRight {
-                    snackbarService.success {
-                        stringResource(
-                            InstanceRes.string.javaInstallSucceeded,
-                            majorVersion
-                        )
+                either { installJavaRuntime(majorVersion) }
+                    .onLeft { installError ->
+                        javaInstallState.update {
+                            copy(done = true, error = {
+                                stringResource(
+                                    InstanceRes.string.javaInstallFailed,
+                                    majorVersion,
+                                    installError.toString()
+                                )
+                            })
+                        }
                     }
-                }
+                    .onRight { javaInstallState.update { copy(done = true) } }
+                progressJob.cancel()
+            }
+        }
+        setJavaInstallJob(job)
+    }
+
+    private fun handleJavaInstallDialogDismiss(
+        javaInstallJob: Job?,
+        javaInstallState: MutableState<JavaInstallProgressView>,
+        setPromptJavaInstall: (Boolean) -> Unit,
+        setSelectedTab: (InstanceDetailsTab) -> Unit,
+        setPromptInstallJava: (Int?) -> Unit,
+        loginState: MutableState<LoginStateView>,
+        setPromptLogin: (Boolean) -> Unit,
+        setLoginJob: (Job?) -> Unit,
+    ) {
+        javaInstallJob?.cancel()
+        setPromptJavaInstall(false)
+        val succeeded = javaInstallState.value.done && javaInstallState.value.error == null
+        if (succeeded) {
+            handleLaunch(setSelectedTab, setPromptInstallJava, loginState, setPromptLogin, setLoginJob)
         }
     }
 

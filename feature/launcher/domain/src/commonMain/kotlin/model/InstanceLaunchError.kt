@@ -20,4 +20,6 @@ sealed interface InstanceLaunchError {
 
     @JvmInline
     value class NoCompatibleJava(val majorVersion: Int) : InstanceLaunchError
+
+    data object LoginRequired : InstanceLaunchError
 }

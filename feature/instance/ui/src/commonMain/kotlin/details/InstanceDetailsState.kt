@@ -1,6 +1,8 @@
 package app.vercors.feature.instance.ui.details
 
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
+import app.vercors.feature.account.ui.list.LoginDialog
 import app.vercors.feature.game.domain.model.LoaderVersion
 import app.vercors.feature.game.domain.model.ModLoaderType
 import app.vercors.feature.game.ui.GameVersionView
@@ -32,6 +34,10 @@ data class InstanceDetailsState(
     val promptRemoveConfirmation: PendingRemoval?,
     val promptFinishInstallation: Boolean,
     val finishInstallationDialog: FinishInstallationDialog,
+    val promptLogin: Boolean = false,
+    val loginDialog: LoginDialog,
+    val promptJavaInstall: Boolean = false,
+    val installJavaProgressDialog: InstallJavaProgressDialog,
 ) {
     val isNameEdited = instance.valueOrNull?.let {
         editedInstance.name != null && editedInstance.name != it.name
@@ -186,6 +192,14 @@ data class PendingRemoval(
     val kind: RemovalKind,
     val fileName: String,
     val title: String,
+)
+
+@Immutable
+data class JavaInstallProgressView(
+    val majorVersion: Int = 0,
+    val progress: Float? = null,
+    val done: Boolean = false,
+    val error: (@Composable () -> String)? = null,
 )
 
 fun InstanceLogEvent.toView(): InstanceLogEventView = when (this) {

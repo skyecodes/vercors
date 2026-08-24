@@ -8,6 +8,7 @@ dependencies {
     commonMainImplementation(projects.feature.game.domain)
     commonMainImplementation(projects.feature.game.ui)
     commonMainImplementation(projects.feature.project.ui.screen)
+    commonMainImplementation(projects.feature.account.ui)
     commonMainImplementation(libs.kotlinx.datetime)
     commonMainImplementation(libs.filekit.dialogs.compose)
 }

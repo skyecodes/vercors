@@ -118,6 +118,20 @@ fun InstanceDetails(
                 else eventSink(InstanceDetailsEvent.OnInstallJavaDismiss)
             }
         }
+
+        if (state.promptJavaInstall) {
+            OverlayEffect {
+                show(state.installJavaProgressDialog)
+                eventSink(InstanceDetailsEvent.OnJavaInstallDialogDismiss)
+            }
+        }
+
+        if (state.promptLogin) {
+            OverlayEffect {
+                show(state.loginDialog)
+                eventSink(InstanceDetailsEvent.CancelLogin)
+            }
+        }
     }
 }
 
@@ -348,7 +362,7 @@ private fun InstanceHeaderActionButton(instance: InstanceView, isInstanceEdited:
             )
 
             is InstanceStatus.Launching -> AppIconTextButton(
-                onClick = { eventSink(InstanceDetailsEvent.Stop) },
+                onClick = { eventSink(InstanceDetailsEvent.Cancel) },
                 text = stringResource(SharedRes.string.cancel),
                 backgroundColor = Theme[colors][error],
                 contentColor = Theme[colors][onError],

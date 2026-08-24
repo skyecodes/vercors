@@ -22,6 +22,7 @@ import app.vercors.feature.launcher.domain.model.InstanceLaunchEvent
 import app.vercors.feature.launcher.domain.service.LauncherService
 import app.vercors.shared.domain.model.JvmMemoryOptions
 import arrow.core.raise.Raise
+import arrow.core.raise.RaiseCancellationException
 import arrow.core.raise.context.raise
 import arrow.core.raise.context.withError
 import dev.zacsweers.metro.Inject
@@ -51,7 +52,18 @@ class LaunchInstanceUseCase(
         val job = coroutineScope.async { prepareInstance(instanceId) }
         job.invokeOnCompletion { instanceRepository.updateInstanceJob(instanceId, null) }
         instanceRepository.updateInstanceJob(instanceId, job)
-        val (instance, account, version, assetIndex, javaExecutable, jvmMemoryOptions) = job.await() ?: return
+        val (instance, account, version, assetIndex, javaExecutable, jvmMemoryOptions) = try {
+            job.await()
+        } catch (e: RaiseCancellationException) {
+            // Arrow's raise() short-circuit is itself a CancellationException subtype — rethrow it
+            // untouched so it reaches the Raise<InstanceLaunchError> scope that installed it, instead
+            // of being mistaken for a real job cancellation below.
+            throw e
+        } catch (_: CancellationException) {
+            instanceRepository.updateInstanceStatus(instanceId, InstanceStatus.Idle)
+            currentCoroutineContext().ensureActive()
+            return
+        } ?: return
 
         launcherService.launch(
             instance = instance,
@@ -98,7 +110,7 @@ class LaunchInstanceUseCase(
                 InstanceLogEvent.Launcher("No account selected, login required")
             )
             instanceRepository.updateInstanceStatus(instanceId, InstanceStatus.Failed.LoginRequired)
-            return null
+            raise(InstanceLaunchError.LoginRequired)
         }
 
         logger.info { "Selected account: ${account.username} (${account.id})" }
@@ -191,7 +203,10 @@ class LaunchInstanceUseCase(
         }
         val javaExecutable = version.javaVersion?.let { javaVersion ->
             resolveJavaInstallation(javaVersion.majorVersion, instance.javaInstallationId)?.path
-                ?: raise(InstanceLaunchError.NoCompatibleJava(javaVersion.majorVersion))
+                ?: run {
+                    instanceRepository.updateInstanceStatus(instanceId, InstanceStatus.Idle)
+                    raise(InstanceLaunchError.NoCompatibleJava(javaVersion.majorVersion))
+                }
         } ?: "java"
         val jvmMemoryOptions = resolveJvmMemoryOptions(instance.jvmMemoryOptions)
 

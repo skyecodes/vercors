@@ -85,9 +85,9 @@ class JavaRuntimeRepositoryImpl(
             val fileRequests = normalFiles.map { (relativePath, file) ->
                 FileValidationRequest.Url(
                     path = relativePath.toRuntimeFilePath(runtimeDir),
-                    url = file.raw.url,
-                    sha1 = file.raw.sha1,
-                    size = file.raw.size,
+                    url = file.downloads.raw.url,
+                    sha1 = file.downloads.raw.sha1,
+                    size = file.downloads.raw.size,
                 )
             }
             withError(JavaRuntimeError::DownloadFailed) {
