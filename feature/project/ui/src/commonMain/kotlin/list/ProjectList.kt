@@ -24,7 +24,6 @@ import androidx.compose.ui.unit.sp
 import app.vercors.core.domain.Page
 import app.vercors.core.ui.CoreRes
 import app.vercors.core.ui.animation.AppAnimatedVisibility
-import app.vercors.core.ui.animation.appAnimateItem
 import app.vercors.core.ui.component.*
 import app.vercors.core.ui.layout.AppError
 import app.vercors.core.ui.layout.AppPaginator
@@ -519,7 +518,6 @@ private fun LazyItemScope.ProjectListItemCard(
         ProjectListItemCardLayout(
             modifier = (if (isLast) Modifier.padding(bottom = 8.dp) else Modifier)
                 .hoverable(interactionSource = interactionSource)
-                .appAnimateItem()
                 .projectSharedElement(project.id, "card", ProjectSharedElementOrigin.ProjectList),
             interactionSource = interactionSource,
             onClick = { eventSink(ProjectListEvent.OnProjectClick(project.id)) },

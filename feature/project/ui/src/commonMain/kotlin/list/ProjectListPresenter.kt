@@ -62,6 +62,7 @@ class ProjectListPresenter(
         val gameVersionSearchQuery = rememberRetained { mutableStateOf("") }
         val showSnapshot = rememberRetained { mutableStateOf(false) }
         val filter = rememberRetained { mutableStateOf(ProjectListFilter()) }
+        val lastSearchedFilter = rememberRetained { mutableStateOf<ProjectListFilter?>(null) }
         val projects = rememberRetained { mutableProgressiveStateOf<ProjectSearchError, Page<BriefProjectView>>() }
 
         LaunchedEffect(platformList, preferredPlatform) {
@@ -90,7 +91,10 @@ class ProjectListPresenter(
         }
 
         LaunchedEffect(filter.value) {
-            searchProjects(filter.value, projects)
+            if (filter.value != lastSearchedFilter.value) {
+                searchProjects(filter.value, projects)
+                if (projects.value is ProgressiveOutcome.Success) lastSearchedFilter.value = filter.value
+            }
         }
 
         return ProjectListState(
@@ -100,7 +104,17 @@ class ProjectListPresenter(
             showSnapshot = showSnapshot.value,
             filter = filter.value,
             projects = projects.value,
-        ) + { handleEvent(it, presenterScope, filter, projects, gameVersionSearchQuery, showSnapshot) }
+        ) + {
+            handleEvent(
+                it,
+                presenterScope,
+                filter,
+                lastSearchedFilter,
+                projects,
+                gameVersionSearchQuery,
+                showSnapshot
+            )
+        }
     }
 
     @Composable
@@ -126,6 +140,7 @@ class ProjectListPresenter(
         event: ProjectListEvent,
         presenterScope: CoroutineScope,
         filter: MutableState<ProjectListFilter>,
+        lastSearchedFilter: MutableState<ProjectListFilter?>,
         projects: MutableState<ProgressiveOutcome<ProjectSearchError, Page<BriefProjectView>>>,
         gameVersionSearchQuery: MutableState<String>,
         showSnapshot: MutableState<Boolean>
@@ -138,7 +153,10 @@ class ProjectListPresenter(
             }
 
             is ProjectListEvent.OnSearchQueryChange -> filter.updateAndResetPage { copy(searchQuery = event.query) }
-            ProjectListEvent.OnSearchButtonClick -> presenterScope.launch { searchProjects(filter.value, projects) }
+            ProjectListEvent.OnSearchButtonClick -> presenterScope.launch {
+                searchProjects(filter.value, projects)
+                if (projects.value is ProgressiveOutcome.Success) lastSearchedFilter.value = filter.value
+            }
             is ProjectListEvent.OnGameVersionSearchQueryChange -> gameVersionSearchQuery.value = event.query
             is ProjectListEvent.OnGameVersionClick -> filter.updateAndResetPage {
                 copy(selectedGameVersions = selectedGameVersions.toggle(event.version))
