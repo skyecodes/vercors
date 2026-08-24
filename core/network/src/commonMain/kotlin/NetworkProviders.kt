@@ -4,6 +4,7 @@ import dev.zacsweers.metro.*
 import io.ktor.client.*
 import io.ktor.client.engine.*
 import io.ktor.client.plugins.*
+import io.ktor.client.plugins.cache.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.json.Json
@@ -24,6 +25,7 @@ interface NetworkProviders {
                 })
             }
             install(HttpRequestRetry)
+            install(HttpCache)
         }
 
     /** Minimal, no-retry, short-timeout client used only for [MetaApiConnectivityPoller]'s health pings —
