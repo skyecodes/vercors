@@ -37,8 +37,9 @@ internal class FileStoreImpl<T>(
     private val _flow = MutableProgressiveStateFlow<FileStoreError, T>()
     override val flow: ProgressiveFlow<FileStoreError, T> = _flow.onStart { backgroundScope.launch { load() } }
 
-    private fun startWatcher() {
+    private suspend fun startWatcher() {
         if (watcherJob?.isActive == true) return
+        filePath.createParentDirectories()
         watcherJob = backgroundScope.launch {
             fileWatcherService.watchFile(filePath).collectLatest { load() }
         }
@@ -50,12 +51,14 @@ internal class FileStoreImpl<T>(
         try {
             if (!filePath.isRegularFile() && defaultProvider != null) {
                 if (filePath.exists()) filePath.deleteRecursively()
-                write(defaultProvider())
-                return // Filewatcher will collect the event and call load() again
+                val data = defaultProvider()
+                write(data)
+                _flow.emit(data.successfulWithProgress())
+            } else {
+                logger.debug { "Reading data from $filePath" }
+                val file = filePath.readJson(serializer, json)
+                _flow.emit(file.successfulWithProgress())
             }
-            logger.debug { "Reading data from $filePath" }
-            val file = filePath.readJson(serializer, json)
-            _flow.emit(file.successfulWithProgress())
         } catch (e: Exception) {
             currentCoroutineContext().ensureActive()
             delay(100.milliseconds) // If another update happens within 100ms, the failure will be canceled
