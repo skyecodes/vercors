@@ -194,6 +194,10 @@ class LaunchInstanceUseCase(
         }
         val version = instance.modLoader?.let { modLoader ->
             logger.info { "Installing ${modLoader.type} ${modLoader.version}..." }
+            instanceRepository.updateInstanceStatus(
+                instanceId,
+                InstanceStatus.Launching.InstallingLoader(modLoader.type)
+            )
             withError({ InstanceLaunchError.ModLoaderInstall(it) }) {
                 modLoaderInstallerService.resolve(vanillaVersion, modLoader.type, modLoader.version)
             }

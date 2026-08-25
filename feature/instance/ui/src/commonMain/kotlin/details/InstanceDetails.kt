@@ -1163,8 +1163,10 @@ private val InstanceStatus.text: String
         is InstanceStatus.Launching.ValidatingToken -> stringResource(InstanceRes.string.validatingToken)
         is InstanceStatus.Launching.RefreshingToken -> stringResource(InstanceRes.string.refreshingToken)
         is InstanceStatus.Launching.LoadingMetadata -> stringResource(InstanceRes.string.loadingMetadata)
+        is InstanceStatus.Launching.InstallingLoader ->
+            stringResource(InstanceRes.string.installingLoader, loaderType.displayName)
         is InstanceStatus.Launching.ValidatingFiles -> stringResource(InstanceRes.string.validatingFiles)
-        is InstanceStatus.Launching.DownloadingFiles -> stringResource(InstanceRes.string.downloadingFiles)
+        is InstanceStatus.Launching.DownloadingFiles -> stringResource(InstanceRes.string.downloadingGameFiles)
         is InstanceStatus.Installing.ResolvingFiles -> stringResource(InstanceRes.string.resolvingFiles)
         is InstanceStatus.Installing.DownloadingFiles -> stringResource(InstanceRes.string.downloadingFiles)
         is InstanceStatus.Installing.AwaitingManualDownloads -> stringResource(InstanceRes.string.awaitingManualDownloads)

@@ -19,8 +19,10 @@
     <string name="validatingToken">Validating token...</string>
     <string name="refreshingToken">Refreshing token...</string>
     <string name="loadingMetadata">Loading metadata...</string>
-    <string name="validatingFiles">Validating files...</string>
+    <string name="installingLoader">Installing %1$s...</string>
+    <string name="validatingFiles">Validating game files...</string>
     <string name="downloadingFiles">Downloading files...</string>
+    <string name="downloadingGameFiles">Downloading game files...</string>
     <string name="running">Running</string>
     <string name="stopping">Stopping</string>
     <string name="failed">Failed</string>

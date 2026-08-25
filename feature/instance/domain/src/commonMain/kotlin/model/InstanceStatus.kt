@@ -1,5 +1,7 @@
 package app.vercors.feature.instance.domain.model
 
+import app.vercors.feature.game.domain.model.ModLoaderType
+
 sealed interface InstanceStatus {
     data object Idle : InstanceStatus
 
@@ -7,6 +9,7 @@ sealed interface InstanceStatus {
         data object ValidatingToken : Launching
         data object RefreshingToken : Launching
         data object LoadingMetadata : Launching
+        data class InstallingLoader(val loaderType: ModLoaderType) : Launching
         data class ValidatingFiles(val progress: Float?) : Launching
         data class DownloadingFiles(val progress: Float?) : Launching
     }
