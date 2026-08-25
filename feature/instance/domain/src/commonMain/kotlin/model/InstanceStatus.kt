@@ -15,6 +15,7 @@ sealed interface InstanceStatus {
         data class ResolvingFiles(val progress: Float?) : Installing
         data class DownloadingFiles(val progress: Float?) : Installing
         data object AwaitingManualDownloads : Installing
+        data class Interrupted(val stage: InstanceInstallStage) : Installing
     }
 
     sealed interface Failed : InstanceStatus {

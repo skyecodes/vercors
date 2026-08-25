@@ -73,22 +73,31 @@ class InstanceRepositoryImpl(
     override val manualDownloads = _manualDownloads.asStateFlow()
 
     init {
-        // Restores AwaitingManualDownloads status (and its item list) from disk for any instance whose manual
-        // downloads were still outstanding when the launcher was last closed — otherwise it silently defaults to
-        // Idle (see getInstanceStatus) and looks fully installed. Skips instances that already have a live status
-        // entry so it never clobbers an in-progress session's own updates once its write round-trips back here.
+        // Restores AwaitingManualDownloads (from pendingManualDownloads) or Installing.Interrupted (from
+        // installStage) status from disk for any instance still mid-install when the launcher was last closed —
+        // otherwise it silently defaults to Idle (see getInstanceStatus) and looks fully installed/launchable.
+        // pendingManualDownloads takes priority: it reflects a strictly later stage than installStage, which is
+        // always cleared to null before pendingManualDownloads is ever populated (see ModpackInstallRunner.run).
+        // Skips instances that already have a live status entry so it never clobbers an in-progress session's own
+        // updates once its write round-trips back here.
         coroutineScope.launch {
             instances.collect { outcome ->
                 val map = outcome.valueOrNull ?: return@collect
                 for ((id, either) in map) {
                     val instance = either.getOrNull() ?: continue
-                    if (instance.pendingManualDownloads.isEmpty()) continue
                     if (_statuses.value.containsKey(id)) continue
-                    _statuses.update { it + (id to InstanceStatus.Installing.AwaitingManualDownloads) }
-                    _manualDownloads.update {
-                        it + (id to instance.pendingManualDownloads.map { pending ->
-                            ManualDownloadItem(pending.fileName, pending.downloadUrl, downloaded = false)
-                        })
+                    val stage = instance.installStage
+                    when {
+                        instance.pendingManualDownloads.isNotEmpty() -> {
+                            _statuses.update { it + (id to InstanceStatus.Installing.AwaitingManualDownloads) }
+                            _manualDownloads.update {
+                                it + (id to instance.pendingManualDownloads.map { pending ->
+                                    ManualDownloadItem(pending.fileName, pending.downloadUrl, downloaded = false)
+                                })
+                            }
+                        }
+
+                        stage != null -> _statuses.update { it + (id to InstanceStatus.Installing.Interrupted(stage)) }
                     }
                 }
             }

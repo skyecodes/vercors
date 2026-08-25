@@ -37,6 +37,7 @@ sealed interface InstanceDetailsEvent : Event {
     data class OnOpenInstanceFolderClick(val folder: InstanceFolder) : InstanceDetailsEvent
     data object OnFinishInstallationClick : InstanceDetailsEvent
     data object OnFinishInstallationDismiss : InstanceDetailsEvent
+    data object OnResumeInstallationClick : InstanceDetailsEvent
     data object CancelLogin : InstanceDetailsEvent
     data object OnJavaInstallDialogDismiss : InstanceDetailsEvent
 }

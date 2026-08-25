@@ -353,6 +353,14 @@ private fun InstanceHeaderActionButton(instance: InstanceView, isInstanceEdited:
                 imageVector = Lucide.Download,
             )
 
+            is InstanceStatus.Installing.Interrupted -> AppIconTextButton(
+                onClick = { eventSink(InstanceDetailsEvent.OnResumeInstallationClick) },
+                text = stringResource(InstanceRes.string.resumeInstallation),
+                backgroundColor = Theme[colors][primary],
+                contentColor = Theme[colors][onPrimary],
+                imageVector = Lucide.RefreshCw,
+            )
+
             is InstanceStatus.Idle, is InstanceStatus.Failed -> AppIconTextButton(
                 onClick = { eventSink(InstanceDetailsEvent.Launch) },
                 text = stringResource(InstanceRes.string.launch),
@@ -1160,6 +1168,7 @@ private val InstanceStatus.text: String
         is InstanceStatus.Installing.ResolvingFiles -> stringResource(InstanceRes.string.resolvingFiles)
         is InstanceStatus.Installing.DownloadingFiles -> stringResource(InstanceRes.string.downloadingFiles)
         is InstanceStatus.Installing.AwaitingManualDownloads -> stringResource(InstanceRes.string.awaitingManualDownloads)
+        is InstanceStatus.Installing.Interrupted -> stringResource(InstanceRes.string.installationInterrupted)
         is InstanceStatus.Running -> stringResource(InstanceRes.string.running)
         is InstanceStatus.Stopping -> stringResource(InstanceRes.string.stopping)
         is InstanceStatus.Failed -> stringResource(InstanceRes.string.failed)

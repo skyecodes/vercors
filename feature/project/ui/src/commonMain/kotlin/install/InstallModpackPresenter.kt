@@ -4,14 +4,14 @@ import androidx.compose.runtime.*
 import app.vercors.core.ui.state.mutableProgressiveStateOf
 import app.vercors.feature.instance.domain.model.*
 import app.vercors.feature.instance.domain.usecase.*
-import app.vercors.feature.instance.ui.install.ManualDownloadCandidate
-import app.vercors.feature.instance.ui.install.persistPendingManualDownloads
-import app.vercors.feature.instance.ui.install.runManualDownloads
+import app.vercors.feature.instance.ui.install.ModpackInstallRunner
 import app.vercors.feature.project.domain.model.ProjectDetailsError
 import app.vercors.feature.project.domain.model.ProjectId
-import app.vercors.feature.project.domain.model.ProjectType
-import app.vercors.feature.project.domain.model.modpack.*
-import app.vercors.feature.project.domain.usecase.*
+import app.vercors.feature.project.domain.model.modpack.ModpackManifest
+import app.vercors.feature.project.domain.model.modpack.ModpackResolutionError
+import app.vercors.feature.project.domain.usecase.GetModpackManifestUseCase
+import app.vercors.feature.project.domain.usecase.GetProjectFilesUseCase
+import app.vercors.feature.project.domain.usecase.GetProjectUseCase
 import app.vercors.feature.project.ui.message
 import app.vercors.shared.ui.Presenter
 import app.vercors.shared.ui.SnackbarService
@@ -23,7 +23,6 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
-import opensavvy.progress.Progress
 import opensavvy.state.ExperimentalProgressiveRaiseApi
 import opensavvy.state.arrow.progressive
 import opensavvy.state.progressive.ProgressiveOutcome
@@ -39,18 +38,13 @@ class InstallModpackPresenter(
     private val getProjectFiles: GetProjectFilesUseCase,
     private val getProject: GetProjectUseCase,
     private val getModpackManifest: GetModpackManifestUseCase,
-    private val resolveModpackManifestFiles: ResolveModpackManifestFilesUseCase,
     private val createInstance: CreateInstanceUseCase,
-    private val installModpackFiles: InstallModpackFilesUseCase,
-    private val awaitManualDownload: AwaitManualDownloadUseCase,
-    private val recordInstalledContentOrigin: RecordInstalledContentOriginUseCase,
     private val setInstanceIconFromUrl: SetInstanceIconFromUrlUseCase,
     private val deleteInstance: DeleteInstanceUseCase,
     private val deleteInstanceFiles: DeleteInstanceFilesUseCase,
     private val updateInstanceStatus: UpdateInstanceStatusUseCase,
     private val updateInstanceJob: UpdateInstanceJobUseCase,
-    private val updateManualDownloadItems: UpdateManualDownloadItemsUseCase,
-    private val updateInstance: UpdateInstanceUseCase,
+    private val modpackInstallRunner: ModpackInstallRunner,
     private val snackbarService: SnackbarService
 ) : Presenter<InstallModpackState, InstallModpackEvent> {
     @OptIn(ExperimentalProgressiveRaiseApi::class)
@@ -143,16 +137,12 @@ class InstallModpackPresenter(
             // Child of `job`, not `globalScope`, so it's cancelled automatically if the install is rolled back.
             launch { fetchAndApplyProjectIcon(instance) }
 
-            val resolvedManifest = resolveManifestFilesOrNull(manifest, instance.id) ?: return@launch
-            val installedFiles = installFilesOrNull(resolvedManifest, instance.id) ?: return@launch
-            recordOrigins(instance.id, resolvedManifest.platformId, installedFiles)
-
-            if (!awaitManualDownloads(resolvedManifest, instance.id)) {
-                updateInstanceStatus(instance.id, InstanceStatus.Failed.InstallFailed)
-                return@launch
-            }
-
-            updateInstanceStatus(instance.id, InstanceStatus.Idle)
+            val ok = modpackInstallRunner.run(
+                instanceId = instance.id,
+                modpackInfo = InstanceModpackInfo(manifest.platformId, manifest.projectId, manifest.fileId),
+                initialManifest = manifest,
+            )
+            updateInstanceStatus(instance.id, if (ok) InstanceStatus.Idle else InstanceStatus.Failed.InstallFailed)
         }
         // Only reached with a non-null error on genuine cancellation (job.cancel() via CancelInstanceSetupUseCase)
         // or a truly unexpected exception — expected step failures above already report InstanceStatus.Failed and
@@ -179,7 +169,8 @@ class InstallModpackPresenter(
                 version = manifest.loaderVersion!!
             )
         },
-        modpackInfo = InstanceModpackInfo(manifest.platformId, manifest.projectId, manifest.fileId)
+        modpackInfo = InstanceModpackInfo(manifest.platformId, manifest.projectId, manifest.fileId),
+        installStage = InstanceInstallStage.ResolvingFiles,
     )
 
     private suspend fun tryCreateInstance(instance: Instance): Boolean =
@@ -200,105 +191,8 @@ class InstallModpackPresenter(
         }
     }
 
-    private suspend fun resolveManifestFilesOrNull(
-        manifest: ModpackManifest,
-        instanceId: InstanceId
-    ): ModpackManifest? =
-        recover({
-            resolveModpackManifestFiles(manifest) { progress ->
-                updateInstanceStatus(instanceId, InstanceStatus.Installing.ResolvingFiles(progress.toFractionOrNull()))
-            }
-        }) { error: ModpackResolutionError ->
-            logger.error { "Modpack file resolution failed for $instanceId: $error" }
-            updateInstanceStatus(instanceId, InstanceStatus.Failed.InstallFailed)
-            null
-        }
-
-    private suspend fun installFilesOrNull(
-        resolvedManifest: ModpackManifest,
-        instanceId: InstanceId
-    ): List<InstalledModpackFile>? =
-        recover({
-            installModpackFiles(resolvedManifest, instanceId) { progress ->
-                updateInstanceStatus(
-                    instanceId,
-                    InstanceStatus.Installing.DownloadingFiles(progress.toFractionOrNull())
-                )
-            }
-        }) { error: ModpackInstallError ->
-            logger.error { "Modpack install failed for $instanceId: $error" }
-            updateInstanceStatus(instanceId, InstanceStatus.Failed.InstallFailed)
-            null
-        }
-
-    private suspend fun awaitManualDownloads(resolvedManifest: ModpackManifest, instanceId: InstanceId): Boolean {
-        updateInstanceStatus(instanceId, InstanceStatus.Installing.AwaitingManualDownloads)
-        val manualCandidates = buildManualDownloadCandidates(resolvedManifest, instanceId)
-        return runManualDownloads(
-            manualCandidates, awaitManualDownload, recordInstalledContentOrigin, snackbarService
-        ) { items ->
-            updateManualDownloadItems(instanceId, items)
-            persistPendingManualDownloads(instanceId, manualCandidates, items, updateInstance)
-        }
-    }
-
-    private fun buildManualDownloadCandidates(
-        resolvedManifest: ModpackManifest,
-        instanceId: InstanceId
-    ): List<ManualDownloadCandidate> = resolvedManifest.files.mapNotNull { manualFile ->
-        val manualDownloadUrl = manualFile.manualDownloadUrl ?: return@mapNotNull null
-        val providerProjectId = manualFile.providerProjectId ?: return@mapNotNull null
-        val providerFileId = manualFile.providerFileId ?: return@mapNotNull null
-        val fileName = manualFile.targetPath.substringAfterLast('/')
-        ManualDownloadCandidate(
-            fileName = fileName,
-            downloadUrl = manualDownloadUrl,
-            instanceId = instanceId,
-            projectType = ProjectType.Mod,
-            size = manualFile.size,
-            sha1 = manualFile.sha1,
-            md5 = manualFile.md5,
-            platformId = resolvedManifest.platformId,
-            providerProjectId = providerProjectId,
-            providerFileId = providerFileId,
-        )
-    }
-
-    private fun Progress.toFractionOrNull(): Float? = when (this) {
-        is Progress.Loading.Quantified -> normalized.toFloat()
-        Progress.Done -> 1f
-        Progress.Loading.Unquantified -> null
-    }
-
     private suspend fun rollback(instanceId: InstanceId) {
         recover({ deleteInstance(instanceId) }) { _: InstanceError -> null }
         deleteInstanceFiles(instanceId)
     }
-
-    private suspend fun recordOrigins(
-        instanceId: InstanceId,
-        platformId: String,
-        installedFiles: List<InstalledModpackFile>
-    ) {
-        for (installedFile in installedFiles) {
-            val kind = installedFile.kind.toContentKindOrNull() ?: continue
-            val providerProjectId = installedFile.providerProjectId ?: continue
-            val providerFileId = installedFile.providerFileId ?: continue
-            recordInstalledContentOrigin(
-                kind,
-                instanceId,
-                installedFile.fileName,
-                platformId,
-                providerProjectId,
-                providerFileId
-            )
-        }
-    }
-}
-
-private fun ModpackFileKind.toContentKindOrNull(): ContentKind? = when (this) {
-    ModpackFileKind.Mod -> ContentKind.Mod
-    ModpackFileKind.ResourcePack -> ContentKind.ResourcePack
-    ModpackFileKind.ShaderPack -> ContentKind.ShaderPack
-    ModpackFileKind.Other -> null
 }

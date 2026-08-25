@@ -5,8 +5,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import app.vercors.feature.instance.domain.model.InstanceId
 import app.vercors.feature.instance.domain.usecase.*
+import app.vercors.feature.instance.ui.install.ModpackInstallRunner
 import app.vercors.feature.project.domain.model.ProjectId
-import app.vercors.feature.project.domain.usecase.*
+import app.vercors.feature.project.domain.usecase.GetModpackManifestUseCase
+import app.vercors.feature.project.domain.usecase.GetProjectFilesUseCase
+import app.vercors.feature.project.domain.usecase.GetProjectUseCase
 import app.vercors.shared.ui.SnackbarService
 import app.vercors.shared.ui.overlay.DialogOverlay
 import com.slack.circuit.overlay.OverlayNavigator
@@ -29,18 +32,13 @@ class InstallModpackDialog(
     private val getProjectFiles: GetProjectFilesUseCase,
     private val getProject: GetProjectUseCase,
     private val getModpackManifest: GetModpackManifestUseCase,
-    private val resolveModpackManifestFiles: ResolveModpackManifestFilesUseCase,
     private val createInstance: CreateInstanceUseCase,
-    private val installModpackFiles: InstallModpackFilesUseCase,
-    private val awaitManualDownload: AwaitManualDownloadUseCase,
-    private val recordInstalledContentOrigin: RecordInstalledContentOriginUseCase,
     private val setInstanceIconFromUrl: SetInstanceIconFromUrlUseCase,
     private val deleteInstance: DeleteInstanceUseCase,
     private val deleteInstanceFiles: DeleteInstanceFilesUseCase,
     private val updateInstanceStatus: UpdateInstanceStatusUseCase,
     private val updateInstanceJob: UpdateInstanceJobUseCase,
-    private val updateManualDownloadItems: UpdateManualDownloadItemsUseCase,
-    private val updateInstance: UpdateInstanceUseCase,
+    private val modpackInstallRunner: ModpackInstallRunner,
     private val snackbarService: SnackbarService
 ) : DialogOverlay<InstallModpackResult>() {
     @Composable
@@ -57,18 +55,13 @@ class InstallModpackDialog(
                 getProjectFiles = getProjectFiles,
                 getProject = getProject,
                 getModpackManifest = getModpackManifest,
-                resolveModpackManifestFiles = resolveModpackManifestFiles,
                 createInstance = createInstance,
-                installModpackFiles = installModpackFiles,
-                awaitManualDownload = awaitManualDownload,
-                recordInstalledContentOrigin = recordInstalledContentOrigin,
                 setInstanceIconFromUrl = setInstanceIconFromUrl,
                 deleteInstance = deleteInstance,
                 deleteInstanceFiles = deleteInstanceFiles,
                 updateInstanceStatus = updateInstanceStatus,
                 updateInstanceJob = updateInstanceJob,
-                updateManualDownloadItems = updateManualDownloadItems,
-                updateInstance = updateInstance,
+                modpackInstallRunner = modpackInstallRunner,
                 snackbarService = snackbarService
             )
         }

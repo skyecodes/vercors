@@ -18,10 +18,7 @@ import app.vercors.feature.instance.domain.model.InstanceModLoader
 import app.vercors.feature.instance.domain.model.InstanceStatus
 import app.vercors.feature.instance.domain.usecase.*
 import app.vercors.feature.instance.ui.*
-import app.vercors.feature.instance.ui.install.FinishInstallationDialog
-import app.vercors.feature.instance.ui.install.persistPendingManualDownloads
-import app.vercors.feature.instance.ui.install.runManualDownloads
-import app.vercors.feature.instance.ui.install.toManualDownloadCandidate
+import app.vercors.feature.instance.ui.install.*
 import app.vercors.feature.instance.ui.list.InstanceListScreen
 import app.vercors.feature.launcher.domain.model.InstanceLaunchError
 import app.vercors.feature.launcher.domain.usecase.CancelInstanceUseCase
@@ -93,6 +90,7 @@ class InstanceDetailsPresenter(
     private val updateInstanceJob: UpdateInstanceJobUseCase,
     private val updateInstanceStatus: UpdateInstanceStatusUseCase,
     private val hasActiveInstanceJob: HasActiveInstanceJobUseCase,
+    private val modpackInstallRunner: ModpackInstallRunner,
     private val login: LoginUseCase,
     private val copyToClipboard: CopyToClipboardUseCase,
     private val setInstanceIcon: SetInstanceIconUseCase,
@@ -418,8 +416,29 @@ class InstanceDetailsPresenter(
             }
 
             InstanceDetailsEvent.OnFinishInstallationDismiss -> setPromptFinishInstallation(false)
+            InstanceDetailsEvent.OnResumeInstallationClick -> currentInstance?.let(::resumeInstallationIfNeeded)
             else -> Unit
         }
+    }
+
+    /**
+     * Re-runs the modpack-install pipeline from the top for an instance whose install was interrupted before a
+     * launcher restart (status == [InstanceStatus.Installing.Interrupted], backed by the persisted
+     * [Instance.installStage] — see [app.vercors.feature.instance.data.repository.InstanceRepositoryImpl]'s startup
+     * reconciliation). A no-op if a job is already running for this instance.
+     */
+    private fun resumeInstallationIfNeeded(instance: InstanceView) {
+        if (instance.status !is InstanceStatus.Installing.Interrupted) return
+        val modpackInfo = instance.modpackInfo ?: return
+        if (hasActiveInstanceJob(screen.instanceId)) return
+
+        val instanceId = screen.instanceId
+        val job = globalScope.launch {
+            val ok = modpackInstallRunner.run(instanceId, modpackInfo, initialManifest = null)
+            updateInstanceStatus(instanceId, if (ok) InstanceStatus.Idle else InstanceStatus.Failed.InstallFailed)
+        }
+        updateInstanceJob(instanceId, job)
+        job.invokeOnCompletion { updateInstanceJob(instanceId, null) }
     }
 
     /**

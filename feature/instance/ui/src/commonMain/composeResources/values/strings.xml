@@ -26,6 +26,8 @@
     <string name="failed">Failed</string>
     <string name="resolvingFiles">Resolving mod files...</string>
     <string name="awaitingManualDownloads">Waiting for manual downloads...</string>
+    <string name="installationInterrupted">Installation was interrupted</string>
+    <string name="resumeInstallation">Resume installation</string>
     <string name="errorManualDownloadFailed">Failed to detect or move the manually downloaded file</string>
     <string name="errorManualDownloadIntegrityMismatch">The manually downloaded file doesn't match what was expected</string>
     <string name="finishInstallation">Finish installation</string>
