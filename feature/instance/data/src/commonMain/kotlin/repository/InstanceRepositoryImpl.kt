@@ -31,10 +31,12 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import kotlinx.io.files.Path
 import opensavvy.state.coroutines.now
 import opensavvy.state.outcome.value
 import opensavvy.state.progressive.map
+import opensavvy.state.progressive.valueOrNull
 import kotlin.time.Clock
 
 private val logger = KotlinLogging.logger {}
@@ -69,6 +71,29 @@ class InstanceRepositoryImpl(
 
     private val _manualDownloads = MutableStateFlow<Map<InstanceId, List<ManualDownloadItem>>>(emptyMap())
     override val manualDownloads = _manualDownloads.asStateFlow()
+
+    init {
+        // Restores AwaitingManualDownloads status (and its item list) from disk for any instance whose manual
+        // downloads were still outstanding when the launcher was last closed — otherwise it silently defaults to
+        // Idle (see getInstanceStatus) and looks fully installed. Skips instances that already have a live status
+        // entry so it never clobbers an in-progress session's own updates once its write round-trips back here.
+        coroutineScope.launch {
+            instances.collect { outcome ->
+                val map = outcome.valueOrNull ?: return@collect
+                for ((id, either) in map) {
+                    val instance = either.getOrNull() ?: continue
+                    if (instance.pendingManualDownloads.isEmpty()) continue
+                    if (_statuses.value.containsKey(id)) continue
+                    _statuses.update { it + (id to InstanceStatus.Installing.AwaitingManualDownloads) }
+                    _manualDownloads.update {
+                        it + (id to instance.pendingManualDownloads.map { pending ->
+                            ManualDownloadItem(pending.fileName, pending.downloadUrl, downloaded = false)
+                        })
+                    }
+                }
+            }
+        }
+    }
 
     context(_: Raise<InstanceValidationError>)
     override suspend fun saveInstance(instance: Instance) {
@@ -173,6 +198,8 @@ class InstanceRepositoryImpl(
     override fun cancelInstanceJob(id: InstanceId) {
         _jobs.value[id]?.cancel()
     }
+
+    override fun hasActiveJob(id: InstanceId): Boolean = _jobs.value.containsKey(id)
 
     override suspend fun stopInstance(id: InstanceId) {
         _statuses.value[id]?.let { status ->

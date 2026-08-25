@@ -4,6 +4,9 @@ import androidx.compose.runtime.*
 import app.vercors.core.ui.state.mutableProgressiveStateOf
 import app.vercors.feature.instance.domain.model.*
 import app.vercors.feature.instance.domain.usecase.*
+import app.vercors.feature.instance.ui.install.ManualDownloadCandidate
+import app.vercors.feature.instance.ui.install.persistPendingManualDownloads
+import app.vercors.feature.instance.ui.install.runManualDownloads
 import app.vercors.feature.project.domain.model.ProjectDetailsError
 import app.vercors.feature.project.domain.model.ProjectId
 import app.vercors.feature.project.domain.model.ProjectType
@@ -47,6 +50,7 @@ class InstallModpackPresenter(
     private val updateInstanceStatus: UpdateInstanceStatusUseCase,
     private val updateInstanceJob: UpdateInstanceJobUseCase,
     private val updateManualDownloadItems: UpdateManualDownloadItemsUseCase,
+    private val updateInstance: UpdateInstanceUseCase,
     private val snackbarService: SnackbarService
 ) : Presenter<InstallModpackState, InstallModpackEvent> {
     @OptIn(ExperimentalProgressiveRaiseApi::class)
@@ -230,8 +234,11 @@ class InstallModpackPresenter(
     private suspend fun awaitManualDownloads(resolvedManifest: ModpackManifest, instanceId: InstanceId): Boolean {
         updateInstanceStatus(instanceId, InstanceStatus.Installing.AwaitingManualDownloads)
         val manualCandidates = buildManualDownloadCandidates(resolvedManifest, instanceId)
-        return runManualDownloads(manualCandidates, awaitManualDownload, snackbarService) { items ->
+        return runManualDownloads(
+            manualCandidates, awaitManualDownload, recordInstalledContentOrigin, snackbarService
+        ) { items ->
             updateManualDownloadItems(instanceId, items)
+            persistPendingManualDownloads(instanceId, manualCandidates, items, updateInstance)
         }
     }
 
@@ -251,16 +258,9 @@ class InstallModpackPresenter(
             size = manualFile.size,
             sha1 = manualFile.sha1,
             md5 = manualFile.md5,
-            recordOrigin = {
-                recordInstalledContentOrigin(
-                    ContentKind.Mod,
-                    instanceId,
-                    fileName,
-                    resolvedManifest.platformId,
-                    providerProjectId,
-                    providerFileId
-                )
-            }
+            platformId = resolvedManifest.platformId,
+            providerProjectId = providerProjectId,
+            providerFileId = providerFileId,
         )
     }
 

@@ -40,6 +40,7 @@ class InstallModpackDialog(
     private val updateInstanceStatus: UpdateInstanceStatusUseCase,
     private val updateInstanceJob: UpdateInstanceJobUseCase,
     private val updateManualDownloadItems: UpdateManualDownloadItemsUseCase,
+    private val updateInstance: UpdateInstanceUseCase,
     private val snackbarService: SnackbarService
 ) : DialogOverlay<InstallModpackResult>() {
     @Composable
@@ -67,6 +68,7 @@ class InstallModpackDialog(
                 updateInstanceStatus = updateInstanceStatus,
                 updateInstanceJob = updateInstanceJob,
                 updateManualDownloadItems = updateManualDownloadItems,
+                updateInstance = updateInstance,
                 snackbarService = snackbarService
             )
         }

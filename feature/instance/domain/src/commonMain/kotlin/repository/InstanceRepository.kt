@@ -51,6 +51,8 @@ interface InstanceRepository {
 
     fun cancelInstanceJob(id: InstanceId)
 
+    fun hasActiveJob(id: InstanceId): Boolean
+
     suspend fun stopInstance(id: InstanceId)
 
     suspend fun killInstance(id: InstanceId)

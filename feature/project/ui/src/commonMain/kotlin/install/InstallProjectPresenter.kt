@@ -12,6 +12,8 @@ import app.vercors.feature.instance.domain.usecase.ContentKind
 import app.vercors.feature.instance.domain.usecase.ObserveInstalledContentUseCase
 import app.vercors.feature.instance.domain.usecase.ObserveInstanceListUseCase
 import app.vercors.feature.instance.domain.usecase.RecordInstalledContentOriginUseCase
+import app.vercors.feature.instance.ui.install.ManualDownloadCandidate
+import app.vercors.feature.instance.ui.install.runManualDownloads
 import app.vercors.feature.project.domain.model.*
 import app.vercors.feature.project.domain.usecase.AwaitManualDownloadUseCase
 import app.vercors.feature.project.domain.usecase.DownloadProjectFileUseCase
@@ -234,20 +236,13 @@ class InstallProjectPresenter(
                         size = candidate.file.size,
                         sha1 = candidate.file.sha1,
                         md5 = candidate.file.md5,
-                        recordOrigin = {
-                            recordInstalledContentOrigin(
-                                projectType.toContentKind(),
-                                instanceId,
-                                candidate.file.fileName,
-                                candidate.projectId.platform,
-                                candidate.projectId.id,
-                                candidate.file.id
-                            )
-                        }
+                        platformId = candidate.projectId.platform,
+                        providerProjectId = candidate.projectId.id,
+                        providerFileId = candidate.file.id,
                     )
                 },
-                awaitManualDownload, snackbarService, onManualDownloadItemsChanged
-            )
+                awaitManualDownload, recordInstalledContentOrigin, snackbarService
+            ) { items -> onManualDownloadItemsChanged(items) }
 
             onFinished(autoOk && manualOk)
         }

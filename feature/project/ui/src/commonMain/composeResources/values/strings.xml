@@ -154,8 +154,6 @@
     <string name="errorModpackOverridesExtractionFailed">Failed to extract the modpack's bundled files</string>
     <string name="errorModpackInvalidFileEntry">The modpack contains an invalid or unusable file entry</string>
     <string name="errorInstanceNameInvalid">Invalid instance name</string>
-    <string name="errorManualDownloadFailed">Failed to detect or move the manually downloaded file</string>
-    <string name="errorManualDownloadIntegrityMismatch">The manually downloaded file doesn't match what was expected</string>
 
     <string name="installToInstance">Install to instance</string>
     <string name="installModpack">Install modpack</string>

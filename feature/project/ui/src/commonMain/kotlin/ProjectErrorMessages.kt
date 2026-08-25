@@ -46,9 +46,3 @@ val ModpackInstallError.message: String
 
 val InstanceValidationError.message: String
     @Composable get() = stringResource(ProjectRes.string.errorInstanceNameInvalid)
-
-val ManualDownloadError.message: String
-    @Composable get() = when (this) {
-        ManualDownloadFailed -> stringResource(ProjectRes.string.errorManualDownloadFailed)
-        ManualDownloadIntegrityMismatch -> stringResource(ProjectRes.string.errorManualDownloadIntegrityMismatch)
-    }

@@ -6,6 +6,9 @@ import app.vercors.feature.instance.domain.model.InstanceLoadingError
 import app.vercors.feature.instance.domain.model.InstanceNotFound
 import app.vercors.feature.instance.domain.model.InstanceValidationError
 import app.vercors.feature.launcher.domain.model.InstanceLaunchError
+import app.vercors.feature.project.domain.model.ManualDownloadError
+import app.vercors.feature.project.domain.model.ManualDownloadFailed
+import app.vercors.feature.project.domain.model.ManualDownloadIntegrityMismatch
 import org.jetbrains.compose.resources.stringResource
 
 val InstanceValidationError.message: String
@@ -37,4 +40,10 @@ val InstanceError.message: String
     @Composable get() = when (this) {
         is InstanceLoadingError -> this.message
         is InstanceNotFound -> this.message
+    }
+
+val ManualDownloadError.message: String
+    @Composable get() = when (this) {
+        ManualDownloadFailed -> stringResource(InstanceRes.string.errorManualDownloadFailed)
+        ManualDownloadIntegrityMismatch -> stringResource(InstanceRes.string.errorManualDownloadIntegrityMismatch)
     }

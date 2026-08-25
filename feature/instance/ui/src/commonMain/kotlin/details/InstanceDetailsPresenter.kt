@@ -15,9 +15,13 @@ import app.vercors.feature.game.ui.toView
 import app.vercors.feature.instance.domain.model.Instance
 import app.vercors.feature.instance.domain.model.InstanceError
 import app.vercors.feature.instance.domain.model.InstanceModLoader
+import app.vercors.feature.instance.domain.model.InstanceStatus
 import app.vercors.feature.instance.domain.usecase.*
 import app.vercors.feature.instance.ui.*
 import app.vercors.feature.instance.ui.install.FinishInstallationDialog
+import app.vercors.feature.instance.ui.install.persistPendingManualDownloads
+import app.vercors.feature.instance.ui.install.runManualDownloads
+import app.vercors.feature.instance.ui.install.toManualDownloadCandidate
 import app.vercors.feature.instance.ui.list.InstanceListScreen
 import app.vercors.feature.launcher.domain.model.InstanceLaunchError
 import app.vercors.feature.launcher.domain.usecase.CancelInstanceUseCase
@@ -25,6 +29,7 @@ import app.vercors.feature.launcher.domain.usecase.KillInstanceUseCase
 import app.vercors.feature.launcher.domain.usecase.LaunchInstanceUseCase
 import app.vercors.feature.launcher.domain.usecase.StopInstanceUseCase
 import app.vercors.feature.project.domain.model.from
+import app.vercors.feature.project.domain.usecase.AwaitManualDownloadUseCase
 import app.vercors.feature.project.ui.details.ProjectDetailsScreen
 import app.vercors.feature.project.ui.list.ProjectListScreen
 import app.vercors.shared.domain.model.JavaInstallation
@@ -82,6 +87,12 @@ class InstanceDetailsPresenter(
     private val installJavaRuntime: InstallJavaRuntimeUseCase,
     private val observeJavaRuntimeInstallProgress: ObserveJavaRuntimeInstallProgressUseCase,
     private val observeManualDownloadItems: ObserveManualDownloadItemsUseCase,
+    private val updateManualDownloadItems: UpdateManualDownloadItemsUseCase,
+    private val awaitManualDownload: AwaitManualDownloadUseCase,
+    private val recordInstalledContentOrigin: RecordInstalledContentOriginUseCase,
+    private val updateInstanceJob: UpdateInstanceJobUseCase,
+    private val updateInstanceStatus: UpdateInstanceStatusUseCase,
+    private val hasActiveInstanceJob: HasActiveInstanceJobUseCase,
     private val login: LoginUseCase,
     private val copyToClipboard: CopyToClipboardUseCase,
     private val setInstanceIcon: SetInstanceIconUseCase,
@@ -401,10 +412,41 @@ class InstanceDetailsPresenter(
                 if (!opened) snackbarService.error { stringResource(InstanceRes.string.errorOpenFolderFailed) }
             }
 
-            InstanceDetailsEvent.OnFinishInstallationClick -> setPromptFinishInstallation(true)
+            InstanceDetailsEvent.OnFinishInstallationClick -> {
+                setPromptFinishInstallation(true)
+                currentInstance?.let(::resumeManualDownloadsIfNeeded)
+            }
+
             InstanceDetailsEvent.OnFinishInstallationDismiss -> setPromptFinishInstallation(false)
             else -> Unit
         }
+    }
+
+    /**
+     * Re-starts watching for the instance's still-outstanding manual downloads (persisted on
+     * [InstanceView.pendingManualDownloads] — see [app.vercors.feature.instance.data.repository.InstanceRepositoryImpl]'s
+     * startup reconciliation) when the "Finish Installation" dialog is reopened after a launcher restart. A no-op
+     * if a watcher is already running for this instance — e.g. the dialog was reopened in the same session, or the
+     * original install job (`InstallModpackPresenter.confirmInstall`) is still alive.
+     */
+    private fun resumeManualDownloadsIfNeeded(instance: InstanceView) {
+        if (instance.status !is InstanceStatus.Installing.AwaitingManualDownloads) return
+        if (instance.pendingManualDownloads.isEmpty()) return
+        if (hasActiveInstanceJob(screen.instanceId)) return
+
+        val instanceId = screen.instanceId
+        val candidates = instance.pendingManualDownloads.map { it.toManualDownloadCandidate(instanceId) }
+        val job = globalScope.launch {
+            val ok = runManualDownloads(
+                candidates, awaitManualDownload, recordInstalledContentOrigin, snackbarService
+            ) { items ->
+                updateManualDownloadItems(instanceId, items)
+                persistPendingManualDownloads(instanceId, candidates, items, updateInstance)
+            }
+            updateInstanceStatus(instanceId, if (ok) InstanceStatus.Idle else InstanceStatus.Failed.InstallFailed)
+        }
+        updateInstanceJob(instanceId, job)
+        job.invokeOnCompletion { updateInstanceJob(instanceId, null) }
     }
 
     private fun handleLaunch(

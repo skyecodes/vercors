@@ -12,6 +12,7 @@ data class Instance(
     val gameVersion: String,
     val modLoader: InstanceModLoader? = null,
     val modpackInfo: InstanceModpackInfo? = null,
+    val pendingManualDownloads: List<PendingManualDownload> = emptyList(),
     val iconFilePath: String? = null,
     val javaInstallationId: String? = null,
     val jvmMemoryOptions: JvmMemoryOptions? = null,

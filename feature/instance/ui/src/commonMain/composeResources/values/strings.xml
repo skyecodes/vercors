@@ -26,6 +26,8 @@
     <string name="failed">Failed</string>
     <string name="resolvingFiles">Resolving mod files...</string>
     <string name="awaitingManualDownloads">Waiting for manual downloads...</string>
+    <string name="errorManualDownloadFailed">Failed to detect or move the manually downloaded file</string>
+    <string name="errorManualDownloadIntegrityMismatch">The manually downloaded file doesn't match what was expected</string>
     <string name="finishInstallation">Finish installation</string>
     <string name="manualDownloadsCompleted">Manually downloaded files have been successfully added to the instance.</string>
     <string name="manualDownloadsRequired">These files can't be downloaded automatically — their authors have disabled direct downloads.\nDownload them manually and they'll be picked up automatically.</string>
