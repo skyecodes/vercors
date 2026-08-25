@@ -2,6 +2,8 @@ package app.vercors.feature.config.ui
 
 import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.Color
+import app.vercors.core.system.OsType
+import app.vercors.core.system.SystemService
 import app.vercors.core.ui.state.collectProgressiveAsState
 import app.vercors.feature.config.domain.usecase.ObserveConfigurationUseCase
 import app.vercors.feature.config.domain.usecase.UpdateConfigurationUseCase
@@ -13,6 +15,9 @@ import app.vercors.feature.theme.domain.model.ThemeDefinition
 import app.vercors.feature.theme.domain.model.ThemeNamedColor
 import app.vercors.feature.theme.domain.usecase.ObserveThemesUseCase
 import app.vercors.shared.domain.model.JvmMemoryOptions
+import app.vercors.shared.domain.model.NativeLibraryOptions
+import app.vercors.shared.domain.model.NativeLibraryType
+import app.vercors.shared.domain.usecase.DetectNativeLibraryPathUseCase
 import app.vercors.shared.domain.usecase.GetTotalPhysicalMemoryUseCase
 import app.vercors.shared.ui.Presenter
 import app.vercors.shared.ui.SnackbarService
@@ -40,6 +45,8 @@ class ConfigurationPresenter(
     private val addJavaInstallation: AddJavaInstallationUseCase,
     private val snackbarService: SnackbarService,
     private val getTotalPhysicalMemory: GetTotalPhysicalMemoryUseCase,
+    private val detectNativeLibraryPath: DetectNativeLibraryPathUseCase,
+    private val systemService: SystemService,
 ) : Presenter<ConfigurationState, ConfigurationEvent> {
     @Composable
     override fun present(): Store<ConfigurationState, ConfigurationEvent> {
@@ -52,10 +59,20 @@ class ConfigurationPresenter(
         val totalMemoryMb = remember {
             ((getTotalPhysicalMemory() ?: (16384L * 1024 * 1024)) / (1024 * 1024)).toInt()
         }
+        val showNativeLibraryOptions = systemService.osType == OsType.Linux
+        var detectedGlfwPath by remember { mutableStateOf<String?>(null) }
+        var detectedOpenAlPath by remember { mutableStateOf<String?>(null) }
+        LaunchedEffect(showNativeLibraryOptions) {
+            if (showNativeLibraryOptions) {
+                detectedGlfwPath = detectNativeLibraryPath(NativeLibraryType.Glfw)
+                detectedOpenAlPath = detectNativeLibraryPath(NativeLibraryType.OpenAl)
+            }
+        }
         val cfg = configuration.valueOrNull
         val selectedTheme = themeList.find { it.id == cfg?.selectedThemeId }
         val selectedAccent = selectedTheme?.accents?.find { it.id == cfg?.selectedAccent }
         val jvmMemoryOptions = cfg?.jvmMemoryOptions ?: JvmMemoryOptions()
+        val nativeLibraryOptions = cfg?.nativeLibraryOptions ?: NativeLibraryOptions()
 
         return ConfigurationState(
             selectedTheme = selectedTheme,
@@ -68,6 +85,10 @@ class ConfigurationPresenter(
             javaScanInProgress = javaScanInProgress,
             jvmMemoryOptions = jvmMemoryOptions,
             totalMemoryMb = totalMemoryMb,
+            nativeLibraryOptions = nativeLibraryOptions,
+            showNativeLibraryOptions = showNativeLibraryOptions,
+            detectedGlfwPath = detectedGlfwPath,
+            detectedOpenAlPath = detectedOpenAlPath,
         ) + {
             when (it) {
                 is ConfigurationEvent.SelectTheme -> presenterScope.launch {
@@ -125,6 +146,26 @@ class ConfigurationPresenter(
 
                 is ConfigurationEvent.SetExtraJvmArgs -> presenterScope.launch {
                     updateConfiguration { copy(jvmMemoryOptions = jvmMemoryOptions.copy(extraArgs = it.value)) }
+                }
+
+                is ConfigurationEvent.ToggleUseSystemGlfw -> presenterScope.launch {
+                    updateConfiguration {
+                        copy(nativeLibraryOptions = nativeLibraryOptions.copy(useSystemGlfw = it.checked))
+                    }
+                }
+
+                is ConfigurationEvent.SetGlfwPath -> presenterScope.launch {
+                    updateConfiguration { copy(nativeLibraryOptions = nativeLibraryOptions.copy(glfwPath = it.value)) }
+                }
+
+                is ConfigurationEvent.ToggleUseSystemOpenAl -> presenterScope.launch {
+                    updateConfiguration {
+                        copy(nativeLibraryOptions = nativeLibraryOptions.copy(useSystemOpenAl = it.checked))
+                    }
+                }
+
+                is ConfigurationEvent.SetOpenAlPath -> presenterScope.launch {
+                    updateConfiguration { copy(nativeLibraryOptions = nativeLibraryOptions.copy(openAlPath = it.value)) }
                 }
             }
         }

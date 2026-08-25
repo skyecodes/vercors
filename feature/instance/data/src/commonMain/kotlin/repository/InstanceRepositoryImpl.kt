@@ -113,9 +113,9 @@ class InstanceRepositoryImpl(
         logger.info { "Saved instance ${instance.id}" }
     }
 
-    override suspend fun deleteInstance(instance: Instance) {
-        dataSource.delete(instance.id)
-        logger.info { "Deleted instance ${instance.id}" }
+    override suspend fun deleteInstance(instanceId: InstanceId) {
+        dataSource.delete(instanceId)
+        logger.info { "Deleted instance $instanceId" }
     }
 
     override suspend fun deleteInstanceFiles(instanceId: InstanceId) {

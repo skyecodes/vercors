@@ -16,8 +16,8 @@ class DeleteCommand(private val deleteInstance: DeleteInstanceUseCase) : Abstrac
 
     context(_: Raise<CommandError>)
     override suspend fun execute() {
-        val deletedInstance = withError({ CommandError("Instance with ID $id not found") }) { deleteInstance(id) }
-        echo("Instance ${deletedInstance.name} deleted")
+        withError({ CommandError("Instance with ID $id not found") }) { deleteInstance(id) }
+        echo("Instance $id deleted")
     }
 
     override fun help(context: Context): String = "Delete an instance"

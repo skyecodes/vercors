@@ -16,7 +16,7 @@ interface InstanceRepository {
     context(_: Raise<InstanceValidationError>)
     suspend fun saveInstance(instance: Instance)
 
-    suspend fun deleteInstance(instance: Instance)
+    suspend fun deleteInstance(instanceId: InstanceId)
 
     /** Deletes an instance's on-disk game directory — [deleteInstance] only removes its metadata. */
     suspend fun deleteInstanceFiles(instanceId: InstanceId)

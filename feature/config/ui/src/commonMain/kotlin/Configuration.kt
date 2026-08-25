@@ -24,7 +24,9 @@ import com.composables.icons.lucide.*
 import com.composeunstyled.theme.Theme
 import com.slack.circuit.codegen.annotations.CircuitInject
 import dev.zacsweers.metro.AppScope
+import io.github.vinceglb.filekit.dialogs.FileKitType
 import io.github.vinceglb.filekit.dialogs.compose.rememberDirectoryPickerLauncher
+import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
 import io.github.vinceglb.filekit.path
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
@@ -55,6 +57,13 @@ fun Configuration(
                     JavaConfigurationCategory(
                         state = state
                     )
+                }
+                if (state.showNativeLibraryOptions) {
+                    item("nativeLibraries") {
+                        NativeLibraryConfigurationCategory(
+                            state = state
+                        )
+                    }
                 }
             }
         }
@@ -200,6 +209,71 @@ private fun JavaConfigurationCategory(
                 modifier = Modifier.weight(1f)
             )
         }
+    }
+}
+
+@Composable
+context(eventSink: EventSink<ConfigurationEvent>)
+private fun NativeLibraryConfigurationCategory(
+    state: ConfigurationState
+) {
+    ConfigurationCategory(
+        icon = Lucide.Package,
+        titleRes = ConfigRes.string.nativeLibraries,
+    ) {
+        ConfigurationRow(title = ConfigRes.string.useSystemGlfw, description = ConfigRes.string.useSystemGlfwDesc) {
+            LibraryOverrideRow(
+                checked = state.nativeLibraryOptions.useSystemGlfw,
+                path = state.nativeLibraryOptions.glfwPath.orEmpty(),
+                detectedPath = state.detectedGlfwPath,
+                onCheckedChange = { eventSink(ConfigurationEvent.ToggleUseSystemGlfw(it)) },
+                onPathChange = { eventSink(ConfigurationEvent.SetGlfwPath(it)) },
+            )
+        }
+        ConfigurationRow(title = ConfigRes.string.useSystemOpenAl, description = ConfigRes.string.useSystemOpenAlDesc) {
+            LibraryOverrideRow(
+                checked = state.nativeLibraryOptions.useSystemOpenAl,
+                path = state.nativeLibraryOptions.openAlPath.orEmpty(),
+                detectedPath = state.detectedOpenAlPath,
+                onCheckedChange = { eventSink(ConfigurationEvent.ToggleUseSystemOpenAl(it)) },
+                onPathChange = { eventSink(ConfigurationEvent.SetOpenAlPath(it)) },
+            )
+        }
+    }
+}
+
+@Composable
+private fun RowScope.LibraryOverrideRow(
+    checked: Boolean,
+    path: String,
+    detectedPath: String?,
+    onCheckedChange: (Boolean) -> Unit,
+    onPathChange: (String) -> Unit,
+) {
+    val pickerLauncher = rememberFilePickerLauncher(type = FileKitType.File("so")) { file ->
+        file?.let { onPathChange(it.path) }
+    }
+    Row(
+        modifier = Modifier.weight(1f),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        AppCheckbox(checked = checked, onCheckedChange = onCheckedChange)
+        AppTextField(
+            initialValue = path,
+            onValueChange = onPathChange,
+            debounceMillis = 500,
+            editable = checked,
+            placeholder = { AppText(text = detectedPath ?: stringResource(ConfigRes.string.useDefaultPath)) },
+            backgroundColor = Theme[colors][surface2],
+            modifier = Modifier.weight(1f)
+        )
+        AppIconTextButton(
+            onClick = pickerLauncher::launch,
+            text = stringResource(ConfigRes.string.browse),
+            imageVector = Lucide.FolderOpen,
+            enabled = checked,
+        )
     }
 }
 

@@ -67,6 +67,14 @@
     <string name="extraJvmArgsDesc">Additional arguments passed to the JVM when launching the game.</string>
     <string name="megabytes">MB</string>
 
+    <string name="nativeLibraries">Native libraries</string>
+    <string name="useSystemGlfw">Use system GLFW</string>
+    <string name="useSystemGlfwDesc">Use the GLFW library installed on this system instead of the bundled one.</string>
+    <string name="useSystemOpenAl">Use system OpenAL</string>
+    <string name="useSystemOpenAlDesc">Use the OpenAL library installed on this system instead of the bundled one.</string>
+    <string name="useDefaultPath">Leave empty to use the default system path</string>
+    <string name="browse">Browse</string>
+
     <string name="editInstance">Edit instance</string>
     <string name="deleteInstanceConfirmation">Are you sure you want to delete this instance?\nAll instance data (worlds, mods, etc.) will be permanently removed.</string>
     <string name="removeContentConfirmation">Are you sure you want to remove %1$s?\nThis cannot be undone.</string>

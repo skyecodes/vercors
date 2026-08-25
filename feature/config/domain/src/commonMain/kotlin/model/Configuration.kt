@@ -2,6 +2,7 @@ package app.vercors.feature.config.domain.model
 
 import app.vercors.shared.domain.model.JavaInstallation
 import app.vercors.shared.domain.model.JvmMemoryOptions
+import app.vercors.shared.domain.model.NativeLibraryOptions
 
 data class Configuration(
     val metaApiUrl: String,
@@ -16,6 +17,7 @@ data class Configuration(
     val preferredJavaByMajorVersion: Map<Int, String> = emptyMap(),
     val javaInstallations: List<JavaInstallation> = emptyList(),
     val jvmMemoryOptions: JvmMemoryOptions = JvmMemoryOptions(),
+    val nativeLibraryOptions: NativeLibraryOptions = NativeLibraryOptions(),
 ) {
     companion object {
         const val DEFAULT_THEME_ID = "catppuccin_mocha"
@@ -34,6 +36,7 @@ data class Configuration(
             preferredJavaByMajorVersion = emptyMap(),
             javaInstallations = emptyList(),
             jvmMemoryOptions = JvmMemoryOptions(),
+            nativeLibraryOptions = NativeLibraryOptions(),
         )
     }
 }

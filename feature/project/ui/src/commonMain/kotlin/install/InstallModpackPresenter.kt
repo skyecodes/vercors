@@ -41,7 +41,6 @@ class InstallModpackPresenter(
     private val createInstance: CreateInstanceUseCase,
     private val setInstanceIconFromUrl: SetInstanceIconFromUrlUseCase,
     private val deleteInstance: DeleteInstanceUseCase,
-    private val deleteInstanceFiles: DeleteInstanceFilesUseCase,
     private val updateInstanceStatus: UpdateInstanceStatusUseCase,
     private val updateInstanceJob: UpdateInstanceJobUseCase,
     private val modpackInstallRunner: ModpackInstallRunner,
@@ -193,6 +192,5 @@ class InstallModpackPresenter(
 
     private suspend fun rollback(instanceId: InstanceId) {
         recover({ deleteInstance(instanceId) }) { _: InstanceError -> null }
-        deleteInstanceFiles(instanceId)
     }
 }

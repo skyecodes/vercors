@@ -21,6 +21,7 @@ import app.vercors.feature.launcher.domain.model.InstanceLaunchError
 import app.vercors.feature.launcher.domain.model.InstanceLaunchEvent
 import app.vercors.feature.launcher.domain.service.LauncherService
 import app.vercors.shared.domain.model.JvmMemoryOptions
+import app.vercors.shared.domain.model.NativeLibraryOptions
 import arrow.core.raise.Raise
 import arrow.core.raise.RaiseCancellationException
 import arrow.core.raise.context.raise
@@ -44,6 +45,7 @@ class LaunchInstanceUseCase(
     private val modLoaderInstallerService: ModLoaderInstallerService,
     private val resolveJavaInstallation: ResolveJavaInstallationUseCase,
     private val resolveJvmMemoryOptions: ResolveJvmMemoryOptionsUseCase,
+    private val resolveNativeLibraryOptions: ResolveNativeLibraryOptionsUseCase,
     private val launcherService: LauncherService,
     private val coroutineScope: CoroutineScope,
 ) {
@@ -52,7 +54,7 @@ class LaunchInstanceUseCase(
         val job = coroutineScope.async { prepareInstance(instanceId) }
         job.invokeOnCompletion { instanceRepository.updateInstanceJob(instanceId, null) }
         instanceRepository.updateInstanceJob(instanceId, job)
-        val (instance, account, version, assetIndex, javaExecutable, jvmMemoryOptions) = try {
+        val (instance, account, version, assetIndex, javaExecutable, jvmMemoryOptions, nativeLibraryOptions) = try {
             job.await()
         } catch (e: RaiseCancellationException) {
             // Arrow's raise() short-circuit is itself a CancellationException subtype — rethrow it
@@ -72,7 +74,8 @@ class LaunchInstanceUseCase(
             assetIndex = assetIndex,
             features = emptyList(),
             javaExecutable = javaExecutable,
-            jvmMemoryOptions = jvmMemoryOptions
+            jvmMemoryOptions = jvmMemoryOptions,
+            nativeLibraryOptions = nativeLibraryOptions
         ).catch {
             when (it) {
                 is CancellationException -> {
@@ -213,8 +216,17 @@ class LaunchInstanceUseCase(
                 }
         } ?: "java"
         val jvmMemoryOptions = resolveJvmMemoryOptions(instance.jvmMemoryOptions)
+        val nativeLibraryOptions = resolveNativeLibraryOptions(instance.nativeLibraryOptions)
 
-        return InstancePreparationResult(instance, finalAccount, version, assetIndex, javaExecutable, jvmMemoryOptions)
+        return InstancePreparationResult(
+            instance,
+            finalAccount,
+            version,
+            assetIndex,
+            javaExecutable,
+            jvmMemoryOptions,
+            nativeLibraryOptions
+        )
     }
 
     private fun offlineFallback(instanceId: InstanceId, account: Account): Account {
@@ -259,5 +271,6 @@ class LaunchInstanceUseCase(
         val assetIndex: GameAssetIndex,
         val javaExecutable: String,
         val jvmMemoryOptions: JvmMemoryOptions,
+        val nativeLibraryOptions: NativeLibraryOptions,
     )
 }

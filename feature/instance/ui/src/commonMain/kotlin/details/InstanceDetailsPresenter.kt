@@ -2,6 +2,8 @@ package app.vercors.feature.instance.ui.details
 
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
+import app.vercors.core.system.OsType
+import app.vercors.core.system.SystemService
 import app.vercors.core.ui.state.produceAndCollectAsProgressiveState
 import app.vercors.core.ui.state.update
 import app.vercors.feature.account.domain.service.LoginState
@@ -30,7 +32,9 @@ import app.vercors.feature.project.domain.usecase.AwaitManualDownloadUseCase
 import app.vercors.feature.project.ui.details.ProjectDetailsScreen
 import app.vercors.feature.project.ui.list.ProjectListScreen
 import app.vercors.shared.domain.model.JavaInstallation
+import app.vercors.shared.domain.model.NativeLibraryType
 import app.vercors.shared.domain.usecase.CopyToClipboardUseCase
+import app.vercors.shared.domain.usecase.DetectNativeLibraryPathUseCase
 import app.vercors.shared.domain.usecase.GetTotalPhysicalMemoryUseCase
 import app.vercors.shared.ui.Presenter
 import app.vercors.shared.ui.SnackbarService
@@ -100,6 +104,8 @@ class InstanceDetailsPresenter(
     private val importShaderPack: ImportShaderPackUseCase,
     private val openInstanceFolder: OpenInstanceFolderUseCase,
     private val getTotalPhysicalMemory: GetTotalPhysicalMemoryUseCase,
+    private val detectNativeLibraryPath: DetectNativeLibraryPathUseCase,
+    private val systemService: SystemService,
 ) : Presenter<InstanceDetailsState, InstanceDetailsEvent> {
     @Composable
     override fun present(): Store<InstanceDetailsState, InstanceDetailsEvent> {
@@ -130,6 +136,15 @@ class InstanceDetailsPresenter(
         val (editedInstance, setEditedInstance) = rememberSaveable { mutableStateOf(InstanceEditState()) }
         val totalMemoryMb = remember {
             ((getTotalPhysicalMemory() ?: (16384L * 1024 * 1024)) / (1024 * 1024)).toInt()
+        }
+        val showNativeLibraryOptions = systemService.osType == OsType.Linux
+        var detectedGlfwPath by remember { mutableStateOf<String?>(null) }
+        var detectedOpenAlPath by remember { mutableStateOf<String?>(null) }
+        LaunchedEffect(showNativeLibraryOptions) {
+            if (showNativeLibraryOptions) {
+                detectedGlfwPath = detectNativeLibraryPath(NativeLibraryType.Glfw)
+                detectedOpenAlPath = detectNativeLibraryPath(NativeLibraryType.OpenAl)
+            }
         }
 
         val currentInstance = instance.valueOrNull
@@ -165,6 +180,9 @@ class InstanceDetailsPresenter(
             availableJavaInstallations = javaInstallations.valueOrNull ?: emptyList(),
             promptInstallJava = promptInstallJava,
             totalMemoryMb = totalMemoryMb,
+            showNativeLibraryOptions = showNativeLibraryOptions,
+            detectedGlfwPath = detectedGlfwPath,
+            detectedOpenAlPath = detectedOpenAlPath,
             promptDeleteConfirmation = promptDeleteConfirmation,
             selectedTab = selectedTab,
             logs = logs,
@@ -676,6 +694,10 @@ class InstanceDetailsPresenter(
 
         updated = editedInstance.jvmMemoryOptionsEdit?.let { edit ->
             updated.copy(jvmMemoryOptions = (edit as? JvmMemoryOptionsEdit.Custom)?.options)
+        } ?: updated
+
+        updated = editedInstance.nativeLibraryOptionsEdit?.let { edit ->
+            updated.copy(nativeLibraryOptions = (edit as? NativeLibraryOptionsEdit.Custom)?.options)
         } ?: updated
 
         return updated

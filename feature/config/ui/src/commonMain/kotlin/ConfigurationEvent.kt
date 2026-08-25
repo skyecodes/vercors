@@ -23,4 +23,9 @@ sealed interface ConfigurationEvent : Event {
     data class SetMinMemoryMb(val value: Int?) : ConfigurationEvent
     data class SetMaxMemoryMb(val value: Int?) : ConfigurationEvent
     data class SetExtraJvmArgs(val value: String) : ConfigurationEvent
+
+    data class ToggleUseSystemGlfw(val checked: Boolean) : ConfigurationEvent
+    data class SetGlfwPath(val value: String) : ConfigurationEvent
+    data class ToggleUseSystemOpenAl(val checked: Boolean) : ConfigurationEvent
+    data class SetOpenAlPath(val value: String) : ConfigurationEvent
 }

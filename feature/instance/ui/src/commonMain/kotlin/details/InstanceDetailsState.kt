@@ -11,6 +11,7 @@ import app.vercors.feature.instance.domain.model.*
 import app.vercors.feature.instance.ui.install.FinishInstallationDialog
 import app.vercors.shared.domain.model.JavaInstallation
 import app.vercors.shared.domain.model.JvmMemoryOptions
+import app.vercors.shared.domain.model.NativeLibraryOptions
 import opensavvy.state.progressive.ProgressiveOutcome
 import opensavvy.state.progressive.valueOrNull
 import kotlin.time.Instant
@@ -25,6 +26,9 @@ data class InstanceDetailsState(
     val availableJavaInstallations: List<JavaInstallation>,
     val promptInstallJava: Int?,
     val totalMemoryMb: Int,
+    val showNativeLibraryOptions: Boolean,
+    val detectedGlfwPath: String?,
+    val detectedOpenAlPath: String?,
     val selectedTab: InstanceDetailsTab,
     val promptDeleteConfirmation: Boolean,
     val logs: List<InstanceLogEventView>?,
@@ -63,8 +67,14 @@ data class InstanceDetailsState(
             it.jvmMemoryOptions?.let(JvmMemoryOptionsEdit::Custom) ?: JvmMemoryOptionsEdit.UseDefault
         editedInstance.jvmMemoryOptionsEdit != null && editedInstance.jvmMemoryOptionsEdit != current
     } ?: false
+    val isNativeLibraryOptionsEdited = instance.valueOrNull?.let {
+        val current: NativeLibraryOptionsEdit =
+            it.nativeLibraryOptions?.let(NativeLibraryOptionsEdit::Custom) ?: NativeLibraryOptionsEdit.UseDefault
+        editedInstance.nativeLibraryOptionsEdit != null && editedInstance.nativeLibraryOptionsEdit != current
+    } ?: false
     val isInstanceEdited: Boolean =
-        isNameEdited || isGameVersionEdited || isModLoaderEdited || isJavaOverrideEdited || isJvmMemoryOptionsEdited
+        isNameEdited || isGameVersionEdited || isModLoaderEdited || isJavaOverrideEdited ||
+                isJvmMemoryOptionsEdited || isNativeLibraryOptionsEdited
 }
 
 enum class InstanceDetailsTab {
@@ -92,6 +102,7 @@ data class InstanceView(
     val iconFilePath: String?,
     val javaInstallationId: String?,
     val jvmMemoryOptions: JvmMemoryOptions?,
+    val nativeLibraryOptions: NativeLibraryOptions?,
     /** Bumped whenever the icon changes — used to bust the image cache when [iconFilePath] is reused unchanged. */
     val updatedAt: Instant,
 )
@@ -104,6 +115,7 @@ data class InstanceEditState(
     val modLoaderVersion: String? = null,
     val javaOverride: JavaOverrideEdit? = null,
     val jvmMemoryOptionsEdit: JvmMemoryOptionsEdit? = null,
+    val nativeLibraryOptionsEdit: NativeLibraryOptionsEdit? = null,
 )
 
 @Immutable
@@ -128,6 +140,14 @@ sealed interface JvmMemoryOptionsEdit {
 
     @JvmInline
     value class Custom(val options: JvmMemoryOptions) : JvmMemoryOptionsEdit
+}
+
+@Immutable
+sealed interface NativeLibraryOptionsEdit {
+    data object UseDefault : NativeLibraryOptionsEdit
+
+    @JvmInline
+    value class Custom(val options: NativeLibraryOptions) : NativeLibraryOptionsEdit
 }
 
 @Immutable
@@ -156,6 +176,7 @@ fun InstanceAndStatus.toView(): InstanceView = InstanceView(
     iconFilePath = instance.iconFilePath,
     javaInstallationId = instance.javaInstallationId,
     jvmMemoryOptions = instance.jvmMemoryOptions,
+    nativeLibraryOptions = instance.nativeLibraryOptions,
     updatedAt = instance.updatedAt
 )
 

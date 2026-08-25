@@ -45,6 +45,7 @@ import app.vercors.feature.instance.ui.delete.ConfirmDeleteDialog
 import app.vercors.feature.instance.ui.delete.ConfirmRemoveDialog
 import app.vercors.feature.project.domain.model.ProjectType
 import app.vercors.shared.domain.model.JvmMemoryOptions
+import app.vercors.shared.domain.model.NativeLibraryOptions
 import app.vercors.shared.ui.*
 import coil3.compose.rememberAsyncImagePainter
 import com.composables.icons.lucide.*
@@ -470,6 +471,11 @@ private fun InstanceOptionsTab(instance: InstanceView, state: InstanceDetailsSta
             item {
                 InstanceJavaOptionsSection(instance, state)
             }
+            if (state.showNativeLibraryOptions) {
+                item {
+                    InstanceNativeLibraryOptionsSection(instance, state)
+                }
+            }
         }
     }
 }
@@ -619,6 +625,88 @@ private fun InstanceJavaOptionsSection(instance: InstanceView, state: InstanceDe
                 debounceMillis = 500,
                 backgroundColor = Theme[colors][surface2],
                 modifier = Modifier.fillMaxWidth()
+            )
+        }
+    }
+}
+
+@Composable
+context(eventSink: EventSink<InstanceDetailsEvent>)
+private fun InstanceNativeLibraryOptionsSection(instance: InstanceView, state: InstanceDetailsState) {
+    InstanceTabSection(
+        titleRes = InstanceRes.string.nativeLibraries,
+        icon = Lucide.Package
+    ) {
+        val effectiveOptions: NativeLibraryOptions? = when (val edit = state.editedInstance.nativeLibraryOptionsEdit) {
+            is NativeLibraryOptionsEdit.Custom -> edit.options
+            NativeLibraryOptionsEdit.UseDefault -> null
+            null -> instance.nativeLibraryOptions
+        }
+        val currentOptions = effectiveOptions ?: NativeLibraryOptions()
+
+        fun updateOptions(update: (NativeLibraryOptions) -> NativeLibraryOptions) {
+            eventSink(InstanceDetailsEvent.UpdateInstance { s ->
+                s.copy(nativeLibraryOptionsEdit = NativeLibraryOptionsEdit.Custom(update(currentOptions)))
+            })
+        }
+
+        InstanceLibraryOverrideRow(
+            title = InstanceRes.string.useSystemGlfw,
+            description = InstanceRes.string.useSystemGlfwDesc,
+            checked = currentOptions.useSystemGlfw,
+            path = currentOptions.glfwPath.orEmpty(),
+            detectedPath = state.detectedGlfwPath,
+            onCheckedChange = { checked -> updateOptions { it.copy(useSystemGlfw = checked) } },
+            onPathChange = { newValue -> updateOptions { it.copy(glfwPath = newValue) } },
+        )
+        InstanceLibraryOverrideRow(
+            title = InstanceRes.string.useSystemOpenAl,
+            description = InstanceRes.string.useSystemOpenAlDesc,
+            checked = currentOptions.useSystemOpenAl,
+            path = currentOptions.openAlPath.orEmpty(),
+            detectedPath = state.detectedOpenAlPath,
+            onCheckedChange = { checked -> updateOptions { it.copy(useSystemOpenAl = checked) } },
+            onPathChange = { newValue -> updateOptions { it.copy(openAlPath = newValue) } },
+        )
+    }
+}
+
+@Composable
+private fun InstanceLibraryOverrideRow(
+    title: StringResource,
+    description: StringResource,
+    checked: Boolean,
+    path: String,
+    detectedPath: String?,
+    onCheckedChange: (Boolean) -> Unit,
+    onPathChange: (String) -> Unit,
+) {
+    val pickerLauncher = rememberFilePickerLauncher(type = FileKitType.File("so")) { file ->
+        file?.let { onPathChange(it.path) }
+    }
+    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        AppText(text = stringResource(title), fontWeight = FontWeight.SemiBold)
+        AppText(text = stringResource(description), style = Theme[textStyles][label])
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            AppCheckbox(checked = checked, onCheckedChange = onCheckedChange)
+            AppTextField(
+                initialValue = path,
+                onValueChange = onPathChange,
+                debounceMillis = 500,
+                editable = checked,
+                placeholder = { AppText(text = detectedPath ?: stringResource(InstanceRes.string.useDefaultPath)) },
+                backgroundColor = Theme[colors][surface2],
+                modifier = Modifier.weight(1f)
+            )
+            AppIconTextButton(
+                onClick = pickerLauncher::launch,
+                text = stringResource(InstanceRes.string.browse),
+                imageVector = Lucide.FolderOpen,
+                enabled = checked,
             )
         }
     }

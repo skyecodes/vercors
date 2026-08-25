@@ -13,6 +13,7 @@ import app.vercors.shared.data.AppPaths
 import app.vercors.shared.data.FileValidationFailure
 import app.vercors.shared.data.FileValidationService
 import app.vercors.shared.domain.model.JvmMemoryOptions
+import app.vercors.shared.domain.model.NativeLibraryOptions
 import arrow.core.NonEmptyList
 import arrow.core.raise.Raise
 import arrow.core.raise.either
@@ -52,6 +53,7 @@ class LauncherServiceImpl(
         features: List<InstanceLaunchFeature>,
         javaExecutable: String,
         jvmMemoryOptions: JvmMemoryOptions,
+        nativeLibraryOptions: NativeLibraryOptions,
     ): Flow<InstanceLaunchEvent> = channelFlow {
         logger.info { "Launching instance ${instance.name}..." }
         val effectiveVersion = ruleEvaluator.applyRules(version, features)
@@ -62,8 +64,15 @@ class LauncherServiceImpl(
             return@channelFlow
         }
         nativesExtractor.extract(dependencyList.natives)
-        val command =
-            commandBuilder.build(dependencyList, account, instance, effectiveVersion, javaExecutable, jvmMemoryOptions)
+        val command = commandBuilder.build(
+            dependencyList,
+            account,
+            instance,
+            effectiveVersion,
+            javaExecutable,
+            jvmMemoryOptions,
+            nativeLibraryOptions
+        )
         val gameDir = appPaths.gameDir(instance.id)
         gameDir.createDirectories()
         val runJob = launch { runCommand(command, gameDir, effectiveVersion.clientLogging?.type) }

@@ -8,6 +8,7 @@ import app.vercors.feature.launcher.domain.service.resolve
 import app.vercors.feature.launcher.domain.service.substituteVariables
 import app.vercors.shared.data.AppPaths
 import app.vercors.shared.domain.model.JvmMemoryOptions
+import app.vercors.shared.domain.model.NativeLibraryOptions
 import dev.zacsweers.metro.Inject
 
 /** Assembles the process command line for an instance whose dependencies are already resolved. */
@@ -19,7 +20,8 @@ class LaunchCommandBuilder(private val appPaths: AppPaths) {
         instance: Instance,
         version: GameVersionDetails,
         javaExecutable: String,
-        jvmMemoryOptions: JvmMemoryOptions
+        jvmMemoryOptions: JvmMemoryOptions,
+        nativeLibraryOptions: NativeLibraryOptions
     ): List<String> {
         val nativesDir = appPaths.nativesDir(instance.id)
         val classpath = buildList {
@@ -47,6 +49,7 @@ class LaunchCommandBuilder(private val appPaths: AppPaths) {
             add(javaExecutable)
             logConfigArg?.let { add(it) }
             addAll(jvmMemoryOptions.toJvmArgs())
+            addAll(nativeLibraryOptions.toJvmArgs())
             jvmArgs?.let { addAll(it) } ?: run {
                 add("-Djava.library.path=$nativesDir")
                 add("-cp")
@@ -62,4 +65,9 @@ private fun JvmMemoryOptions.toJvmArgs(): List<String> = buildList {
     minMemoryMb?.let { add("-Xms${it}M") }
     maxMemoryMb?.let { add("-Xmx${it}M") }
     addAll(extraArgs.trim().split(Regex("\\s+")).filter(String::isNotBlank))
+}
+
+private fun NativeLibraryOptions.toJvmArgs(): List<String> = buildList {
+    if (useSystemGlfw) add("-Dorg.lwjgl.glfw.libname=${glfwPath?.takeIf(String::isNotBlank) ?: "glfw"}")
+    if (useSystemOpenAl) add("-Dorg.lwjgl.openal.libname=${openAlPath?.takeIf(String::isNotBlank) ?: "openal"}")
 }

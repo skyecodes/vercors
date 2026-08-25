@@ -3,6 +3,7 @@ package app.vercors.feature.config.data.dto
 import app.vercors.feature.config.domain.model.Configuration
 import app.vercors.feature.config.domain.model.HomeCategoryConfig
 import app.vercors.shared.data.dto.JvmMemoryOptionsData
+import app.vercors.shared.data.dto.NativeLibraryOptionsData
 import app.vercors.shared.data.dto.toData
 import app.vercors.shared.data.dto.toDomain
 import kotlinx.serialization.SerialName
@@ -22,6 +23,7 @@ data class ConfigurationData(
     val preferredJavaByMajorVersion: Map<Int, String> = emptyMap(),
     val javaInstallations: List<JavaInstallationData> = emptyList(),
     val jvmMemoryOptions: JvmMemoryOptionsData = JvmMemoryOptionsData(),
+    val nativeLibraryOptions: NativeLibraryOptionsData = NativeLibraryOptionsData(),
 )
 
 internal fun ConfigurationData.toDomain(): Configuration = Configuration(
@@ -37,6 +39,7 @@ internal fun ConfigurationData.toDomain(): Configuration = Configuration(
     preferredJavaByMajorVersion = preferredJavaByMajorVersion,
     javaInstallations = javaInstallations.map { it.toDomain() },
     jvmMemoryOptions = jvmMemoryOptions.toDomain(),
+    nativeLibraryOptions = nativeLibraryOptions.toDomain(),
 )
 
 internal fun Configuration.toData(): ConfigurationData = ConfigurationData(
@@ -52,6 +55,7 @@ internal fun Configuration.toData(): ConfigurationData = ConfigurationData(
     preferredJavaByMajorVersion = preferredJavaByMajorVersion,
     javaInstallations = javaInstallations.map { it.toData() },
     jvmMemoryOptions = jvmMemoryOptions.toData(),
+    nativeLibraryOptions = nativeLibraryOptions.toData(),
 )
 
 @Serializable
