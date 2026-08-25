@@ -28,6 +28,7 @@ data class ModpackManifestFile(
     val kind: ModpackFileKind,
     val downloadUrl: String?,
     val sha1: String?,
+    val md5: String? = null,
     val size: Long?,
     val providerProjectId: String?,
     val providerFileId: String?,

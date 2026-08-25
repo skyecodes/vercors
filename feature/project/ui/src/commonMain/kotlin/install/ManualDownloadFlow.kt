@@ -20,6 +20,9 @@ internal data class ManualDownloadCandidate(
     val downloadUrl: String,
     val instanceId: InstanceId,
     val projectType: ProjectType,
+    val size: Long?,
+    val sha1: String?,
+    val md5: String?,
     val recordOrigin: suspend () -> Unit
 )
 
@@ -45,7 +48,14 @@ internal suspend fun runManualDownloads(
         candidates.map { candidate ->
             async {
                 val ok = recover({
-                    awaitManualDownload(candidate.fileName, candidate.instanceId, candidate.projectType)
+                    awaitManualDownload(
+                        candidate.fileName,
+                        candidate.instanceId,
+                        candidate.projectType,
+                        candidate.size,
+                        candidate.sha1,
+                        candidate.md5
+                    )
                     true
                 }) { error: ManualDownloadError ->
                     snackbarService.error { error.message }

@@ -8,8 +8,7 @@ import kotlin.coroutines.CoroutineContext
 interface CryptographyService {
     suspend fun randomBytes(size: Int): ByteArray
     suspend fun sha1(source: RawSource, context: CoroutineContext = Dispatchers.Default): ByteString
-    suspend fun sha1(data: ByteArray, context: CoroutineContext = Dispatchers.Default): ByteArray
-    suspend fun sha256(source: RawSource, context: CoroutineContext = Dispatchers.Default): ByteString
+    suspend fun md5(source: RawSource, context: CoroutineContext = Dispatchers.Default): ByteString
     suspend fun sha256(data: ByteArray, context: CoroutineContext = Dispatchers.Default): ByteArray
     suspend fun generateKey(context: CoroutineContext = Dispatchers.Default): CryptographicKey
     suspend fun encodeKey(key: CryptographicKey, context: CoroutineContext = Dispatchers.Default): ByteString

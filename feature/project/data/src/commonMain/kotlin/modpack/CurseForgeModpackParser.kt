@@ -108,6 +108,7 @@ class CurseForgeModpackParser(
                 kind = ModpackFileKind.Mod,
                 downloadUrl = null,
                 sha1 = file.sha1,
+                md5 = file.md5,
                 size = file.size,
                 providerProjectId = entry.projectID.toString(),
                 providerFileId = entry.fileID.toString(),

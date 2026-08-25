@@ -17,7 +17,10 @@ class DownloadProjectFileUseCase(
         fileId: String,
         fileName: String,
         instanceId: String,
-        type: ProjectType
+        type: ProjectType,
+        size: Long?,
+        sha1: String?,
+        md5: String?
     ) =
-        projectRepository.downloadProjectFile(projectId, fileId, fileName, instanceId, type)
+        projectRepository.downloadProjectFile(projectId, fileId, fileName, instanceId, type, size, sha1, md5)
 }

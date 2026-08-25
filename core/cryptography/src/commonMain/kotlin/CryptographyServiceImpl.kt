@@ -7,6 +7,7 @@ import dev.whyoleg.cryptography.CryptographyProvider
 import dev.whyoleg.cryptography.CryptographyProviderApi
 import dev.whyoleg.cryptography.DelicateCryptographyApi
 import dev.whyoleg.cryptography.algorithms.AES
+import dev.whyoleg.cryptography.algorithms.MD5
 import dev.whyoleg.cryptography.algorithms.SHA1
 import dev.whyoleg.cryptography.algorithms.SHA256
 import dev.whyoleg.cryptography.random.CryptographyRandom
@@ -26,6 +27,7 @@ import kotlin.jvm.JvmInline
 class CryptographyServiceImpl : CryptographyService {
     private val sha1 by lazy { CryptographyProvider.Default.get(SHA1).hasher() }
     private val sha256 by lazy { CryptographyProvider.Default.get(SHA256).hasher() }
+    private val md5 by lazy { CryptographyProvider.Default.get(MD5).hasher() }
     private val aecGcm by lazy { CryptographyProvider.Default.get(AES.GCM) }
     private val aecGcmKeyGenerator by lazy { aecGcm.keyGenerator(AES.Key.Size.B256) }
     private val aecGcmKeyDecoder by lazy { aecGcm.keyDecoder() }
@@ -40,18 +42,11 @@ class CryptographyServiceImpl : CryptographyService {
         sha1.hash(source)
     }
 
-    override suspend fun sha1(
-        data: ByteArray,
-        context: CoroutineContext
-    ): ByteArray = withContext(context) {
-        sha1.hash(data)
-    }
-
-    override suspend fun sha256(
+    override suspend fun md5(
         source: RawSource,
         context: CoroutineContext
     ): ByteString = withContext(context) {
-        sha256.hash(source)
+        md5.hash(source)
     }
 
     override suspend fun sha256(

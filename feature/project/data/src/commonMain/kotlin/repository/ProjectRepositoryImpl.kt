@@ -42,6 +42,7 @@ import io.ktor.client.*
 import io.ktor.client.plugins.*
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.first
 import kotlinx.io.files.Path
@@ -55,7 +56,14 @@ import opensavvy.spine.api.div
 import opensavvy.spine.api.invoke
 import opensavvy.spine.client.handle
 import opensavvy.spine.client.request
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.uuid.Uuid
+
+/** Polling interval used to detect when a manually-downloaded file has stopped growing — see [awaitDownloadStable]. */
+private val STABLE_POLL_INTERVAL = 500.milliseconds
+
+/** Number of consecutive unchanged size polls required before treating a manual download as finished. */
+private const val STABLE_POLL_THRESHOLD = 3
 
 @SingleIn(AppScope::class)
 @ContributesBinding(AppScope::class)
@@ -201,7 +209,10 @@ class ProjectRepositoryImpl(
         fileId: String,
         fileName: String,
         instanceId: String,
-        type: ProjectType
+        type: ProjectType,
+        size: Long?,
+        sha1: String?,
+        md5: String?
     ) {
         val finalPath = Path(type.targetDir(instanceId), fileName)
         val tempPath = Path(appPaths.downloadsTmp, "${Uuid.random()}-$fileName")
@@ -209,7 +220,10 @@ class ProjectRepositoryImpl(
             platformId = projectId.platform,
             projectId = projectId.id,
             fileId = fileId,
-            path = tempPath
+            path = tempPath,
+            size = size,
+            sha1 = sha1,
+            md5 = md5
         )
         recover({
             fileValidationService.submit(listOf(request)) {}
@@ -217,8 +231,9 @@ class ProjectRepositoryImpl(
             raise(ProjectFileDownloadFailed)
         }
         try {
-            if (finalPath.exists()) finalPath.deleteRecursively()
             finalPath.createParentDirectories()
+            // atomicMove overwrites finalPath if it already exists — no need to delete it first, and doing so
+            // would just reopen the window this atomic move is meant to close.
             tempPath.moveTo(finalPath)
         } catch (_: Exception) {
             currentCoroutineContext().ensureActive()
@@ -293,15 +308,18 @@ class ProjectRepositoryImpl(
             val targetPath = Path(gameDir, *file.targetPath.pathSegments())
             val downloadUrl = file.downloadUrl
             if (downloadUrl != null) {
-                FileValidationRequest.Url(downloadUrl, targetPath, file.size, file.sha1)
+                FileValidationRequest.Url(downloadUrl, targetPath, file.size, file.sha1, file.md5)
             } else {
+                val providerProjectId = ensureNotNull(file.providerProjectId) { ModpackInvalidFileEntry }
+                val providerFileId = ensureNotNull(file.providerFileId) { ModpackInvalidFileEntry }
                 projectFileDownloadRequest(
                     manifest.platformId,
-                    requireNotNull(file.providerProjectId),
-                    requireNotNull(file.providerFileId),
+                    providerProjectId,
+                    providerFileId,
                     targetPath,
                     file.size,
-                    file.sha1
+                    file.sha1,
+                    file.md5
                 )
             }
         }
@@ -335,13 +353,23 @@ class ProjectRepositoryImpl(
     }
 
     context(_: Raise<ManualDownloadError>)
-    override suspend fun awaitManualDownload(fileName: String, instanceId: String, type: ProjectType) {
+    override suspend fun awaitManualDownload(
+        fileName: String,
+        instanceId: String,
+        type: ProjectType,
+        size: Long?,
+        sha1: String?,
+        md5: String?
+    ) {
         val downloadsDir = Path(ensureNotNull(systemService.downloadsDir()) { ManualDownloadFailed })
         val sourcePath = Path(downloadsDir, fileName)
         if (!sourcePath.exists()) {
             fileWatcherService.watchDirectory(downloadsDir)
                 .first { it.type == FileEvent.Type.CREATE && it.path.name == fileName }
         }
+        // The file existing (or having just been created) doesn't mean the browser is done writing to it — wait
+        // for it to stop growing before touching it, so we never move/validate a still-downloading file.
+        awaitDownloadStable(sourcePath, size)
         val targetPath = Path(type.targetDir(instanceId), fileName)
         try {
             sourcePath.copyTo(targetPath)
@@ -350,6 +378,41 @@ class ProjectRepositoryImpl(
             throw e
         } catch (_: Exception) {
             raise(ManualDownloadFailed)
+        }
+        recover({
+            with(fileValidationService) {
+                FileValidationRequest.Url(url = "", path = targetPath, size = size, sha1 = sha1, md5 = md5).validate()
+            }
+        }) { _: FileValidationFailure ->
+            if (targetPath.exists()) targetPath.deleteRecursively()
+            raise(ManualDownloadIntegrityMismatch)
+        }
+    }
+
+    /**
+     * Suspends until [path]'s size stops changing — either it reaches the already-known [expectedSize] (fast
+     * path), or it stays unchanged across [STABLE_POLL_THRESHOLD] consecutive polls. There's no cross-platform
+     * signal for "is another process still writing to this file" (`Path.lastModifiedOrNull()` is unavailable on
+     * mingw), so polling size is the only reliable option here.
+     */
+    private suspend fun awaitDownloadStable(path: Path, expectedSize: Long?) {
+        var lastSize: Long? = null
+        var stableCount = 0
+        while (true) {
+            val currentSize = path.metadataOrNull()?.size
+            when {
+                currentSize != null && currentSize == expectedSize -> return
+                currentSize != null && currentSize == lastSize -> {
+                    stableCount++
+                    if (stableCount >= STABLE_POLL_THRESHOLD) return
+                }
+
+                else -> {
+                    lastSize = currentSize
+                    stableCount = 0
+                }
+            }
+            delay(STABLE_POLL_INTERVAL)
         }
     }
 

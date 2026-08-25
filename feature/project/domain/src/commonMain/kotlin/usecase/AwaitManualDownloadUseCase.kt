@@ -11,6 +11,12 @@ class AwaitManualDownloadUseCase(
     private val projectRepository: ProjectRepository
 ) {
     context(_: Raise<ManualDownloadError>)
-    suspend operator fun invoke(fileName: String, instanceId: String, type: ProjectType) =
-        projectRepository.awaitManualDownload(fileName, instanceId, type)
+    suspend operator fun invoke(
+        fileName: String,
+        instanceId: String,
+        type: ProjectType,
+        size: Long?,
+        sha1: String?,
+        md5: String?
+    ) = projectRepository.awaitManualDownload(fileName, instanceId, type, size, sha1, md5)
 }

@@ -27,7 +27,8 @@
     <string name="resolvingFiles">Resolving mod files...</string>
     <string name="awaitingManualDownloads">Waiting for manual downloads...</string>
     <string name="finishInstallation">Finish installation</string>
-    <string name="manualDownloadsRequired">These files can\'t be downloaded automatically — their authors have disabled direct downloads. Download them manually and they\'ll be picked up automatically.</string>
+    <string name="manualDownloadsCompleted">Manually downloaded files have been successfully added to the instance.</string>
+    <string name="manualDownloadsRequired">These files can't be downloaded automatically — their authors have disabled direct downloads.\nDownload them manually and they'll be picked up automatically.</string>
     <string name="openAll">Open all</string>
     <string name="cancelSetup">Cancel setup</string>
 

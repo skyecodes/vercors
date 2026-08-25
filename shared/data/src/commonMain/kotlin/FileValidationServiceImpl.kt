@@ -99,8 +99,13 @@ class FileValidationServiceImpl(
         val metadata = ensureNotNull(path.metadataOrNull()) { FileValidationFailure.FileNotFound(path) }
         ensure(metadata.isRegularFile) { FileValidationFailure.NotRegularFile(path) }
         if (size != null) ensure(size == metadata.size) { FileValidationFailure.SizeMismatch(path) }
-        if (sha1 != null) ensure(sha1 == path.source { cryptographyService.sha1(it) }
-            .toHexString()) { FileValidationFailure.HashMismatch(path) }
+        when {
+            sha1 != null -> ensure(sha1 == path.source { cryptographyService.sha1(it) }
+                .toHexString()) { FileValidationFailure.HashMismatch(path) }
+
+            md5 != null -> ensure(md5 == path.source { cryptographyService.md5(it) }
+                .toHexString()) { FileValidationFailure.HashMismatch(path) }
+        }
     }
 
     context(_: Raise<RemoteError>)
@@ -126,6 +131,7 @@ class FileValidationServiceImpl(
                     }
                 }
             }
+            ensure((tempPath.metadataOrNull()?.size ?: 0) > 0) { RemoteError.Network }
             tempPath.moveTo(path)
         } finally {
             if (tempPath.exists()) tempPath.deleteRecursively()

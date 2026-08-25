@@ -148,12 +148,14 @@
     <string name="errorProjectFileDownloadFailed">Failed to download the file</string>
     <string name="errorModpackDownloadFailed">Failed to download the modpack file</string>
     <string name="errorModpackParseFailed">Failed to read the modpack file</string>
-    <string name="errorModpackUnsupportedPlatform">This platform's modpacks aren\'t supported yet</string>
+    <string name="errorModpackUnsupportedPlatform">This platform's modpacks aren't supported yet</string>
     <string name="errorModpackFileResolutionFailed">Failed to resolve one of the modpack's files</string>
     <string name="errorModpackInstallDownloadFailed">Failed to download the modpack's files</string>
     <string name="errorModpackOverridesExtractionFailed">Failed to extract the modpack's bundled files</string>
+    <string name="errorModpackInvalidFileEntry">The modpack contains an invalid or unusable file entry</string>
     <string name="errorInstanceNameInvalid">Invalid instance name</string>
     <string name="errorManualDownloadFailed">Failed to detect or move the manually downloaded file</string>
+    <string name="errorManualDownloadIntegrityMismatch">The manually downloaded file doesn't match what was expected</string>
 
     <string name="installToInstance">Install to instance</string>
     <string name="installModpack">Install modpack</string>
@@ -164,6 +166,6 @@
     <string name="noCompatibleInstances">No compatible instances found</string>
     <string name="modInstalled">Mod installed</string>
 
-    <string name="manualDownloadsRequired">These files can\'t be downloaded automatically — their authors have disabled direct downloads. Download them manually and they\'ll be picked up automatically.</string>
+    <string name="manualDownloadsRequired">These files can't be downloaded automatically — their authors have disabled direct downloads.\nDownload them manually and they'll be picked up automatically.</string>
     <string name="openAll">Open all</string>
 </resources>

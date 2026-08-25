@@ -42,7 +42,10 @@ interface ProjectRepository {
         fileId: String,
         fileName: String,
         instanceId: String,
-        type: ProjectType
+        type: ProjectType,
+        size: Long?,
+        sha1: String?,
+        md5: String?
     )
 
     context(_: Raise<ProjectDetailsError>)
@@ -69,5 +72,12 @@ interface ProjectRepository {
      * moves it into the instance's directory for [type]. Cancelling the calling coroutine cancels the wait.
      */
     context(_: Raise<ManualDownloadError>)
-    suspend fun awaitManualDownload(fileName: String, instanceId: String, type: ProjectType)
+    suspend fun awaitManualDownload(
+        fileName: String,
+        instanceId: String,
+        type: ProjectType,
+        size: Long?,
+        sha1: String?,
+        md5: String?
+    )
 }

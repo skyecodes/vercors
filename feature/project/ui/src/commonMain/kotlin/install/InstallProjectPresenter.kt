@@ -231,6 +231,9 @@ class InstallProjectPresenter(
                         downloadUrl = requireNotNull(candidate.file.manualDownloadUrl),
                         instanceId = instanceId,
                         projectType = projectType,
+                        size = candidate.file.size,
+                        sha1 = candidate.file.sha1,
+                        md5 = candidate.file.md5,
                         recordOrigin = {
                             recordInstalledContentOrigin(
                                 projectType.toContentKind(),
@@ -259,7 +262,9 @@ class InstallProjectPresenter(
      */
     context(_: Raise<ProjectFileDownloadError>)
     private suspend fun installFile(fileProjectId: ProjectId, file: ProjectFileView, instanceId: InstanceId) {
-        downloadProjectFile(fileProjectId, file.id, file.fileName, instanceId, projectType)
+        downloadProjectFile(
+            fileProjectId, file.id, file.fileName, instanceId, projectType, file.size, file.sha1, file.md5
+        )
         recordInstalledContentOrigin(
             projectType.toContentKind(),
             instanceId,

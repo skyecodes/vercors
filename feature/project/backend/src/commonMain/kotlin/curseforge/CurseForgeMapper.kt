@@ -133,6 +133,7 @@ internal fun CurseForgeFile.convert(loaderFilter: ProjectLoaderData?): ProjectFi
     releaseChannel = releaseType.toProjectReleaseChannelData(),
     size = fileLength,
     sha1 = hashes.firstOrNull { it.algo == CurseForgeHashAlgo.Sha1 }?.value,
+    md5 = hashes.firstOrNull { it.algo == CurseForgeHashAlgo.Md5 }?.value,
     publishedAt = fileDate,
     dependencies = dependencies.filter { it.relationType == CurseForgeFileRelationType.RequiredDependency }
         .map { ProjectFileDependencyData(it.modId.toString()) }

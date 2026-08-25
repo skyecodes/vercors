@@ -11,3 +11,4 @@ sealed interface ModpackInstallError
 
 data object ModpackInstallDownloadFailed : ModpackInstallError
 data object ModpackOverridesExtractionFailed : ModpackInstallError
+data object ModpackInvalidFileEntry : ModpackInstallError

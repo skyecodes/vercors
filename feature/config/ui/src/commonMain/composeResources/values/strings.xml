@@ -17,7 +17,7 @@
     <string name="preferredForMajorVersion">Preferred for Java %1$d</string>
     <string name="preferred">Preferred</string>
     <string name="javaMajorVersion">Java %1$d</string>
-    <string name="javaAddFailed">"%1$s" doesn\'t look like a valid Java installation</string>
+    <string name="javaAddFailed">"%1$s" doesn't look like a valid Java installation</string>
 
     <string name="maxMemory">Max memory</string>
     <string name="maxMemoryDesc">The maximum amount of memory the game is allowed to use (-Xmx).</string>

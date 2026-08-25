@@ -248,6 +248,9 @@ class InstallModpackPresenter(
             downloadUrl = manualDownloadUrl,
             instanceId = instanceId,
             projectType = ProjectType.Mod,
+            size = manualFile.size,
+            sha1 = manualFile.sha1,
+            md5 = manualFile.md5,
             recordOrigin = {
                 recordInstalledContentOrigin(
                     ContentKind.Mod,

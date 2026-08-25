@@ -297,23 +297,15 @@ private fun InstanceHeaderStatus(instance: InstanceView) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterVertically)
     ) {
-        if (instance.status is InstanceStatus.Installing.AwaitingManualDownloads) {
-            AppIconTextButton(
-                onClick = { eventSink(InstanceDetailsEvent.OnFinishInstallationClick) },
-                text = stringResource(InstanceRes.string.finishInstallation),
-                imageVector = Lucide.Download,
+        AppText(
+            text = instance.status.text
+        )
+        instance.status.progress?.let {
+            val progress by appAnimateFloatAsState(it)
+            AppProgressIndicator(
+                progress = progress,
+                modifier = Modifier.fillMaxWidth()
             )
-        } else {
-            AppText(
-                text = instance.status.text
-            )
-            instance.status.progress?.let {
-                val progress by appAnimateFloatAsState(it)
-                AppProgressIndicator(
-                    progress = progress,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
         }
     }
 }
@@ -353,6 +345,14 @@ context(eventSink: EventSink<InstanceDetailsEvent>)
 private fun InstanceHeaderActionButton(instance: InstanceView, isInstanceEdited: Boolean) {
     AppAnimatedVisibility(!isInstanceEdited) {
         when (instance.status) {
+            is InstanceStatus.Installing.AwaitingManualDownloads -> AppIconTextButton(
+                onClick = { eventSink(InstanceDetailsEvent.OnFinishInstallationClick) },
+                text = stringResource(InstanceRes.string.finishInstallation),
+                backgroundColor = Theme[colors][primary],
+                contentColor = Theme[colors][onPrimary],
+                imageVector = Lucide.Download,
+            )
+
             is InstanceStatus.Idle, is InstanceStatus.Failed -> AppIconTextButton(
                 onClick = { eventSink(InstanceDetailsEvent.Launch) },
                 text = stringResource(InstanceRes.string.launch),

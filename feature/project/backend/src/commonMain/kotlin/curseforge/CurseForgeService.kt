@@ -5,11 +5,13 @@ import app.vercors.feature.project.backend.PlatformInfo
 import app.vercors.feature.project.backend.PlatformServiceBase
 import app.vercors.feature.project.backend.bindResponse
 import arrow.core.raise.Raise
+import arrow.core.raise.recover
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesIntoMap
 import dev.zacsweers.metro.SingleIn
 import dev.zacsweers.metro.StringKey
 import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 
 internal const val MINECRAFT_GAME_ID = 432
@@ -83,23 +85,34 @@ class CurseForgeService(
         projectId: String,
         gameVersion: String?,
         loader: ProjectLoaderData?
-    ): List<ProjectFileData> {
+    ): List<ProjectFileData> = coroutineScope {
         val files = api.getFiles(
             modId = projectId,
             gameVersion = gameVersion,
             modLoaderType = loader?.toCurseForgeModLoaderType()
         ).bindResponse().data
-        val project =
-            if (files.any { it.downloadUrl == null }) api.getProject(projectId).bindResponse().data else null
-        return files.map { file ->
+
+        // `downloadUrl` can be null in the file listing response even for files that ARE downloadable — the
+        // dedicated /download-url endpoint sometimes succeeds where the listing's inline field doesn't, so check
+        // it before treating a file as distribution-restricted.
+        val needsCheck = files.filter { it.downloadUrl == null }
+        val downloadableIds = needsCheck.map { file ->
+            async {
+                file.id to recover({
+                    api.getFileDownloadUrl(projectId, file.id.toString()).bindResponse()
+                    true
+                }) { _: PlatformErrorData -> false }
+            }
+        }.awaitAll().filter { it.second }.map { it.first }.toSet()
+
+        val stillManual = needsCheck.filterNot { it.id in downloadableIds }
+        val project = if (stillManual.isNotEmpty()) api.getProject(projectId).bindResponse().data else null
+
+        files.map { file ->
             val data = file.convert(loader)
-            if (project != null && file.downloadUrl == null) data.copy(
-                manualDownloadUrl = manualDownloadUrl(
-                    project.slug,
-                    project.classId,
-                    file.id
-                )
-            ) else data
+            if (project != null && file.downloadUrl == null && file.id !in downloadableIds) {
+                data.copy(manualDownloadUrl = manualDownloadUrl(project.slug, project.classId, file.id))
+            } else data
         }
     }
 
@@ -114,6 +127,13 @@ class CurseForgeService(
         val file = api.getFile(projectId, fileId).bindResponse().data
         val data = file.convert(loaderFilter = null)
         if (file.downloadUrl != null) return data
+        // As in getProjectFiles: a null downloadUrl here doesn't always mean distribution-restricted — the
+        // dedicated endpoint can still succeed, so try it before falling back to a manual-download link.
+        val downloadable = recover({
+            api.getFileDownloadUrl(projectId, fileId).bindResponse()
+            true
+        }) { _: PlatformErrorData -> false }
+        if (downloadable) return data
         val project = api.getProject(projectId).bindResponse().data
         return data.copy(manualDownloadUrl = manualDownloadUrl(project.slug, project.classId, file.id))
     }

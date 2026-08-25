@@ -41,10 +41,14 @@ val ModpackInstallError.message: String
     @Composable get() = when (this) {
         ModpackInstallDownloadFailed -> stringResource(ProjectRes.string.errorModpackInstallDownloadFailed)
         ModpackOverridesExtractionFailed -> stringResource(ProjectRes.string.errorModpackOverridesExtractionFailed)
+        ModpackInvalidFileEntry -> stringResource(ProjectRes.string.errorModpackInvalidFileEntry)
     }
 
 val InstanceValidationError.message: String
     @Composable get() = stringResource(ProjectRes.string.errorInstanceNameInvalid)
 
 val ManualDownloadError.message: String
-    @Composable get() = stringResource(ProjectRes.string.errorManualDownloadFailed)
+    @Composable get() = when (this) {
+        ManualDownloadFailed -> stringResource(ProjectRes.string.errorManualDownloadFailed)
+        ManualDownloadIntegrityMismatch -> stringResource(ProjectRes.string.errorManualDownloadIntegrityMismatch)
+    }

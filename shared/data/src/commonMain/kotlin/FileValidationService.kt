@@ -38,6 +38,7 @@ interface FileValidationRequest {
     val path: Path
     val size: Long?
     val sha1: String?
+    val md5: String?
     val alwaysRedownload: Boolean
 
     open class Url(
@@ -45,6 +46,7 @@ interface FileValidationRequest {
         override val path: Path,
         override val size: Long? = null,
         override val sha1: String? = null,
+        override val md5: String? = null,
         override val alwaysRedownload: Boolean = false
     ) : FileValidationRequest {
         override val source: FileRemoteSource = FileRemoteSource { it.get(url).bodyAsSource() }
@@ -56,6 +58,7 @@ interface FileValidationRequest {
         override val path: Path,
         override val size: Long? = null,
         override val sha1: String? = null,
+        override val md5: String? = null,
         override val alwaysRedownload: Boolean = false
     ) : FileValidationRequest {
         override val source: FileRemoteSource = FileRemoteSource { channel(it).asSource().buffered() }
