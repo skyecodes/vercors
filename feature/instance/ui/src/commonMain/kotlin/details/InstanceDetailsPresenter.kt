@@ -31,8 +31,10 @@ import app.vercors.feature.launcher.domain.usecase.CancelInstanceUseCase
 import app.vercors.feature.launcher.domain.usecase.KillInstanceUseCase
 import app.vercors.feature.launcher.domain.usecase.LaunchInstanceUseCase
 import app.vercors.feature.launcher.domain.usecase.StopInstanceUseCase
+import app.vercors.feature.project.domain.model.ProjectDetailsError
 import app.vercors.feature.project.domain.model.from
 import app.vercors.feature.project.domain.usecase.AwaitManualDownloadUseCase
+import app.vercors.feature.project.domain.usecase.GetProjectUseCase
 import app.vercors.feature.project.ui.details.ProjectDetailsScreen
 import app.vercors.feature.project.ui.list.ProjectListScreen
 import app.vercors.shared.domain.model.JavaInstallation
@@ -45,6 +47,7 @@ import app.vercors.shared.ui.SnackbarService
 import app.vercors.shared.ui.Store
 import app.vercors.shared.ui.error
 import arrow.core.raise.context.either
+import arrow.core.raise.recover
 import com.slack.circuit.codegen.annotations.CircuitInject
 import com.slack.circuit.retained.produceAndCollectAsRetainedState
 import com.slack.circuit.runtime.Navigator
@@ -103,6 +106,9 @@ class InstanceDetailsPresenter(
     private val copyToClipboard: CopyToClipboardUseCase,
     private val setInstanceIcon: SetInstanceIconUseCase,
     private val removeInstanceIcon: RemoveInstanceIconUseCase,
+    private val getInstance: GetInstanceUseCase,
+    private val getProject: GetProjectUseCase,
+    private val setInstanceIconFromUrl: SetInstanceIconFromUrlUseCase,
     private val importMod: ImportModUseCase,
     private val importResourcePack: ImportResourcePackUseCase,
     private val importShaderPack: ImportShaderPackUseCase,
@@ -457,6 +463,25 @@ class InstanceDetailsPresenter(
 
             InstanceDetailsEvent.OnRemoveIconClick -> globalScope.launch {
                 either { removeInstanceIcon(screen.instanceId) }.onLeft { error -> snackbarService.error { error.message } }
+            }
+
+            InstanceDetailsEvent.OnRestoreIconClick -> globalScope.launch {
+                recover({
+                    val instance = getInstance(screen.instanceId)
+                    val modpackInfo = instance.modpackInfo
+                    if (modpackInfo != null) {
+                        recover({
+                            val logoUrl = getProject(modpackInfo.projectId from modpackInfo.platformId).logoUrl
+                            if (logoUrl == null || !setInstanceIconFromUrl(instance, logoUrl)) {
+                                snackbarService.error { stringResource(InstanceRes.string.errorRestoreIconFailed) }
+                            }
+                        }) { _: ProjectDetailsError ->
+                            snackbarService.error { stringResource(InstanceRes.string.errorRestoreIconFailed) }
+                        }
+                    }
+                }) { _: InstanceError ->
+                    snackbarService.error { stringResource(InstanceRes.string.errorRestoreIconFailed) }
+                }
             }
 
             is InstanceDetailsEvent.OnImportContentClick -> globalScope.launch {

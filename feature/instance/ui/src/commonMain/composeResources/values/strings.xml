@@ -117,4 +117,6 @@
     <string name="remove">Remove</string>
     <string name="openProject">Open %1$s Project</string>
     <string name="removeIcon">Remove Custom Icon</string>
+    <string name="restoreIcon">Restore icon</string>
+    <string name="errorRestoreIconFailed">Failed to restore the icon from the provider</string>
 </resources>

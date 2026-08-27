@@ -444,6 +444,12 @@ private fun InstanceHeaderMenu(instance: InstanceView) {
                 text = stringResource(InstanceRes.string.removeIcon),
                 imageVector = Lucide.ImageOff
             )
+        } else if (instance.modpackInfo != null) {
+            AppMenuItem(
+                onClick = { eventSink(InstanceDetailsEvent.OnRestoreIconClick) },
+                text = stringResource(InstanceRes.string.restoreIcon),
+                imageVector = Lucide.Image
+            )
         }
         AppMenuItem(
             onClick = { eventSink(InstanceDetailsEvent.Delete) },

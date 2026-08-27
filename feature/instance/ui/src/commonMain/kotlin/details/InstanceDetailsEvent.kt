@@ -33,6 +33,7 @@ sealed interface InstanceDetailsEvent : Event {
     data class OnAddContentClick(val type: ProjectType) : InstanceDetailsEvent
     data class OnIconSelected(val path: String) : InstanceDetailsEvent
     data object OnRemoveIconClick : InstanceDetailsEvent
+    data object OnRestoreIconClick : InstanceDetailsEvent
     data class OnImportContentClick(val kind: RemovalKind, val path: String) : InstanceDetailsEvent
     data class OnOpenInstanceFolderClick(val folder: InstanceFolder) : InstanceDetailsEvent
     data object OnFinishInstallationClick : InstanceDetailsEvent
