@@ -32,9 +32,15 @@ expect fun Throwable.isPlatformNetworkUnreachable(): Boolean
  * subtype — see io.ktor.client.engine.curl.internal.CurlMultiApiHandler.collectFailedResponse. Explicitly
  * excludes CancellationException (a JVM IllegalStateException subtype) so callers outside Arrow's own
  * cancellation-safe `catch()` — like AuthenticationServiceImpl — can't accidentally swallow cancellation.
+ * Also explicitly excludes Ktor's [ResponseException] (base of [ClientRequestException]/[ServerResponseException]/
+ * [RedirectResponseException], thrown by the response validator whenever a client is configured with
+ * `expectSuccess = true` and the server answers with a non-2xx status) — it's also an IllegalStateException
+ * subtype on every target, but receiving *any* HTTP response, even an error one, is definitive proof the server
+ * was reached. Without this exclusion, a routine expired/invalid token (e.g. Microsoft/Xbox/Minecraft returning
+ * 400/401) gets misclassified as the server being unreachable instead of the real "invalid credentials" case.
  */
 fun Throwable.isNetworkUnreachable(): Boolean =
-    this !is CancellationException &&
+    this !is CancellationException && this !is ResponseException &&
             (this is IOException || this is IllegalStateException || isPlatformNetworkUnreachable())
 
 context(err: Raise<RemoteError>)
