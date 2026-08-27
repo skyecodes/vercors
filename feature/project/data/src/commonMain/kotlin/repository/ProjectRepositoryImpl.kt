@@ -204,40 +204,42 @@ class ProjectRepositoryImpl(
     )
 
     context(_: Raise<ProjectFileDownloadError>)
-    override suspend fun downloadProjectFile(
-        projectId: ProjectId,
-        fileId: String,
-        fileName: String,
+    override suspend fun downloadProjectFiles(
+        candidates: List<ProjectFileDownloadCandidate>,
         instanceId: String,
         type: ProjectType,
-        size: Long?,
-        sha1: String?,
-        md5: String?
+        onProgress: (Progress) -> Unit
     ) {
-        val finalPath = Path(type.targetDir(instanceId), fileName)
-        val tempPath = Path(appPaths.downloadsTmp, "${Uuid.random()}-$fileName")
-        val request = projectFileDownloadRequest(
-            platformId = projectId.platform,
-            projectId = projectId.id,
-            fileId = fileId,
-            path = tempPath,
-            size = size,
-            sha1 = sha1,
-            md5 = md5
-        )
+        val targetDir = type.targetDir(instanceId)
+        val downloads = candidates.map { candidate ->
+            val finalPath = Path(targetDir, candidate.fileName)
+            val tempPath = Path(appPaths.downloadsTmp, "${Uuid.random()}-${candidate.fileName}")
+            val request = projectFileDownloadRequest(
+                platformId = candidate.projectId.platform,
+                projectId = candidate.projectId.id,
+                fileId = candidate.fileId,
+                path = tempPath,
+                size = candidate.size,
+                sha1 = candidate.sha1,
+                md5 = candidate.md5
+            )
+            Triple(request, tempPath, finalPath)
+        }
         recover({
-            fileValidationService.submit(listOf(request)) {}
+            fileValidationService.submit(downloads.map { it.first }, onProgress)
         }) { _: NonEmptyList<FileValidationFailure> ->
             raise(ProjectFileDownloadFailed)
         }
-        try {
-            finalPath.createParentDirectories()
-            // atomicMove overwrites finalPath if it already exists — no need to delete it first, and doing so
-            // would just reopen the window this atomic move is meant to close.
-            tempPath.moveTo(finalPath)
-        } catch (_: Exception) {
-            currentCoroutineContext().ensureActive()
-            raise(ProjectFileDownloadFailed)
+        downloads.forEach { (_, tempPath, finalPath) ->
+            try {
+                finalPath.createParentDirectories()
+                // atomicMove overwrites finalPath if it already exists — no need to delete it first, and doing so
+                // would just reopen the window this atomic move is meant to close.
+                tempPath.moveTo(finalPath)
+            } catch (_: Exception) {
+                currentCoroutineContext().ensureActive()
+                raise(ProjectFileDownloadFailed)
+            }
         }
     }
 
@@ -274,11 +276,15 @@ class ProjectRepositoryImpl(
         Path(appPaths.downloadsTmp, "modpack-$platformId-$projectId-$fileId.zip")
 
     context(_: Raise<ModpackResolutionError>)
-    override suspend fun getModpackManifest(projectId: ProjectId, fileId: String): ModpackManifest {
+    override suspend fun getModpackManifest(
+        projectId: ProjectId,
+        fileId: String,
+        onProgress: (Progress) -> Unit
+    ): ModpackManifest {
         val zipPath = modpackZipPath(projectId.platform, projectId.id, fileId)
         val request = projectFileDownloadRequest(projectId.platform, projectId.id, fileId, zipPath)
         recover({
-            fileValidationService.submit(listOf(request)) {}
+            fileValidationService.submit(listOf(request), onProgress)
         }) { _: NonEmptyList<FileValidationFailure> ->
             raise(ModpackDownloadFailed)
         }

@@ -132,7 +132,9 @@ class InstanceDetailsPresenter(
         val (promptJavaInstall, setPromptJavaInstall) = remember { mutableStateOf(false) }
         val installJavaProgressDialog = remember { InstallJavaProgressDialog(javaInstallState) }
         val (javaInstallJob, setJavaInstallJob) = remember { mutableStateOf<Job?>(null) }
-        val (selectedTab, setSelectedTab) = rememberSaveable { mutableStateOf(InstanceDetailsTab.Options) }
+        val (selectedTab, setSelectedTab) = rememberSaveable {
+            mutableStateOf(screen.initialTab ?: InstanceDetailsTab.Options)
+        }
         val (editedInstance, setEditedInstance) = rememberSaveable { mutableStateOf(InstanceEditState()) }
         val totalMemoryMb = remember {
             ((getTotalPhysicalMemory() ?: (16384L * 1024 * 1024)) / (1024 * 1024)).toInt()

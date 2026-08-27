@@ -1,14 +1,11 @@
 package app.vercors.feature.project.ui.install
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import app.vercors.core.ui.component.*
 import app.vercors.core.ui.layout.AppDialog
-import app.vercors.core.ui.layout.AppForm
 import app.vercors.core.ui.theme.*
 import app.vercors.feature.project.ui.*
 import app.vercors.shared.ui.SharedRes
@@ -27,7 +24,10 @@ fun InstallModpack(
     val (state, eventSink) = store
 
     AppDialog(onClickOutside = { eventSink(InstallModpackEvent.OnCancelClick) }) {
-        AppForm {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            modifier = Modifier.width(IntrinsicSize.Max)
+        ) {
             AppText(
                 text = stringResource(ProjectRes.string.installModpack),
                 style = Theme[textStyles][title]
@@ -48,6 +48,10 @@ fun InstallModpack(
                 onValueChange = { eventSink(InstallModpackEvent.OnInstanceNameChange(it)) },
                 modifier = Modifier.width(300.dp),
             )
+
+            if (state.installing) {
+                AppProgressIndicator(progress = state.installProgress ?: 0f, modifier = Modifier.fillMaxWidth())
+            }
 
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 AppIconTextButton(

@@ -14,9 +14,10 @@ import app.vercors.feature.instance.domain.usecase.ObserveInstanceListUseCase
 import app.vercors.feature.instance.domain.usecase.RecordInstalledContentOriginUseCase
 import app.vercors.feature.instance.ui.install.ManualDownloadCandidate
 import app.vercors.feature.instance.ui.install.runManualDownloads
+import app.vercors.feature.instance.ui.install.toFractionOrNull
 import app.vercors.feature.project.domain.model.*
 import app.vercors.feature.project.domain.usecase.AwaitManualDownloadUseCase
-import app.vercors.feature.project.domain.usecase.DownloadProjectFileUseCase
+import app.vercors.feature.project.domain.usecase.DownloadProjectFilesUseCase
 import app.vercors.feature.project.domain.usecase.GetProjectFilesUseCase
 import app.vercors.feature.project.domain.usecase.GetProjectUseCase
 import app.vercors.feature.project.ui.message
@@ -25,7 +26,6 @@ import app.vercors.shared.ui.Presenter
 import app.vercors.shared.ui.SnackbarService
 import app.vercors.shared.ui.Store
 import app.vercors.shared.ui.error
-import arrow.core.raise.Raise
 import arrow.core.raise.recover
 import com.slack.circuit.overlay.OverlayNavigator
 import kotlinx.coroutines.*
@@ -48,7 +48,7 @@ class InstallProjectPresenter(
     private val observeInstalledContent: ObserveInstalledContentUseCase,
     private val getProject: GetProjectUseCase,
     private val getProjectFiles: GetProjectFilesUseCase,
-    private val downloadProjectFile: DownloadProjectFileUseCase,
+    private val downloadProjectFiles: DownloadProjectFilesUseCase,
     private val awaitManualDownload: AwaitManualDownloadUseCase,
     private val recordInstalledContentOrigin: RecordInstalledContentOriginUseCase,
     private val copyToClipboard: CopyToClipboardUseCase,
@@ -63,8 +63,10 @@ class InstallProjectPresenter(
         var selectedDependencyIds by remember { mutableStateOf<Set<ProjectId>>(emptySet()) }
         var resolvingDependencies by remember { mutableStateOf(false) }
         var installing by remember { mutableStateOf(false) }
+        var installProgress by remember { mutableFloatStateOf(0f) }
         var installJob by remember { mutableStateOf<Job?>(null) }
         var manualDownloadItems by remember { mutableStateOf<List<ManualDownloadItem>>(emptyList()) }
+        var completedInstanceId by remember { mutableStateOf<InstanceId?>(null) }
         val files = remember { mutableProgressiveStateOf<ProjectDetailsError, List<ProjectFileView>>() }
 
         val selectedInstance = instances.valueOrNull?.find { it.id == selectedInstanceId }
@@ -116,16 +118,24 @@ class InstallProjectPresenter(
                     if (instanceId != null && file != null) {
                         val selectedDependencies = dependencies.filter { it.projectId in selectedDependencyIds }
                         installing = true
+                        installProgress = 0f
                         installJob = confirmInstall(
                             instanceId, file, selectedDependencies,
-                            onManualDownloadItemsChanged = { manualDownloadItems = it }
+                            onManualDownloadItemsChanged = { manualDownloadItems = it },
+                            onProgressChanged = { installProgress = it }
                         ) { success ->
                             installing = false
                             manualDownloadItems = emptyList()
-                            if (success) navigator.finish(InstallProjectResult.Installed(instanceId))
+                            if (success) completedInstanceId = instanceId
                         }
                     }
                 }
+
+                InstallProjectEvent.OnCloseClick ->
+                    navigator.finish(InstallProjectResult.Installed(requireNotNull(completedInstanceId)))
+
+                InstallProjectEvent.OnGoToInstanceClick ->
+                    navigator.finish(InstallProjectResult.GoToInstance(requireNotNull(completedInstanceId)))
             }
         }
 
@@ -138,7 +148,9 @@ class InstallProjectPresenter(
             selectedDependencyIds = selectedDependencyIds,
             resolvingDependencies = resolvingDependencies,
             installing = installing,
-            manualDownloadItems = manualDownloadItems
+            installProgress = installProgress,
+            manualDownloadItems = manualDownloadItems,
+            completedInstanceId = completedInstanceId
         ) + ::handleEvent
     }
 
@@ -203,12 +215,18 @@ class InstallProjectPresenter(
         pickRecommendedFile(fileList)?.let { DependencyFileView(dependencyId, project.name, it) }
     }) { null }
 
-    /** Installs [file] (and each of [selectedDependencies]), auto files first, then manual ones in parallel. */
+    /**
+     * Installs [file] (and each of [selectedDependencies]), auto files first (as one batch download, so their
+     * progress can be merged into a single fraction), then manual ones. [onProgressChanged] reports the overall
+     * fraction (0..1) across every candidate — auto candidates count as done once the batch download finishes,
+     * manual candidates count as done one by one as [runManualDownloads] reports each item downloaded.
+     */
     private fun confirmInstall(
         instanceId: InstanceId,
         file: ProjectFileView,
         selectedDependencies: List<DependencyFileView>,
         onManualDownloadItemsChanged: (List<ManualDownloadItem>) -> Unit,
+        onProgressChanged: (Float) -> Unit,
         onFinished: (success: Boolean) -> Unit
     ): Job {
         val candidates = buildList {
@@ -216,10 +234,33 @@ class InstallProjectPresenter(
             selectedDependencies.forEach { add(InstallCandidate(it.projectId, it.file)) }
         }
         val (autoCandidates, manualCandidates) = candidates.partition { it.file.manualDownloadUrl == null }
+        val totalCount = candidates.size
 
         val job = globalScope.launch {
             val autoOk = recover({
-                for (candidate in autoCandidates) installFile(candidate.projectId, candidate.file, instanceId)
+                if (autoCandidates.isNotEmpty()) {
+                    downloadProjectFiles(
+                        autoCandidates.map {
+                            ProjectFileDownloadCandidate(
+                                it.projectId, it.file.id, it.file.fileName, it.file.size, it.file.sha1, it.file.md5
+                            )
+                        },
+                        instanceId, projectType
+                    ) { progress ->
+                        onProgressChanged((progress.toFractionOrNull() ?: 0f) * autoCandidates.size / totalCount)
+                    }
+                    autoCandidates.forEach { candidate ->
+                        recordInstalledContentOrigin(
+                            projectType.toContentKind(),
+                            instanceId,
+                            candidate.file.fileName,
+                            candidate.projectId.platform,
+                            candidate.projectId.id,
+                            candidate.file.id
+                        )
+                    }
+                }
+                onProgressChanged(autoCandidates.size.toFloat() / totalCount)
                 true
             }) { error: ProjectFileDownloadError ->
                 snackbarService.error { error.message }
@@ -242,32 +283,15 @@ class InstallProjectPresenter(
                     )
                 },
                 awaitManualDownload, recordInstalledContentOrigin, snackbarService
-            ) { items -> onManualDownloadItemsChanged(items) }
+            ) { items ->
+                onManualDownloadItemsChanged(items)
+                onProgressChanged((autoCandidates.size + items.count { it.downloaded }).toFloat() / totalCount)
+            }
 
             onFinished(autoOk && manualOk)
         }
         job.invokeOnCompletion { error -> if (error != null) onFinished(false) }
         return job
-    }
-
-    /**
-     * Downloads [file] and records its provider origin as one unit — every install path (the primary file, each
-     * confirmed dependency) must go through this rather than calling [downloadProjectFile] directly, so it's never
-     * possible to download a project file without also recording where it came from.
-     */
-    context(_: Raise<ProjectFileDownloadError>)
-    private suspend fun installFile(fileProjectId: ProjectId, file: ProjectFileView, instanceId: InstanceId) {
-        downloadProjectFile(
-            fileProjectId, file.id, file.fileName, instanceId, projectType, file.size, file.sha1, file.md5
-        )
-        recordInstalledContentOrigin(
-            projectType.toContentKind(),
-            instanceId,
-            file.fileName,
-            fileProjectId.platform,
-            fileProjectId.id,
-            file.id
-        )
     }
 
     @Composable

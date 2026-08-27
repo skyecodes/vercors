@@ -21,7 +21,9 @@ data class InstallProjectState(
     val selectedDependencyIds: Set<ProjectId>,
     val resolvingDependencies: Boolean,
     val installing: Boolean,
+    val installProgress: Float = 0f,
     val manualDownloadItems: List<ManualDownloadItem> = emptyList(),
+    val completedInstanceId: InstanceId? = null,
 ) {
     val instanceList = instances.valueOrNull ?: emptyList()
     val selectedInstance = instanceList.find { it.id == selectedInstanceId }

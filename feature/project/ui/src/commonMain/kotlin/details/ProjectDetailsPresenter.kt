@@ -3,11 +3,13 @@ package app.vercors.feature.project.ui.details
 import androidx.compose.runtime.*
 import app.vercors.core.ui.state.produceProgressiveState
 import app.vercors.feature.instance.ui.details.InstanceDetailsScreen
+import app.vercors.feature.instance.ui.details.InstanceDetailsTab
 import app.vercors.feature.project.domain.model.ProjectType
 import app.vercors.feature.project.domain.usecase.GetProjectUseCase
 import app.vercors.feature.project.ui.install.InstallModpackDialog
 import app.vercors.feature.project.ui.install.InstallModpackResult
 import app.vercors.feature.project.ui.install.InstallProjectDialog
+import app.vercors.feature.project.ui.install.InstallProjectResult
 import app.vercors.shared.ui.Presenter
 import app.vercors.shared.ui.Store
 import com.slack.circuit.codegen.annotations.CircuitInject
@@ -63,6 +65,11 @@ class ProjectDetailsPresenter(
                 ProjectDetailsEvent.OnInstallClick -> promptInstall = true
                 is ProjectDetailsEvent.OnInstallResult -> {
                     promptInstall = false
+                    if (event.result is InstallProjectResult.GoToInstance) {
+                        navigator.goTo(
+                            InstanceDetailsScreen(event.result.instanceId, initialTab = type?.toInstanceDetailsTab())
+                        )
+                    }
                 }
 
                 is ProjectDetailsEvent.OnInstallModpackResult -> {
@@ -80,4 +87,13 @@ class ProjectDetailsPresenter(
     fun interface Factory {
         fun create(screen: ProjectDetailsScreen, navigator: Navigator): ProjectDetailsPresenter
     }
+}
+
+private fun ProjectType.toInstanceDetailsTab(): InstanceDetailsTab = when (this) {
+    ProjectType.Mod -> InstanceDetailsTab.Mods
+    ProjectType.ResourcePack -> InstanceDetailsTab.ResourcePacks
+    ProjectType.ShaderPack -> InstanceDetailsTab.ShaderPacks
+    ProjectType.DataPack -> InstanceDetailsTab.DataPacks
+    ProjectType.World -> InstanceDetailsTab.Worlds
+    ProjectType.Modpack -> InstanceDetailsTab.Options
 }

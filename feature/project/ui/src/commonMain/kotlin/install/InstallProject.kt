@@ -1,9 +1,6 @@
 package app.vercors.feature.project.ui.install
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -11,7 +8,6 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
 import app.vercors.core.ui.component.*
 import app.vercors.core.ui.layout.AppDialog
-import app.vercors.core.ui.layout.AppForm
 import app.vercors.core.ui.modifier.clickableText
 import app.vercors.core.ui.theme.*
 import app.vercors.feature.instance.domain.model.ManualDownloadItem
@@ -27,9 +23,19 @@ fun InstallProject(
 ) {
     val (state, eventSink) = store
 
-    AppDialog(onClickOutside = { eventSink(InstallProjectEvent.OnCancelClick) }) {
+    AppDialog(
+        onClickOutside = {
+            eventSink(
+                if (state.completedInstanceId != null) InstallProjectEvent.OnCloseClick
+                else InstallProjectEvent.OnCancelClick
+            )
+        }
+    ) {
         with(eventSink) {
-            AppForm {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                modifier = Modifier.width(IntrinsicSize.Max)
+            ) {
                 AppText(
                     text = stringResource(ProjectRes.string.installToInstance),
                     style = Theme[textStyles][title]
@@ -39,6 +45,9 @@ fun InstallProject(
                 FileSelector(state)
                 DependenciesSection(state)
                 ManualDownloadsSection(state)
+                if (state.installing || state.installProgress > 0f) {
+                    AppProgressIndicator(progress = state.installProgress, modifier = Modifier.fillMaxWidth())
+                }
                 ActionButtons(state)
             }
         }
@@ -140,18 +149,33 @@ private fun ManualDownloadRow(item: ManualDownloadItem) {
 context(eventSink: EventSink<InstallProjectEvent>)
 private fun ActionButtons(state: InstallProjectState) {
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        AppIconTextButton(
-            onClick = { eventSink(InstallProjectEvent.OnCancelClick) },
-            text = stringResource(SharedRes.string.cancel),
-            imageVector = Lucide.X,
-        )
-        AppIconTextButton(
-            onClick = { eventSink(InstallProjectEvent.OnConfirmClick) },
-            text = stringResource(ProjectRes.string.install),
-            imageVector = Lucide.Download,
-            backgroundColor = Theme[colors][primary],
-            contentColor = Theme[colors][onPrimary],
-            enabled = state.canInstall
-        )
+        if (state.completedInstanceId != null) {
+            AppIconTextButton(
+                onClick = { eventSink(InstallProjectEvent.OnCloseClick) },
+                text = stringResource(ProjectRes.string.close),
+                imageVector = Lucide.X,
+            )
+            AppIconTextButton(
+                onClick = { eventSink(InstallProjectEvent.OnGoToInstanceClick) },
+                text = stringResource(ProjectRes.string.goToInstance),
+                imageVector = Lucide.ArrowRight,
+                backgroundColor = Theme[colors][primary],
+                contentColor = Theme[colors][onPrimary],
+            )
+        } else {
+            AppIconTextButton(
+                onClick = { eventSink(InstallProjectEvent.OnCancelClick) },
+                text = stringResource(SharedRes.string.cancel),
+                imageVector = Lucide.X,
+            )
+            AppIconTextButton(
+                onClick = { eventSink(InstallProjectEvent.OnConfirmClick) },
+                text = stringResource(ProjectRes.string.install),
+                imageVector = Lucide.Download,
+                backgroundColor = Theme[colors][primary],
+                contentColor = Theme[colors][onPrimary],
+                enabled = state.canInstall
+            )
+        }
     }
 }

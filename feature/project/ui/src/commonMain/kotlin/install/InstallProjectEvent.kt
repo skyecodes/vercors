@@ -10,4 +10,6 @@ sealed interface InstallProjectEvent : Event {
     data class OnCopyUrlClick(val url: String) : InstallProjectEvent
     data object OnConfirmClick : InstallProjectEvent
     data object OnCancelClick : InstallProjectEvent
+    data object OnCloseClick : InstallProjectEvent
+    data object OnGoToInstanceClick : InstallProjectEvent
 }

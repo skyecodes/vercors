@@ -5,6 +5,7 @@ import app.vercors.core.ui.state.mutableProgressiveStateOf
 import app.vercors.feature.instance.domain.model.*
 import app.vercors.feature.instance.domain.usecase.*
 import app.vercors.feature.instance.ui.install.ModpackInstallRunner
+import app.vercors.feature.instance.ui.install.toFractionOrNull
 import app.vercors.feature.project.domain.model.ProjectDetailsError
 import app.vercors.feature.project.domain.model.ProjectId
 import app.vercors.feature.project.domain.model.modpack.ModpackManifest
@@ -52,6 +53,7 @@ class InstallModpackPresenter(
         var selectedFileId by remember { mutableStateOf<String?>(null) }
         var instanceName by remember { mutableStateOf(projectName) }
         var installing by remember { mutableStateOf(false) }
+        var installProgress by remember { mutableStateOf<Float?>(null) }
         var installJob by remember { mutableStateOf<Job?>(null) }
         val files = remember { mutableProgressiveStateOf<ProjectDetailsError, List<ProjectFileView>>() }
 
@@ -75,8 +77,10 @@ class InstallModpackPresenter(
                     val file = files.value.valueOrNull?.find { it.id == selectedFileId }
                     if (file != null && instanceName.length >= 3) {
                         installing = true
+                        installProgress = null
                         installJob = confirmInstall(
                             file, instanceName,
+                            onProgressChanged = { installProgress = it },
                             onInstanceCreated = { instanceId ->
                                 installing = false
                                 navigator.finish(InstallModpackResult.Installed(instanceId))
@@ -95,7 +99,8 @@ class InstallModpackPresenter(
             files = files.value,
             selectedFileId = selectedFileId,
             instanceName = instanceName,
-            installing = installing
+            installing = installing,
+            installProgress = installProgress
         ) + ::handleEvent
     }
 
@@ -113,13 +118,14 @@ class InstallModpackPresenter(
     private fun confirmInstall(
         file: ProjectFileView,
         instanceName: String,
+        onProgressChanged: (Float?) -> Unit,
         onInstanceCreated: (InstanceId) -> Unit,
         onFinished: () -> Unit
     ): Job {
         var createdInstanceId: InstanceId? = null
         lateinit var job: Job
         job = globalScope.launch {
-            val manifest = resolveManifestOrNull(file) ?: run {
+            val manifest = resolveManifestOrNull(file, onProgressChanged) ?: run {
                 onFinished()
                 return@launch
             }
@@ -153,8 +159,13 @@ class InstallModpackPresenter(
         return job
     }
 
-    private suspend fun resolveManifestOrNull(file: ProjectFileView): ModpackManifest? =
-        recover({ getModpackManifest(projectId, file.id) }) { error: ModpackResolutionError ->
+    private suspend fun resolveManifestOrNull(
+        file: ProjectFileView,
+        onProgressChanged: (Float?) -> Unit
+    ): ModpackManifest? =
+        recover({
+            getModpackManifest(projectId, file.id) { progress -> onProgressChanged(progress.toFractionOrNull()) }
+        }) { error: ModpackResolutionError ->
             snackbarService.error { error.message }
             null
         }

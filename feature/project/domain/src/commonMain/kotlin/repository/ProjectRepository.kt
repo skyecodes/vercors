@@ -37,22 +37,22 @@ interface ProjectRepository {
     suspend fun getProjectFiles(projectId: ProjectId, gameVersion: String?, loader: ModLoaderType?): List<ProjectFile>
 
     context(_: Raise<ProjectFileDownloadError>)
-    suspend fun downloadProjectFile(
-        projectId: ProjectId,
-        fileId: String,
-        fileName: String,
+    suspend fun downloadProjectFiles(
+        candidates: List<ProjectFileDownloadCandidate>,
         instanceId: String,
         type: ProjectType,
-        size: Long?,
-        sha1: String?,
-        md5: String?
+        onProgress: (Progress) -> Unit = {}
     )
 
     context(_: Raise<ProjectDetailsError>)
     suspend fun getProjectFile(projectId: ProjectId, fileId: String): ProjectFile
 
     context(_: Raise<ModpackResolutionError>)
-    suspend fun getModpackManifest(projectId: ProjectId, fileId: String): ModpackManifest
+    suspend fun getModpackManifest(
+        projectId: ProjectId,
+        fileId: String,
+        onProgress: (Progress) -> Unit = {}
+    ): ModpackManifest
 
     context(_: Raise<ModpackResolutionError>)
     suspend fun resolveModpackManifestFiles(

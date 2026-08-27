@@ -11,7 +11,7 @@ import app.vercors.feature.instance.domain.usecase.RecordInstalledContentOriginU
 import app.vercors.feature.project.domain.model.ProjectId
 import app.vercors.feature.project.domain.model.ProjectType
 import app.vercors.feature.project.domain.usecase.AwaitManualDownloadUseCase
-import app.vercors.feature.project.domain.usecase.DownloadProjectFileUseCase
+import app.vercors.feature.project.domain.usecase.DownloadProjectFilesUseCase
 import app.vercors.feature.project.domain.usecase.GetProjectFilesUseCase
 import app.vercors.feature.project.domain.usecase.GetProjectUseCase
 import app.vercors.shared.domain.usecase.CopyToClipboardUseCase
@@ -26,6 +26,7 @@ import kotlinx.coroutines.CoroutineScope
 
 sealed interface InstallProjectResult {
     data class Installed(val instanceId: InstanceId) : InstallProjectResult
+    data class GoToInstance(val instanceId: InstanceId) : InstallProjectResult
     data object Cancelled : InstallProjectResult
 }
 
@@ -40,7 +41,7 @@ class InstallProjectDialog(
     private val observeInstalledContent: ObserveInstalledContentUseCase,
     private val getProject: GetProjectUseCase,
     private val getProjectFiles: GetProjectFilesUseCase,
-    private val downloadProjectFile: DownloadProjectFileUseCase,
+    private val downloadProjectFiles: DownloadProjectFilesUseCase,
     private val awaitManualDownload: AwaitManualDownloadUseCase,
     private val recordInstalledContentOrigin: RecordInstalledContentOriginUseCase,
     private val copyToClipboard: CopyToClipboardUseCase,
@@ -63,7 +64,7 @@ class InstallProjectDialog(
                 observeInstalledContent = observeInstalledContent,
                 getProject = getProject,
                 getProjectFiles = getProjectFiles,
-                downloadProjectFile = downloadProjectFile,
+                downloadProjectFiles = downloadProjectFiles,
                 awaitManualDownload = awaitManualDownload,
                 recordInstalledContentOrigin = recordInstalledContentOrigin,
                 copyToClipboard = copyToClipboard,

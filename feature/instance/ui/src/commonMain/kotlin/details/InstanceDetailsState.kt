@@ -77,16 +77,6 @@ data class InstanceDetailsState(
                 isJvmMemoryOptionsEdited || isNativeLibraryOptionsEdited
 }
 
-enum class InstanceDetailsTab {
-    Options,
-    Mods,
-    ResourcePacks,
-    ShaderPacks,
-    DataPacks,
-    Worlds,
-    Logs
-}
-
 @Immutable
 data class InstanceView(
     val id: InstanceId,
