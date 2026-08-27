@@ -77,7 +77,11 @@ class ProjectListPresenter(
                         ProjectType.entries.first { it in types }
                     },
                     selectedLoaders = selectedLoaders.ifEmpty {
-                        screen.initialLoader?.let { listOf(it) } ?: emptyList()
+                        if (screen.initialType?.requiresLoader == true) {
+                            screen.initialLoader?.let { listOf(it) } ?: emptyList()
+                        } else {
+                            emptyList()
+                        }
                     }
                 )
             }
