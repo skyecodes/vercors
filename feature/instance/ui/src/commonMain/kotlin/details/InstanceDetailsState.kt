@@ -32,6 +32,9 @@ data class InstanceDetailsState(
     val selectedTab: InstanceDetailsTab,
     val promptDeleteConfirmation: Boolean,
     val logs: List<InstanceLogEventView>?,
+    val logSearchQuery: String = "",
+    val logLevelFilter: Set<InstanceLogEventView.Level> = InstanceLogEventView.Level.entries.toSet(),
+    val wrapLogLines: Boolean = true,
     val installedMods: List<InstalledContentFileView>?,
     val installedResourcePacks: List<InstalledContentFileView>?,
     val installedShaderPacks: List<InstalledContentFileView>?,
@@ -75,6 +78,12 @@ data class InstanceDetailsState(
     val isInstanceEdited: Boolean =
         isNameEdited || isGameVersionEdited || isModLoaderEdited || isJavaOverrideEdited ||
                 isJvmMemoryOptionsEdited || isNativeLibraryOptionsEdited
+    val filteredLogs = logs?.filter {
+        it.level in logLevelFilter && (logSearchQuery.isBlank() || it.message.contains(
+            logSearchQuery,
+            ignoreCase = true
+        ))
+    }
 }
 
 @Immutable

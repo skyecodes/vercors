@@ -2,14 +2,18 @@ package app.vercors.feature.instance.ui.details
 
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
+import app.vercors.core.domain.toggle
 import app.vercors.core.system.OsType
 import app.vercors.core.system.SystemService
+import app.vercors.core.ui.state.collectProgressiveAsState
 import app.vercors.core.ui.state.produceAndCollectAsProgressiveState
 import app.vercors.core.ui.state.update
 import app.vercors.feature.account.domain.service.LoginState
 import app.vercors.feature.account.domain.usecase.LoginUseCase
 import app.vercors.feature.account.ui.list.LoginDialog
 import app.vercors.feature.account.ui.list.LoginStateView
+import app.vercors.feature.config.domain.usecase.ObserveConfigurationUseCase
+import app.vercors.feature.config.domain.usecase.UpdateConfigurationUseCase
 import app.vercors.feature.game.domain.model.*
 import app.vercors.feature.game.domain.usecase.*
 import app.vercors.feature.game.ui.GameVersionView
@@ -106,6 +110,8 @@ class InstanceDetailsPresenter(
     private val getTotalPhysicalMemory: GetTotalPhysicalMemoryUseCase,
     private val detectNativeLibraryPath: DetectNativeLibraryPathUseCase,
     private val systemService: SystemService,
+    private val observeConfiguration: ObserveConfigurationUseCase,
+    private val updateConfiguration: UpdateConfigurationUseCase,
 ) : Presenter<InstanceDetailsState, InstanceDetailsEvent> {
     @Composable
     override fun present(): Store<InstanceDetailsState, InstanceDetailsEvent> {
@@ -135,6 +141,11 @@ class InstanceDetailsPresenter(
         val (selectedTab, setSelectedTab) = rememberSaveable {
             mutableStateOf(screen.initialTab ?: InstanceDetailsTab.Options)
         }
+        val (logSearchQuery, setLogSearchQuery) = rememberSaveable { mutableStateOf("") }
+        val (logLevelFilter, setLogLevelFilter) = rememberSaveable {
+            mutableStateOf(InstanceLogEventView.Level.entries.toSet())
+        }
+        val configuration by observeConfiguration().collectProgressiveAsState()
         val (editedInstance, setEditedInstance) = rememberSaveable { mutableStateOf(InstanceEditState()) }
         val totalMemoryMb = remember {
             ((getTotalPhysicalMemory() ?: (16384L * 1024 * 1024)) / (1024 * 1024)).toInt()
@@ -188,6 +199,9 @@ class InstanceDetailsPresenter(
             promptDeleteConfirmation = promptDeleteConfirmation,
             selectedTab = selectedTab,
             logs = logs,
+            logSearchQuery = logSearchQuery,
+            logLevelFilter = logLevelFilter,
+            wrapLogLines = configuration.valueOrNull?.wrapLogLines ?: true,
             installedMods = installedMods,
             installedResourcePacks = installedResourcePacks,
             installedShaderPacks = installedShaderPacks,
@@ -218,7 +232,10 @@ class InstanceDetailsPresenter(
                 javaInstallState = javaInstallState,
                 setPromptJavaInstall = setPromptJavaInstall,
                 javaInstallJob = javaInstallJob,
-                setJavaInstallJob = setJavaInstallJob
+                setJavaInstallJob = setJavaInstallJob,
+                logLevelFilter = logLevelFilter,
+                setLogSearchQuery = setLogSearchQuery,
+                setLogLevelFilter = setLogLevelFilter
             )
         }
     }
@@ -242,7 +259,10 @@ class InstanceDetailsPresenter(
         javaInstallState: MutableState<JavaInstallProgressView>,
         setPromptJavaInstall: (Boolean) -> Unit,
         javaInstallJob: Job?,
-        setJavaInstallJob: (Job?) -> Unit
+        setJavaInstallJob: (Job?) -> Unit,
+        logLevelFilter: Set<InstanceLogEventView.Level>,
+        setLogSearchQuery: (String) -> Unit,
+        setLogLevelFilter: (Set<InstanceLogEventView.Level>) -> Unit
     ) {
         if (handleLifecycleEvent(
                 event,
@@ -262,7 +282,30 @@ class InstanceDetailsPresenter(
         ) return
         if (handleEditEvent(event, editedInstance, setEditedInstance, setSelectedTab)) return
         if (handleContentEvent(event, promptRemoveConfirmation, setPromptRemoveConfirmation)) return
+        if (handleLogsEvent(event, logLevelFilter, setLogSearchQuery, setLogLevelFilter)) return
         handleNavigationAndMiscEvent(event, currentInstance, setPromptFinishInstallation)
+    }
+
+    /** Search/filter/wrap-lines events for the Logs tab. Returns whether [event] was one of these. */
+    private fun handleLogsEvent(
+        event: InstanceDetailsEvent,
+        logLevelFilter: Set<InstanceLogEventView.Level>,
+        setLogSearchQuery: (String) -> Unit,
+        setLogLevelFilter: (Set<InstanceLogEventView.Level>) -> Unit
+    ): Boolean {
+        when (event) {
+            is InstanceDetailsEvent.OnLogSearchQueryChange -> setLogSearchQuery(event.query)
+            is InstanceDetailsEvent.OnLogLevelFilterToggle -> setLogLevelFilter(
+                logLevelFilter.toggle(event.level).toSet()
+            )
+
+            InstanceDetailsEvent.OnWrapLogLinesToggle -> globalScope.launch {
+                updateConfiguration { copy(wrapLogLines = !wrapLogLines) }
+            }
+
+            else -> return false
+        }
+        return true
     }
 
     /** Launch/stop/delete and other whole-instance lifecycle events. Returns whether [event] was one of these. */

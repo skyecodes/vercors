@@ -40,4 +40,7 @@ sealed interface InstanceDetailsEvent : Event {
     data object OnResumeInstallationClick : InstanceDetailsEvent
     data object CancelLogin : InstanceDetailsEvent
     data object OnJavaInstallDialogDismiss : InstanceDetailsEvent
+    data class OnLogSearchQueryChange(val query: String) : InstanceDetailsEvent
+    data class OnLogLevelFilterToggle(val level: InstanceLogEventView.Level) : InstanceDetailsEvent
+    data object OnWrapLogLinesToggle : InstanceDetailsEvent
 }

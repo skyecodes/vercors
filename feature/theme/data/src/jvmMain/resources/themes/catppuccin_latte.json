@@ -14,7 +14,8 @@
     "onSuccess": "#DCE0E8",
     "warn": "#FE640B",
     "surface": "#CCD0DA",
-    "surface2": "#BCC0CC"
+    "surface2": "#BCC0CC",
+    "surface3": "#ACB0BE"
   },
   "accents": [
     {

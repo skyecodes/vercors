@@ -5,6 +5,7 @@ import app.vercors.feature.account.domain.model.Account
 import app.vercors.feature.game.domain.model.GameAssetIndex
 import app.vercors.feature.game.domain.model.GameVersionDetails
 import app.vercors.feature.instance.domain.model.Instance
+import app.vercors.feature.instance.domain.model.InstanceLogEvent
 import app.vercors.feature.launcher.domain.model.InstanceLaunchEvent
 import app.vercors.feature.launcher.domain.model.InstanceLaunchFeature
 import app.vercors.feature.launcher.domain.service.LaunchRuleEvaluator
@@ -73,12 +74,50 @@ class LauncherServiceImpl(
             jvmMemoryOptions,
             nativeLibraryOptions
         )
+        logLaunchCommand(command, effectiveVersion.mainClass, account)
         val gameDir = appPaths.gameDir(instance.id)
         gameDir.createDirectories()
         val runJob = launch { runCommand(command, gameDir, effectiveVersion.clientLogging?.type) }
         send(InstanceLaunchEvent.Running { runJob.cancel() })
         runJob.join()
         logger.info { "Instance ${instance.name} finished" }
+    }
+
+    /**
+     * Surfaces what's actually being launched in the instance's log — java executable, JVM arguments, program
+     * arguments — with [account]'s username/uuid/access token redacted (the access token in particular appears
+     * under two different variable names, legacy and modern, in [command] — see [LaunchVariables.toMap] — so
+     * redaction matches by value, not by flag name).
+     */
+    private suspend fun ProducerScope<InstanceLaunchEvent>.logLaunchCommand(
+        command: List<String>,
+        mainClass: String,
+        account: Account
+    ) {
+        val censored = command.map { arg ->
+            when (arg) {
+                account.username -> "<username>"
+                account.id.toString() -> "<uuid>"
+                account.accessToken -> "<access_token>"
+                else -> arg
+            }
+        }
+        val mainClassIndex = censored.indexOf(mainClass).let { if (it >= 0) it else censored.size }
+        send(InstanceLaunchEvent.Logging(InstanceLogEvent.Launcher("Java: ${censored.firstOrNull().orEmpty()}")))
+        send(
+            InstanceLaunchEvent.Logging(
+                InstanceLogEvent.Launcher(
+                    "JVM arguments: ${censored.subList(1, mainClassIndex.coerceAtLeast(1)).joinToString(" ")}"
+                )
+            )
+        )
+        send(
+            InstanceLaunchEvent.Logging(
+                InstanceLogEvent.Launcher(
+                    "Command arguments: ${censored.subList(mainClassIndex, censored.size).joinToString(" ")}"
+                )
+            )
+        )
     }
 
     context(scope: ProducerScope<InstanceLaunchEvent>, _: Raise<NonEmptyList<FileValidationFailure>>)

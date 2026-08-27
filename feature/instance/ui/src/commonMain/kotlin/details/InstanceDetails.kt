@@ -58,6 +58,7 @@ import dev.zacsweers.metro.AppScope
 import io.github.vinceglb.filekit.dialogs.FileKitType
 import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
 import io.github.vinceglb.filekit.path
+import kotlinx.coroutines.flow.filter
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.format
@@ -201,7 +202,7 @@ private fun InstanceDetailsTabContent(tab: InstanceDetailsTab, instance: Instanc
         InstanceDetailsTab.ShaderPacks -> InstanceShaderPacksTab(state)
         InstanceDetailsTab.DataPacks -> InstanceDataPacksTab(state)
         InstanceDetailsTab.Worlds -> InstanceWorldsTab(state)
-        InstanceDetailsTab.Logs -> state.logs?.let { logs -> InstanceLogsTab(logs) }
+        InstanceDetailsTab.Logs -> state.logs?.let { InstanceLogsTab(state) }
     }
 }
 
@@ -1165,38 +1166,89 @@ private fun InstanceWorldsTab(state: InstanceDetailsState) {
 }
 
 @Composable
-private fun InstanceLogsTab(logs: List<InstanceLogEventView>) {
-    val scrollState = rememberScrollState()
-    SelectionContainer(modifier = Modifier.fillMaxSize()) {
-        Column(
-            modifier = Modifier.fillMaxSize().appCard().padding(horizontal = 8.dp).verticalScroll(scrollState),
-            verticalArrangement = Arrangement.spacedBy(2.dp)
-        ) {
-            ProvideTextStyle(Theme[textStyles][console]) {
-                logs.forEachIndexed { index, it ->
-                    InstanceLogMessage(it, index, logs)
+context(eventSink: EventSink<InstanceDetailsEvent>)
+private fun InstanceLogsTab(state: InstanceDetailsState) {
+    val logs = state.filteredLogs ?: emptyList()
+    val listState = rememberLazyListState()
+    val horizontalScrollState = rememberScrollState()
+    var stickToBottom by remember { mutableStateOf(true) }
+
+    LaunchedEffect(listState) {
+        snapshotFlow { listState.isScrollInProgress }
+            .filter { inProgress -> !inProgress }
+            .collect { stickToBottom = !listState.canScrollForward }
+    }
+    LaunchedEffect(logs) {
+        if (stickToBottom && logs.isNotEmpty()) listState.scrollToItem(logs.lastIndex)
+    }
+
+    Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        InstanceLogsFilterBar(state)
+
+        SelectionContainer(modifier = Modifier.weight(1f)) {
+            Column(modifier = Modifier.appCard()) {
+                Row(modifier = Modifier.weight(1f)) {
+                    LazyColumn(
+                        state = listState,
+                        modifier = Modifier.weight(1f).padding(horizontal = 8.dp)
+                            .let { m -> if (state.wrapLogLines) m else m.horizontalScroll(horizontalScrollState) },
+                        verticalArrangement = Arrangement.spacedBy(2.dp),
+                        contentPadding = PaddingValues(vertical = 8.dp)
+                    ) {
+                        items(logs) { logEvent ->
+                            ProvideTextStyle(Theme[textStyles][console]) {
+                                InstanceLogMessage(logEvent, state.wrapLogLines)
+                            }
+                        }
+                    }
+                    VerticalScrollbar(adapter = rememberScrollbarAdapter(listState))
+                }
+                if (!state.wrapLogLines) {
+                    HorizontalScrollbar(
+                        adapter = rememberScrollbarAdapter(horizontalScrollState),
+                        modifier = Modifier.fillMaxWidth().padding(end = 12.dp)
+                    )
                 }
             }
         }
+    }
+}
 
-        LaunchedEffect(logs) {
-            scrollState.scrollTo(scrollState.maxValue)
-        }
+@Composable
+context(eventSink: EventSink<InstanceDetailsEvent>)
+private fun InstanceLogsFilterBar(state: InstanceDetailsState) {
+    Row(
+        modifier = Modifier.appCard().padding(8.dp).fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        AppMultiSelectField(
+            values = state.logLevelFilter,
+            items = InstanceLogEventView.Level.entries,
+            onValueChange = { eventSink(InstanceDetailsEvent.OnLogLevelFilterToggle(it)) },
+            itemRenderer = { value, _ -> AppSelectItem(text = value.name) },
+        )
+        AppTextField(
+            initialValue = state.logSearchQuery,
+            onValueChange = { eventSink(InstanceDetailsEvent.OnLogSearchQueryChange(it)) },
+            placeholder = { AppText(stringResource(CoreRes.string.search)) },
+            modifier = Modifier.weight(1f)
+        )
+        AppCheckbox(
+            label = stringResource(InstanceRes.string.wrapLines),
+            checked = state.wrapLogLines,
+            onCheckedChange = { eventSink(InstanceDetailsEvent.OnWrapLogLinesToggle) }
+        )
     }
 }
 
 @Composable
 private fun InstanceLogMessage(
     it: InstanceLogEventView,
-    index: Int,
-    logs: List<InstanceLogEventView>
+    wrapLines: Boolean,
 ) {
     Row(
-        modifier = when (index) {
-            0 -> Modifier.padding(top = 8.dp)
-            logs.lastIndex -> Modifier.padding(bottom = 8.dp)
-            else -> Modifier
-        }.height(IntrinsicSize.Max),
+        modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Max),
         horizontalArrangement = Arrangement.spacedBy(4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -1238,7 +1290,8 @@ private fun InstanceLogMessage(
             }
             AppText(
                 text = it.message,
-                color = color
+                color = color,
+                maxLines = if (wrapLines) Int.MAX_VALUE else 1,
             )
         }
     }

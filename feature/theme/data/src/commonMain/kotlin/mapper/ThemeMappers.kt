@@ -31,6 +31,7 @@ fun ThemeDefinitionData.toDomain(source: ThemeSource): ThemeDefinition {
             warn = parseColor("warn", colors.warn),
             surface = parseColor("surface", colors.surface),
             surface2 = parseColor("surface2", colors.surface2),
+            surface3 = parseColor("surface3", colors.surface3)
         ),
         accents = accents.map {
             ThemeNamedColor(

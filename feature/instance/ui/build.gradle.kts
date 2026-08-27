@@ -10,6 +10,7 @@ dependencies {
     commonMainImplementation(projects.feature.project.domain)
     commonMainImplementation(projects.feature.project.ui.screen)
     commonMainImplementation(projects.feature.account.ui)
+    commonMainImplementation(projects.feature.config.domain)
     commonMainImplementation(libs.kotlinx.datetime)
     commonMainImplementation(libs.filekit.dialogs.compose)
 }

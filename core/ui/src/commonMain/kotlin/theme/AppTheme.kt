@@ -38,6 +38,7 @@ val onSuccess = ThemeToken<Color>("on_success")
 val warn = ThemeToken<Color>("warn")
 val surface = ThemeToken<Color>("surface")
 val surface2 = ThemeToken<Color>("surface2")
+val surface3 = ThemeToken<Color>("surface3")
 
 val fonts = ThemeProperty<FontFamily>("fonts")
 val standard = ThemeToken<FontFamily>("standard")
@@ -132,6 +133,7 @@ private fun ThemeColors.toColor(accentColor: Long) = ConvertedThemeColors(
     warnColor = warn.toColor(accentColor),
     surfaceColor = surface.toColor(accentColor),
     surface2Color = surface2.toColor(accentColor),
+    surface3Color = surface3.toColor(accentColor),
 )
 
 private fun ThemeColor.toColor(accentColor: Long): Color = when (this) {
@@ -170,6 +172,7 @@ private fun Transition<ConvertedThemeColors>.animateThemeColors(): ConvertedThem
         warnColor = animate("warn") { it.warnColor },
         surfaceColor = animate("surface") { it.surfaceColor },
         surface2Color = animate("surface2") { it.surface2Color },
+        surface3Color = animate("surface3") { it.surface3Color }
     )
 }
 
@@ -186,6 +189,7 @@ private fun ConvertedThemeColors.toThemeMap() = mapOf(
     warn to warnColor,
     surface to surfaceColor,
     surface2 to surface2Color,
+    surface3 to surface3Color,
 )
 
 private data class ConvertedThemeColors(
@@ -201,4 +205,5 @@ private data class ConvertedThemeColors(
     val warnColor: Color,
     val surfaceColor: Color,
     val surface2Color: Color,
+    val surface3Color: Color,
 )

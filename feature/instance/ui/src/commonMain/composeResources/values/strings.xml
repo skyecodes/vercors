@@ -96,6 +96,7 @@
     <string name="noResourcePacksInstalled">No resource packs installed</string>
     <string name="noShaderPacksInstalled">No shader packs installed</string>
     <string name="noMatchingFiles">No matching files found</string>
+    <string name="wrapLines">Wrap lines</string>
 
     <string name="showOnlyEnabled">Only show enabled</string>
     <string name="sortByName">Name</string>

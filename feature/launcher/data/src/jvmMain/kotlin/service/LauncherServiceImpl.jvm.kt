@@ -26,8 +26,6 @@ internal actual suspend fun ProducerScope<InstanceLaunchEvent>.runCommand(
     context: CoroutineContext
 ) = withContext(context) {
     val processBuilder = ProcessBuilder(command).directory(File(workingDir.toString()))
-    logger.info { "Starting instance run at $workingDir" }
-    sendLog(InstanceLogEvent.Launcher("Starting instance run at $workingDir"))
     sendLog(InstanceLogEvent.Empty)
     logger.trace { "Running command: $command" }
     System.gc()

@@ -26,6 +26,7 @@ data class ThemeColorsData(
     val warn: String,
     val surface: String,
     val surface2: String,
+    val surface3: String,
 )
 
 @Serializable

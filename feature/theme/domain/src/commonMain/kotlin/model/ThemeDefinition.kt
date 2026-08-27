@@ -30,6 +30,7 @@ data class ThemeColors(
     val warn: ThemeColor,
     val surface: ThemeColor,
     val surface2: ThemeColor,
+    val surface3: ThemeColor,
 )
 
 data class ThemeNamedColor(

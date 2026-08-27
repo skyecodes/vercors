@@ -18,6 +18,7 @@ data class Configuration(
     val javaInstallations: List<JavaInstallation> = emptyList(),
     val jvmMemoryOptions: JvmMemoryOptions = JvmMemoryOptions(),
     val nativeLibraryOptions: NativeLibraryOptions = NativeLibraryOptions(),
+    val wrapLogLines: Boolean = true,
 ) {
     companion object {
         const val DEFAULT_THEME_ID = "catppuccin_mocha"
@@ -37,6 +38,7 @@ data class Configuration(
             javaInstallations = emptyList(),
             jvmMemoryOptions = JvmMemoryOptions(),
             nativeLibraryOptions = NativeLibraryOptions(),
+            wrapLogLines = true,
         )
     }
 }
