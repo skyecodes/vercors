@@ -17,6 +17,7 @@ import app.vercors.feature.instance.domain.model.InstanceId
 import app.vercors.feature.instance.domain.model.InstanceLogEvent
 import app.vercors.feature.instance.domain.model.InstanceStatus
 import app.vercors.feature.instance.domain.repository.InstanceRepository
+import app.vercors.feature.instance.domain.usecase.UpdateInstanceUseCase
 import app.vercors.feature.launcher.domain.model.InstanceLaunchError
 import app.vercors.feature.launcher.domain.model.InstanceLaunchEvent
 import app.vercors.feature.launcher.domain.service.LauncherService
@@ -24,6 +25,7 @@ import app.vercors.shared.domain.model.JvmMemoryOptions
 import app.vercors.shared.domain.model.NativeLibraryOptions
 import arrow.core.raise.Raise
 import arrow.core.raise.RaiseCancellationException
+import arrow.core.raise.context.either
 import arrow.core.raise.context.raise
 import arrow.core.raise.context.withError
 import dev.zacsweers.metro.Inject
@@ -32,8 +34,15 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.lastOrNull
 import kotlinx.coroutines.flow.onEach
+import kotlin.time.Clock
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.Instant
 
 private val logger = KotlinLogging.logger {}
+
+/** How often a running instance's [Instance.playTime]/[Instance.lastPlayedAt] are persisted while playing. */
+private val PLAYTIME_TICK_INTERVAL = 30.seconds
 
 @Inject
 class LaunchInstanceUseCase(
@@ -47,6 +56,7 @@ class LaunchInstanceUseCase(
     private val resolveJvmMemoryOptions: ResolveJvmMemoryOptionsUseCase,
     private val resolveNativeLibraryOptions: ResolveNativeLibraryOptionsUseCase,
     private val launcherService: LauncherService,
+    private val updateInstance: UpdateInstanceUseCase,
     private val coroutineScope: CoroutineScope,
 ) {
     context(_: Raise<InstanceLaunchError>)
@@ -67,32 +77,75 @@ class LaunchInstanceUseCase(
             return
         } ?: return
 
-        launcherService.launch(
-            instance = instance,
-            account = account,
-            version = version,
-            assetIndex = assetIndex,
-            features = emptyList(),
-            javaExecutable = javaExecutable,
-            jvmMemoryOptions = jvmMemoryOptions,
-            nativeLibraryOptions = nativeLibraryOptions
-        ).catch {
-            when (it) {
-                is CancellationException -> {
-                    instanceRepository.updateInstanceStatus(instanceId, InstanceStatus.Idle)
-                    currentCoroutineContext().ensureActive()
-                }
+        var playtimeJob: Job? = null
+        try {
+            launcherService.launch(
+                instance = instance,
+                account = account,
+                version = version,
+                assetIndex = assetIndex,
+                features = emptyList(),
+                javaExecutable = javaExecutable,
+                jvmMemoryOptions = jvmMemoryOptions,
+                nativeLibraryOptions = nativeLibraryOptions
+            ).catch {
+                when (it) {
+                    is CancellationException -> {
+                        instanceRepository.updateInstanceStatus(instanceId, InstanceStatus.Idle)
+                        currentCoroutineContext().ensureActive()
+                    }
 
-                is Exception -> {
-                    logger.error(it) { "Unknown error" }
-                    instanceRepository.updateInstanceStatus(instanceId, InstanceStatus.Failed.Unknown(it))
-                }
+                    is Exception -> {
+                        logger.error(it) { "Unknown error" }
+                        instanceRepository.updateInstanceStatus(instanceId, InstanceStatus.Failed.Unknown(it))
+                    }
 
-                else -> throw it
+                    else -> throw it
+                }
+            }.collect { event ->
+                onLaunchEvent(event, instanceId)
+                if (event is InstanceLaunchEvent.Running) {
+                    playtimeJob = coroutineScope.launch { trackPlaytime(instanceId, instance.playTime) }
+                }
             }
-        }.collect { onLaunchEvent(it, instanceId) }
+        } finally {
+            playtimeJob?.cancelAndJoin()
+        }
 
         instanceRepository.updateInstanceStatus(instanceId, InstanceStatus.Idle)
+    }
+
+    /**
+     * Persists [instanceId]'s [Instance.playTime]/[Instance.lastPlayedAt] every [PLAYTIME_TICK_INTERVAL] while the
+     * instance is running, plus once immediately on start and once more on stop — so the values stay live without
+     * writing to disk more often than necessary (the reactive instance list only updates once the filesystem
+     * watcher picks up each write). [baselinePlayTime] is the instance's playtime *before* this session started;
+     * each persist recomputes the total from [baselinePlayTime] + elapsed-since-session-start, rather than
+     * incrementing tick-over-tick, so a delayed or duplicated tick can never double-count.
+     */
+    private suspend fun trackPlaytime(instanceId: InstanceId, baselinePlayTime: Duration) {
+        val sessionStart = Clock.System.now()
+        try {
+            persistPlaytime(instanceId, baselinePlayTime, sessionStart)
+            while (true) {
+                delay(PLAYTIME_TICK_INTERVAL)
+                persistPlaytime(instanceId, baselinePlayTime, sessionStart)
+            }
+        } finally {
+            withContext(NonCancellable) { persistPlaytime(instanceId, baselinePlayTime, sessionStart) }
+        }
+    }
+
+    private suspend fun persistPlaytime(instanceId: InstanceId, baselinePlayTime: Duration, sessionStart: Instant) {
+        val now = Clock.System.now()
+        either {
+            updateInstance(instanceId) {
+                it.copy(
+                    playTime = baselinePlayTime + (now - sessionStart),
+                    lastPlayedAt = now
+                )
+            }
+        }.onLeft { error -> logger.warn { "Failed to persist playtime for $instanceId: $error" } }
     }
 
     context(_: Raise<InstanceLaunchError>)
