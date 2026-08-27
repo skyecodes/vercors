@@ -5,6 +5,9 @@ import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
 import dev.zacsweers.metro.SingleIn
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import oshi.SystemInfo
 import java.awt.Desktop
 import java.awt.Toolkit
@@ -15,7 +18,9 @@ private val logger = KotlinLogging.logger {}
 
 @SingleIn(AppScope::class)
 @ContributesBinding(AppScope::class)
-actual class SystemServiceImpl : SystemService {
+actual class SystemServiceImpl(
+    coroutineScope: CoroutineScope
+) : SystemService {
     actual override val osType: OsType = System.getProperty("os.name").lowercase().let { name ->
         when {
             name.startsWith("windows") -> OsType.Windows
@@ -42,9 +47,25 @@ actual class SystemServiceImpl : SystemService {
         Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.OPEN)
     }
 
-    actual override val totalPhysicalMemoryBytes: Long? by lazy {
-        runCatching { SystemInfo().hardware.memory.total }.getOrNull()
+    // SystemInfo() performs slow native hardware enumeration (JNA) — the first synchronous access to this
+    // property used to cause a noticeable UI freeze (e.g. opening Settings or an instance's details for the
+    // first time). Warm it on a background thread as soon as this singleton is constructed instead; the
+    // getter below only blocks if something reads the property before that warm-up finishes.
+    @Volatile
+    private var cachedTotalPhysicalMemoryBytes: Long? = null
+
+    init {
+        coroutineScope.launch(Dispatchers.IO) {
+            cachedTotalPhysicalMemoryBytes = queryTotalPhysicalMemoryBytes()
+        }
     }
+
+    private fun queryTotalPhysicalMemoryBytes(): Long? =
+        runCatching { SystemInfo().hardware.memory.total }.getOrNull()
+
+    actual override val totalPhysicalMemoryBytes: Long?
+        get() = cachedTotalPhysicalMemoryBytes
+            ?: queryTotalPhysicalMemoryBytes().also { cachedTotalPhysicalMemoryBytes = it }
 
     actual override fun copyToClipboard(text: String) = canCopyToClipboard && catch({
         Toolkit.getDefaultToolkit().systemClipboard.setContents(StringSelection(text), null)
