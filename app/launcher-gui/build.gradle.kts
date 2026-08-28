@@ -49,7 +49,6 @@ dependencies {
     commonMainImplementation(libs.nucleus.composenativetray)
     commonMainImplementation(libs.coil.compose)
     commonMainImplementation(libs.cryptography.provider.optimal)
-    commonMainImplementation(libs.kotlinx.coroutines.swing)
     commonMainImplementation(libs.logback)
     commonMainImplementation(libs.coil.network.ktor3)
     commonMainImplementation(libs.kotlinx.io.core)
