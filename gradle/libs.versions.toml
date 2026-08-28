@@ -38,6 +38,7 @@ coil = "3.6.0"
 markdown-renderer = "0.45.0"
 webview = "2.0.3"
 nucleusframework = "2.5.5"
+composenativetray = "2.1.3"
 filekit = "0.15.0"
 # CLI
 clikt = "5.1.0"
@@ -132,6 +133,7 @@ nucleus-notification-windows = { module = "dev.nucleusframework:nucleus.notifica
 nucleus-notification-linux = { module = "dev.nucleusframework:nucleus.notification-linux", version.ref = "nucleusframework" }
 nucleus-notification-macos = { module = "dev.nucleusframework:nucleus.notification-macos", version.ref = "nucleusframework" }
 nucleus-taskbar-progress-tao = { module = "dev.nucleusframework:nucleus.taskbar-progress-tao", version.ref = "nucleusframework" }
+nucleus-composenativetray = { module = "dev.nucleusframework:composenativetray", version.ref = "composenativetray" }
 # CLI
 clikt = { module = "com.github.ajalt.clikt:clikt", version.ref = "clikt" }
 mordant-coroutines = { module = "com.github.ajalt.mordant:mordant-coroutines", version.ref = "mordant" }

@@ -1,6 +1,7 @@
 package app.vercors.launcher.gui
 
 import app.vercors.core.network.MetaApiConnectivityPoller
+import app.vercors.feature.instance.domain.usecase.ObserveInstanceListUseCase
 import app.vercors.shared.data.AppPaths
 import app.vercors.shared.ui.SnackbarService
 import com.slack.circuit.foundation.Circuit
@@ -22,6 +23,7 @@ internal interface AppGraph {
     val snackbarService: SnackbarService
     val metaApiConnectivityPoller: MetaApiConnectivityPoller
     val httpClient: HttpClient
+    val observeInstanceList: ObserveInstanceListUseCase
 
     @Provides
     @SingleIn(AppScope::class)

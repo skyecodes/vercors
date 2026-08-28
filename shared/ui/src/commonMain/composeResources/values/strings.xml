@@ -11,4 +11,6 @@
     <string name="done">Done</string>
     <string name="sortBy">Sort by</string>
     <string name="save">Save</string>
+    <string name="open">Open</string>
+    <string name="quit">Quit</string>
 </resources>
