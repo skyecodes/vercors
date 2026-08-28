@@ -42,6 +42,8 @@ dependencies {
     commonMainImplementation(projects.feature.theme.domain)
     commonMainImplementation(projects.feature.theme.data)
     commonMainImplementation(compose.desktop.currentOs)
+    commonMainImplementation(libs.nucleus.application)
+    commonMainImplementation(libs.nucleus.decorated.window.tao)
     commonMainImplementation(libs.coil.compose)
     commonMainImplementation(libs.cryptography.provider.optimal)
     commonMainImplementation(libs.kotlinx.coroutines.swing)

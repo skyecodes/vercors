@@ -124,6 +124,8 @@ markdown-renderer = { module = "com.mikepenz:multiplatform-markdown-renderer-jvm
 markdown-renderer-coil3 = { module = "com.mikepenz:multiplatform-markdown-renderer-coil3", version.ref = "markdown-renderer" }
 webview = { module = "io.github.kevinnzou:compose-webview-multiplatform", version.ref = "webview" }
 filekit-dialogs-compose = { module = "io.github.vinceglb:filekit-dialogs-compose", version.ref = "filekit" }
+nucleus-application = { module = "dev.nucleusframework:nucleus.nucleus-application", version.ref = "nucleusframework" }
+nucleus-decorated-window-tao = { module = "dev.nucleusframework:nucleus.decorated-window-tao", version.ref = "nucleusframework" }
 # CLI
 clikt = { module = "com.github.ajalt.clikt:clikt", version.ref = "clikt" }
 mordant-coroutines = { module = "com.github.ajalt.mordant:mordant-coroutines", version.ref = "mordant" }

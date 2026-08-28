@@ -1,28 +1,25 @@
 package app.vercors.launcher.gui
 
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.*
-import app.vercors.shared.ui.error
+import androidx.compose.ui.window.rememberWindowState
 import coil3.ImageLoader
+import coil3.annotation.ExperimentalCoilApi
 import coil3.compose.setSingletonImageLoaderFactory
 import coil3.disk.DiskCache
+import coil3.network.ktor3.KtorNetworkFetcherFactory
 import com.slack.circuit.foundation.CircuitCompositionLocals
 import com.slack.circuit.foundation.CircuitContent
+import dev.nucleusframework.application.DecoratedWindow
+import dev.nucleusframework.application.nucleusApplication
 import dev.zacsweers.metro.createGraphFactory
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.*
 import okio.Path.Companion.toPath
-import org.jetbrains.compose.resources.stringResource
-import java.awt.Dimension
 
-@OptIn(ExperimentalComposeUiApi::class)
-fun main() {
+@OptIn(ExperimentalCoilApi::class)
+fun main(args: Array<String>) {
     lateinit var logger: KLogger
     val scope = CoroutineScope(
         SupervisorJob() + Dispatchers.Default + CoroutineExceptionHandler { _, e ->
@@ -35,12 +32,25 @@ fun main() {
     logger = KotlinLogging.logger {}
     logger.info { "Hello World!" }
 
-    application(exitProcessOnExit = false) {
+    // nucleusApplication() hard-exits the process (exitProcess(0)) on the Tao backend the moment the
+    // last window closes, so code placed after this call never runs. A shutdown hook still lets the
+    // background scope wind down (and this log line print) before the JVM actually terminates.
+    Runtime.getRuntime().addShutdownHook(
+        Thread {
+            scope.cancel()
+            logger.info { "Goodbye World!" }
+        }
+    )
+
+    nucleusApplication(args) {
         val windowState = rememberWindowState()
         windowState.size = DpSize(1280.dp, 720.dp)
 
         setSingletonImageLoaderFactory {
             ImageLoader.Builder(it)
+                .components {
+                    KtorNetworkFetcherFactory(appGraph.httpClient)
+                }
                 .diskCache(
                     DiskCache.Builder()
                         .directory(appGraph.appPaths.imageCache.toString().toPath())
@@ -48,55 +58,17 @@ fun main() {
                 )
                 .build()
         }
-        CompositionLocalProvider(
-            LocalWindowExceptionHandlerFactory provides WindowExceptionHandlerFactory { _ ->
-                WindowExceptionHandler { throwable ->
-                    logger.error(throwable) { "Uncaught exception in GUI composition" }
-                    scope.launch {
-                        appGraph.snackbarService.error { stringResource(Res.string.unexpectedError) }
-                    }
-                }
-            }
+
+        DecoratedWindow(
+            onCloseRequest = ::exitApplication,
+            undecorated = true,
+            state = windowState,
+            title = "vercors",
+            minimumSize = DpSize(960.dp, 540.dp),
         ) {
-            Window(
-                state = windowState,
-                onCloseRequest = ::exitApplication,
-                decoration = WindowDecoration.Undecorated(),
-                title = "vercors",
-            ) {
-                LaunchedEffect(Unit) {
-                    window.minimumSize = Dimension(960, 540)
-                }
-
-                val windowScope = this
-                val appWindow = remember(windowState) {
-                    object : AppWindow, WindowScope by windowScope {
-                        override val isMaximized: Boolean
-                            get() = windowState.placement == WindowPlacement.Maximized
-
-                        override fun onEvent(event: AppWindowEvent) {
-                            when (event) {
-                                AppWindowEvent.Close -> exitApplication()
-                                AppWindowEvent.Maximize -> windowState.placement =
-                                    when (windowState.placement) {
-                                        WindowPlacement.Floating -> WindowPlacement.Maximized
-                                        else -> WindowPlacement.Floating
-                                    }
-
-                                AppWindowEvent.Minimize -> windowState.isMinimized = true
-                            }
-                        }
-                    }
-                }
-
-                CompositionLocalProvider(LocalAppWindow provides appWindow) {
-                    CircuitCompositionLocals(appGraph.circuit) {
-                        CircuitContent(AppScreen)
-                    }
-                }
+            CircuitCompositionLocals(appGraph.circuit) {
+                CircuitContent(AppScreen)
             }
         }
     }
-    scope.cancel()
-    logger.info { "Goodbye World!" }
 }

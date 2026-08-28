@@ -12,6 +12,7 @@ import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.DependencyGraph
 import dev.zacsweers.metro.Provides
 import dev.zacsweers.metro.SingleIn
+import io.ktor.client.*
 import kotlinx.coroutines.CoroutineScope
 
 @DependencyGraph(AppScope::class)
@@ -20,6 +21,7 @@ internal interface AppGraph {
     val circuit: Circuit
     val snackbarService: SnackbarService
     val metaApiConnectivityPoller: MetaApiConnectivityPoller
+    val httpClient: HttpClient
 
     @Provides
     @SingleIn(AppScope::class)

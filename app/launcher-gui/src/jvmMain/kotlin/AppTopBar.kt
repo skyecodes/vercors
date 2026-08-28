@@ -2,13 +2,10 @@ package app.vercors.launcher.gui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.window.WindowDraggableArea
-import androidx.compose.material.ContentAlpha.disabled
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -31,7 +28,11 @@ import app.vercors.shared.ui.next
 import com.composables.icons.lucide.*
 import com.composeunstyled.LocalContentColor
 import com.composeunstyled.theme.Theme
+import dev.nucleusframework.application.LocalNucleusWindow
+import dev.nucleusframework.window.windowDragArea
 import org.jetbrains.compose.resources.stringResource
+
+private const val DisabledContentAlpha = 0.38f
 
 @Composable
 fun AppTopBar(
@@ -40,75 +41,64 @@ fun AppTopBar(
     onNavigateBack: () -> Unit,
     onNavigateNext: () -> Unit,
 ) {
-    val interactionSource = remember { MutableInteractionSource() }
+    val nucleusWindow = LocalNucleusWindow.current
 
-    with(LocalAppWindow.current) {
-        WindowDraggableArea(
-            modifier = Modifier.combinedClickable(
-                interactionSource = interactionSource,
-                indication = null,
-                onDoubleClick = { onEvent(AppWindowEvent.Maximize) },
-                onClick = {}
-            )
+    Row(
+        modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Max).windowDragArea()
+    ) {
+        Row(
+            modifier = Modifier.weight(1f).padding(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Max)
-            ) {
-                Row(
-                    modifier = Modifier.weight(1f).padding(8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    AppIcon(
-                        imageVector = Lucide.MountainSnow,
-                        contentDescription = stringResource(Res.string.appTitle)
-                    )
-                    AppText(
-                        text = stringResource(Res.string.appTitle),
-                        fontFamily = Theme[fonts][tight],
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    AppNavButton(
-                        imageVector = Lucide.ChevronLeft,
-                        contentDescription = stringResource(SharedRes.string.back),
-                        enabled = canGoBack,
-                        onClick = onNavigateBack
-                    )
-                    AppNavButton(
-                        imageVector = Lucide.ChevronRight,
-                        contentDescription = stringResource(SharedRes.string.next),
-                        enabled = canGoNext,
-                        onClick = onNavigateNext
-                    )
-                    Spacer(Modifier.weight(1f))
-                }
-                Row(
-                    modifier = Modifier.fillMaxHeight()
-                ) {
-                    AppWindowButton(
-                        onClick = { onEvent(AppWindowEvent.Minimize) },
-                        imageVector = Lucide.Minus,
-                        contentDescription = stringResource(Res.string.minimize)
-                    )
-                    AppWindowButton(
-                        onClick = { onEvent(AppWindowEvent.Maximize) },
-                        imageVector = if (isMaximized) Lucide.Minimize2 else Lucide.Maximize2,
-                        contentDescription = stringResource(Res.string.maximize)
-                    )
+            AppIcon(
+                imageVector = Lucide.MountainSnow,
+                contentDescription = stringResource(Res.string.appTitle)
+            )
+            AppText(
+                text = stringResource(Res.string.appTitle),
+                fontFamily = Theme[fonts][tight],
+                fontWeight = FontWeight.SemiBold
+            )
+            AppNavButton(
+                imageVector = Lucide.ChevronLeft,
+                contentDescription = stringResource(SharedRes.string.back),
+                enabled = canGoBack,
+                onClick = onNavigateBack
+            )
+            AppNavButton(
+                imageVector = Lucide.ChevronRight,
+                contentDescription = stringResource(SharedRes.string.next),
+                enabled = canGoNext,
+                onClick = onNavigateNext
+            )
+            Spacer(Modifier.weight(1f))
+        }
+        Row(
+            modifier = Modifier.fillMaxHeight()
+        ) {
+            AppWindowButton(
+                onClick = { nucleusWindow.setMinimized(true) },
+                imageVector = Lucide.Minus,
+                contentDescription = stringResource(Res.string.minimize)
+            )
+            AppWindowButton(
+                onClick = { nucleusWindow.setMaximized(!nucleusWindow.isMaximized) },
+                imageVector = if (nucleusWindow.isMaximized) Lucide.Minimize2 else Lucide.Maximize2,
+                contentDescription = stringResource(Res.string.maximize)
+            )
 
-                    val interactionSource = remember { MutableInteractionSource() }
-                    val hovered by interactionSource.collectIsHoveredAsState()
-                    AppWindowButton(
-                        onClick = { onEvent(AppWindowEvent.Close) },
-                        imageVector = Lucide.X,
-                        contentDescription = stringResource(Res.string.close),
-                        tint = if (hovered) Theme[colors][onError] else LocalContentColor.current,
-                        modifier = Modifier.hoverable(interactionSource) then if (hovered) Modifier.background(
-                            Theme[colors][error]
-                        ) else Modifier.Companion,
-                    )
-                }
-            }
+            val interactionSource = remember { MutableInteractionSource() }
+            val hovered by interactionSource.collectIsHoveredAsState()
+            AppWindowButton(
+                onClick = { nucleusWindow.close() },
+                imageVector = Lucide.X,
+                contentDescription = stringResource(Res.string.close),
+                tint = if (hovered) Theme[colors][onError] else LocalContentColor.current,
+                modifier = Modifier.hoverable(interactionSource) then if (hovered) Modifier.background(
+                    Theme[colors][error]
+                ) else Modifier.Companion,
+            )
         }
     }
 }
@@ -130,7 +120,7 @@ private fun AppNavButton(
             onClick = onClick,
             indication = null
         ) then (if (enabled) Modifier.pointerHoverIcon(PointerIcon.Hand) else Modifier),
-        tint = if (enabled) LocalContentColor.current else LocalContentColor.current.copy(alpha = disabled)
+        tint = if (enabled) LocalContentColor.current else LocalContentColor.current.copy(alpha = DisabledContentAlpha)
     )
 }
 
