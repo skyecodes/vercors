@@ -524,6 +524,7 @@ class InstanceDetailsPresenter(
         val job = globalScope.launch {
             val ok = modpackInstallRunner.run(instanceId, modpackInfo, initialManifest = null)
             updateInstanceStatus(instanceId, if (ok) InstanceStatus.Idle else InstanceStatus.Failed.InstallFailed)
+            notifyModpackInstallResult(instance.name, ok)
         }
         updateInstanceJob(instanceId, job)
         job.invokeOnCompletion { updateInstanceJob(instanceId, null) }

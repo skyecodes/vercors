@@ -5,6 +5,7 @@ import app.vercors.core.ui.state.mutableProgressiveStateOf
 import app.vercors.feature.instance.domain.model.*
 import app.vercors.feature.instance.domain.usecase.*
 import app.vercors.feature.instance.ui.install.ModpackInstallRunner
+import app.vercors.feature.instance.ui.install.notifyModpackInstallResult
 import app.vercors.feature.instance.ui.install.toFractionOrNull
 import app.vercors.feature.project.domain.model.ProjectDetailsError
 import app.vercors.feature.project.domain.model.ProjectId
@@ -148,6 +149,7 @@ class InstallModpackPresenter(
                 initialManifest = manifest,
             )
             updateInstanceStatus(instance.id, if (ok) InstanceStatus.Idle else InstanceStatus.Failed.InstallFailed)
+            notifyModpackInstallResult(instanceName, ok)
         }
         // Only reached with a non-null error on genuine cancellation (job.cancel() via CancelInstanceSetupUseCase)
         // or a truly unexpected exception — expected step failures above already report InstanceStatus.Failed and

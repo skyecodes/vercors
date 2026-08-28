@@ -12,6 +12,7 @@ import com.slack.circuit.foundation.CircuitCompositionLocals
 import com.slack.circuit.foundation.CircuitContent
 import dev.nucleusframework.application.DecoratedWindow
 import dev.nucleusframework.application.nucleusApplication
+import dev.nucleusframework.notification.common.NotificationManager
 import dev.zacsweers.metro.createGraphFactory
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -31,6 +32,7 @@ fun main(args: Array<String>) {
     appGraph.metaApiConnectivityPoller // force eager construction so its background poll loop starts now
     logger = KotlinLogging.logger {}
     logger.info { "Hello World!" }
+    NotificationManager.initialize()
 
     // nucleusApplication() hard-exits the process (exitProcess(0)) on the Tao backend the moment the
     // last window closes, so code placed after this call never runs. A shutdown hook still lets the

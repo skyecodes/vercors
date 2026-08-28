@@ -11,4 +11,13 @@ data class AppState(
     val theme: ThemeDefinition?,
     val accentColor: Long?,
     val snackbarMessage: SnackbarMessage?,
+    val installTaskbarProgress: InstallTaskbarProgress,
 )
+
+/** Aggregate taskbar-progress signal across every instance currently installing or launching. */
+@Immutable
+sealed interface InstallTaskbarProgress {
+    data object None : InstallTaskbarProgress
+    data object Indeterminate : InstallTaskbarProgress
+    data class Fraction(val value: Float) : InstallTaskbarProgress
+}

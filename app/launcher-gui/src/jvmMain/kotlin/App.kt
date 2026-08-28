@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
@@ -26,6 +27,10 @@ import com.slack.circuit.overlay.ContentWithOverlays
 import com.slack.circuit.runtime.Navigator
 import com.slack.circuit.runtime.navigation.NavStack
 import com.slack.circuit.sharedelements.SharedElementTransitionLayout
+import dev.nucleusframework.application.LocalNucleusWindow
+import dev.nucleusframework.taskbarprogress.tao.hideTaskbarProgress
+import dev.nucleusframework.taskbarprogress.tao.showTaskbarIndeterminate
+import dev.nucleusframework.taskbarprogress.tao.showTaskbarProgress
 import dev.zacsweers.metro.AppScope
 
 @CircuitInject(AppScreen::class, AppScope::class)
@@ -38,6 +43,15 @@ fun App(
 
     val navStack = rememberSaveableNavStack(root = HomeScreen)
     val navigator = rememberCircuitNavigator(navStack) {}
+
+    val nucleusWindow = LocalNucleusWindow.current
+    LaunchedEffect(state.installTaskbarProgress) {
+        when (val progress = state.installTaskbarProgress) {
+            InstallTaskbarProgress.None -> nucleusWindow.hideTaskbarProgress()
+            InstallTaskbarProgress.Indeterminate -> nucleusWindow.showTaskbarIndeterminate()
+            is InstallTaskbarProgress.Fraction -> nucleusWindow.showTaskbarProgress(progress.value.toDouble())
+        }
+    }
 
     if (state.config != null && state.theme != null && state.accentColor != null) {
         CompositionLocalProvider(LocalAnimation provides state.config.animations) {

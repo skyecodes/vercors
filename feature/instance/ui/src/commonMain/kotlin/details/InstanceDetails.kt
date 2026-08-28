@@ -1323,7 +1323,7 @@ private val InstanceStatus.text: String
         is InstanceStatus.Failed -> stringResource(InstanceRes.string.failed)
     }
 
-private val InstanceStatus.progress: Float?
+val InstanceStatus.progress: Float?
     get() = when (this) {
         is InstanceStatus.Launching.ValidatingFiles -> progress
         is InstanceStatus.Launching.DownloadingFiles -> progress

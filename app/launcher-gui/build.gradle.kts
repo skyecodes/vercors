@@ -44,6 +44,8 @@ dependencies {
     commonMainImplementation(compose.desktop.currentOs)
     commonMainImplementation(libs.nucleus.application)
     commonMainImplementation(libs.nucleus.decorated.window.tao)
+    commonMainImplementation(libs.nucleus.notification.common)
+    commonMainImplementation(libs.nucleus.taskbar.progress.tao)
     commonMainImplementation(libs.coil.compose)
     commonMainImplementation(libs.cryptography.provider.optimal)
     commonMainImplementation(libs.kotlinx.coroutines.swing)

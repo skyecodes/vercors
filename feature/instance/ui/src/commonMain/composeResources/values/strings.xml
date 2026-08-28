@@ -37,6 +37,8 @@
     <string name="manualDownloadsRequired">These files can't be downloaded automatically — their authors have disabled direct downloads.\nDownload them manually and they'll be picked up automatically.</string>
     <string name="openAll">Open all</string>
     <string name="cancelSetup">Cancel setup</string>
+    <string name="notificationInstallFinishedMessage">Installation finished</string>
+    <string name="notificationInstallFailedMessage">Installation failed</string>
 
     <string name="errorEmptyInstanceId">Instance ID cannot be empty</string>
     <string name="errorNameTooShort">Instance name is too short</string>

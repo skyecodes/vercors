@@ -5,6 +5,9 @@ import app.vercors.feature.instance.domain.model.InstanceInstallStage
 import app.vercors.feature.instance.domain.model.InstanceModpackInfo
 import app.vercors.feature.instance.domain.model.InstanceStatus
 import app.vercors.feature.instance.domain.usecase.*
+import app.vercors.feature.instance.ui.InstanceRes
+import app.vercors.feature.instance.ui.notificationInstallFailedMessage
+import app.vercors.feature.instance.ui.notificationInstallFinishedMessage
 import app.vercors.feature.project.domain.model.ProjectId
 import app.vercors.feature.project.domain.model.ProjectType
 import app.vercors.feature.project.domain.model.modpack.*
@@ -15,11 +18,27 @@ import app.vercors.feature.project.domain.usecase.ResolveModpackManifestFilesUse
 import app.vercors.shared.ui.SnackbarService
 import arrow.core.raise.context.either
 import arrow.core.raise.recover
+import dev.nucleusframework.notification.common.notification
 import dev.zacsweers.metro.Inject
 import io.github.oshai.kotlinlogging.KotlinLogging
 import opensavvy.progress.Progress
+import org.jetbrains.compose.resources.getString
 
 private val logger = KotlinLogging.logger {}
+
+/** Fired once a modpack install (fresh or resumed) reaches its terminal state — see [ModpackInstallRunner.run]. */
+suspend fun notifyModpackInstallResult(instanceName: String, ok: Boolean) {
+    notification(
+        title = instanceName,
+        message = getString(
+            if (ok) {
+                InstanceRes.string.notificationInstallFinishedMessage
+            } else {
+                InstanceRes.string.notificationInstallFailedMessage
+            }
+        ),
+    ).send()
+}
 
 /**
  * Runs the shared, resumable portion of the modpack-install pipeline for an already-created instance: resolve the
