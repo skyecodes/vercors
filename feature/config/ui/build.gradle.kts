@@ -5,6 +5,7 @@ plugins {
 dependencies {
     commonMainApi(projects.feature.config.domain)
     commonMainApi(projects.feature.game.domain)
+    commonMainImplementation(projects.feature.theme.domain)
     commonMainImplementation(libs.filekit.dialogs.compose)
 }
 

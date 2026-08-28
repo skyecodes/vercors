@@ -4,7 +4,6 @@ plugins {
 
 dependencies {
     commonMainApi(projects.core.domain)
-    commonMainApi(projects.feature.theme.domain)
     commonMainApi(libs.composables.composeunstyled.theming)
     commonMainImplementation(libs.composables.composeunstyled)
     commonMainImplementation(libs.composables.ripple)

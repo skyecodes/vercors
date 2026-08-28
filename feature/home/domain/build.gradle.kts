@@ -3,7 +3,7 @@ plugins {
 }
 
 dependencies {
-    commonMainImplementation(projects.feature.project.domain)
-    commonMainImplementation(projects.feature.instance.domain)
-    commonMainImplementation(projects.feature.config.domain)
+    commonMainApi(projects.feature.project.domain)
+    commonMainApi(projects.feature.instance.domain)
+    commonMainApi(projects.feature.config.domain)
 }

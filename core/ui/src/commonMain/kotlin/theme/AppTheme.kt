@@ -14,11 +14,11 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+import app.vercors.core.domain.ThemeColor
+import app.vercors.core.domain.ThemeColors
 import app.vercors.core.ui.CoreRes
 import app.vercors.core.ui.Inter
 import app.vercors.core.ui.InterTight
-import app.vercors.feature.theme.domain.model.ThemeColor
-import app.vercors.feature.theme.domain.model.ThemeColors
 import com.composables.compose.ripple.rememberRippleIndication
 import com.composeunstyled.theme.ThemeProperty
 import com.composeunstyled.theme.ThemeToken

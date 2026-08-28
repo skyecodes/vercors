@@ -1,6 +1,7 @@
 package app.vercors.feature.theme.domain.model
 
-import kotlin.jvm.JvmInline
+import app.vercors.core.domain.ThemeColor
+import app.vercors.core.domain.ThemeColors
 
 data class ThemeDefinition(
     val id: String,
@@ -17,32 +18,8 @@ enum class ThemeSource {
     Custom
 }
 
-data class ThemeColors(
-    val background: ThemeColor,
-    val backgroundAlt: ThemeColor,
-    val onBackground: ThemeColor,
-    val primary: ThemeColor,
-    val onPrimary: ThemeColor,
-    val error: ThemeColor,
-    val onError: ThemeColor,
-    val success: ThemeColor,
-    val onSuccess: ThemeColor,
-    val warn: ThemeColor,
-    val surface: ThemeColor,
-    val surface2: ThemeColor,
-    val surface3: ThemeColor,
-)
-
 data class ThemeNamedColor(
     val id: String,
     val name: String,
     val color: ThemeColor.Argb,
 )
-
-sealed interface ThemeColor {
-    @JvmInline
-    value class Argb(val value: Long) : ThemeColor
-
-    @JvmInline
-    value class Named(val name: String) : ThemeColor
-}
