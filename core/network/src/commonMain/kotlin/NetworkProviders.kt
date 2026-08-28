@@ -16,6 +16,7 @@ interface NetworkProviders {
     fun provideHttpClient(@Named("metaApiUrl") metaApiUrl: String): HttpClient =
         HttpClient(platformHttpClientEngineFactory) {
             expectSuccess = true
+            installPlatformTrustStore()
             install(DefaultRequest) {
                 url(metaApiUrl)
             }
@@ -35,6 +36,7 @@ interface NetworkProviders {
     @Named("metaHealthCheckHttpClient")
     fun provideMetaHealthCheckHttpClient(@Named("metaApiUrl") metaApiUrl: String): HttpClient =
         HttpClient(platformHttpClientEngineFactory) {
+            installPlatformTrustStore()
             install(DefaultRequest) {
                 url(metaApiUrl)
             }
@@ -48,3 +50,7 @@ interface NetworkProviders {
 }
 
 internal expect val platformHttpClientEngineFactory: HttpClientEngineFactory<*>
+
+/** Wires the OS-native certificate trust store into the client's engine (JVM only; no-op elsewhere —
+ *  Kotlin/Native's Curl engine already consults the OS trust store on its own). */
+internal expect fun <T : HttpClientEngineConfig> HttpClientConfig<T>.installPlatformTrustStore()

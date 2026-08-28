@@ -12,6 +12,7 @@ dependencies {
     commonMainImplementation(libs.ktor.client.content.negotiation)
     commonMainImplementation(libs.ktor.serialization.kotlinx.json)
     jvmMainImplementation(libs.ktor.client.cio)
+    jvmMainImplementation(libs.nucleus.native.http.ktor)
 }
 
 kotlin {
