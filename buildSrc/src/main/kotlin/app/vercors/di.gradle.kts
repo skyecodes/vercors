@@ -6,6 +6,5 @@ plugins {
 }
 
 metro {
-    debug = true
     contributesAsInject.set(true)
 }

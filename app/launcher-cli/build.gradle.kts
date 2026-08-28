@@ -47,7 +47,7 @@ kotlin {
             executable {
                 entryPoint = "app.vercors.launcher.cli.main"
                 baseName = "vercors"
-                linkerOpts += "--allow-multiple-definition"
+                linkerOpts += "-Wl,--allow-multiple-definition"
             }
         }
     }
