@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.text.selection.TextSelectionColors
 import androidx.compose.runtime.*
@@ -33,13 +34,15 @@ fun AppTextField(
     onValueChange: (String) -> Unit = {},
     debounceMillis: Long = 0L,
     imeAction: ImeAction = ImeAction.Unspecified,
-    editable: Boolean = true,
+    enabled: Boolean = true,
+    singleLine: Boolean = true,
     shape: Shape = RoundedCornerShape(4.dp),
     backgroundColor: Color = Theme[colors][surface2],
     modifier: Modifier = Modifier
 ) {
     val state = rememberTextFieldState(initialValue)
     var lastKnownExternalValue by remember { mutableStateOf(initialValue) }
+    val currentOnValueChange by rememberUpdatedState(onValueChange)
 
     LaunchedEffect(initialValue) {
         lastKnownExternalValue = initialValue
@@ -51,16 +54,10 @@ fun AppTextField(
     }
 
     LaunchedEffect(state) {
-        // Drop the current value emitted on subscribe so remounting this composable (e.g. navigating
-        // back to a screen that retained its state) doesn't spuriously re-fire onValueChange. Also skip
-        // any emission that matches the last value we received via `initialValue` — otherwise a caller
-        // whose `initialValue` changes for reasons other than the user typing (e.g. an external value
-        // being reset by some other control) gets its own correction echoed straight back through
-        // `onValueChange`, since the sync above mutates `state` the same way a keystroke would.
         snapshotFlow { state.text.toString() }.drop(1).collectLatest {
             delay(debounceMillis.milliseconds)
             if (it != lastKnownExternalValue) {
-                onValueChange(it)
+                currentOnValueChange(it)
             }
         }
     }
@@ -80,9 +77,10 @@ fun AppTextField(
             state = state,
             modifier = Modifier.fillMaxWidth(),
             cursorBrush = SolidColor(LocalContentColor.current),
-            readOnly = !editable,
+            enabled = enabled,
+            lineLimits = if (singleLine) TextFieldLineLimits.SingleLine else TextFieldLineLimits.Default,
             onKeyboardAction = {
-                onValueChange(state.text.toString())
+                currentOnValueChange(state.text.toString())
                 it()
             },
             keyboardOptions = KeyboardOptions(

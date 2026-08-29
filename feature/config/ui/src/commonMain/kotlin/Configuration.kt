@@ -216,7 +216,7 @@ private fun JavaConfigurationCategory(
         }
         ConfigurationRow(title = ConfigRes.string.extraJvmArgs, description = ConfigRes.string.extraJvmArgsDesc) {
             AppTextField(
-                initialValue = state.jvmMemoryOptions.extraArgs,
+                initialValue = state.jvmMemoryOptions.extraArgs.orEmpty(),
                 onValueChange = { eventSink(ConfigurationEvent.SetExtraJvmArgs(it)) },
                 debounceMillis = 500,
                 backgroundColor = Theme[colors][surface2],
@@ -237,7 +237,7 @@ private fun NativeLibraryConfigurationCategory(
     ) {
         ConfigurationRow(title = ConfigRes.string.useSystemGlfw, description = ConfigRes.string.useSystemGlfwDesc) {
             LibraryOverrideRow(
-                checked = state.nativeLibraryOptions.useSystemGlfw,
+                checked = state.nativeLibraryOptions.useSystemGlfw == true,
                 path = state.nativeLibraryOptions.glfwPath.orEmpty(),
                 detectedPath = state.detectedGlfwPath,
                 onCheckedChange = { eventSink(ConfigurationEvent.ToggleUseSystemGlfw(it)) },
@@ -246,7 +246,7 @@ private fun NativeLibraryConfigurationCategory(
         }
         ConfigurationRow(title = ConfigRes.string.useSystemOpenAl, description = ConfigRes.string.useSystemOpenAlDesc) {
             LibraryOverrideRow(
-                checked = state.nativeLibraryOptions.useSystemOpenAl,
+                checked = state.nativeLibraryOptions.useSystemOpenAl == true,
                 path = state.nativeLibraryOptions.openAlPath.orEmpty(),
                 detectedPath = state.detectedOpenAlPath,
                 onCheckedChange = { eventSink(ConfigurationEvent.ToggleUseSystemOpenAl(it)) },
@@ -277,7 +277,7 @@ private fun RowScope.LibraryOverrideRow(
             initialValue = path,
             onValueChange = onPathChange,
             debounceMillis = 500,
-            editable = checked,
+            enabled = checked,
             placeholder = { AppText(text = detectedPath ?: stringResource(ConfigRes.string.useDefaultPath)) },
             backgroundColor = Theme[colors][surface2],
             modifier = Modifier.weight(1f)

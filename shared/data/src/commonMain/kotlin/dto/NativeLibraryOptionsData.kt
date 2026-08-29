@@ -5,9 +5,9 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class NativeLibraryOptionsData(
-    val useSystemGlfw: Boolean = false,
+    val useSystemGlfw: Boolean? = null,
     val glfwPath: String? = null,
-    val useSystemOpenAl: Boolean = false,
+    val useSystemOpenAl: Boolean? = null,
     val openAlPath: String? = null,
 )
 

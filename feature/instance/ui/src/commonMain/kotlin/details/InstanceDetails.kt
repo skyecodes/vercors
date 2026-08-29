@@ -572,41 +572,51 @@ private fun InstanceJavaOptionsSection(instance: InstanceView, state: InstanceDe
             null -> instance.javaInstallationId
         }
         val selected = state.availableJavaInstallations.find { it.id == selectedId }
-        val defaultLabel = stringResource(InstanceRes.string.useDefaultJava)
+        val inheritLabel = state.inheritedJavaInstallation?.path
+            ?.let { stringResource(InstanceRes.string.useDefaultJavaResolved, it) }
+            ?: stringResource(InstanceRes.string.useDefaultJava)
+        val recommendedSuffix = state.requiredJavaMajorVersion
+            ?.let { " " + stringResource(InstanceRes.string.recommendedJavaVersion, it) }
+            .orEmpty()
 
-        AppSelectField(
-            value = selected,
-            items = listOf(null) + state.availableJavaInstallations,
-            onValueChange = { eventSink(InstanceDetailsEvent.OnJavaOverrideChange(it?.id)) },
-            label = stringResource(InstanceRes.string.javaOverride) + if (state.isJavaOverrideEdited) "*" else "",
-            itemRenderer = { value, _ ->
-                AppSelectItem(value?.path ?: defaultLabel)
-            },
-            modifier = Modifier.width(300.dp),
-        )
-
-        val effectiveCustomOptions: JvmMemoryOptions? = when (val edit = state.editedInstance.jvmMemoryOptionsEdit) {
-            is JvmMemoryOptionsEdit.Custom -> edit.options
-            JvmMemoryOptionsEdit.UseDefault -> null
-            null -> instance.jvmMemoryOptions
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.Bottom
+        ) {
+            AppSelectField(
+                value = selected,
+                items = listOf(null) + state.availableJavaInstallations,
+                onValueChange = { eventSink(InstanceDetailsEvent.OnJavaOverrideChange(it?.id)) },
+                label = stringResource(InstanceRes.string.javaOverride) +
+                        (if (state.isJavaOverrideEdited) "*" else "") + recommendedSuffix,
+                itemRenderer = { value, _ ->
+                    AppSelectItem(value?.path ?: inheritLabel)
+                },
+                modifier = Modifier.width(450.dp),
+            )
+            ResetButton(selectedId != null) {
+                eventSink(InstanceDetailsEvent.OnJavaOverrideChange(null))
+            }
         }
-        val currentOptions = effectiveCustomOptions ?: JvmMemoryOptions()
+
+        val currentOptions = state.editedInstance.jvmMemoryOptionsEdit ?: instance.jvmMemoryOptions
+        val effectiveOptions = currentOptions.withFallback(state.globalJvmMemoryOptions)
         val defaultMax = defaultMaxMemoryMb(state.totalMemoryMb)
 
         fun updateOptions(update: (JvmMemoryOptions) -> JvmMemoryOptions) {
             eventSink(InstanceDetailsEvent.UpdateInstance { s ->
-                s.copy(jvmMemoryOptionsEdit = JvmMemoryOptionsEdit.Custom(update(currentOptions)))
+                s.copy(jvmMemoryOptionsEdit = update(currentOptions))
             })
         }
 
         InstanceMemorySliderRow(
             title = InstanceRes.string.maxMemory,
             description = InstanceRes.string.maxMemoryDesc,
-            value = currentOptions.maxMemoryMb,
-            defaultValue = defaultMax,
+            value = effectiveOptions.maxMemoryMb ?: defaultMax,
             valueRange = 512..state.totalMemoryMb,
             stepSize = 128,
-            onCheckedChange = { checked -> updateOptions { it.copy(maxMemoryMb = if (checked) defaultMax else null) } },
+            isOverridden = currentOptions.maxMemoryMb != null,
+            onReset = { updateOptions { it.copy(maxMemoryMb = null) } },
             onValueChange = { newValue ->
                 updateOptions { opts ->
                     val clampedMin = opts.minMemoryMb?.let { min -> minOf(min, newValue) }
@@ -617,25 +627,44 @@ private fun InstanceJavaOptionsSection(instance: InstanceView, state: InstanceDe
         InstanceMemorySliderRow(
             title = InstanceRes.string.minMemory,
             description = InstanceRes.string.minMemoryDesc,
-            value = currentOptions.minMemoryMb,
-            defaultValue = defaultMinMemoryMb(),
-            valueRange = 256..(currentOptions.maxMemoryMb ?: defaultMax),
+            value = effectiveOptions.minMemoryMb ?: defaultMinMemoryMb(),
+            valueRange = 256..(effectiveOptions.maxMemoryMb ?: defaultMax),
             stepSize = 32,
-            onCheckedChange = { checked -> updateOptions { it.copy(minMemoryMb = if (checked) defaultMinMemoryMb() else null) } },
+            isOverridden = currentOptions.minMemoryMb != null,
+            onReset = { updateOptions { it.copy(minMemoryMb = null) } },
             onValueChange = { newValue -> updateOptions { it.copy(minMemoryMb = newValue) } },
         )
         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
             AppText(text = stringResource(InstanceRes.string.extraJvmArgs), fontWeight = FontWeight.SemiBold)
             AppText(text = stringResource(InstanceRes.string.extraJvmArgsDesc), style = Theme[textStyles][label])
-            AppTextField(
-                initialValue = currentOptions.extraArgs,
-                onValueChange = { newValue -> updateOptions { it.copy(extraArgs = newValue) } },
-                debounceMillis = 500,
-                backgroundColor = Theme[colors][surface2],
-                modifier = Modifier.fillMaxWidth()
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                AppTextField(
+                    initialValue = effectiveOptions.extraArgs.orEmpty(),
+                    onValueChange = { newValue -> updateOptions { it.copy(extraArgs = newValue) } },
+                    debounceMillis = 500,
+                    backgroundColor = Theme[colors][surface2],
+                    modifier = Modifier.weight(1f)
+                )
+                ResetButton(currentOptions.extraArgs != null) {
+                    updateOptions { it.copy(extraArgs = null) }
+                }
+            }
         }
     }
+}
+
+@Composable
+private fun ResetButton(enabled: Boolean, onClick: () -> Unit) {
+    AppIconTextButton(
+        onClick = onClick,
+        text = stringResource(InstanceRes.string.reset),
+        imageVector = Lucide.RotateCcw,
+        enabled = enabled,
+    )
 }
 
 @Composable
@@ -645,34 +674,34 @@ private fun InstanceNativeLibraryOptionsSection(instance: InstanceView, state: I
         titleRes = InstanceRes.string.nativeLibraries,
         icon = Lucide.Package
     ) {
-        val effectiveOptions: NativeLibraryOptions? = when (val edit = state.editedInstance.nativeLibraryOptionsEdit) {
-            is NativeLibraryOptionsEdit.Custom -> edit.options
-            NativeLibraryOptionsEdit.UseDefault -> null
-            null -> instance.nativeLibraryOptions
-        }
-        val currentOptions = effectiveOptions ?: NativeLibraryOptions()
+        val currentOptions = state.editedInstance.nativeLibraryOptionsEdit ?: instance.nativeLibraryOptions
+        val effectiveOptions = currentOptions.withFallback(state.globalNativeLibraryOptions)
 
         fun updateOptions(update: (NativeLibraryOptions) -> NativeLibraryOptions) {
             eventSink(InstanceDetailsEvent.UpdateInstance { s ->
-                s.copy(nativeLibraryOptionsEdit = NativeLibraryOptionsEdit.Custom(update(currentOptions)))
+                s.copy(nativeLibraryOptionsEdit = update(currentOptions))
             })
         }
 
         InstanceLibraryOverrideRow(
             title = InstanceRes.string.useSystemGlfw,
             description = InstanceRes.string.useSystemGlfwDesc,
-            checked = currentOptions.useSystemGlfw,
-            path = currentOptions.glfwPath.orEmpty(),
+            checked = effectiveOptions.useSystemGlfw == true,
+            path = effectiveOptions.glfwPath.orEmpty(),
             detectedPath = state.detectedGlfwPath,
+            isOverridden = currentOptions.useSystemGlfw != null || currentOptions.glfwPath != null,
+            onReset = { updateOptions { it.copy(useSystemGlfw = null, glfwPath = null) } },
             onCheckedChange = { checked -> updateOptions { it.copy(useSystemGlfw = checked) } },
             onPathChange = { newValue -> updateOptions { it.copy(glfwPath = newValue) } },
         )
         InstanceLibraryOverrideRow(
             title = InstanceRes.string.useSystemOpenAl,
             description = InstanceRes.string.useSystemOpenAlDesc,
-            checked = currentOptions.useSystemOpenAl,
-            path = currentOptions.openAlPath.orEmpty(),
+            checked = effectiveOptions.useSystemOpenAl == true,
+            path = effectiveOptions.openAlPath.orEmpty(),
             detectedPath = state.detectedOpenAlPath,
+            isOverridden = currentOptions.useSystemOpenAl != null || currentOptions.openAlPath != null,
+            onReset = { updateOptions { it.copy(useSystemOpenAl = null, openAlPath = null) } },
             onCheckedChange = { checked -> updateOptions { it.copy(useSystemOpenAl = checked) } },
             onPathChange = { newValue -> updateOptions { it.copy(openAlPath = newValue) } },
         )
@@ -686,6 +715,8 @@ private fun InstanceLibraryOverrideRow(
     checked: Boolean,
     path: String,
     detectedPath: String?,
+    isOverridden: Boolean,
+    onReset: () -> Unit,
     onCheckedChange: (Boolean) -> Unit,
     onPathChange: (String) -> Unit,
 ) {
@@ -693,19 +724,28 @@ private fun InstanceLibraryOverrideRow(
         file?.let { onPathChange(it.path) }
     }
     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-        AppText(text = stringResource(title), fontWeight = FontWeight.SemiBold)
-        AppText(text = stringResource(description), style = Theme[textStyles][label])
+        AppText(
+            text = stringResource(title),
+            fontWeight = FontWeight.SemiBold
+        )
+        AppText(
+            text = stringResource(description),
+            style = Theme[textStyles][label]
+        )
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            AppCheckbox(checked = checked, onCheckedChange = onCheckedChange)
+            AppCheckbox(
+                checked = checked,
+                onCheckedChange = onCheckedChange
+            )
             AppTextField(
                 initialValue = path,
                 onValueChange = onPathChange,
                 debounceMillis = 500,
-                editable = checked,
+                enabled = checked,
                 placeholder = { AppText(text = detectedPath ?: stringResource(InstanceRes.string.useDefaultPath)) },
                 backgroundColor = Theme[colors][surface2],
                 modifier = Modifier.weight(1f)
@@ -716,6 +756,10 @@ private fun InstanceLibraryOverrideRow(
                 imageVector = Lucide.FolderOpen,
                 enabled = checked,
             )
+            ResetButton(
+                enabled = isOverridden,
+                onClick = onReset
+            )
         }
     }
 }
@@ -724,15 +768,14 @@ private fun InstanceLibraryOverrideRow(
 private fun InstanceMemorySliderRow(
     title: StringResource,
     description: StringResource,
-    value: Int?,
-    defaultValue: Int,
+    value: Int,
     valueRange: IntRange,
     stepSize: Int,
-    onCheckedChange: (Boolean) -> Unit,
+    isOverridden: Boolean,
+    onReset: () -> Unit,
     onValueChange: (Int) -> Unit,
 ) {
-    val checked = value != null
-    val displayValue = (value ?: defaultValue).coerceIn(valueRange)
+    val displayValue = value.coerceIn(valueRange)
     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
         AppText(text = stringResource(title), fontWeight = FontWeight.SemiBold)
         AppText(text = stringResource(description), style = Theme[textStyles][label])
@@ -741,22 +784,23 @@ private fun InstanceMemorySliderRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            AppCheckbox(checked = checked, onCheckedChange = onCheckedChange)
             AppSlider(
                 value = displayValue,
                 onValueChange = onValueChange,
                 valueRange = valueRange,
                 stepSize = stepSize,
-                enabled = checked,
                 modifier = Modifier.weight(1f)
             )
             AppNumberField(
                 value = displayValue,
                 onValueChange = onValueChange,
                 valueRange = valueRange,
-                enabled = checked,
             )
             AppText(text = stringResource(InstanceRes.string.megabytes), style = Theme[textStyles][label])
+            ResetButton(
+                enabled = isOverridden,
+                onClick = onReset
+            )
         }
     }
 }

@@ -29,6 +29,10 @@ data class InstanceDetailsState(
     val showNativeLibraryOptions: Boolean,
     val detectedGlfwPath: String?,
     val detectedOpenAlPath: String?,
+    val globalJvmMemoryOptions: JvmMemoryOptions,
+    val globalNativeLibraryOptions: NativeLibraryOptions,
+    val inheritedJavaInstallation: JavaInstallation?,
+    val requiredJavaMajorVersion: Int?,
     val selectedTab: InstanceDetailsTab,
     val promptDeleteConfirmation: Boolean,
     val logs: List<InstanceLogEventView>?,
@@ -66,14 +70,10 @@ data class InstanceDetailsState(
         editedInstance.javaOverride != null && editedInstance.javaOverride != current
     } ?: false
     val isJvmMemoryOptionsEdited = instance.valueOrNull?.let {
-        val current: JvmMemoryOptionsEdit =
-            it.jvmMemoryOptions?.let(JvmMemoryOptionsEdit::Custom) ?: JvmMemoryOptionsEdit.UseDefault
-        editedInstance.jvmMemoryOptionsEdit != null && editedInstance.jvmMemoryOptionsEdit != current
+        editedInstance.jvmMemoryOptionsEdit != null && editedInstance.jvmMemoryOptionsEdit != it.jvmMemoryOptions
     } ?: false
     val isNativeLibraryOptionsEdited = instance.valueOrNull?.let {
-        val current: NativeLibraryOptionsEdit =
-            it.nativeLibraryOptions?.let(NativeLibraryOptionsEdit::Custom) ?: NativeLibraryOptionsEdit.UseDefault
-        editedInstance.nativeLibraryOptionsEdit != null && editedInstance.nativeLibraryOptionsEdit != current
+        editedInstance.nativeLibraryOptionsEdit != null && editedInstance.nativeLibraryOptionsEdit != it.nativeLibraryOptions
     } ?: false
     val isInstanceEdited: Boolean =
         isNameEdited || isGameVersionEdited || isModLoaderEdited || isJavaOverrideEdited ||
@@ -100,8 +100,8 @@ data class InstanceView(
     val pendingManualDownloads: List<PendingManualDownload>,
     val iconFilePath: String?,
     val javaInstallationId: String?,
-    val jvmMemoryOptions: JvmMemoryOptions?,
-    val nativeLibraryOptions: NativeLibraryOptions?,
+    val jvmMemoryOptions: JvmMemoryOptions,
+    val nativeLibraryOptions: NativeLibraryOptions,
     /** Bumped whenever the icon changes — used to bust the image cache when [iconFilePath] is reused unchanged. */
     val updatedAt: Instant,
 )
@@ -113,8 +113,8 @@ data class InstanceEditState(
     val modLoaderType: ModLoaderTypeEdit? = null,
     val modLoaderVersion: String? = null,
     val javaOverride: JavaOverrideEdit? = null,
-    val jvmMemoryOptionsEdit: JvmMemoryOptionsEdit? = null,
-    val nativeLibraryOptionsEdit: NativeLibraryOptionsEdit? = null,
+    val jvmMemoryOptionsEdit: JvmMemoryOptions? = null,
+    val nativeLibraryOptionsEdit: NativeLibraryOptions? = null,
 )
 
 @Immutable
@@ -131,22 +131,6 @@ sealed interface JavaOverrideEdit {
 
     @JvmInline
     value class Specific(val installationId: String) : JavaOverrideEdit
-}
-
-@Immutable
-sealed interface JvmMemoryOptionsEdit {
-    data object UseDefault : JvmMemoryOptionsEdit
-
-    @JvmInline
-    value class Custom(val options: JvmMemoryOptions) : JvmMemoryOptionsEdit
-}
-
-@Immutable
-sealed interface NativeLibraryOptionsEdit {
-    data object UseDefault : NativeLibraryOptionsEdit
-
-    @JvmInline
-    value class Custom(val options: NativeLibraryOptions) : NativeLibraryOptionsEdit
 }
 
 @Immutable

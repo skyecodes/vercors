@@ -7,7 +7,7 @@ import kotlinx.serialization.Serializable
 data class JvmMemoryOptionsData(
     val minMemoryMb: Int? = null,
     val maxMemoryMb: Int? = null,
-    val extraArgs: String = "",
+    val extraArgs: String? = null,
 )
 
 fun JvmMemoryOptionsData.toDomain(): JvmMemoryOptions = JvmMemoryOptions(

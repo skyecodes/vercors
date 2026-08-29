@@ -38,7 +38,7 @@ fun AppNumberField(
                 }
             },
             debounceMillis = debounceMillis,
-            editable = enabled,
+            enabled = enabled,
             backgroundColor = backgroundColor,
             modifier = Modifier.fillMaxWidth().alpha(if (enabled) 1f else DISABLED_ALPHA),
         )

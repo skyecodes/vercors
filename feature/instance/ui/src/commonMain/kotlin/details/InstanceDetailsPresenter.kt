@@ -38,6 +38,8 @@ import app.vercors.feature.project.domain.usecase.GetProjectUseCase
 import app.vercors.feature.project.ui.details.ProjectDetailsScreen
 import app.vercors.feature.project.ui.list.ProjectListScreen
 import app.vercors.shared.domain.model.JavaInstallation
+import app.vercors.shared.domain.model.JvmMemoryOptions
+import app.vercors.shared.domain.model.NativeLibraryOptions
 import app.vercors.shared.domain.model.NativeLibraryType
 import app.vercors.shared.domain.usecase.CopyToClipboardUseCase
 import app.vercors.shared.domain.usecase.DetectNativeLibraryPathUseCase
@@ -118,6 +120,8 @@ class InstanceDetailsPresenter(
     private val systemService: SystemService,
     private val observeConfiguration: ObserveConfigurationUseCase,
     private val updateConfiguration: UpdateConfigurationUseCase,
+    private val resolveJavaInstallation: ResolveJavaInstallationUseCase,
+    private val getRequiredJavaMajorVersion: GetRequiredJavaMajorVersionUseCase,
 ) : Presenter<InstanceDetailsState, InstanceDetailsEvent> {
     @Composable
     override fun present(): Store<InstanceDetailsState, InstanceDetailsEvent> {
@@ -168,6 +172,14 @@ class InstanceDetailsPresenter(
 
         val currentInstance = instance.valueOrNull
         val effectiveGameVersion = editedInstance.gameVersion ?: currentInstance?.gameVersion
+
+        var requiredJavaMajorVersion by remember { mutableStateOf<Int?>(null) }
+        var inheritedJavaInstallation by remember { mutableStateOf<JavaInstallation?>(null) }
+        LaunchedEffect(effectiveGameVersion) {
+            val majorVersion = effectiveGameVersion?.let { getRequiredJavaMajorVersion(it) }
+            requiredJavaMajorVersion = majorVersion
+            inheritedJavaInstallation = majorVersion?.let { resolveJavaInstallation(it, instanceOverrideId = null) }
+        }
         val effectiveLoaderType = when (val edit = editedInstance.modLoaderType) {
             is ModLoaderTypeEdit.Loader -> edit.type
             ModLoaderTypeEdit.Vanilla -> null
@@ -202,6 +214,10 @@ class InstanceDetailsPresenter(
             showNativeLibraryOptions = showNativeLibraryOptions,
             detectedGlfwPath = detectedGlfwPath,
             detectedOpenAlPath = detectedOpenAlPath,
+            globalJvmMemoryOptions = configuration.valueOrNull?.jvmMemoryOptions ?: JvmMemoryOptions(),
+            globalNativeLibraryOptions = configuration.valueOrNull?.nativeLibraryOptions ?: NativeLibraryOptions(),
+            inheritedJavaInstallation = inheritedJavaInstallation,
+            requiredJavaMajorVersion = requiredJavaMajorVersion,
             promptDeleteConfirmation = promptDeleteConfirmation,
             selectedTab = selectedTab,
             logs = logs,
@@ -509,12 +525,6 @@ class InstanceDetailsPresenter(
         }
     }
 
-    /**
-     * Re-runs the modpack-install pipeline from the top for an instance whose install was interrupted before a
-     * launcher restart (status == [InstanceStatus.Installing.Interrupted], backed by the persisted
-     * [Instance.installStage] — see [app.vercors.feature.instance.data.repository.InstanceRepositoryImpl]'s startup
-     * reconciliation). A no-op if a job is already running for this instance.
-     */
     private fun resumeInstallationIfNeeded(instance: InstanceView) {
         if (instance.status !is InstanceStatus.Installing.Interrupted) return
         val modpackInfo = instance.modpackInfo ?: return
@@ -530,13 +540,6 @@ class InstanceDetailsPresenter(
         job.invokeOnCompletion { updateInstanceJob(instanceId, null) }
     }
 
-    /**
-     * Re-starts watching for the instance's still-outstanding manual downloads (persisted on
-     * [InstanceView.pendingManualDownloads] — see [app.vercors.feature.instance.data.repository.InstanceRepositoryImpl]'s
-     * startup reconciliation) when the "Finish Installation" dialog is reopened after a launcher restart. A no-op
-     * if a watcher is already running for this instance — e.g. the dialog was reopened in the same session, or the
-     * original install job (`InstallModpackPresenter.confirmInstall`) is still alive.
-     */
     private fun resumeManualDownloadsIfNeeded(instance: InstanceView) {
         if (instance.status !is InstanceStatus.Installing.AwaitingManualDownloads) return
         if (instance.pendingManualDownloads.isEmpty()) return
@@ -764,11 +767,11 @@ class InstanceDetailsPresenter(
         } ?: updated
 
         updated = editedInstance.jvmMemoryOptionsEdit?.let { edit ->
-            updated.copy(jvmMemoryOptions = (edit as? JvmMemoryOptionsEdit.Custom)?.options)
+            updated.copy(jvmMemoryOptions = edit)
         } ?: updated
 
         updated = editedInstance.nativeLibraryOptionsEdit?.let { edit ->
-            updated.copy(nativeLibraryOptions = (edit as? NativeLibraryOptionsEdit.Custom)?.options)
+            updated.copy(nativeLibraryOptions = edit)
         } ?: updated
 
         return updated

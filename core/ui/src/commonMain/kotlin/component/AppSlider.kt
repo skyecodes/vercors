@@ -12,6 +12,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.unit.dp
 import app.vercors.core.ui.theme.colors
 import app.vercors.core.ui.theme.primary
@@ -46,7 +48,7 @@ fun AppSlider(
     UnstyledSlider(
         value = value.toFloat().coerceIn(floatRange),
         onValueChange = { onValueChange(it.roundToInt()) },
-        modifier = modifier,
+        modifier = modifier.let { if (enabled) it.pointerHoverIcon(PointerIcon.Hand) else it },
         enabled = enabled,
         valueRange = floatRange,
         steps = steps,
