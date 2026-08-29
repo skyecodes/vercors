@@ -21,10 +21,13 @@ import opensavvy.progress.done
 import opensavvy.progress.loading
 import kotlin.concurrent.atomics.AtomicInt
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
-import kotlin.concurrent.atomics.incrementAndFetch
 
 private const val CURSEFORGE_PLATFORM_ID = "curseforge"
 private const val RESOLVE_CONCURRENCY = 5
+
+/** Files per [ProjectRepository.getProjectFilesByIds] request — bounds request/response size without giving up
+ *  most of the round-trip savings from batching. */
+private const val RESOLVE_BATCH_SIZE = 50
 
 @Serializable
 private data class CurseForgeManifest(
@@ -48,8 +51,9 @@ private data class CurseForgeManifestFile(val projectID: Long, val fileID: Long,
 
 /**
  * Parses a CurseForge modpack zip — `manifest.json` (a `{projectID, fileID}` list, no filenames/hashes) plus an
- * `overrides` folder. Each manifest entry is resolved to real file metadata via [ProjectRepository.getProjectFile],
- * bounded to [RESOLVE_CONCURRENCY] concurrent requests to avoid hammering CurseForge's API.
+ * `overrides` folder. Manifest entries are resolved to real file metadata in [RESOLVE_BATCH_SIZE]-sized batches
+ * via [ProjectRepository.getProjectFilesByIds], bounded to [RESOLVE_CONCURRENCY] concurrent batch requests to
+ * avoid hammering CurseForge's API.
  */
 @SingleIn(AppScope::class)
 @ContributesIntoMap(AppScope::class)
@@ -93,16 +97,22 @@ class CurseForgeModpackParser(
         onProgress(loading(0.0))
         val total = entries.size.toDouble()
         val resolved = AtomicInt(0)
-        val fileResolutions = entries.parMap(concurrency = RESOLVE_CONCURRENCY) { entry ->
+        val chunks = entries.chunked(RESOLVE_BATCH_SIZE)
+        val chunkResolutions = chunks.parMap(concurrency = RESOLVE_CONCURRENCY) { chunk ->
             either {
-                projectRepository.value.getProjectFile(
-                    ProjectId(entry.projectID.toString(), CURSEFORGE_PLATFORM_ID),
-                    entry.fileID.toString()
+                projectRepository.value.getProjectFilesByIds(
+                    CURSEFORGE_PLATFORM_ID,
+                    chunk.map { it.fileID.toString() }
                 )
-            }.also { onProgress(loading(resolved.incrementAndFetch() / total)) }
+            }.also { onProgress(loading(resolved.addAndFetch(chunk.size) / total)) }
         }
-        val files = entries.zip(fileResolutions).map { (entry, resolution) ->
-            val file = resolution.mapLeft { ModpackFileResolutionFailed }.bind()
+        // The batch endpoint can silently omit an unknown/invalid file ID from its response instead of erroring
+        // the whole call — look every entry up explicitly rather than assuming the response covers all of them,
+        // so a bad manifest entry still fails resolution instead of being dropped unnoticed.
+        val filesById = chunkResolutions.flatMap { it.mapLeft { ModpackFileResolutionFailed }.bind() }
+            .associateBy { it.id }
+        val files = entries.map { entry ->
+            val file = filesById[entry.fileID.toString()] ?: raise(ModpackFileResolutionFailed)
             ModpackManifestFile(
                 targetPath = "mods/${file.fileName}",
                 kind = ModpackFileKind.Mod,

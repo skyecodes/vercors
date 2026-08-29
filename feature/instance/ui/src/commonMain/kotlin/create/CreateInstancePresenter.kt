@@ -150,10 +150,11 @@ class CreateInstancePresenter(
             gameVersion = selectedGameVersion!!.id,
             modLoader = selectedLoader?.let { InstanceModLoader(type = it, version = selectedLoaderVersion!!.version) }
         )
+        var createdInstance = instance
         globalScope.launch {
-            recover({ createInstance(instance) }) { error -> snackbarService.error { error.message } }
+            recover({ createdInstance = createInstance(instance) }) { error -> snackbarService.error { error.message } }
         }.invokeOnCompletion { error ->
-            if (error == null) navigator.finish(CreateInstanceResult.Created(instance.id))
+            if (error == null) navigator.finish(CreateInstanceResult.Created(createdInstance.id))
         }
     }
 }

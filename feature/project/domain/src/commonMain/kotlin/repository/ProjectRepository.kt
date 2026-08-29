@@ -47,6 +47,10 @@ interface ProjectRepository {
     context(_: Raise<ProjectDetailsError>)
     suspend fun getProjectFile(projectId: ProjectId, fileId: String): ProjectFile
 
+    /** Resolves many files by ID in one request, potentially across different projects on [platformId]. */
+    context(_: Raise<ProjectDetailsError>)
+    suspend fun getProjectFilesByIds(platformId: PlatformId, fileIds: List<String>): List<ProjectFile>
+
     context(_: Raise<ModpackResolutionError>)
     suspend fun getModpackManifest(
         projectId: ProjectId,

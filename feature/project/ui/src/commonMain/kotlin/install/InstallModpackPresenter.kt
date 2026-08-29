@@ -168,8 +168,7 @@ class InstallModpackPresenter(
                 return@launch
             }
 
-            val instance = buildInstance(manifest, instanceName)
-            if (!tryCreateInstance(instance)) {
+            val instance = tryCreateInstance(buildInstance(manifest, instanceName)) ?: run {
                 onFinished()
                 return@launch
             }
@@ -222,10 +221,10 @@ class InstallModpackPresenter(
         installStage = InstanceInstallStage.ResolvingFiles,
     )
 
-    private suspend fun tryCreateInstance(instance: Instance): Boolean =
-        recover({ createInstance(instance); true }) { error: InstanceValidationError ->
+    private suspend fun tryCreateInstance(instance: Instance): Instance? =
+        recover({ createInstance(instance) }) { error: InstanceValidationError ->
             snackbarService.error { error.message }
-            false
+            null
         }
 
     /** Best-effort only: a missing/broken project logo must never fail or delay the modpack install. */

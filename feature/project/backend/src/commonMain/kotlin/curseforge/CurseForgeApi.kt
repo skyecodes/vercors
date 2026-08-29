@@ -2,9 +2,7 @@ package app.vercors.feature.project.backend.curseforge
 
 import app.vercors.feature.project.backend.PlatformResponse
 import app.vercors.feature.project.backend.curseforge.dto.*
-import de.jensklingenberg.ktorfit.http.GET
-import de.jensklingenberg.ktorfit.http.Path
-import de.jensklingenberg.ktorfit.http.Query
+import de.jensklingenberg.ktorfit.http.*
 
 interface CurseForgeApi {
     @GET("v1/categories")
@@ -54,4 +52,10 @@ interface CurseForgeApi {
         @Path("modId") modId: String,
         @Path("fileId") fileId: String
     ): PlatformResponse<CurseForgeStandardResponse<String>>
+
+    @Headers("Content-Type: application/json")
+    @POST("v1/mods/files")
+    suspend fun getFilesByIds(
+        @Body request: CurseForgeGetFilesRequest
+    ): PlatformResponse<CurseForgeStandardResponse<List<CurseForgeFile>>>
 }

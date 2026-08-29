@@ -44,6 +44,9 @@ interface PlatformServiceBase {
 
     context(_: Raise<PlatformErrorData>)
     suspend fun getProjectFile(projectId: String, fileId: String): ProjectFileData
+
+    context(_: Raise<PlatformErrorData>)
+    suspend fun getProjectFilesByIds(fileIds: List<String>): List<ProjectFileData>
 }
 
 data class PlatformInfo(

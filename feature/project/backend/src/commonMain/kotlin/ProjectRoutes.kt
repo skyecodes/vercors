@@ -1,5 +1,6 @@
 package app.vercors.feature.project.backend
 
+import app.vercors.feature.project.api.PlatformFiles
 import app.vercors.feature.project.api.Platforms
 import app.vercors.feature.project.api.ProjectFiles
 import app.vercors.feature.project.api.Projects
@@ -69,6 +70,10 @@ fun Route.projectRoutes(service: ProjectService, json: Json) {
             val projectId = idOf(Projects.ProjectId)
             val fileId = idOf(ProjectFiles.ProjectFileId)
             respond(service.getProjectFile(platformId, projectId, fileId))
+        }
+        routeWithRaise(PlatformFiles.get) {
+            val platformId = idOf(Platforms.PlatformId)
+            respond(service.getProjectFilesByIds(platformId, parameters.fileIds))
         }
     }
     // Not cached: the CurseForge download-url resolution can return short-lived/signed URLs.

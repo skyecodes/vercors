@@ -6,6 +6,7 @@ import app.vercors.core.network.RemoteError
 import app.vercors.core.network.makeMetaApiRequest
 import app.vercors.core.system.SystemService
 import app.vercors.feature.game.domain.model.ModLoaderType
+import app.vercors.feature.project.api.PlatformFiles
 import app.vercors.feature.project.api.Platforms
 import app.vercors.feature.project.api.ProjectFiles
 import app.vercors.feature.project.api.Projects
@@ -271,6 +272,22 @@ class ProjectRepositoryImpl(
         handle2 = { raise(it.toDomain()) },
         transform = { it.toDomain(projectId.platform) }
     )
+
+    context(_: Raise<ProjectDetailsError>)
+    override suspend fun getProjectFilesByIds(platformId: PlatformId, fileIds: List<String>): List<ProjectFile> =
+        withError(RemoteError::toPlatformError) {
+            makeMetaApiRequest {
+                httpClient.request(
+                    endpoint = ApiV1 / Platforms / Platforms.PlatformId(platformId) / PlatformFiles / PlatformFiles.get,
+                    parameters = { this.fileIds = fileIds },
+                    configure = { expectSuccess = false }
+                )
+            }
+        }.handle(
+            handle1 = { raise(it.toDomain()) },
+            handle2 = { raise(it.toDomain()) },
+            transform = { list -> list.map { it.toDomain(platformId) } }
+        )
 
     private fun modpackZipPath(platformId: String, projectId: String, fileId: String): Path =
         Path(appPaths.downloadsTmp, "modpack-$platformId-$projectId-$fileId.zip")

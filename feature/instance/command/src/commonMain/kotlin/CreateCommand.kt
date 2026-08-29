@@ -54,8 +54,9 @@ class CreateCommand(
             gameVersion = resolvedGameVersion,
             modLoader = parseLoader(loader)?.let { InstanceModLoader(type = it, version = LATEST_RELEASE) }
         )
-        withError({ CommandError("Could not create instance: ${it.message}") }) { createInstance(instance) }
-        echo("Instance created with ID: ${instance.id}")
+        val createdInstance =
+            withError({ CommandError("Could not create instance: ${it.message}") }) { createInstance(instance) }
+        echo("Instance created with ID: ${createdInstance.id}")
     }
 
     override fun help(context: Context): String = "Create a new instance"

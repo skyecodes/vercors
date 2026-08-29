@@ -4,6 +4,7 @@ import app.vercors.feature.project.api.dto.*
 import app.vercors.feature.project.backend.PlatformInfo
 import app.vercors.feature.project.backend.PlatformServiceBase
 import app.vercors.feature.project.backend.bindResponse
+import app.vercors.feature.project.backend.curseforge.dto.CurseForgeGetFilesRequest
 import arrow.core.raise.Raise
 import arrow.core.raise.recover
 import dev.zacsweers.metro.AppScope
@@ -111,6 +112,38 @@ class CurseForgeService(
         files.map { file ->
             val data = file.convert(loader)
             if (project != null && file.downloadUrl == null && file.id !in downloadableIds) {
+                data.copy(manualDownloadUrl = manualDownloadUrl(project.slug, project.classId, file.id))
+            } else data
+        }
+    }
+
+    context(_: Raise<PlatformErrorData>)
+    override suspend fun getProjectFilesByIds(fileIds: List<String>): List<ProjectFileData> = coroutineScope {
+        val files = api.getFilesByIds(CurseForgeGetFilesRequest(fileIds.map { it.toInt() })).bindResponse().data
+
+        // As in getProjectFiles/getProjectFile: a null downloadUrl doesn't always mean distribution-restricted —
+        // the dedicated endpoint can still succeed, so try it before falling back to a manual-download link.
+        val needsCheck = files.filter { it.downloadUrl == null }
+        val downloadableIds = needsCheck.map { file ->
+            async {
+                file.id to recover({
+                    api.getFileDownloadUrl(file.modId.toString(), file.id.toString()).bindResponse()
+                    true
+                }) { _: PlatformErrorData -> false }
+            }
+        }.awaitAll().filter { it.second }.map { it.first }.toSet()
+
+        val stillManual = needsCheck.filterNot { it.id in downloadableIds }
+        // One project lookup per distinct mod (not per file) — enough to build manualDownloadUrl for every
+        // still-restricted file belonging to that mod.
+        val manualProjects = stillManual.map { it.modId }.distinct().associateWith { modId ->
+            async { api.getProject(modId.toString()).bindResponse().data }
+        }
+
+        files.map { file ->
+            val data = file.convert(loaderFilter = null)
+            if (file.downloadUrl == null && file.id !in downloadableIds) {
+                val project = manualProjects.getValue(file.modId).await()
                 data.copy(manualDownloadUrl = manualDownloadUrl(project.slug, project.classId, file.id))
             } else data
         }

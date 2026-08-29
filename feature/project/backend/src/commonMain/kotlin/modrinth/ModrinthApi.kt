@@ -37,4 +37,7 @@ interface ModrinthApi {
 
     @GET("v2/version/{id}")
     suspend fun getVersion(@Path("id") id: String): PlatformResponse<ModrinthVersion>
+
+    @GET("v2/versions")
+    suspend fun getVersionsByIds(@Query("ids") ids: String): PlatformResponse<List<ModrinthVersion>>
 }

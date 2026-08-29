@@ -106,4 +106,9 @@ class ModrinthService(
         ensureNotNull(api.getVersion(fileId).bindResponse().convert()) {
             PlatformErrorData("NoFiles", "Version $fileId has no files")
         }
+
+    context(_: Raise<PlatformErrorData>)
+    override suspend fun getProjectFilesByIds(fileIds: List<String>): List<ProjectFileData> =
+        api.getVersionsByIds(fileIds.joinToString(",", "[", "]") { "\"$it\"" }).bindResponse()
+            .mapNotNull { it.convert() }
 }
