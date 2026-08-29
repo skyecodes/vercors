@@ -3,88 +3,34 @@ package app.vercors.feature.instance.ui.details
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import app.vercors.feature.account.ui.list.LoginDialog
-import app.vercors.feature.game.domain.model.LoaderVersion
 import app.vercors.feature.game.domain.model.ModLoaderType
-import app.vercors.feature.game.ui.GameVersionView
 import app.vercors.feature.game.ui.displayName
 import app.vercors.feature.instance.domain.model.*
 import app.vercors.feature.instance.ui.install.FinishInstallationDialog
-import app.vercors.shared.domain.model.JavaInstallation
 import app.vercors.shared.domain.model.JvmMemoryOptions
 import app.vercors.shared.domain.model.NativeLibraryOptions
+import app.vercors.shared.ui.Store
 import opensavvy.state.progressive.ProgressiveOutcome
-import opensavvy.state.progressive.valueOrNull
 import kotlin.time.Instant
 
 @Immutable
 data class InstanceDetailsState(
     val instance: ProgressiveOutcome<InstanceError, InstanceView>,
-    val editedInstance: InstanceEditState,
-    val gameVersionList: List<GameVersionView>,
-    val loaderList: List<ModLoaderType>,
-    val loaderVersionList: List<LoaderVersion>,
-    val availableJavaInstallations: List<JavaInstallation>,
     val promptInstallJava: Int?,
-    val totalMemoryMb: Int,
-    val showNativeLibraryOptions: Boolean,
-    val detectedGlfwPath: String?,
-    val detectedOpenAlPath: String?,
-    val globalJvmMemoryOptions: JvmMemoryOptions,
-    val globalNativeLibraryOptions: NativeLibraryOptions,
-    val inheritedJavaInstallation: JavaInstallation?,
-    val requiredJavaMajorVersion: Int?,
     val selectedTab: InstanceDetailsTab,
     val promptDeleteConfirmation: Boolean,
-    val logs: List<InstanceLogEventView>?,
-    val logSearchQuery: String = "",
-    val logLevelFilter: Set<InstanceLogEventView.Level> = InstanceLogEventView.Level.entries.toSet(),
-    val wrapLogLines: Boolean = true,
-    val installedMods: List<InstalledContentFileView>?,
-    val installedResourcePacks: List<InstalledContentFileView>?,
-    val installedShaderPacks: List<InstalledContentFileView>?,
-    val promptRemoveConfirmation: PendingRemoval?,
+    val optionsContent: Store<InstanceOptionsState, InstanceOptionsEvent>,
+    val modsContent: Store<InstalledContentState, InstalledContentEvent>,
+    val resourcePacksContent: Store<InstalledContentState, InstalledContentEvent>,
+    val shaderPacksContent: Store<InstalledContentState, InstalledContentEvent>,
+    val logsContent: Store<InstanceLogsState, InstanceLogsEvent>,
     val promptFinishInstallation: Boolean,
     val finishInstallationDialog: FinishInstallationDialog,
     val promptLogin: Boolean = false,
     val loginDialog: LoginDialog,
     val promptJavaInstall: Boolean = false,
     val installJavaProgressDialog: InstallJavaProgressDialog,
-) {
-    val isNameEdited = instance.valueOrNull?.let {
-        editedInstance.name != null && editedInstance.name != it.name
-    } ?: false
-    val isGameVersionEdited = instance.valueOrNull?.let {
-        editedInstance.gameVersion != null && editedInstance.gameVersion != it.gameVersion
-    } ?: false
-    val isLoaderTypeEdited = instance.valueOrNull?.let {
-        val current: ModLoaderTypeEdit = it.loaderType?.let(ModLoaderTypeEdit::Loader) ?: ModLoaderTypeEdit.Vanilla
-        editedInstance.modLoaderType != null && editedInstance.modLoaderType != current
-    } ?: false
-    val isLoaderVersionEdited = instance.valueOrNull?.let {
-        editedInstance.modLoaderVersion != null && editedInstance.modLoaderVersion != it.loaderVersion
-    } ?: false
-    val isModLoaderEdited = isLoaderTypeEdited || isLoaderVersionEdited
-    val isJavaOverrideEdited = instance.valueOrNull?.let {
-        val current: JavaOverrideEdit =
-            it.javaInstallationId?.let(JavaOverrideEdit::Specific) ?: JavaOverrideEdit.UseDefault
-        editedInstance.javaOverride != null && editedInstance.javaOverride != current
-    } ?: false
-    val isJvmMemoryOptionsEdited = instance.valueOrNull?.let {
-        editedInstance.jvmMemoryOptionsEdit != null && editedInstance.jvmMemoryOptionsEdit != it.jvmMemoryOptions
-    } ?: false
-    val isNativeLibraryOptionsEdited = instance.valueOrNull?.let {
-        editedInstance.nativeLibraryOptionsEdit != null && editedInstance.nativeLibraryOptionsEdit != it.nativeLibraryOptions
-    } ?: false
-    val isInstanceEdited: Boolean =
-        isNameEdited || isGameVersionEdited || isModLoaderEdited || isJavaOverrideEdited ||
-                isJvmMemoryOptionsEdited || isNativeLibraryOptionsEdited
-    val filteredLogs = logs?.filter {
-        it.level in logLevelFilter && (logSearchQuery.isBlank() || it.message.contains(
-            logSearchQuery,
-            ignoreCase = true
-        ))
-    }
-}
+)
 
 @Immutable
 data class InstanceView(
@@ -105,33 +51,6 @@ data class InstanceView(
     /** Bumped whenever the icon changes — used to bust the image cache when [iconFilePath] is reused unchanged. */
     val updatedAt: Instant,
 )
-
-@Immutable
-data class InstanceEditState(
-    val name: String? = null,
-    val gameVersion: String? = null,
-    val modLoaderType: ModLoaderTypeEdit? = null,
-    val modLoaderVersion: String? = null,
-    val javaOverride: JavaOverrideEdit? = null,
-    val jvmMemoryOptionsEdit: JvmMemoryOptions? = null,
-    val nativeLibraryOptionsEdit: NativeLibraryOptions? = null,
-)
-
-@Immutable
-sealed interface ModLoaderTypeEdit {
-    data object Vanilla : ModLoaderTypeEdit
-
-    @JvmInline
-    value class Loader(val type: ModLoaderType) : ModLoaderTypeEdit
-}
-
-@Immutable
-sealed interface JavaOverrideEdit {
-    data object UseDefault : JavaOverrideEdit
-
-    @JvmInline
-    value class Specific(val installationId: String) : JavaOverrideEdit
-}
 
 @Immutable
 data class InstanceLogEventView(
@@ -186,18 +105,6 @@ fun InstalledContentFile.toView(): InstalledContentFileView = InstalledContentFi
     enabled = enabled,
     providers = providers,
     lastModified = lastModified
-)
-
-@Immutable
-enum class RemovalKind {
-    Mod, ResourcePack, ShaderPack
-}
-
-@Immutable
-data class PendingRemoval(
-    val kind: RemovalKind,
-    val fileName: String,
-    val title: String,
 )
 
 @Immutable

@@ -99,10 +99,22 @@ fun InstanceDetails(
             }
         }
 
-        state.promptRemoveConfirmation?.let { pending ->
+        state.modsContent.state.promptRemoveConfirmation?.let { pending ->
             OverlayEffect(pending) {
                 val result = show(ConfirmRemoveDialog(pending.title))
-                eventSink(InstanceDetailsEvent.OnConfirmRemove(result))
+                state.modsContent.eventSink(InstalledContentEvent.OnConfirmRemove(result))
+            }
+        }
+        state.resourcePacksContent.state.promptRemoveConfirmation?.let { pending ->
+            OverlayEffect(pending) {
+                val result = show(ConfirmRemoveDialog(pending.title))
+                state.resourcePacksContent.eventSink(InstalledContentEvent.OnConfirmRemove(result))
+            }
+        }
+        state.shaderPacksContent.state.promptRemoveConfirmation?.let { pending ->
+            OverlayEffect(pending) {
+                val result = show(ConfirmRemoveDialog(pending.title))
+                state.shaderPacksContent.eventSink(InstalledContentEvent.OnConfirmRemove(result))
             }
         }
 
@@ -150,12 +162,16 @@ private fun InstanceDetails(
     ) {
         InstanceHeader(
             instance = instance,
-            isInstanceEdited = state.isInstanceEdited
+            isInstanceEdited = state.optionsContent.state.isInstanceEdited,
+            onCancelEdit = { state.optionsContent.eventSink(InstanceOptionsEvent.CancelEdit) },
+            onSaveInstance = { state.optionsContent.eventSink(InstanceOptionsEvent.SaveInstance) },
         )
         AppTabGroup(
             selectedTab = state.selectedTab,
             onSelectedTabChange = { eventSink(InstanceDetailsEvent.SelectTab(it)) },
-            tabs = InstanceDetailsTab.entries.filter { it != InstanceDetailsTab.Logs || state.logs != null },
+            tabs = InstanceDetailsTab.entries.filter {
+                it != InstanceDetailsTab.Logs || state.logsContent.state.logs != null
+            },
             orientation = Orientation.Vertical,
             tabTitle = { tab -> InstanceDetailsTabTitle(tab, state) }
         ) { tab -> InstanceDetailsTabContent(tab, instance, state) }
@@ -175,9 +191,9 @@ private fun AppTabScope.InstanceDetailsTabTitle(tab: InstanceDetailsTab, state: 
         verticalAlignment = Alignment.CenterVertically
     ) {
         val installedFiles = when (tab) {
-            InstanceDetailsTab.Mods -> state.installedMods
-            InstanceDetailsTab.ResourcePacks -> state.installedResourcePacks
-            InstanceDetailsTab.ShaderPacks -> state.installedShaderPacks
+            InstanceDetailsTab.Mods -> state.modsContent.state.files
+            InstanceDetailsTab.ResourcePacks -> state.resourcePacksContent.state.files
+            InstanceDetailsTab.ShaderPacks -> state.shaderPacksContent.state.files
             else -> null
         }
         val title = if (installedFiles != null) {
@@ -196,20 +212,25 @@ private fun AppTabScope.InstanceDetailsTabTitle(tab: InstanceDetailsTab, state: 
 context(eventSink: EventSink<InstanceDetailsEvent>)
 private fun InstanceDetailsTabContent(tab: InstanceDetailsTab, instance: InstanceView, state: InstanceDetailsState) {
     when (tab) {
-        InstanceDetailsTab.Options -> InstanceOptionsTab(instance, state)
-        InstanceDetailsTab.Mods -> InstanceModsTab(state)
-        InstanceDetailsTab.ResourcePacks -> InstanceResourcePacksTab(state)
-        InstanceDetailsTab.ShaderPacks -> InstanceShaderPacksTab(state)
+        InstanceDetailsTab.Options -> InstanceOptionsTab(instance, state.optionsContent)
+        InstanceDetailsTab.Mods -> InstanceModsTab(state, state.modsContent)
+        InstanceDetailsTab.ResourcePacks -> InstanceResourcePacksTab(state.resourcePacksContent)
+        InstanceDetailsTab.ShaderPacks -> InstanceShaderPacksTab(state.shaderPacksContent)
         InstanceDetailsTab.DataPacks -> InstanceDataPacksTab(state)
         InstanceDetailsTab.Worlds -> InstanceWorldsTab(state)
-        InstanceDetailsTab.Logs -> state.logs?.let { InstanceLogsTab(state) }
+        InstanceDetailsTab.Logs -> state.logsContent.state.logs?.let { InstanceLogsTab(state.logsContent) }
     }
 }
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 context(eventSink: EventSink<InstanceDetailsEvent>)
-private fun InstanceHeader(instance: InstanceView, isInstanceEdited: Boolean) = SharedElementTransitionScope {
+private fun InstanceHeader(
+    instance: InstanceView,
+    isInstanceEdited: Boolean,
+    onCancelEdit: () -> Unit,
+    onSaveInstance: () -> Unit,
+) = SharedElementTransitionScope {
     Row(
         modifier = Modifier.appCard().padding(horizontal = 16.dp, vertical = 8.dp).fillMaxWidth()
             .instanceSharedElement(instance.id, "card"),
@@ -219,7 +240,7 @@ private fun InstanceHeader(instance: InstanceView, isInstanceEdited: Boolean) = 
         InstanceHeaderIcon(instance)
         InstanceHeaderInfo(instance)
         InstanceHeaderStatus(instance)
-        InstanceHeaderEditActions(isInstanceEdited)
+        InstanceHeaderEditActions(isInstanceEdited, onCancelEdit, onSaveInstance)
         InstanceHeaderActionButton(instance, isInstanceEdited)
         InstanceHeaderMenu(instance)
     }
@@ -290,7 +311,6 @@ private fun RowScope.InstanceHeaderInfo(instance: InstanceView) {
 }
 
 @Composable
-context(eventSink: EventSink<InstanceDetailsEvent>)
 private fun InstanceHeaderStatus(instance: InstanceView) {
     if (instance.status !is InstanceStatus.Launching && instance.status !is InstanceStatus.Installing) return
 
@@ -313,8 +333,11 @@ private fun InstanceHeaderStatus(instance: InstanceView) {
 }
 
 @Composable
-context(eventSink: EventSink<InstanceDetailsEvent>)
-private fun InstanceHeaderEditActions(isInstanceEdited: Boolean) {
+private fun InstanceHeaderEditActions(
+    isInstanceEdited: Boolean,
+    onCancelEdit: () -> Unit,
+    onSaveInstance: () -> Unit,
+) {
     AppAnimatedVisibility(isInstanceEdited) {
         Row(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -325,14 +348,14 @@ private fun InstanceHeaderEditActions(isInstanceEdited: Boolean) {
             )
 
             AppIconTextButton(
-                onClick = { eventSink(InstanceDetailsEvent.CancelEdit) },
+                onClick = onCancelEdit,
                 text = stringResource(SharedRes.string.cancel),
                 contentColor = Theme[colors][onBackground],
                 imageVector = Lucide.X,
             )
 
             AppIconTextButton(
-                onClick = { eventSink(InstanceDetailsEvent.SaveInstance) },
+                onClick = onSaveInstance,
                 text = stringResource(SharedRes.string.save),
                 backgroundColor = Theme[colors][success],
                 contentColor = Theme[colors][onSuccess],
@@ -461,26 +484,28 @@ private fun InstanceHeaderMenu(instance: InstanceView) {
 }
 
 @Composable
-context(eventSink: EventSink<InstanceDetailsEvent>)
-private fun InstanceOptionsTab(instance: InstanceView, state: InstanceDetailsState) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .scrollable(state = rememberScrollState(), orientation = Orientation.Horizontal),
-    ) {
-        LazyColumn(
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            contentPadding = PaddingValues(8.dp)
+private fun InstanceOptionsTab(instance: InstanceView, content: Store<InstanceOptionsState, InstanceOptionsEvent>) {
+    val state = content.state
+    with(content.eventSink) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .scrollable(state = rememberScrollState(), orientation = Orientation.Horizontal),
         ) {
-            item {
-                InstanceGeneralOptionsSection(instance, state)
-            }
-            item {
-                InstanceJavaOptionsSection(instance, state)
-            }
-            if (state.showNativeLibraryOptions) {
+            LazyColumn(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                contentPadding = PaddingValues(8.dp)
+            ) {
                 item {
-                    InstanceNativeLibraryOptionsSection(instance, state)
+                    InstanceGeneralOptionsSection(instance, state)
+                }
+                item {
+                    InstanceJavaOptionsSection(instance, state)
+                }
+                if (state.showNativeLibraryOptions) {
+                    item {
+                        InstanceNativeLibraryOptionsSection(instance, state)
+                    }
                 }
             }
         }
@@ -488,8 +513,8 @@ private fun InstanceOptionsTab(instance: InstanceView, state: InstanceDetailsSta
 }
 
 @Composable
-context(eventSink: EventSink<InstanceDetailsEvent>)
-private fun InstanceGeneralOptionsSection(instance: InstanceView, state: InstanceDetailsState) {
+context(eventSink: EventSink<InstanceOptionsEvent>)
+private fun InstanceGeneralOptionsSection(instance: InstanceView, state: InstanceOptionsState) {
     InstanceTabSection(
         titleRes = InstanceRes.string.general,
         icon = Lucide.Info
@@ -497,7 +522,7 @@ private fun InstanceGeneralOptionsSection(instance: InstanceView, state: Instanc
         AppTextField(
             label = stringResource(InstanceRes.string.instanceName) + if (state.isNameEdited) "*" else "",
             initialValue = state.editedInstance.name ?: instance.name,
-            onValueChange = { eventSink(InstanceDetailsEvent.UpdateInstance { state -> state.copy(name = it) }) },
+            onValueChange = { eventSink(InstanceOptionsEvent.UpdateInstance { state -> state.copy(name = it) }) },
             modifier = Modifier.widthIn(min = 300.dp)
         )
 
@@ -510,7 +535,7 @@ private fun InstanceGeneralOptionsSection(instance: InstanceView, state: Instanc
             versionList = state.gameVersionList,
             onVersionChange = {
                 it?.let {
-                    eventSink(InstanceDetailsEvent.UpdateInstance { state ->
+                    eventSink(InstanceOptionsEvent.UpdateInstance { state ->
                         state.copy(
                             gameVersion = it.id
                         )
@@ -525,9 +550,9 @@ private fun InstanceGeneralOptionsSection(instance: InstanceView, state: Instanc
 }
 
 @Composable
-context(eventSink: EventSink<InstanceDetailsEvent>)
+context(eventSink: EventSink<InstanceOptionsEvent>)
 private fun InstanceGeneralOptionsLoader(
-    state: InstanceDetailsState,
+    state: InstanceOptionsState,
     instance: InstanceView
 ) {
     val loaderType = when (val edit = state.editedInstance.modLoaderType) {
@@ -539,7 +564,7 @@ private fun InstanceGeneralOptionsLoader(
     LoaderSelector(
         selectedLoader = loaderType,
         availableLoaders = state.loaderList,
-        onLoaderChange = { eventSink(InstanceDetailsEvent.OnLoaderChange(it)) },
+        onLoaderChange = { eventSink(InstanceOptionsEvent.OnLoaderChange(it)) },
         label = stringResource(GameRes.string.loader) + if (state.isLoaderTypeEdited) "*" else ""
     )
 
@@ -553,15 +578,15 @@ private fun InstanceGeneralOptionsLoader(
         LoaderVersionSelector(
             selectedVersion = selectedVersion,
             versionList = state.loaderVersionList,
-            onVersionChange = { it?.let { eventSink(InstanceDetailsEvent.OnLoaderVersionChange(it.version)) } },
+            onVersionChange = { it?.let { eventSink(InstanceOptionsEvent.OnLoaderVersionChange(it.version)) } },
             label = stringResource(GameRes.string.loaderVersion) + if (state.isLoaderVersionEdited) "*" else ""
         )
     }
 }
 
 @Composable
-context(eventSink: EventSink<InstanceDetailsEvent>)
-private fun InstanceJavaOptionsSection(instance: InstanceView, state: InstanceDetailsState) {
+context(eventSink: EventSink<InstanceOptionsEvent>)
+private fun InstanceJavaOptionsSection(instance: InstanceView, state: InstanceOptionsState) {
     InstanceTabSection(
         titleRes = InstanceRes.string.java,
         icon = Lucide.Coffee
@@ -586,7 +611,7 @@ private fun InstanceJavaOptionsSection(instance: InstanceView, state: InstanceDe
             AppSelectField(
                 value = selected,
                 items = listOf(null) + state.availableJavaInstallations,
-                onValueChange = { eventSink(InstanceDetailsEvent.OnJavaOverrideChange(it?.id)) },
+                onValueChange = { eventSink(InstanceOptionsEvent.OnJavaOverrideChange(it?.id)) },
                 label = stringResource(InstanceRes.string.javaOverride) +
                         (if (state.isJavaOverrideEdited) "*" else "") + recommendedSuffix,
                 itemRenderer = { value, _ ->
@@ -595,7 +620,7 @@ private fun InstanceJavaOptionsSection(instance: InstanceView, state: InstanceDe
                 modifier = Modifier.width(450.dp),
             )
             ResetButton(selectedId != null) {
-                eventSink(InstanceDetailsEvent.OnJavaOverrideChange(null))
+                eventSink(InstanceOptionsEvent.OnJavaOverrideChange(null))
             }
         }
 
@@ -604,7 +629,7 @@ private fun InstanceJavaOptionsSection(instance: InstanceView, state: InstanceDe
         val defaultMax = defaultMaxMemoryMb(state.totalMemoryMb)
 
         fun updateOptions(update: (JvmMemoryOptions) -> JvmMemoryOptions) {
-            eventSink(InstanceDetailsEvent.UpdateInstance { s ->
+            eventSink(InstanceOptionsEvent.UpdateInstance { s ->
                 s.copy(jvmMemoryOptionsEdit = update(currentOptions))
             })
         }
@@ -668,8 +693,8 @@ private fun ResetButton(enabled: Boolean, onClick: () -> Unit) {
 }
 
 @Composable
-context(eventSink: EventSink<InstanceDetailsEvent>)
-private fun InstanceNativeLibraryOptionsSection(instance: InstanceView, state: InstanceDetailsState) {
+context(eventSink: EventSink<InstanceOptionsEvent>)
+private fun InstanceNativeLibraryOptionsSection(instance: InstanceView, state: InstanceOptionsState) {
     InstanceTabSection(
         titleRes = InstanceRes.string.nativeLibraries,
         icon = Lucide.Package
@@ -678,7 +703,7 @@ private fun InstanceNativeLibraryOptionsSection(instance: InstanceView, state: I
         val effectiveOptions = currentOptions.withFallback(state.globalNativeLibraryOptions)
 
         fun updateOptions(update: (NativeLibraryOptions) -> NativeLibraryOptions) {
-            eventSink(InstanceDetailsEvent.UpdateInstance { s ->
+            eventSink(InstanceOptionsEvent.UpdateInstance { s ->
                 s.copy(nativeLibraryOptionsEdit = update(currentOptions))
             })
         }
@@ -860,19 +885,19 @@ private val ContentSortBy.displayName: String
     )
 
 @Composable
-context(eventSink: EventSink<InstanceDetailsEvent>)
+context(eventSink: EventSink<InstalledContentEvent>)
 private fun InstalledContentFileList(
     files: List<InstalledContentFileView>?,
     emptyMessage: StringResource,
     addLabel: StringResource,
     addEnabled: Boolean,
-    removalKind: RemovalKind,
     importLabel: StringResource,
     importExtension: String,
     openFolderLabel: StringResource,
     contentFolder: InstanceFolder,
     onAddClick: () -> Unit,
-    onEnabledChange: (fileName: String, enabled: Boolean) -> InstanceDetailsEvent
+    onOpenProject: (platformId: String, projectId: String) -> Unit,
+    onOpenFolder: (InstanceFolder) -> Unit,
 ) {
     var searchQuery by remember { mutableStateOf("") }
     var showOnlyEnabled by remember { mutableStateOf(false) }
@@ -893,12 +918,12 @@ private fun InstalledContentFileList(
             onSortByChange = { sortBy = it },
             addLabel = addLabel,
             addEnabled = addEnabled,
-            removalKind = removalKind,
             importLabel = importLabel,
             importExtension = importExtension,
             openFolderLabel = openFolderLabel,
             contentFolder = contentFolder,
-            onAddClick = onAddClick
+            onAddClick = onAddClick,
+            onOpenFolder = onOpenFolder
         )
 
         val filteredFiles = files?.filteredAndSorted(searchQuery, showOnlyEnabled, sortBy)
@@ -906,15 +931,14 @@ private fun InstalledContentFileList(
             files = files,
             filteredFiles = filteredFiles,
             emptyMessage = emptyMessage,
-            removalKind = removalKind,
             listState = listState,
-            onEnabledChange = onEnabledChange
+            onOpenProject = onOpenProject
         )
     }
 }
 
 @Composable
-context(eventSink: EventSink<InstanceDetailsEvent>)
+context(eventSink: EventSink<InstalledContentEvent>)
 private fun InstalledContentFileListHeader(
     searchQuery: String,
     onSearchQueryChange: (String) -> Unit,
@@ -924,12 +948,12 @@ private fun InstalledContentFileListHeader(
     onSortByChange: (ContentSortBy) -> Unit,
     addLabel: StringResource,
     addEnabled: Boolean,
-    removalKind: RemovalKind,
     importLabel: StringResource,
     importExtension: String,
     openFolderLabel: StringResource,
     contentFolder: InstanceFolder,
-    onAddClick: () -> Unit
+    onAddClick: () -> Unit,
+    onOpenFolder: (InstanceFolder) -> Unit
 ) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(8.dp),
@@ -962,30 +986,30 @@ private fun InstalledContentFileListHeader(
         InstalledContentFileListMenu(
             addLabel = addLabel,
             addEnabled = addEnabled,
-            removalKind = removalKind,
             importLabel = importLabel,
             importExtension = importExtension,
             openFolderLabel = openFolderLabel,
             contentFolder = contentFolder,
-            onAddClick = onAddClick
+            onAddClick = onAddClick,
+            onOpenFolder = onOpenFolder
         )
     }
 }
 
 @Composable
-context(eventSink: EventSink<InstanceDetailsEvent>)
+context(eventSink: EventSink<InstalledContentEvent>)
 private fun InstalledContentFileListMenu(
     addLabel: StringResource,
     addEnabled: Boolean,
-    removalKind: RemovalKind,
     importLabel: StringResource,
     importExtension: String,
     openFolderLabel: StringResource,
     contentFolder: InstanceFolder,
-    onAddClick: () -> Unit
+    onAddClick: () -> Unit,
+    onOpenFolder: (InstanceFolder) -> Unit
 ) {
     val importPickerLauncher = rememberFilePickerLauncher(type = FileKitType.File(importExtension)) { file ->
-        file?.let { eventSink(InstanceDetailsEvent.OnImportContentClick(removalKind, it.path)) }
+        file?.let { eventSink(InstalledContentEvent.OnImportClick(it.path)) }
     }
     AppMenuButton {
         AppMenuItem(
@@ -1001,13 +1025,13 @@ private fun InstalledContentFileListMenu(
             enabled = addEnabled
         )
         AppMenuItem(
-            onClick = { eventSink(InstanceDetailsEvent.OnOpenInstanceFolderClick(contentFolder)) },
+            onClick = { onOpenFolder(contentFolder) },
             text = stringResource(openFolderLabel),
             imageVector = Lucide.FolderOpen
         )
         if (contentFolder == InstanceFolder.Mods) {
             AppMenuItem(
-                onClick = { eventSink(InstanceDetailsEvent.OnOpenInstanceFolderClick(InstanceFolder.Config)) },
+                onClick = { onOpenFolder(InstanceFolder.Config) },
                 text = stringResource(InstanceRes.string.openConfigFolder),
                 imageVector = Lucide.FolderCog
             )
@@ -1030,14 +1054,13 @@ private fun List<InstalledContentFileView>.filteredAndSorted(
 }
 
 @Composable
-context(eventSink: EventSink<InstanceDetailsEvent>)
+context(eventSink: EventSink<InstalledContentEvent>)
 private fun InstalledContentFileListBody(
     files: List<InstalledContentFileView>?,
     filteredFiles: List<InstalledContentFileView>?,
     emptyMessage: StringResource,
-    removalKind: RemovalKind,
     listState: LazyListState,
-    onEnabledChange: (fileName: String, enabled: Boolean) -> InstanceDetailsEvent
+    onOpenProject: (platformId: String, projectId: String) -> Unit
 ) {
     when {
         files == null -> AppLoading()
@@ -1057,7 +1080,7 @@ private fun InstalledContentFileListBody(
                 contentPadding = PaddingValues(vertical = 8.dp)
             ) {
                 items(filteredFiles, key = { it.fileName }) { file ->
-                    InstalledContentFileRow(file, removalKind, onEnabledChange)
+                    InstalledContentFileRow(file, onOpenProject)
                 }
             }
             VerticalScrollbar(adapter = rememberScrollbarAdapter(listState))
@@ -1066,11 +1089,10 @@ private fun InstalledContentFileListBody(
 }
 
 @Composable
-context(eventSink: EventSink<InstanceDetailsEvent>)
+context(eventSink: EventSink<InstalledContentEvent>)
 private fun InstalledContentFileRow(
     file: InstalledContentFileView,
-    removalKind: RemovalKind,
-    onEnabledChange: (fileName: String, enabled: Boolean) -> InstanceDetailsEvent
+    onOpenProject: (platformId: String, projectId: String) -> Unit
 ) {
     val contentAlpha = if (file.enabled) 1f else 0.4f
 
@@ -1121,13 +1143,13 @@ private fun InstalledContentFileRow(
 
         AppMenuButton {
             AppMenuItem(
-                onClick = { eventSink(onEnabledChange(file.fileName, !file.enabled)) },
+                onClick = { eventSink(InstalledContentEvent.OnEnabledChange(file.fileName, !file.enabled)) },
                 text = stringResource(if (file.enabled) InstanceRes.string.disable else InstanceRes.string.enable),
                 imageVector = if (file.enabled) Lucide.EyeOff else Lucide.Eye
             )
             AppMenuItem(
                 onClick = {
-                    eventSink(InstanceDetailsEvent.OnRemoveClick(removalKind, file.fileName, file.title))
+                    eventSink(InstalledContentEvent.OnRemoveClick(file.fileName, file.title))
                 },
                 text = stringResource(InstanceRes.string.remove),
                 imageVector = Lucide.Trash,
@@ -1136,7 +1158,7 @@ private fun InstalledContentFileRow(
             file.providers.forEach { provider ->
                 AppMenuItem(
                     onClick = {
-                        eventSink(InstanceDetailsEvent.OnOpenProjectClick(provider.platformId, provider.projectId))
+                        onOpenProject(provider.platformId, provider.projectId)
                     },
                     text = stringResource(
                         InstanceRes.string.openProject,
@@ -1151,58 +1173,71 @@ private fun InstalledContentFileRow(
 
 @Composable
 context(eventSink: EventSink<InstanceDetailsEvent>)
-private fun InstanceModsTab(state: InstanceDetailsState) {
-    InstalledContentFileList(
-        files = state.installedMods,
-        emptyMessage = InstanceRes.string.noModsInstalled,
-        addLabel = InstanceRes.string.addMod,
-        addEnabled = state.instance.valueOrNull?.loaderType != null,
-        removalKind = RemovalKind.Mod,
-        importLabel = InstanceRes.string.importMod,
-        importExtension = "jar",
-        openFolderLabel = InstanceRes.string.openModsFolder,
-        contentFolder = InstanceFolder.Mods,
-        onAddClick = { eventSink(InstanceDetailsEvent.OnAddContentClick(ProjectType.Mod)) }
-    ) { fileName, enabled ->
-        InstanceDetailsEvent.OnModEnabledChange(fileName, enabled)
+private fun InstanceModsTab(state: InstanceDetailsState, content: Store<InstalledContentState, InstalledContentEvent>) {
+    with(content.eventSink) {
+        InstalledContentFileList(
+            files = content.state.files,
+            emptyMessage = InstanceRes.string.noModsInstalled,
+            addLabel = InstanceRes.string.addMod,
+            addEnabled = state.instance.valueOrNull?.loaderType != null,
+            importLabel = InstanceRes.string.importMod,
+            importExtension = "jar",
+            openFolderLabel = InstanceRes.string.openModsFolder,
+            contentFolder = InstanceFolder.Mods,
+            onAddClick = { eventSink(InstanceDetailsEvent.OnAddContentClick(ProjectType.Mod)) },
+            onOpenProject = { platformId, projectId ->
+                eventSink(InstanceDetailsEvent.OnOpenProjectClick(platformId, projectId))
+            },
+            onOpenFolder = { folder -> eventSink(InstanceDetailsEvent.OnOpenInstanceFolderClick(folder)) }
+        )
     }
 }
 
 @Composable
 context(eventSink: EventSink<InstanceDetailsEvent>)
-private fun InstanceResourcePacksTab(state: InstanceDetailsState) {
-    InstalledContentFileList(
-        files = state.installedResourcePacks,
-        emptyMessage = InstanceRes.string.noResourcePacksInstalled,
-        addLabel = InstanceRes.string.addResourcePack,
-        addEnabled = true,
-        removalKind = RemovalKind.ResourcePack,
-        importLabel = InstanceRes.string.importResourcePack,
-        importExtension = "zip",
-        openFolderLabel = InstanceRes.string.openResourcePacksFolder,
-        contentFolder = InstanceFolder.ResourcePacks,
-        onAddClick = { eventSink(InstanceDetailsEvent.OnAddContentClick(ProjectType.ResourcePack)) }
-    ) { fileName, enabled ->
-        InstanceDetailsEvent.OnResourcePackEnabledChange(fileName, enabled)
+private fun InstanceResourcePacksTab(
+    content: Store<InstalledContentState, InstalledContentEvent>
+) {
+    with(content.eventSink) {
+        InstalledContentFileList(
+            files = content.state.files,
+            emptyMessage = InstanceRes.string.noResourcePacksInstalled,
+            addLabel = InstanceRes.string.addResourcePack,
+            addEnabled = true,
+            importLabel = InstanceRes.string.importResourcePack,
+            importExtension = "zip",
+            openFolderLabel = InstanceRes.string.openResourcePacksFolder,
+            contentFolder = InstanceFolder.ResourcePacks,
+            onAddClick = { eventSink(InstanceDetailsEvent.OnAddContentClick(ProjectType.ResourcePack)) },
+            onOpenProject = { platformId, projectId ->
+                eventSink(InstanceDetailsEvent.OnOpenProjectClick(platformId, projectId))
+            },
+            onOpenFolder = { folder -> eventSink(InstanceDetailsEvent.OnOpenInstanceFolderClick(folder)) }
+        )
     }
 }
 
 @Composable
 context(eventSink: EventSink<InstanceDetailsEvent>)
-private fun InstanceShaderPacksTab(state: InstanceDetailsState) {
-    InstalledContentFileList(
-        files = state.installedShaderPacks,
-        emptyMessage = InstanceRes.string.noShaderPacksInstalled,
-        addLabel = InstanceRes.string.addShaderPack,
-        addEnabled = true,
-        removalKind = RemovalKind.ShaderPack,
-        importLabel = InstanceRes.string.importShaderPack,
-        importExtension = "zip",
-        openFolderLabel = InstanceRes.string.openShaderPacksFolder,
-        contentFolder = InstanceFolder.ShaderPacks,
-        onAddClick = { eventSink(InstanceDetailsEvent.OnAddContentClick(ProjectType.ShaderPack)) }
-    ) { fileName, enabled ->
-        InstanceDetailsEvent.OnShaderPackEnabledChange(fileName, enabled)
+private fun InstanceShaderPacksTab(
+    content: Store<InstalledContentState, InstalledContentEvent>
+) {
+    with(content.eventSink) {
+        InstalledContentFileList(
+            files = content.state.files,
+            emptyMessage = InstanceRes.string.noShaderPacksInstalled,
+            addLabel = InstanceRes.string.addShaderPack,
+            addEnabled = true,
+            importLabel = InstanceRes.string.importShaderPack,
+            importExtension = "zip",
+            openFolderLabel = InstanceRes.string.openShaderPacksFolder,
+            contentFolder = InstanceFolder.ShaderPacks,
+            onAddClick = { eventSink(InstanceDetailsEvent.OnAddContentClick(ProjectType.ShaderPack)) },
+            onOpenProject = { platformId, projectId ->
+                eventSink(InstanceDetailsEvent.OnOpenProjectClick(platformId, projectId))
+            },
+            onOpenFolder = { folder -> eventSink(InstanceDetailsEvent.OnOpenInstanceFolderClick(folder)) }
+        )
     }
 }
 
@@ -1217,8 +1252,8 @@ private fun InstanceWorldsTab(state: InstanceDetailsState) {
 }
 
 @Composable
-context(eventSink: EventSink<InstanceDetailsEvent>)
-private fun InstanceLogsTab(state: InstanceDetailsState) {
+private fun InstanceLogsTab(content: Store<InstanceLogsState, InstanceLogsEvent>) {
+    val (state, eventSink) = content
     val logs = state.filteredLogs ?: emptyList()
     val listState = rememberLazyListState()
     val horizontalScrollState = rememberScrollState()
@@ -1234,7 +1269,9 @@ private fun InstanceLogsTab(state: InstanceDetailsState) {
     }
 
     Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        InstanceLogsFilterBar(state)
+        with(eventSink) {
+            InstanceLogsFilterBar(state)
+        }
 
         SelectionContainer(modifier = Modifier.weight(1f)) {
             Column(modifier = Modifier.appCard()) {
@@ -1242,19 +1279,19 @@ private fun InstanceLogsTab(state: InstanceDetailsState) {
                     LazyColumn(
                         state = listState,
                         modifier = Modifier.weight(1f).padding(horizontal = 8.dp)
-                            .let { m -> if (state.wrapLogLines) m else m.horizontalScroll(horizontalScrollState) },
+                            .let { m -> if (state.wrapLines) m else m.horizontalScroll(horizontalScrollState) },
                         verticalArrangement = Arrangement.spacedBy(2.dp),
                         contentPadding = PaddingValues(vertical = 8.dp)
                     ) {
                         items(logs) { logEvent ->
                             ProvideTextStyle(Theme[textStyles][console]) {
-                                InstanceLogMessage(logEvent, state.wrapLogLines)
+                                InstanceLogMessage(logEvent, state.wrapLines)
                             }
                         }
                     }
                     VerticalScrollbar(adapter = rememberScrollbarAdapter(listState))
                 }
-                if (!state.wrapLogLines) {
+                if (!state.wrapLines) {
                     HorizontalScrollbar(
                         adapter = rememberScrollbarAdapter(horizontalScrollState),
                         modifier = Modifier.fillMaxWidth().padding(end = 12.dp)
@@ -1266,29 +1303,29 @@ private fun InstanceLogsTab(state: InstanceDetailsState) {
 }
 
 @Composable
-context(eventSink: EventSink<InstanceDetailsEvent>)
-private fun InstanceLogsFilterBar(state: InstanceDetailsState) {
+context(eventSink: EventSink<InstanceLogsEvent>)
+private fun InstanceLogsFilterBar(state: InstanceLogsState) {
     Row(
         modifier = Modifier.appCard().padding(8.dp).fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         AppMultiSelectField(
-            values = state.logLevelFilter,
+            values = state.levelFilter,
             items = InstanceLogEventView.Level.entries,
-            onValueChange = { eventSink(InstanceDetailsEvent.OnLogLevelFilterToggle(it)) },
+            onValueChange = { eventSink(InstanceLogsEvent.OnLevelFilterToggle(it)) },
             itemRenderer = { value, _ -> AppSelectItem(text = value.name) },
         )
         AppTextField(
-            initialValue = state.logSearchQuery,
-            onValueChange = { eventSink(InstanceDetailsEvent.OnLogSearchQueryChange(it)) },
+            initialValue = state.searchQuery,
+            onValueChange = { eventSink(InstanceLogsEvent.OnSearchQueryChange(it)) },
             placeholder = { AppText(stringResource(CoreRes.string.search)) },
             modifier = Modifier.weight(1f)
         )
         AppCheckbox(
             label = stringResource(InstanceRes.string.wrapLines),
-            checked = state.wrapLogLines,
-            onCheckedChange = { eventSink(InstanceDetailsEvent.OnWrapLogLinesToggle) }
+            checked = state.wrapLines,
+            onCheckedChange = { eventSink(InstanceLogsEvent.OnWrapLinesToggle) }
         )
     }
 }
