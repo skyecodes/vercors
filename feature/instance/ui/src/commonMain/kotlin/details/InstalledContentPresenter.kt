@@ -59,26 +59,45 @@ class InstalledContentPresenter(
             files = files,
             promptRemoveConfirmation = promptRemoveConfirmation,
         ) + { event ->
-            when (event) {
-                is InstalledContentEvent.OnEnabledChange -> globalScope.launch {
-                    setContentEnabled(kind, instanceId, event.fileName, event.enabled)
-                }
+            handleEvent(
+                event = event,
+                promptRemoveConfirmation = promptRemoveConfirmation,
+                setPromptRemoveConfirmation = setPromptRemoveConfirmation,
+            )
+        }
+    }
 
-                is InstalledContentEvent.OnRemoveClick ->
-                    setPromptRemoveConfirmation(PendingContentRemoval(event.fileName, event.title))
-
-                is InstalledContentEvent.OnConfirmRemove -> {
-                    setPromptRemoveConfirmation(null)
-                    if (event.result && promptRemoveConfirmation != null) {
-                        globalScope.launch { removeContent(kind, instanceId, promptRemoveConfirmation.fileName) }
-                    }
-                }
-
-                is InstalledContentEvent.OnImportClick -> globalScope.launch {
-                    val imported = importContent(kind, instanceId, event.sourcePath)
-                    if (!imported) snackbarService.error { stringResource(InstanceRes.string.errorImportFailed) }
-                }
+    private fun handleEvent(
+        event: InstalledContentEvent,
+        promptRemoveConfirmation: PendingContentRemoval?,
+        setPromptRemoveConfirmation: (PendingContentRemoval?) -> Unit,
+    ) {
+        when (event) {
+            is InstalledContentEvent.OnEnabledChange -> globalScope.launch {
+                setContentEnabled(kind, instanceId, event.fileName, event.enabled)
             }
+
+            is InstalledContentEvent.OnRemoveClick ->
+                setPromptRemoveConfirmation(PendingContentRemoval(event.fileName, event.title))
+
+            is InstalledContentEvent.OnConfirmRemove ->
+                handleConfirmRemove(event, promptRemoveConfirmation, setPromptRemoveConfirmation)
+
+            is InstalledContentEvent.OnImportClick -> globalScope.launch {
+                val imported = importContent(kind, instanceId, event.sourcePath)
+                if (!imported) snackbarService.error { stringResource(InstanceRes.string.errorImportFailed) }
+            }
+        }
+    }
+
+    private fun handleConfirmRemove(
+        event: InstalledContentEvent.OnConfirmRemove,
+        promptRemoveConfirmation: PendingContentRemoval?,
+        setPromptRemoveConfirmation: (PendingContentRemoval?) -> Unit,
+    ) {
+        setPromptRemoveConfirmation(null)
+        if (event.result && promptRemoveConfirmation != null) {
+            globalScope.launch { removeContent(kind, instanceId, promptRemoveConfirmation.fileName) }
         }
     }
 

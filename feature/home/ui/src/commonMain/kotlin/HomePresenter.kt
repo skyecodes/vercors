@@ -31,24 +31,31 @@ class HomePresenter(
     @Composable
     override fun present(): Store<HomeState, HomeEvent> {
         val sections by observeHomeState()
-        var promptCreateInstance by remember { mutableStateOf(false) }
+        val (promptCreateInstance, setPromptCreateInstance) = remember { mutableStateOf(false) }
 
         return HomeState(
             sections = sections,
             promptCreateInstance = promptCreateInstance,
             createInstanceDialog = createInstanceDialog
         ) + { event ->
-            when (event) {
-                HomeEvent.OnCreateInstanceClick -> promptCreateInstance = true
-                is HomeEvent.OnCreateInstanceResult -> {
-                    promptCreateInstance = false
-                    val result = event.result
-                    if (result is CreateInstanceResult.Created) navigator.goTo(InstanceDetailsScreen(result.instanceId))
-                }
+            handleEvent(
+                event = event,
+                setPromptCreateInstance = setPromptCreateInstance
+            )
+        }
+    }
 
-                is HomeEvent.OnProjectClick -> navigator.goTo(ProjectDetailsScreen(event.projectId))
-                is HomeEvent.OnInstanceClick -> navigator.goTo(InstanceDetailsScreen(event.instanceId))
+    private fun handleEvent(event: HomeEvent, setPromptCreateInstance: (Boolean) -> Unit) {
+        when (event) {
+            HomeEvent.OnCreateInstanceClick -> setPromptCreateInstance(true)
+            is HomeEvent.OnCreateInstanceResult -> {
+                setPromptCreateInstance(false)
+                val result = event.result
+                if (result is CreateInstanceResult.Created) navigator.goTo(InstanceDetailsScreen(result.instanceId))
             }
+
+            is HomeEvent.OnProjectClick -> navigator.goTo(ProjectDetailsScreen(event.projectId))
+            is HomeEvent.OnInstanceClick -> navigator.goTo(InstanceDetailsScreen(event.instanceId))
         }
     }
 

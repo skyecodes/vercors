@@ -46,18 +46,20 @@ class CreateInstancePresenter(
     @Composable
     override fun present(): Store<CreateInstanceState, CreateInstanceEvent> {
         val gameVersionList by observeGameVersionListView()
-        var instanceName by remember { mutableStateOf("") }
-        var selectedGameVersion by remember { mutableStateOf<GameVersionView?>(null) }
-        var selectedLoader by remember { mutableStateOf<ModLoaderType?>(null) }
-        var selectedLoaderVersion by remember { mutableStateOf<LoaderVersion?>(null) }
+        val (instanceName, setInstanceName) = remember { mutableStateOf("") }
+        val (selectedGameVersion, setSelectedGameVersion) = remember { mutableStateOf<GameVersionView?>(null) }
+        val (selectedLoader, setSelectedLoader) = remember { mutableStateOf<ModLoaderType?>(null) }
+        val (selectedLoaderVersion, setSelectedLoaderVersion) = remember { mutableStateOf<LoaderVersion?>(null) }
         val loaderList by observeAvailableLoadersView(selectedGameVersion?.id)
         val loaderVersionList by observeLoaderVersionsView(selectedGameVersion?.id, selectedLoader)
 
         LaunchedEffect(loaderVersionList) {
             if (selectedLoaderVersion == null) {
-                selectedLoaderVersion = loaderVersionList.valueOrNull?.let { versions ->
-                    versions.firstOrNull { it.stable } ?: versions.firstOrNull()
-                }
+                setSelectedLoaderVersion(
+                    loaderVersionList.valueOrNull?.let { versions ->
+                        versions.firstOrNull { it.stable } ?: versions.firstOrNull()
+                    }
+                )
             }
         }
 
@@ -69,25 +71,49 @@ class CreateInstancePresenter(
             loaderList = loaderList,
             selectedLoaderVersion = selectedLoaderVersion,
             loaderVersionList = loaderVersionList
-        ) + {
-            when (it) {
-                is CreateInstanceEvent.OnInstanceNameChange -> instanceName = it.name
-                is CreateInstanceEvent.OnGameVersionChange -> {
-                    selectedGameVersion = it.version
-                    selectedLoader = null
-                    selectedLoaderVersion = null
-                }
+        ) + { event ->
+            handleEvent(
+                event = event,
+                instanceName = instanceName,
+                setInstanceName = setInstanceName,
+                selectedGameVersion = selectedGameVersion,
+                setSelectedGameVersion = setSelectedGameVersion,
+                selectedLoader = selectedLoader,
+                setSelectedLoader = setSelectedLoader,
+                selectedLoaderVersion = selectedLoaderVersion,
+                setSelectedLoaderVersion = setSelectedLoaderVersion,
+            )
+        }
+    }
 
-                is CreateInstanceEvent.OnLoaderChange -> {
-                    selectedLoader = it.loader
-                    selectedLoaderVersion = null
-                }
-
-                is CreateInstanceEvent.OnLoaderVersionChange -> selectedLoaderVersion = it.version
-                CreateInstanceEvent.OnCancelClick -> navigator.finish(CreateInstanceResult.Cancelled)
-                CreateInstanceEvent.OnCreateInstanceClick ->
-                    createInstance(instanceName, selectedGameVersion, selectedLoader, selectedLoaderVersion)
+    private fun handleEvent(
+        event: CreateInstanceEvent,
+        instanceName: String,
+        setInstanceName: (String) -> Unit,
+        selectedGameVersion: GameVersionView?,
+        setSelectedGameVersion: (GameVersionView?) -> Unit,
+        selectedLoader: ModLoaderType?,
+        setSelectedLoader: (ModLoaderType?) -> Unit,
+        selectedLoaderVersion: LoaderVersion?,
+        setSelectedLoaderVersion: (LoaderVersion?) -> Unit,
+    ) {
+        when (event) {
+            is CreateInstanceEvent.OnInstanceNameChange -> setInstanceName(event.name)
+            is CreateInstanceEvent.OnGameVersionChange -> {
+                setSelectedGameVersion(event.version)
+                setSelectedLoader(null)
+                setSelectedLoaderVersion(null)
             }
+
+            is CreateInstanceEvent.OnLoaderChange -> {
+                setSelectedLoader(event.loader)
+                setSelectedLoaderVersion(null)
+            }
+
+            is CreateInstanceEvent.OnLoaderVersionChange -> setSelectedLoaderVersion(event.version)
+            CreateInstanceEvent.OnCancelClick -> navigator.finish(CreateInstanceResult.Cancelled)
+            CreateInstanceEvent.OnCreateInstanceClick ->
+                createInstance(instanceName, selectedGameVersion, selectedLoader, selectedLoaderVersion)
         }
     }
 

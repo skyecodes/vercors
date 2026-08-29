@@ -1,6 +1,9 @@
 package app.vercors.feature.project.ui.details
 
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import app.vercors.core.ui.state.produceProgressiveState
 import app.vercors.feature.instance.ui.details.InstanceDetailsScreen
 import app.vercors.feature.instance.ui.details.InstanceDetailsTab
@@ -36,7 +39,7 @@ class ProjectDetailsPresenter(
         val project by produceProgressiveState(screen.projectId) {
             value = progressive { getProject(screen.projectId).toView() }
         }
-        var promptInstall by remember { mutableStateOf(false) }
+        val (promptInstall, setPromptInstall) = remember { mutableStateOf(false) }
         val type = project.valueOrNull?.type
         val loaders = project.valueOrNull?.loaders
         val name = project.valueOrNull?.name
@@ -61,22 +64,30 @@ class ProjectDetailsPresenter(
             installProjectDialog = installProjectDialog,
             installModpackDialog = installModpackDialog
         ) + { event ->
-            when (event) {
-                ProjectDetailsEvent.OnInstallClick -> promptInstall = true
-                is ProjectDetailsEvent.OnInstallResult -> {
-                    promptInstall = false
-                    if (event.result is InstallProjectResult.GoToInstance) {
-                        navigator.goTo(
-                            InstanceDetailsScreen(event.result.instanceId, initialTab = type?.toInstanceDetailsTab())
-                        )
-                    }
-                }
+            handleEvent(
+                event = event,
+                type = type,
+                setPromptInstall = setPromptInstall,
+            )
+        }
+    }
 
-                is ProjectDetailsEvent.OnInstallModpackResult -> {
-                    promptInstall = false
-                    if (event.result is InstallModpackResult.Installed) {
-                        navigator.goTo(InstanceDetailsScreen(event.result.instanceId))
-                    }
+    private fun handleEvent(event: ProjectDetailsEvent, type: ProjectType?, setPromptInstall: (Boolean) -> Unit) {
+        when (event) {
+            ProjectDetailsEvent.OnInstallClick -> setPromptInstall(true)
+            is ProjectDetailsEvent.OnInstallResult -> {
+                setPromptInstall(false)
+                if (event.result is InstallProjectResult.GoToInstance) {
+                    navigator.goTo(
+                        InstanceDetailsScreen(event.result.instanceId, initialTab = type?.toInstanceDetailsTab())
+                    )
+                }
+            }
+
+            is ProjectDetailsEvent.OnInstallModpackResult -> {
+                setPromptInstall(false)
+                if (event.result is InstallModpackResult.Installed) {
+                    navigator.goTo(InstanceDetailsScreen(event.result.instanceId))
                 }
             }
         }

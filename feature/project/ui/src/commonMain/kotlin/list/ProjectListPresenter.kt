@@ -31,7 +31,6 @@ import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedFactory
 import dev.zacsweers.metro.AssistedInject
-import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -40,8 +39,6 @@ import opensavvy.state.arrow.progressive
 import opensavvy.state.progressive.ProgressiveOutcome
 import opensavvy.state.progressive.map
 import opensavvy.state.progressive.valueOrNull
-
-private val logger = KotlinLogging.logger {}
 
 @AssistedInject
 class ProjectListPresenter(
@@ -108,15 +105,15 @@ class ProjectListPresenter(
             showSnapshot = showSnapshot.value,
             filter = filter.value,
             projects = projects.value,
-        ) + {
+        ) + { event ->
             handleEvent(
-                it,
-                presenterScope,
-                filter,
-                lastSearchedFilter,
-                projects,
-                gameVersionSearchQuery,
-                showSnapshot
+                event = event,
+                presenterScope = presenterScope,
+                filter = filter,
+                lastSearchedFilter = lastSearchedFilter,
+                projects = projects,
+                gameVersionSearchQuery = gameVersionSearchQuery,
+                showSnapshot = showSnapshot,
             )
         }
     }

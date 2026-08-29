@@ -51,49 +51,18 @@ class InstallModpackPresenter(
     @OptIn(ExperimentalProgressiveRaiseApi::class)
     @Composable
     override fun present(): Store<InstallModpackState, InstallModpackEvent> {
-        var selectedFileId by remember { mutableStateOf<String?>(null) }
-        var instanceName by remember { mutableStateOf(projectName) }
-        var installing by remember { mutableStateOf(false) }
-        var installProgress by remember { mutableStateOf<Float?>(null) }
-        var installJob by remember { mutableStateOf<Job?>(null) }
+        val (selectedFileId, setSelectedFileId) = remember { mutableStateOf<String?>(null) }
+        val (instanceName, setInstanceName) = remember { mutableStateOf(projectName) }
+        val (installing, setInstalling) = remember { mutableStateOf(false) }
+        val (installProgress, setInstallProgress) = remember { mutableStateOf<Float?>(null) }
+        val (installJob, setInstallJob) = remember { mutableStateOf<Job?>(null) }
         val files = remember { mutableProgressiveStateOf<ProjectDetailsError, List<ProjectFileView>>() }
 
         LaunchedEffect(projectId) {
             files.value = ProgressiveOutcome.Incomplete()
             val outcome = progressive { getProjectFiles(projectId).map { it.toView() } }
             files.value = outcome
-            selectedFileId = outcome.valueOrNull?.let(::pickRecommendedFile)?.id
-        }
-
-        fun handleEvent(event: InstallModpackEvent) {
-            when (event) {
-                is InstallModpackEvent.OnFileSelected -> selectedFileId = event.fileId
-                is InstallModpackEvent.OnInstanceNameChange -> instanceName = event.name
-                InstallModpackEvent.OnCancelClick -> {
-                    installJob?.cancel()
-                    navigator.finish(InstallModpackResult.Cancelled)
-                }
-
-                InstallModpackEvent.OnConfirmClick -> {
-                    val file = files.value.valueOrNull?.find { it.id == selectedFileId }
-                    if (file != null && instanceName.length >= 3) {
-                        installing = true
-                        installProgress = null
-                        installJob = confirmInstall(
-                            file, instanceName,
-                            onProgressChanged = { installProgress = it },
-                            onInstanceCreated = { instanceId ->
-                                installing = false
-                                navigator.finish(InstallModpackResult.Installed(instanceId))
-                            },
-                            onFinished = {
-                                installing = false
-                                navigator.finish(InstallModpackResult.Cancelled)
-                            }
-                        )
-                    }
-                }
-            }
+            setSelectedFileId(outcome.valueOrNull?.let(::pickRecommendedFile)?.id)
         }
 
         return InstallModpackState(
@@ -102,7 +71,75 @@ class InstallModpackPresenter(
             instanceName = instanceName,
             installing = installing,
             installProgress = installProgress
-        ) + ::handleEvent
+        ) + { event ->
+            handleEvent(
+                event = event,
+                files = files,
+                selectedFileId = selectedFileId,
+                setSelectedFileId = setSelectedFileId,
+                instanceName = instanceName,
+                setInstanceName = setInstanceName,
+                installJob = installJob,
+                setInstallJob = setInstallJob,
+                setInstalling = setInstalling,
+                setInstallProgress = setInstallProgress,
+            )
+        }
+    }
+
+    private fun handleEvent(
+        event: InstallModpackEvent,
+        files: MutableState<ProgressiveOutcome<ProjectDetailsError, List<ProjectFileView>>>,
+        selectedFileId: String?,
+        setSelectedFileId: (String?) -> Unit,
+        instanceName: String,
+        setInstanceName: (String) -> Unit,
+        installJob: Job?,
+        setInstallJob: (Job?) -> Unit,
+        setInstalling: (Boolean) -> Unit,
+        setInstallProgress: (Float?) -> Unit,
+    ) {
+        when (event) {
+            is InstallModpackEvent.OnFileSelected -> setSelectedFileId(event.fileId)
+            is InstallModpackEvent.OnInstanceNameChange -> setInstanceName(event.name)
+            InstallModpackEvent.OnCancelClick -> {
+                installJob?.cancel()
+                navigator.finish(InstallModpackResult.Cancelled)
+            }
+
+            InstallModpackEvent.OnConfirmClick -> handleConfirmClick(
+                files, selectedFileId, instanceName, setInstalling, setInstallProgress, setInstallJob
+            )
+        }
+    }
+
+    private fun handleConfirmClick(
+        files: MutableState<ProgressiveOutcome<ProjectDetailsError, List<ProjectFileView>>>,
+        selectedFileId: String?,
+        instanceName: String,
+        setInstalling: (Boolean) -> Unit,
+        setInstallProgress: (Float?) -> Unit,
+        setInstallJob: (Job?) -> Unit,
+    ) {
+        val file = files.value.valueOrNull?.find { it.id == selectedFileId }
+        if (file != null && instanceName.length >= 3) {
+            setInstalling(true)
+            setInstallProgress(null)
+            setInstallJob(
+                confirmInstall(
+                    file, instanceName,
+                    onProgressChanged = { setInstallProgress(it) },
+                    onInstanceCreated = { instanceId ->
+                        setInstalling(false)
+                        navigator.finish(InstallModpackResult.Installed(instanceId))
+                    },
+                    onFinished = {
+                        setInstalling(false)
+                        navigator.finish(InstallModpackResult.Cancelled)
+                    }
+                )
+            )
+        }
     }
 
     /**

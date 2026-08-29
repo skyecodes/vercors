@@ -18,6 +18,7 @@ import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Inject
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -40,7 +41,7 @@ class AccountListPresenter(
     override fun present(): Store<AccountListState, AccountListEvent> {
         val presenterScope = rememberCoroutineScope()
         val accountList by observeAccountListView()
-        var loginJob by remember { mutableStateOf<Job?>(null) }
+        val (loginJob, setLoginJob) = remember { mutableStateOf<Job?>(null) }
         val loginState = remember { mutableStateOf(LoginStateView()) }
         val (promptLogin, setPromptLogin) = remember { mutableStateOf(false) }
         val loginDialog = remember { LoginDialog(loginState) { url -> copyToClipboard(url) } }
@@ -50,27 +51,50 @@ class AccountListPresenter(
             promptLogin = promptLogin,
             loginDialog = loginDialog,
         ) + { event ->
-            when (event) {
-                AccountListEvent.CancelLogin -> {
-                    loginJob?.cancel(CancellationException("Login cancelled by user"))
-                    setPromptLogin(false)
-                }
-
-                is AccountListEvent.CopyToClipboard -> copyToClipboard(event.data)
-                AccountListEvent.Login -> {
-                    loginState.value = LoginStateView()
-                    setPromptLogin(true)
-                    loginJob = presenterScope.launch { collectLoginState(loginState) }.apply {
-                        invokeOnCompletion {
-                            if (it != null && it !is CancellationException) onFailure(it, loginState)
-                        }
-                    }
-                }
-
-                is AccountListEvent.Logout -> presenterScope.launch { handleAccountError { logout(event.accountId) } }
-                is AccountListEvent.SelectAccount -> presenterScope.launch { handleAccountError { selectAccount(event.accountId) } }
-            }
+            handleEvent(
+                event = event,
+                presenterScope = presenterScope,
+                loginJob = loginJob,
+                setLoginJob = setLoginJob,
+                loginState = loginState,
+                setPromptLogin = setPromptLogin,
+            )
         }
+    }
+
+    private fun handleEvent(
+        event: AccountListEvent,
+        presenterScope: CoroutineScope,
+        loginJob: Job?,
+        setLoginJob: (Job?) -> Unit,
+        loginState: MutableState<LoginStateView>,
+        setPromptLogin: (Boolean) -> Unit,
+    ) {
+        when (event) {
+            AccountListEvent.CancelLogin -> {
+                loginJob?.cancel(CancellationException("Login cancelled by user"))
+                setPromptLogin(false)
+            }
+
+            is AccountListEvent.CopyToClipboard -> copyToClipboard(event.data)
+            AccountListEvent.Login -> handleLogin(presenterScope, loginState, setPromptLogin, setLoginJob)
+            is AccountListEvent.Logout -> presenterScope.launch { handleAccountError { logout(event.accountId) } }
+            is AccountListEvent.SelectAccount ->
+                presenterScope.launch { handleAccountError { selectAccount(event.accountId) } }
+        }
+    }
+
+    private fun handleLogin(
+        presenterScope: CoroutineScope,
+        loginState: MutableState<LoginStateView>,
+        setPromptLogin: (Boolean) -> Unit,
+        setLoginJob: (Job?) -> Unit,
+    ) {
+        loginState.value = LoginStateView()
+        setPromptLogin(true)
+        val job = presenterScope.launch { collectLoginState(loginState) }
+        job.invokeOnCompletion { if (it != null && it !is CancellationException) onFailure(it, loginState) }
+        setLoginJob(job)
     }
 
     @Composable

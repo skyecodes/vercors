@@ -28,6 +28,7 @@ import com.slack.circuit.codegen.annotations.CircuitInject
 import com.slack.circuit.retained.collectAsRetainedState
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Inject
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import opensavvy.state.progressive.value
@@ -54,8 +55,8 @@ class ConfigurationPresenter(
         val themeList by observeThemeViewList()
         val configuration by observeConfiguration().collectProgressiveAsState()
         val javaInstallations by observeJavaInstallations().collectProgressiveAsState()
-        var javaAddError by remember { mutableStateOf<String?>(null) }
-        var javaScanInProgress by remember { mutableStateOf(false) }
+        val (javaAddError, setJavaAddError) = remember { mutableStateOf<String?>(null) }
+        val (javaScanInProgress, setJavaScanInProgress) = remember { mutableStateOf(false) }
         val totalMemoryMb = remember {
             ((getTotalPhysicalMemory() ?: (16384L * 1024 * 1024)) / (1024 * 1024)).toInt()
         }
@@ -90,88 +91,132 @@ class ConfigurationPresenter(
             showNativeLibraryOptions = showNativeLibraryOptions,
             detectedGlfwPath = detectedGlfwPath,
             detectedOpenAlPath = detectedOpenAlPath,
-        ) + {
-            when (it) {
-                is ConfigurationEvent.SelectTheme -> presenterScope.launch {
-                    selectTheme(themeList.first { t -> t.id == it.themeId })
-                }
+        ) + { event ->
+            handleEvent(
+                event = event,
+                presenterScope = presenterScope,
+                themeList = themeList,
+                setJavaAddError = setJavaAddError,
+                javaScanInProgress = javaScanInProgress,
+                setJavaScanInProgress = setJavaScanInProgress
+            )
+        }
+    }
 
-                is ConfigurationEvent.SelectAccent -> presenterScope.launch {
-                    updateConfiguration { copy(selectedAccent = it.accentId) }
-                }
+    private fun handleEvent(
+        event: ConfigurationEvent,
+        presenterScope: CoroutineScope,
+        themeList: List<ThemeView>,
+        setJavaAddError: (String?) -> Unit,
+        javaScanInProgress: Boolean,
+        setJavaScanInProgress: (Boolean) -> Unit,
+    ) {
+        when (event) {
+            is ConfigurationEvent.SelectTheme -> presenterScope.launch {
+                selectTheme(themeList.first { t -> t.id == event.themeId })
+            }
 
-                ConfigurationEvent.ToggleAnimations -> presenterScope.launch {
-                    updateConfiguration { copy(animations = !animations) }
-                }
+            is ConfigurationEvent.SelectAccent -> presenterScope.launch {
+                updateConfiguration { copy(selectedAccent = event.accentId) }
+            }
 
-                is ConfigurationEvent.SetUiScalePercent -> presenterScope.launch {
-                    updateConfiguration { copy(uiScalePercent = it.value) }
-                }
+            ConfigurationEvent.ToggleAnimations -> presenterScope.launch {
+                updateConfiguration { copy(animations = !animations) }
+            }
 
-                is ConfigurationEvent.AddJavaInstallation -> presenterScope.launch {
-                    either { addJavaInstallation(it.path) }.onLeft { error ->
-                        javaAddError = when (error) {
-                            is JavaInstallationError.NotAJavaInstallation -> error.path
-                        }
+            is ConfigurationEvent.SetUiScalePercent -> presenterScope.launch {
+                updateConfiguration { copy(uiScalePercent = event.value) }
+            }
+
+            is ConfigurationEvent.AddJavaInstallation ->
+                handleAddJavaInstallation(event.path, presenterScope, setJavaAddError)
+
+            ConfigurationEvent.RescanJavaInstallations ->
+                handleRescanJavaInstallations(presenterScope, javaScanInProgress, setJavaScanInProgress)
+
+            is ConfigurationEvent.SetPreferredJava -> presenterScope.launch {
+                updateConfiguration {
+                    copy(
+                        preferredJavaByMajorVersion = preferredJavaByMajorVersion +
+                                (event.majorVersion to event.installationId)
+                    )
+                }
+            }
+
+            ConfigurationEvent.DismissJavaAddError -> setJavaAddError(null)
+
+            is ConfigurationEvent.SetMinMemoryMb -> presenterScope.launch {
+                updateConfiguration { copy(jvmMemoryOptions = jvmMemoryOptions.copy(minMemoryMb = event.value)) }
+            }
+
+            is ConfigurationEvent.SetMaxMemoryMb -> handleSetMaxMemoryMb(event.value, presenterScope)
+
+            is ConfigurationEvent.SetExtraJvmArgs -> presenterScope.launch {
+                updateConfiguration { copy(jvmMemoryOptions = jvmMemoryOptions.copy(extraArgs = event.value)) }
+            }
+
+            is ConfigurationEvent.ToggleUseSystemGlfw -> presenterScope.launch {
+                updateConfiguration {
+                    copy(nativeLibraryOptions = nativeLibraryOptions.copy(useSystemGlfw = event.checked))
+                }
+            }
+
+            is ConfigurationEvent.SetGlfwPath -> presenterScope.launch {
+                updateConfiguration { copy(nativeLibraryOptions = nativeLibraryOptions.copy(glfwPath = event.value)) }
+            }
+
+            is ConfigurationEvent.ToggleUseSystemOpenAl -> presenterScope.launch {
+                updateConfiguration {
+                    copy(nativeLibraryOptions = nativeLibraryOptions.copy(useSystemOpenAl = event.checked))
+                }
+            }
+
+            is ConfigurationEvent.SetOpenAlPath -> presenterScope.launch {
+                updateConfiguration { copy(nativeLibraryOptions = nativeLibraryOptions.copy(openAlPath = event.value)) }
+            }
+        }
+    }
+
+    private fun handleAddJavaInstallation(
+        path: String,
+        presenterScope: CoroutineScope,
+        setJavaAddError: (String?) -> Unit,
+    ) {
+        presenterScope.launch {
+            either { addJavaInstallation(path) }.onLeft { error ->
+                setJavaAddError(
+                    when (error) {
+                        is JavaInstallationError.NotAJavaInstallation -> error.path
                     }
-                }
+                )
+            }
+        }
+    }
 
-                ConfigurationEvent.RescanJavaInstallations -> if (!javaScanInProgress) {
-                    javaScanInProgress = true
-                    presenterScope.launch {
-                        try {
-                            scanJavaInstallations()
-                            snackbarService.success { stringResource(ConfigRes.string.javaScanCompleted) }
-                        } finally {
-                            javaScanInProgress = false
-                        }
-                    }
-                }
+    private fun handleRescanJavaInstallations(
+        presenterScope: CoroutineScope,
+        javaScanInProgress: Boolean,
+        setJavaScanInProgress: (Boolean) -> Unit,
+    ) {
+        if (javaScanInProgress) return
+        setJavaScanInProgress(true)
+        presenterScope.launch {
+            try {
+                scanJavaInstallations()
+                snackbarService.success { stringResource(ConfigRes.string.javaScanCompleted) }
+            } finally {
+                setJavaScanInProgress(false)
+            }
+        }
+    }
 
-                is ConfigurationEvent.SetPreferredJava -> presenterScope.launch {
-                    updateConfiguration {
-                        copy(preferredJavaByMajorVersion = preferredJavaByMajorVersion + (it.majorVersion to it.installationId))
-                    }
-                }
-
-                ConfigurationEvent.DismissJavaAddError -> javaAddError = null
-
-                is ConfigurationEvent.SetMinMemoryMb -> presenterScope.launch {
-                    updateConfiguration { copy(jvmMemoryOptions = jvmMemoryOptions.copy(minMemoryMb = it.value)) }
-                }
-
-                is ConfigurationEvent.SetMaxMemoryMb -> presenterScope.launch {
-                    updateConfiguration {
-                        val newMax = it.value
-                        val clampedMin =
-                            jvmMemoryOptions.minMemoryMb?.let { min -> newMax?.let { max -> minOf(min, max) } ?: min }
-                        copy(jvmMemoryOptions = jvmMemoryOptions.copy(maxMemoryMb = newMax, minMemoryMb = clampedMin))
-                    }
-                }
-
-                is ConfigurationEvent.SetExtraJvmArgs -> presenterScope.launch {
-                    updateConfiguration { copy(jvmMemoryOptions = jvmMemoryOptions.copy(extraArgs = it.value)) }
-                }
-
-                is ConfigurationEvent.ToggleUseSystemGlfw -> presenterScope.launch {
-                    updateConfiguration {
-                        copy(nativeLibraryOptions = nativeLibraryOptions.copy(useSystemGlfw = it.checked))
-                    }
-                }
-
-                is ConfigurationEvent.SetGlfwPath -> presenterScope.launch {
-                    updateConfiguration { copy(nativeLibraryOptions = nativeLibraryOptions.copy(glfwPath = it.value)) }
-                }
-
-                is ConfigurationEvent.ToggleUseSystemOpenAl -> presenterScope.launch {
-                    updateConfiguration {
-                        copy(nativeLibraryOptions = nativeLibraryOptions.copy(useSystemOpenAl = it.checked))
-                    }
-                }
-
-                is ConfigurationEvent.SetOpenAlPath -> presenterScope.launch {
-                    updateConfiguration { copy(nativeLibraryOptions = nativeLibraryOptions.copy(openAlPath = it.value)) }
-                }
+    private fun handleSetMaxMemoryMb(value: Int?, presenterScope: CoroutineScope) {
+        presenterScope.launch {
+            updateConfiguration {
+                val newMax = value
+                val clampedMin =
+                    jvmMemoryOptions.minMemoryMb?.let { min -> newMax?.let { max -> minOf(min, max) } ?: min }
+                copy(jvmMemoryOptions = jvmMemoryOptions.copy(maxMemoryMb = newMax, minMemoryMb = clampedMin))
             }
         }
     }

@@ -69,12 +69,26 @@ class InstanceLogsPresenter(
             levelFilter = levelFilter,
             wrapLines = configuration.valueOrNull?.wrapLogLines ?: true,
         ) + { event ->
-            when (event) {
-                is InstanceLogsEvent.OnSearchQueryChange -> setSearchQuery(event.query)
-                is InstanceLogsEvent.OnLevelFilterToggle -> setLevelFilter(levelFilter.toggle(event.level).toSet())
-                InstanceLogsEvent.OnWrapLinesToggle -> globalScope.launch {
-                    updateConfiguration { copy(wrapLogLines = !wrapLogLines) }
-                }
+            handleEvent(
+                event = event,
+                levelFilter = levelFilter,
+                setSearchQuery = setSearchQuery,
+                setLevelFilter = setLevelFilter,
+            )
+        }
+    }
+
+    private fun handleEvent(
+        event: InstanceLogsEvent,
+        levelFilter: Set<InstanceLogEventView.Level>,
+        setSearchQuery: (String) -> Unit,
+        setLevelFilter: (Set<InstanceLogEventView.Level>) -> Unit,
+    ) {
+        when (event) {
+            is InstanceLogsEvent.OnSearchQueryChange -> setSearchQuery(event.query)
+            is InstanceLogsEvent.OnLevelFilterToggle -> setLevelFilter(levelFilter.toggle(event.level).toSet())
+            InstanceLogsEvent.OnWrapLinesToggle -> globalScope.launch {
+                updateConfiguration { copy(wrapLogLines = !wrapLogLines) }
             }
         }
     }

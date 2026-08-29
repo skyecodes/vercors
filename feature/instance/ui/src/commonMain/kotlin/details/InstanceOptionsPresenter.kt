@@ -210,22 +210,34 @@ class InstanceOptionsPresenter(
             requiredJavaMajorVersion = requiredJavaMajorVersion,
             persistedInstance = currentInstance,
         ) + { event ->
-            when (event) {
-                is InstanceOptionsEvent.UpdateInstance -> setEditedInstance(event.update(editedInstance))
-                is InstanceOptionsEvent.OnLoaderChange -> handleLoaderChange(event, editedInstance, setEditedInstance)
-                is InstanceOptionsEvent.OnLoaderVersionChange ->
-                    setEditedInstance(editedInstance.copy(modLoaderVersion = event.version))
+            handleEvent(
+                event = event,
+                editedInstance = editedInstance,
+                setEditedInstance = setEditedInstance,
+            )
+        }
+    }
 
-                is InstanceOptionsEvent.OnJavaOverrideChange -> setEditedInstance(
-                    editedInstance.copy(
-                        javaOverride = event.installationId?.let(JavaOverrideEdit::Specific)
-                            ?: JavaOverrideEdit.UseDefault
-                    )
+    private fun handleEvent(
+        event: InstanceOptionsEvent,
+        editedInstance: InstanceEditState,
+        setEditedInstance: (InstanceEditState) -> Unit
+    ) {
+        when (event) {
+            is InstanceOptionsEvent.UpdateInstance -> setEditedInstance(event.update(editedInstance))
+            is InstanceOptionsEvent.OnLoaderChange -> handleLoaderChange(event, editedInstance, setEditedInstance)
+            is InstanceOptionsEvent.OnLoaderVersionChange ->
+                setEditedInstance(editedInstance.copy(modLoaderVersion = event.version))
+
+            is InstanceOptionsEvent.OnJavaOverrideChange -> setEditedInstance(
+                editedInstance.copy(
+                    javaOverride = event.installationId?.let(JavaOverrideEdit::Specific)
+                        ?: JavaOverrideEdit.UseDefault
                 )
+            )
 
-                InstanceOptionsEvent.CancelEdit -> setEditedInstance(InstanceEditState())
-                InstanceOptionsEvent.SaveInstance -> handleSaveInstance(editedInstance, setEditedInstance)
-            }
+            InstanceOptionsEvent.CancelEdit -> setEditedInstance(InstanceEditState())
+            InstanceOptionsEvent.SaveInstance -> handleSaveInstance(editedInstance, setEditedInstance)
         }
     }
 

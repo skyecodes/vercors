@@ -177,45 +177,6 @@ class InstanceDetailsPresenter(
         javaInstallJob: Job?,
         setJavaInstallJob: (Job?) -> Unit
     ) {
-        if (handleLifecycleEvent(
-                event,
-                setSelectedTab,
-                setPromptDeleteConfirmation,
-                promptInstallJava,
-                setPromptInstallJava,
-                loginState,
-                setPromptLogin,
-                loginJob,
-                setLoginJob,
-                javaInstallState,
-                setPromptJavaInstall,
-                javaInstallJob,
-                setJavaInstallJob
-            )
-        ) return
-        if (event is InstanceDetailsEvent.SelectTab) {
-            setSelectedTab(event.tab)
-            return
-        }
-        handleNavigationAndMiscEvent(event, currentInstance, setPromptFinishInstallation)
-    }
-
-    /** Launch/stop/delete and other whole-instance lifecycle events. Returns whether [event] was one of these. */
-    private fun handleLifecycleEvent(
-        event: InstanceDetailsEvent,
-        setSelectedTab: (InstanceDetailsTab) -> Unit,
-        setPromptDeleteConfirmation: (Boolean) -> Unit,
-        promptInstallJava: Int?,
-        setPromptInstallJava: (Int?) -> Unit,
-        loginState: MutableState<LoginStateView>,
-        setPromptLogin: (Boolean) -> Unit,
-        loginJob: Job?,
-        setLoginJob: (Job?) -> Unit,
-        javaInstallState: MutableState<JavaInstallProgressView>,
-        setPromptJavaInstall: (Boolean) -> Unit,
-        javaInstallJob: Job?,
-        setJavaInstallJob: (Job?) -> Unit
-    ): Boolean {
         when (event) {
             InstanceDetailsEvent.Launch -> handleLaunch(
                 setSelectedTab, setPromptInstallJava, loginState, setPromptLogin, setLoginJob
@@ -256,18 +217,8 @@ class InstanceDetailsPresenter(
             InstanceDetailsEvent.CancelSetup -> cancelInstanceSetup(screen.instanceId)
             InstanceDetailsEvent.Stop -> globalScope.launch { stopInstance(screen.instanceId) }
             InstanceDetailsEvent.Kill -> globalScope.launch { killInstance(screen.instanceId) }
-            else -> return false
-        }
-        return true
-    }
+            is InstanceDetailsEvent.SelectTab -> setSelectedTab(event.tab)
 
-    /** Navigation, custom icon, and manual-download-installation events. */
-    private fun handleNavigationAndMiscEvent(
-        event: InstanceDetailsEvent,
-        currentInstance: InstanceView?,
-        setPromptFinishInstallation: (Boolean) -> Unit
-    ) {
-        when (event) {
             is InstanceDetailsEvent.OnOpenProjectClick -> navigator.goTo(
                 ProjectDetailsScreen(event.projectId from event.platformId, preferredInstanceId = screen.instanceId)
             )
@@ -281,42 +232,13 @@ class InstanceDetailsPresenter(
                 )
             )
 
-            is InstanceDetailsEvent.OnIconSelected -> globalScope.launch {
-                either {
-                    setInstanceIcon(
-                        screen.instanceId,
-                        event.path
-                    )
-                }.onLeft { error -> snackbarService.error { error.message } }
-            }
-
+            is InstanceDetailsEvent.OnIconSelected -> handleIconSelected(event)
             InstanceDetailsEvent.OnRemoveIconClick -> globalScope.launch {
                 either { removeInstanceIcon(screen.instanceId) }.onLeft { error -> snackbarService.error { error.message } }
             }
 
-            InstanceDetailsEvent.OnRestoreIconClick -> globalScope.launch {
-                recover({
-                    val instance = getInstance(screen.instanceId)
-                    val modpackInfo = instance.modpackInfo
-                    if (modpackInfo != null) {
-                        recover({
-                            val logoUrl = getProject(modpackInfo.projectId from modpackInfo.platformId).logoUrl
-                            if (logoUrl == null || !setInstanceIconFromUrl(instance, logoUrl)) {
-                                snackbarService.error { stringResource(InstanceRes.string.errorRestoreIconFailed) }
-                            }
-                        }) { _: ProjectDetailsError ->
-                            snackbarService.error { stringResource(InstanceRes.string.errorRestoreIconFailed) }
-                        }
-                    }
-                }) { _: InstanceError ->
-                    snackbarService.error { stringResource(InstanceRes.string.errorRestoreIconFailed) }
-                }
-            }
-
-            is InstanceDetailsEvent.OnOpenInstanceFolderClick -> globalScope.launch {
-                val opened = openInstanceFolder(screen.instanceId, event.folder)
-                if (!opened) snackbarService.error { stringResource(InstanceRes.string.errorOpenFolderFailed) }
-            }
+            InstanceDetailsEvent.OnRestoreIconClick -> handleRestoreIconClick()
+            is InstanceDetailsEvent.OnOpenInstanceFolderClick -> handleOpenInstanceFolderClick(event)
 
             InstanceDetailsEvent.OnFinishInstallationClick -> {
                 setPromptFinishInstallation(true)
@@ -325,7 +247,41 @@ class InstanceDetailsPresenter(
 
             InstanceDetailsEvent.OnFinishInstallationDismiss -> setPromptFinishInstallation(false)
             InstanceDetailsEvent.OnResumeInstallationClick -> currentInstance?.let(::resumeInstallationIfNeeded)
-            else -> Unit
+        }
+    }
+
+    private fun handleIconSelected(event: InstanceDetailsEvent.OnIconSelected) {
+        globalScope.launch {
+            either { setInstanceIcon(screen.instanceId, event.path) }
+                .onLeft { error -> snackbarService.error { error.message } }
+        }
+    }
+
+    private fun handleRestoreIconClick() {
+        globalScope.launch {
+            recover({
+                val instance = getInstance(screen.instanceId)
+                val modpackInfo = instance.modpackInfo
+                if (modpackInfo != null) {
+                    recover({
+                        val logoUrl = getProject(modpackInfo.projectId from modpackInfo.platformId).logoUrl
+                        if (logoUrl == null || !setInstanceIconFromUrl(instance, logoUrl)) {
+                            snackbarService.error { stringResource(InstanceRes.string.errorRestoreIconFailed) }
+                        }
+                    }) { _: ProjectDetailsError ->
+                        snackbarService.error { stringResource(InstanceRes.string.errorRestoreIconFailed) }
+                    }
+                }
+            }) { _: InstanceError ->
+                snackbarService.error { stringResource(InstanceRes.string.errorRestoreIconFailed) }
+            }
+        }
+    }
+
+    private fun handleOpenInstanceFolderClick(event: InstanceDetailsEvent.OnOpenInstanceFolderClick) {
+        globalScope.launch {
+            val opened = openInstanceFolder(screen.instanceId, event.folder)
+            if (!opened) snackbarService.error { stringResource(InstanceRes.string.errorOpenFolderFailed) }
         }
     }
 

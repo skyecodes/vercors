@@ -57,16 +57,17 @@ class InstallProjectPresenter(
     @Composable
     override fun present(): Store<InstallProjectState, InstallProjectEvent> {
         val instances by observeInstanceListView()
-        var selectedInstanceId by remember { mutableStateOf(preferredInstanceId) }
-        var selectedFileId by remember { mutableStateOf<String?>(null) }
+        val (selectedInstanceId, setSelectedInstanceId) = remember { mutableStateOf(preferredInstanceId) }
+        val (selectedFileId, setSelectedFileId) = remember { mutableStateOf<String?>(null) }
         var dependencies by remember { mutableStateOf<List<DependencyFileView>>(emptyList()) }
-        var selectedDependencyIds by remember { mutableStateOf<Set<ProjectId>>(emptySet()) }
+        val (selectedDependencyIds, setSelectedDependencyIds) = remember { mutableStateOf<Set<ProjectId>>(emptySet()) }
         var resolvingDependencies by remember { mutableStateOf(false) }
-        var installing by remember { mutableStateOf(false) }
-        var installProgress by remember { mutableFloatStateOf(0f) }
-        var installJob by remember { mutableStateOf<Job?>(null) }
-        var manualDownloadItems by remember { mutableStateOf<List<ManualDownloadItem>>(emptyList()) }
-        var completedInstanceId by remember { mutableStateOf<InstanceId?>(null) }
+        val (installing, setInstalling) = remember { mutableStateOf(false) }
+        val (installProgress, setInstallProgress) = remember { mutableFloatStateOf(0f) }
+        val (installJob, setInstallJob) = remember { mutableStateOf<Job?>(null) }
+        val (manualDownloadItems, setManualDownloadItems) =
+            remember { mutableStateOf<List<ManualDownloadItem>>(emptyList()) }
+        val (completedInstanceId, setCompletedInstanceId) = remember { mutableStateOf<InstanceId?>(null) }
         val files = remember { mutableProgressiveStateOf<ProjectDetailsError, List<ProjectFileView>>() }
 
         val selectedInstance = instances.valueOrNull?.find { it.id == selectedInstanceId }
@@ -74,14 +75,14 @@ class InstallProjectPresenter(
         val installedProviders by observeInstalledProvidersView(selectedInstanceId)
 
         LaunchedEffect(selectedInstance?.id) {
-            selectedFileId = loadFiles(selectedInstance, files)
+            setSelectedFileId(loadFiles(selectedInstance, files))
         }
 
         LaunchedEffect(selectedFileId, installedProviders) {
             when (val resolution = resolveDependencies(selectedFile, selectedInstance, installedProviders)) {
                 DependencyResolution.NotApplicable -> {
                     dependencies = emptyList()
-                    selectedDependencyIds = emptySet()
+                    setSelectedDependencyIds(emptySet())
                     resolvingDependencies = false
                 }
 
@@ -89,53 +90,9 @@ class InstallProjectPresenter(
 
                 is DependencyResolution.Resolved -> {
                     dependencies = resolution.dependencies
-                    selectedDependencyIds = resolution.dependencies.map { it.projectId }.toSet()
+                    setSelectedDependencyIds(resolution.dependencies.map { it.projectId }.toSet())
                     resolvingDependencies = false
                 }
-            }
-        }
-
-        fun handleEvent(event: InstallProjectEvent) {
-            when (event) {
-                is InstallProjectEvent.OnInstanceSelected -> selectedInstanceId = event.instanceId
-                is InstallProjectEvent.OnFileSelected -> selectedFileId = event.fileId
-                is InstallProjectEvent.OnDependencyToggled -> selectedDependencyIds = if (event.checked) {
-                    selectedDependencyIds + event.projectId
-                } else {
-                    selectedDependencyIds - event.projectId
-                }
-
-                is InstallProjectEvent.OnCopyUrlClick -> copyToClipboard(event.url)
-
-                InstallProjectEvent.OnCancelClick -> {
-                    val job = installJob
-                    if (job != null && job.isActive) job.cancel() else navigator.finish(InstallProjectResult.Cancelled)
-                }
-
-                InstallProjectEvent.OnConfirmClick -> {
-                    val instanceId = selectedInstanceId
-                    val file = files.value.valueOrNull?.find { it.id == selectedFileId }
-                    if (instanceId != null && file != null) {
-                        val selectedDependencies = dependencies.filter { it.projectId in selectedDependencyIds }
-                        installing = true
-                        installProgress = 0f
-                        installJob = confirmInstall(
-                            instanceId, file, selectedDependencies,
-                            onManualDownloadItemsChanged = { manualDownloadItems = it },
-                            onProgressChanged = { installProgress = it }
-                        ) { success ->
-                            installing = false
-                            manualDownloadItems = emptyList()
-                            if (success) completedInstanceId = instanceId
-                        }
-                    }
-                }
-
-                InstallProjectEvent.OnCloseClick ->
-                    navigator.finish(InstallProjectResult.Installed(requireNotNull(completedInstanceId)))
-
-                InstallProjectEvent.OnGoToInstanceClick ->
-                    navigator.finish(InstallProjectResult.GoToInstance(requireNotNull(completedInstanceId)))
             }
         }
 
@@ -151,7 +108,104 @@ class InstallProjectPresenter(
             installProgress = installProgress,
             manualDownloadItems = manualDownloadItems,
             completedInstanceId = completedInstanceId
-        ) + ::handleEvent
+        ) + { event ->
+            handleEvent(
+                event = event,
+                files = files,
+                selectedInstanceId = selectedInstanceId,
+                setSelectedInstanceId = setSelectedInstanceId,
+                selectedFileId = selectedFileId,
+                setSelectedFileId = setSelectedFileId,
+                dependencies = dependencies,
+                selectedDependencyIds = selectedDependencyIds,
+                setSelectedDependencyIds = setSelectedDependencyIds,
+                installJob = installJob,
+                setInstallJob = setInstallJob,
+                setInstalling = setInstalling,
+                setInstallProgress = setInstallProgress,
+                setManualDownloadItems = setManualDownloadItems,
+                completedInstanceId = completedInstanceId,
+                setCompletedInstanceId = setCompletedInstanceId,
+            )
+        }
+    }
+
+    private fun handleEvent(
+        event: InstallProjectEvent,
+        files: MutableState<ProgressiveOutcome<ProjectDetailsError, List<ProjectFileView>>>,
+        selectedInstanceId: InstanceId?,
+        setSelectedInstanceId: (InstanceId?) -> Unit,
+        selectedFileId: String?,
+        setSelectedFileId: (String?) -> Unit,
+        dependencies: List<DependencyFileView>,
+        selectedDependencyIds: Set<ProjectId>,
+        setSelectedDependencyIds: (Set<ProjectId>) -> Unit,
+        installJob: Job?,
+        setInstallJob: (Job?) -> Unit,
+        setInstalling: (Boolean) -> Unit,
+        setInstallProgress: (Float) -> Unit,
+        setManualDownloadItems: (List<ManualDownloadItem>) -> Unit,
+        completedInstanceId: InstanceId?,
+        setCompletedInstanceId: (InstanceId?) -> Unit,
+    ) {
+        when (event) {
+            is InstallProjectEvent.OnInstanceSelected -> setSelectedInstanceId(event.instanceId)
+            is InstallProjectEvent.OnFileSelected -> setSelectedFileId(event.fileId)
+            is InstallProjectEvent.OnDependencyToggled -> setSelectedDependencyIds(
+                if (event.checked) selectedDependencyIds + event.projectId
+                else selectedDependencyIds - event.projectId
+            )
+
+            is InstallProjectEvent.OnCopyUrlClick -> copyToClipboard(event.url)
+
+            InstallProjectEvent.OnCancelClick -> {
+                if (installJob != null && installJob.isActive) installJob.cancel()
+                else navigator.finish(InstallProjectResult.Cancelled)
+            }
+
+            InstallProjectEvent.OnConfirmClick -> handleConfirmClick(
+                files, selectedInstanceId, selectedFileId, dependencies, selectedDependencyIds,
+                setInstalling, setInstallProgress, setInstallJob, setManualDownloadItems, setCompletedInstanceId
+            )
+
+            InstallProjectEvent.OnCloseClick ->
+                navigator.finish(InstallProjectResult.Installed(requireNotNull(completedInstanceId)))
+
+            InstallProjectEvent.OnGoToInstanceClick ->
+                navigator.finish(InstallProjectResult.GoToInstance(requireNotNull(completedInstanceId)))
+        }
+    }
+
+    private fun handleConfirmClick(
+        files: MutableState<ProgressiveOutcome<ProjectDetailsError, List<ProjectFileView>>>,
+        selectedInstanceId: InstanceId?,
+        selectedFileId: String?,
+        dependencies: List<DependencyFileView>,
+        selectedDependencyIds: Set<ProjectId>,
+        setInstalling: (Boolean) -> Unit,
+        setInstallProgress: (Float) -> Unit,
+        setInstallJob: (Job?) -> Unit,
+        setManualDownloadItems: (List<ManualDownloadItem>) -> Unit,
+        setCompletedInstanceId: (InstanceId?) -> Unit,
+    ) {
+        val instanceId = selectedInstanceId
+        val file = files.value.valueOrNull?.find { it.id == selectedFileId }
+        if (instanceId != null && file != null) {
+            val selectedDependencies = dependencies.filter { it.projectId in selectedDependencyIds }
+            setInstalling(true)
+            setInstallProgress(0f)
+            setInstallJob(
+                confirmInstall(
+                    instanceId, file, selectedDependencies,
+                    onManualDownloadItemsChanged = { setManualDownloadItems(it) },
+                    onProgressChanged = { setInstallProgress(it) }
+                ) { success ->
+                    setInstalling(false)
+                    setManualDownloadItems(emptyList())
+                    if (success) setCompletedInstanceId(instanceId)
+                }
+            )
+        }
     }
 
     /** Fetches the compatible files for [instance] and picks a default selection; used for the primary file. */

@@ -30,11 +30,11 @@ class InstanceListPresenter(
     @Composable
     override fun present(): Store<InstanceListState, InstanceListEvent> {
         val instances by observeInstanceListView()
-        var nameFilter by remember { mutableStateOf("") }
-        var versionFilter by remember { mutableStateOf("") }
-        var loaderFilter by remember { mutableStateOf("") }
-        var typeFilter by remember { mutableStateOf("") }
-        var promptCreateInstance by remember { mutableStateOf(false) }
+        val (nameFilter, setNameFilter) = remember { mutableStateOf("") }
+        val (versionFilter, setVersionFilter) = remember { mutableStateOf("") }
+        val (loaderFilter, setLoaderFilter) = remember { mutableStateOf("") }
+        val (typeFilter, setTypeFilter) = remember { mutableStateOf("") }
+        val (promptCreateInstance, setPromptCreateInstance) = remember { mutableStateOf(false) }
         return InstanceListState(
             instances = instances,
             nameFilter = nameFilter,
@@ -43,26 +43,44 @@ class InstanceListPresenter(
             typeFilter = typeFilter,
             promptCreateInstance = promptCreateInstance,
             createInstanceDialog = createInstanceDialog
-        ) + {
-            when (it) {
-                InstanceListEvent.OnCreateInstanceClick -> promptCreateInstance = true
-                is InstanceListEvent.OnCreateInstanceResult -> {
-                    promptCreateInstance = false
-                    val result = it.result
-                    if (result is CreateInstanceResult.Created) navigator.goTo(InstanceDetailsScreen(result.instanceId))
-                }
+        ) + { event ->
+            handleEvent(
+                event = event,
+                setNameFilter = setNameFilter,
+                setVersionFilter = setVersionFilter,
+                setLoaderFilter = setLoaderFilter,
+                setTypeFilter = setTypeFilter,
+                setPromptCreateInstance = setPromptCreateInstance,
+            )
+        }
+    }
 
-                is InstanceListEvent.OnInstanceClick -> navigator.goTo(InstanceDetailsScreen(it.instanceId))
-                is InstanceListEvent.OnNameFilterChange -> nameFilter = it.name
-                is InstanceListEvent.OnVersionFilterChange -> versionFilter = it.version
-                is InstanceListEvent.OnLoaderFilterChange -> loaderFilter = it.loader
-                is InstanceListEvent.OnTypeFilterChange -> typeFilter = it.type
-                InstanceListEvent.OnResetFilterClick -> {
-                    nameFilter = ""
-                    versionFilter = ""
-                    loaderFilter = ""
-                    typeFilter = ""
-                }
+    private fun handleEvent(
+        event: InstanceListEvent,
+        setNameFilter: (String) -> Unit,
+        setVersionFilter: (String) -> Unit,
+        setLoaderFilter: (String) -> Unit,
+        setTypeFilter: (String) -> Unit,
+        setPromptCreateInstance: (Boolean) -> Unit,
+    ) {
+        when (event) {
+            InstanceListEvent.OnCreateInstanceClick -> setPromptCreateInstance(true)
+            is InstanceListEvent.OnCreateInstanceResult -> {
+                setPromptCreateInstance(false)
+                val result = event.result
+                if (result is CreateInstanceResult.Created) navigator.goTo(InstanceDetailsScreen(result.instanceId))
+            }
+
+            is InstanceListEvent.OnInstanceClick -> navigator.goTo(InstanceDetailsScreen(event.instanceId))
+            is InstanceListEvent.OnNameFilterChange -> setNameFilter(event.name)
+            is InstanceListEvent.OnVersionFilterChange -> setVersionFilter(event.version)
+            is InstanceListEvent.OnLoaderFilterChange -> setLoaderFilter(event.loader)
+            is InstanceListEvent.OnTypeFilterChange -> setTypeFilter(event.type)
+            InstanceListEvent.OnResetFilterClick -> {
+                setNameFilter("")
+                setVersionFilter("")
+                setLoaderFilter("")
+                setTypeFilter("")
             }
         }
     }
