@@ -14,6 +14,8 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
@@ -44,6 +46,8 @@ fun <T> AppSelectField(
     modifier: Modifier = Modifier,
 ) {
     var expanded by remember { mutableStateOf(false) }
+    var anchorWidth by remember { mutableStateOf(0) }
+    val density = LocalDensity.current
 
     Column(
         modifier = modifier.width(IntrinsicSize.Max),
@@ -63,7 +67,7 @@ fun <T> AppSelectField(
             panel = {
                 DropdownMenuPanel(
                     modifier = Modifier.appCard(backgroundColor = Theme[colors][surface2])
-                        .width(300.dp) // TODO: find a way to calculate this automatically
+                        .width(with(density) { anchorWidth.toDp() })
                         .heightIn(max = 400.dp),
                 ) {
                     if (searchable) {
@@ -95,7 +99,7 @@ fun <T> AppSelectField(
                 onClick = { expanded = !expanded },
                 backgroundColor = backgroundColor,
                 horizontalArrangement = Arrangement.SpaceBetween,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth().onSizeChanged { anchorWidth = it.width }
             ) {
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),

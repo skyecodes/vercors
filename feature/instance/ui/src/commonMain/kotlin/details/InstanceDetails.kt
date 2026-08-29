@@ -581,7 +581,8 @@ private fun InstanceJavaOptionsSection(instance: InstanceView, state: InstanceDe
             label = stringResource(InstanceRes.string.javaOverride) + if (state.isJavaOverrideEdited) "*" else "",
             itemRenderer = { value, _ ->
                 AppSelectItem(value?.path ?: defaultLabel)
-            }
+            },
+            modifier = Modifier.width(300.dp),
         )
 
         val effectiveCustomOptions: JvmMemoryOptions? = when (val edit = state.editedInstance.jvmMemoryOptionsEdit) {
