@@ -12,6 +12,7 @@ data class ConfigurationState(
     val themeList: List<ThemeView>,
     val selectedAccent: ThemeNamedColorView?,
     val animations: Boolean?,
+    val uiScalePercent: Int?,
     val javaInstallations: List<JavaInstallation>,
     val preferredJavaByMajorVersion: Map<Int, String>,
     val javaAddError: String?,

@@ -11,6 +11,8 @@ sealed interface ConfigurationEvent : Event {
 
     data object ToggleAnimations : ConfigurationEvent
 
+    data class SetUiScalePercent(val value: Int) : ConfigurationEvent
+
     @JvmInline
     value class AddJavaInstallation(val path: String) : ConfigurationEvent
 

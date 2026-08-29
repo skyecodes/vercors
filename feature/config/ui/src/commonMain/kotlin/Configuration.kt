@@ -123,6 +123,20 @@ private fun UIConfigurationCategory(
                 )
             }
         }
+        if (state.uiScalePercent != null) {
+            ConfigurationRow(
+                title = ConfigRes.string.uiScale,
+                description = ConfigRes.string.uiScaleDesc,
+            ) {
+                AppSelectField(
+                    value = state.uiScalePercent,
+                    items = UI_SCALE_OPTIONS,
+                    onValueChange = { eventSink(ConfigurationEvent.SetUiScalePercent(it)) },
+                    itemRenderer = { percent, _ -> AppSelectItem(text = "$percent%") },
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
     }
 }
 
@@ -311,6 +325,8 @@ private fun RowScope.MemorySliderControl(
         AppText(text = stringResource(ConfigRes.string.megabytes), style = Theme[textStyles][label])
     }
 }
+
+private val UI_SCALE_OPTIONS = listOf(70, 80, 90, 100, 110, 125, 150, 175, 200)
 
 private fun defaultMaxMemoryMb(totalMemoryMb: Int): Int = (((totalMemoryMb / 4).coerceIn(1024, 4096)) / 128) * 128
 private fun defaultMinMemoryMb(): Int = 512

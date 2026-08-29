@@ -7,8 +7,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import app.vercors.core.ui.animation.LocalAnimation
 import app.vercors.core.ui.theme.AppTheme
@@ -54,7 +57,16 @@ fun App(
     }
 
     if (state.config != null && state.theme != null && state.accentColor != null) {
-        CompositionLocalProvider(LocalAnimation provides state.config.animations) {
+        // The native window is independent of this density override and does not auto-resize with it,
+        // so a user zooming in past what the window currently fits must resize/maximize manually.
+        val density = LocalDensity.current
+        val scaledDensity = remember(density, state.config.uiScalePercent) {
+            Density(density.density * (state.config.uiScalePercent / 100f), density.fontScale)
+        }
+        CompositionLocalProvider(
+            LocalDensity provides scaledDensity,
+            LocalAnimation provides state.config.animations,
+        ) {
             (AppTheme(
                 themeColors = state.theme.colors,
                 accentColor = state.accentColor

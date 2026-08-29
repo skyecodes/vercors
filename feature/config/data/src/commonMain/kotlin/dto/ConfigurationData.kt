@@ -25,6 +25,7 @@ data class ConfigurationData(
     val jvmMemoryOptions: JvmMemoryOptionsData = JvmMemoryOptionsData(),
     val nativeLibraryOptions: NativeLibraryOptionsData = NativeLibraryOptionsData(),
     val wrapLogLines: Boolean = true,
+    val uiScalePercent: Int = 100,
 )
 
 internal fun ConfigurationData.toDomain(): Configuration = Configuration(
@@ -42,6 +43,7 @@ internal fun ConfigurationData.toDomain(): Configuration = Configuration(
     jvmMemoryOptions = jvmMemoryOptions.toDomain(),
     nativeLibraryOptions = nativeLibraryOptions.toDomain(),
     wrapLogLines = wrapLogLines,
+    uiScalePercent = uiScalePercent,
 )
 
 internal fun Configuration.toData(): ConfigurationData = ConfigurationData(
@@ -59,6 +61,7 @@ internal fun Configuration.toData(): ConfigurationData = ConfigurationData(
     jvmMemoryOptions = jvmMemoryOptions.toData(),
     nativeLibraryOptions = nativeLibraryOptions.toData(),
     wrapLogLines = wrapLogLines,
+    uiScalePercent = uiScalePercent,
 )
 
 @Serializable

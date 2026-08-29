@@ -19,10 +19,12 @@ data class Configuration(
     val jvmMemoryOptions: JvmMemoryOptions = JvmMemoryOptions(),
     val nativeLibraryOptions: NativeLibraryOptions = NativeLibraryOptions(),
     val wrapLogLines: Boolean = true,
+    val uiScalePercent: Int = 100,
 ) {
     companion object {
         const val DEFAULT_THEME_ID = "catppuccin_mocha"
         const val DEFAULT_ACCENT = "mauve"
+        const val DEFAULT_UI_SCALE_PERCENT = 100
 
         val Default = Configuration(
             metaApiUrl = "https://meta.vercors.app",
@@ -39,6 +41,7 @@ data class Configuration(
             jvmMemoryOptions = JvmMemoryOptions(),
             nativeLibraryOptions = NativeLibraryOptions(),
             wrapLogLines = true,
+            uiScalePercent = DEFAULT_UI_SCALE_PERCENT,
         )
     }
 }

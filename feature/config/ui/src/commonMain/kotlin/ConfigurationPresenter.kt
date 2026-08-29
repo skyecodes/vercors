@@ -79,6 +79,7 @@ class ConfigurationPresenter(
             themeList = themeList,
             selectedAccent = selectedAccent,
             animations = cfg?.animations,
+            uiScalePercent = cfg?.uiScalePercent,
             javaInstallations = javaInstallations.valueOrNull ?: emptyList(),
             preferredJavaByMajorVersion = cfg?.preferredJavaByMajorVersion ?: emptyMap(),
             javaAddError = javaAddError,
@@ -101,6 +102,10 @@ class ConfigurationPresenter(
 
                 ConfigurationEvent.ToggleAnimations -> presenterScope.launch {
                     updateConfiguration { copy(animations = !animations) }
+                }
+
+                is ConfigurationEvent.SetUiScalePercent -> presenterScope.launch {
+                    updateConfiguration { copy(uiScalePercent = it.value) }
                 }
 
                 is ConfigurationEvent.AddJavaInstallation -> presenterScope.launch {

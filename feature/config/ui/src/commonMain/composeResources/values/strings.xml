@@ -6,6 +6,8 @@
     <string name="accentDesc">The accent color used in the application.</string>
     <string name="animations">Animations</string>
     <string name="animationsDesc">Whether animations are enabled in the application.</string>
+    <string name="uiScale">UI scale</string>
+    <string name="uiScaleDesc">Zoom level of the application's interface.</string>
 
     <string name="java">Java</string>
     <string name="javaInstallations">Detected installations</string>
