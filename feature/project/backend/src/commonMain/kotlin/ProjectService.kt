@@ -101,6 +101,6 @@ class ProjectService(
             .bind()
 
     context(_: Raise<PlatformNotFoundData>, _: Raise<PlatformErrorData>)
-    suspend fun getProjectFilesByIds(platformId: String, fileIds: List<String>): List<ProjectFileData> =
-        getPlatformService(platformId).getProjectFilesByIds(fileIds)
+    suspend fun getFiles(platformId: String, fileIds: List<String>): List<ProjectFileData> =
+        getPlatformService(platformId).getFiles(fileIds)
 }

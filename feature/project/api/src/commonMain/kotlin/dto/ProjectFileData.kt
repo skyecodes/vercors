@@ -16,5 +16,6 @@ data class ProjectFileData(
     val md5: String? = null,
     val publishedAt: Instant,
     val dependencies: List<ProjectFileDependencyData>,
-    val manualDownloadUrl: String? = null
+    val manualDownloadUrl: String? = null,
+    val type: ProjectTypeData? = null
 )

@@ -108,7 +108,7 @@ class ModrinthService(
         }
 
     context(_: Raise<PlatformErrorData>)
-    override suspend fun getProjectFilesByIds(fileIds: List<String>): List<ProjectFileData> =
+    override suspend fun getFiles(fileIds: List<String>): List<ProjectFileData> =
         api.getVersionsByIds(fileIds.joinToString(",", "[", "]") { "\"$it\"" }).bindResponse()
             .mapNotNull { it.convert() }
 }

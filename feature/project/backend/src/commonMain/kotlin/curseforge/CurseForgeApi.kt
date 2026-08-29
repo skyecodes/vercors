@@ -29,12 +29,12 @@ interface CurseForgeApi {
     @GET("v1/mods/{projectId}")
     suspend fun getProject(@Path("projectId") projectId: String): PlatformResponse<CurseForgeStandardResponse<CurseForgeProject>>
 
-    @GET("v1/mods/{modId}/description")
-    suspend fun getDescription(@Path("modId") modId: String): PlatformResponse<CurseForgeStandardResponse<String>>
+    @GET("v1/mods/{projectId}/description")
+    suspend fun getDescription(@Path("projectId") projectId: String): PlatformResponse<CurseForgeStandardResponse<String>>
 
-    @GET("v1/mods/{modId}/files")
-    suspend fun getFiles(
-        @Path("modId") modId: String,
+    @GET("v1/mods/{projectId}/files")
+    suspend fun getProjectFiles(
+        @Path("projectId") projectId: String,
         @Query("gameVersion") gameVersion: String? = null,
         @Query("modLoaderType") modLoaderType: CurseForgeModLoaderType? = null,
         @Query("index") index: Int? = null,
@@ -55,7 +55,13 @@ interface CurseForgeApi {
 
     @Headers("Content-Type: application/json")
     @POST("v1/mods/files")
-    suspend fun getFilesByIds(
+    suspend fun getFiles(
         @Body request: CurseForgeGetFilesRequest
     ): PlatformResponse<CurseForgeStandardResponse<List<CurseForgeFile>>>
+
+    @Headers("Content-Type: application/json")
+    @POST("v1/mods")
+    suspend fun getProjects(
+        @Body request: CurseForgeGetModsRequest
+    ): PlatformResponse<CurseForgeStandardResponse<List<CurseForgeProject>>>
 }

@@ -5,6 +5,7 @@ import app.vercors.feature.project.backend.PlatformInfo
 import app.vercors.feature.project.backend.PlatformServiceBase
 import app.vercors.feature.project.backend.bindResponse
 import app.vercors.feature.project.backend.curseforge.dto.CurseForgeGetFilesRequest
+import app.vercors.feature.project.backend.curseforge.dto.CurseForgeGetModsRequest
 import arrow.core.raise.Raise
 import arrow.core.raise.recover
 import dev.zacsweers.metro.AppScope
@@ -87,8 +88,8 @@ class CurseForgeService(
         gameVersion: String?,
         loader: ProjectLoaderData?
     ): List<ProjectFileData> = coroutineScope {
-        val files = api.getFiles(
-            modId = projectId,
+        val files = api.getProjectFiles(
+            projectId = projectId,
             gameVersion = gameVersion,
             modLoaderType = loader?.toCurseForgeModLoaderType()
         ).bindResponse().data
@@ -118,8 +119,8 @@ class CurseForgeService(
     }
 
     context(_: Raise<PlatformErrorData>)
-    override suspend fun getProjectFilesByIds(fileIds: List<String>): List<ProjectFileData> = coroutineScope {
-        val files = api.getFilesByIds(CurseForgeGetFilesRequest(fileIds.map { it.toInt() })).bindResponse().data
+    override suspend fun getFiles(fileIds: List<String>): List<ProjectFileData> = coroutineScope {
+        val files = api.getFiles(CurseForgeGetFilesRequest(fileIds.map { it.toInt() })).bindResponse().data
 
         // As in getProjectFiles/getProjectFile: a null downloadUrl doesn't always mean distribution-restricted —
         // the dedicated endpoint can still succeed, so try it before falling back to a manual-download link.
@@ -133,17 +134,16 @@ class CurseForgeService(
             }
         }.awaitAll().filter { it.second }.map { it.first }.toSet()
 
-        val stillManual = needsCheck.filterNot { it.id in downloadableIds }
-        // One project lookup per distinct mod (not per file) — enough to build manualDownloadUrl for every
-        // still-restricted file belonging to that mod.
-        val manualProjects = stillManual.map { it.modId }.distinct().associateWith { modId ->
-            async { api.getProject(modId.toString()).bindResponse().data }
-        }
+        // One batch project lookup covering every distinct mod in the response (not just files needing a
+        // manual-download check) — also needed to resolve each file's project type (classId), which the file
+        // listing itself never carries.
+        val projectsByModId = api.getProjects(CurseForgeGetModsRequest(files.map { it.modId }.distinct()))
+            .bindResponse().data.associateBy { it.id }
 
         files.map { file ->
-            val data = file.convert(loaderFilter = null)
-            if (file.downloadUrl == null && file.id !in downloadableIds) {
-                val project = manualProjects.getValue(file.modId).await()
+            val project = projectsByModId[file.modId]
+            val data = file.convert(loaderFilter = null).copy(type = project?.classId.toProjectTypeData())
+            if (project != null && file.downloadUrl == null && file.id !in downloadableIds) {
                 data.copy(manualDownloadUrl = manualDownloadUrl(project.slug, project.classId, file.id))
             } else data
         }

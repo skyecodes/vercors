@@ -16,7 +16,8 @@ data class ProjectFile(
     val publishedAt: Instant,
     val dependencies: List<ProjectId>,
     /** Set only when this file can't be downloaded automatically (e.g. its author disabled distribution) — the page a user can download it from manually. */
-    val manualDownloadUrl: String? = null
+    val manualDownloadUrl: String? = null,
+    val type: ProjectType? = null
 )
 
 enum class ProjectReleaseChannel {

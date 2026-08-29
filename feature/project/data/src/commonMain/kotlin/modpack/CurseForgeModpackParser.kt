@@ -2,6 +2,7 @@ package app.vercors.feature.project.data.modpack
 
 import app.vercors.feature.game.domain.model.ModLoaderType
 import app.vercors.feature.project.domain.model.ProjectId
+import app.vercors.feature.project.domain.model.ProjectType
 import app.vercors.feature.project.domain.model.modpack.*
 import app.vercors.feature.project.domain.repository.ProjectRepository
 import arrow.core.raise.Raise
@@ -113,9 +114,10 @@ class CurseForgeModpackParser(
             .associateBy { it.id }
         val files = entries.map { entry ->
             val file = filesById[entry.fileID.toString()] ?: raise(ModpackFileResolutionFailed)
+            val kind = (file.type ?: ProjectType.Mod).toModpackFileKind()
             ModpackManifestFile(
-                targetPath = "mods/${file.fileName}",
-                kind = ModpackFileKind.Mod,
+                targetPath = "${kind.toFolderName()}/${file.fileName}",
+                kind = kind,
                 downloadUrl = null,
                 sha1 = file.sha1,
                 md5 = file.md5,

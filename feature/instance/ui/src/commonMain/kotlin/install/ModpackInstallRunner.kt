@@ -178,7 +178,7 @@ class ModpackInstallRunner(
             fileName = fileName,
             downloadUrl = manualDownloadUrl,
             instanceId = instanceId,
-            projectType = ProjectType.Mod,
+            projectType = manualFile.kind.toProjectType(),
             size = manualFile.size,
             sha1 = manualFile.sha1,
             md5 = manualFile.md5,
@@ -205,4 +205,10 @@ private fun ModpackFileKind.toContentKindOrNull(): ContentKind? = when (this) {
     ModpackFileKind.ResourcePack -> ContentKind.ResourcePack
     ModpackFileKind.ShaderPack -> ContentKind.ShaderPack
     ModpackFileKind.Other -> null
+}
+
+private fun ModpackFileKind.toProjectType(): ProjectType = when (this) {
+    ModpackFileKind.Mod, ModpackFileKind.Other -> ProjectType.Mod
+    ModpackFileKind.ResourcePack -> ProjectType.ResourcePack
+    ModpackFileKind.ShaderPack -> ProjectType.ShaderPack
 }

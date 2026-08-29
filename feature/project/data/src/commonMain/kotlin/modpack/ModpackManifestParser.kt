@@ -1,6 +1,7 @@
 package app.vercors.feature.project.data.modpack
 
 import app.vercors.feature.project.domain.model.ProjectId
+import app.vercors.feature.project.domain.model.ProjectType
 import app.vercors.feature.project.domain.model.modpack.ModpackFileKind
 import app.vercors.feature.project.domain.model.modpack.ModpackManifest
 import app.vercors.feature.project.domain.model.modpack.ModpackResolutionError
@@ -36,4 +37,21 @@ internal fun String.toModpackFileKind(): ModpackFileKind = when (substringBefore
     "resourcepacks" -> ModpackFileKind.ResourcePack
     "shaderpacks" -> ModpackFileKind.ShaderPack
     else -> ModpackFileKind.Other
+}
+
+/** Derives a [ModpackFileKind] from a resolved [ProjectType] — used when a manifest gives no per-file path
+ *  (e.g. CurseForge) and the destination folder has to be inferred from the file's own project type instead. */
+internal fun ProjectType.toModpackFileKind(): ModpackFileKind = when (this) {
+    ProjectType.Mod, ProjectType.Modpack -> ModpackFileKind.Mod
+    ProjectType.ResourcePack -> ModpackFileKind.ResourcePack
+    ProjectType.ShaderPack -> ModpackFileKind.ShaderPack
+    ProjectType.DataPack, ProjectType.World -> ModpackFileKind.Other
+}
+
+/** Inverse of [String.toModpackFileKind] — the folder a resolved file of this [ModpackFileKind] belongs in. */
+internal fun ModpackFileKind.toFolderName(): String = when (this) {
+    ModpackFileKind.Mod -> "mods"
+    ModpackFileKind.ResourcePack -> "resourcepacks"
+    ModpackFileKind.ShaderPack -> "shaderpacks"
+    ModpackFileKind.Other -> "mods"
 }
