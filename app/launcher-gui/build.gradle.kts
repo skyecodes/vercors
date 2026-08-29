@@ -63,8 +63,14 @@ java {
 nucleus.application {
     mainClass = "app.vercors.launcher.gui.MainKt"
 
+    buildTypes.release.proguard {
+        isEnabled = true
+        configurationFiles.from("proguard-rules.pro")
+    }
+
     nativeDistributions {
         targetFormats(*TargetFormat.entries.toTypedArray())
+        modules("jdk.security.auth")
         packageName = "vercors"
         packageVersion = rootProject.version.toString()
         description = "A modern Minecraft Launcher with mod support and much more!"

@@ -15,6 +15,7 @@ import coil3.annotation.ExperimentalCoilApi
 import coil3.compose.setSingletonImageLoaderFactory
 import coil3.disk.DiskCache
 import coil3.network.ktor3.KtorNetworkFetcherFactory
+import coil3.util.Logger
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.MountainSnow
 import com.slack.circuit.foundation.CircuitCompositionLocals
@@ -30,6 +31,21 @@ import kotlinx.coroutines.*
 import okio.Path.Companion.toPath
 import opensavvy.state.progressive.valueOrNull
 import org.jetbrains.compose.resources.stringResource
+
+private class Slf4jCoilLogger(override var minLevel: Logger.Level = Logger.Level.Warn) : Logger {
+    private val logger = KotlinLogging.logger {}
+
+    override fun log(tag: String, level: Logger.Level, message: String?, throwable: Throwable?) {
+        val log = { "$tag: $message" }
+        when (level) {
+            Logger.Level.Verbose -> logger.trace(throwable, log)
+            Logger.Level.Debug -> logger.debug(throwable, log)
+            Logger.Level.Info -> logger.info(throwable, log)
+            Logger.Level.Warn -> logger.warn(throwable, log)
+            Logger.Level.Error -> logger.error(throwable, log)
+        }
+    }
+}
 
 @OptIn(ExperimentalCoilApi::class)
 fun main(args: Array<String>) {
@@ -65,6 +81,7 @@ fun main(args: Array<String>) {
 
         setSingletonImageLoaderFactory {
             ImageLoader.Builder(it)
+                .logger(Slf4jCoilLogger())
                 .components {
                     KtorNetworkFetcherFactory(appGraph.httpClient)
                 }
