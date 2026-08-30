@@ -1,5 +1,4 @@
 <resources>
-    <string name="appTitle">Vercors</string>
     <string name="minimize">Minimize</string>
     <string name="maximize">Maximize</string>
     <string name="close">Close</string>

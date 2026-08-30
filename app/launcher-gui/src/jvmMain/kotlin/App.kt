@@ -82,7 +82,8 @@ fun App(
                                 canGoBack = navStack.currentRecord != navStack.rootRecord,
                                 canGoNext = navStack.currentRecord != navStack.topRecord,
                                 onNavigateBack = { navigator.backward() },
-                                onNavigateNext = { navigator.forward() }
+                                onNavigateNext = { navigator.forward() },
+                                appName = state.appName
                             )
                             Row {
                                 AppMenu(

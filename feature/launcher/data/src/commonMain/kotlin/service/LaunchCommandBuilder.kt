@@ -1,5 +1,6 @@
 package app.vercors.feature.launcher.data.service
 
+import app.vercors.core.domain.AppConstants
 import app.vercors.feature.account.domain.model.Account
 import app.vercors.feature.game.domain.model.GameVersionDetails
 import app.vercors.feature.instance.domain.model.Instance
@@ -10,10 +11,15 @@ import app.vercors.shared.data.AppPaths
 import app.vercors.shared.domain.model.JvmMemoryOptions
 import app.vercors.shared.domain.model.NativeLibraryOptions
 import dev.zacsweers.metro.Inject
+import dev.zacsweers.metro.Named
 
 /** Assembles the process command line for an instance whose dependencies are already resolved. */
 @Inject
-class LaunchCommandBuilder(private val appPaths: AppPaths) {
+class LaunchCommandBuilder(
+    private val appPaths: AppPaths,
+    @Named(AppConstants.APP_NAME_KEY) private val launcherName: String,
+    @Named(AppConstants.APP_VERSION_KEY) private val launcherVersion: String
+) {
     fun build(
         dependencyList: InstanceDependencyList,
         account: Account,
@@ -39,6 +45,8 @@ class LaunchCommandBuilder(private val appPaths: AppPaths) {
             nativesDir = nativesDir.toString(),
             libraryDir = appPaths.libraries.toString(),
             classpathSeparator = platformPathSeparator,
+            launcherName = launcherName,
+            launcherVersion = launcherVersion
         ).toMap()
         val jvmArgs = version.jvmArgs?.resolve(variables)
         val gameArgs = version.gameArgs?.resolve(variables)

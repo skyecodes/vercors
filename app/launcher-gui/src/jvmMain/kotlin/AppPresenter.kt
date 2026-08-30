@@ -1,6 +1,7 @@
 package app.vercors.launcher.gui
 
 import androidx.compose.runtime.*
+import app.vercors.core.domain.AppConstants
 import app.vercors.core.ui.state.collectProgressiveAsState
 import app.vercors.feature.config.domain.model.Configuration
 import app.vercors.feature.config.domain.usecase.ObserveConfigurationUseCase
@@ -16,15 +17,15 @@ import app.vercors.shared.ui.Store
 import com.slack.circuit.codegen.annotations.CircuitInject
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Inject
-import io.github.oshai.kotlinlogging.KotlinLogging
+import dev.zacsweers.metro.Named
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import opensavvy.state.progressive.valueOrNull
+import kotlin.time.Duration.Companion.milliseconds
 
-private val logger = KotlinLogging.logger {}
 private const val SNACKBAR_DURATION_MS = 4000L
 
 @CircuitInject(AppScreen::class, AppScope::class)
@@ -36,6 +37,7 @@ class AppPresenter(
     private val observeThemes: ObserveThemesUseCase,
     private val observeInstanceList: ObserveInstanceListUseCase,
     private val snackbarService: SnackbarService,
+    @Named(AppConstants.APP_NAME_KEY) private val appName: String
 ) : Presenter<AppState, AppEvent> {
     @Composable
     override fun present(): Store<AppState, AppEvent> {
@@ -48,7 +50,7 @@ class AppPresenter(
         LaunchedEffect(Unit) {
             for (message in snackbarService.messages) {
                 snackbarMessage = message
-                withTimeoutOrNull(SNACKBAR_DURATION_MS) { dismissRequests.first() }
+                withTimeoutOrNull(SNACKBAR_DURATION_MS.milliseconds) { dismissRequests.first() }
                 snackbarMessage = null
             }
         }
@@ -71,6 +73,7 @@ class AppPresenter(
             accentColor = accent,
             snackbarMessage = snackbarMessage,
             installTaskbarProgress = installTaskbarProgress,
+            appName = appName
         ) + {
             when (it) {
                 AppEvent.ToggleDrawer -> backgroundScope.launch {

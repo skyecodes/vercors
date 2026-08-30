@@ -40,6 +40,7 @@ fun AppTopBar(
     canGoNext: Boolean,
     onNavigateBack: () -> Unit,
     onNavigateNext: () -> Unit,
+    appName: String
 ) {
     val nucleusWindow = LocalNucleusWindow.current
 
@@ -53,10 +54,10 @@ fun AppTopBar(
         ) {
             AppIcon(
                 imageVector = Lucide.MountainSnow,
-                contentDescription = stringResource(Res.string.appTitle)
+                contentDescription = null
             )
             AppText(
-                text = stringResource(Res.string.appTitle),
+                text = appName,
                 fontFamily = Theme[fonts][tight],
                 fontWeight = FontWeight.SemiBold
             )

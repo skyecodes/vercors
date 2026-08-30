@@ -48,9 +48,10 @@ dependencies {
     commonMainImplementation(libs.nucleus.taskbar.progress.tao)
     commonMainImplementation(libs.nucleus.composenativetray)
     commonMainImplementation(libs.coil.compose)
+    commonMainImplementation(libs.coil.network.ktor3)
+    //commonMainImplementation(libs.coil.gif)
     commonMainImplementation(libs.cryptography.provider.optimal)
     commonMainImplementation(libs.logback)
-    commonMainImplementation(libs.coil.network.ktor3)
     commonMainImplementation(libs.kotlinx.io.core)
 }
 
@@ -71,6 +72,7 @@ nucleus.application {
     nativeDistributions {
         targetFormats(*TargetFormat.entries.toTypedArray())
         modules("jdk.security.auth")
+        appName = "Vercors"
         packageName = "vercors"
         packageVersion = rootProject.version.toString()
         description = "A modern Minecraft Launcher with mod support and much more!"

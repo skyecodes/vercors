@@ -3,8 +3,6 @@ package app.vercors.feature.launcher.domain.model
 import app.vercors.feature.account.domain.model.Account
 import app.vercors.feature.game.domain.model.GameVersionDetails
 import app.vercors.feature.instance.domain.model.Instance
-import app.vercors.shared.domain.LAUNCHER_NAME
-import app.vercors.shared.domain.LAUNCHER_VERSION
 
 /**
  * The substitution variables that Mojang's argument templates are resolved against.
@@ -22,6 +20,8 @@ data class LaunchVariables(
     val nativesDir: String,
     val libraryDir: String,
     val classpathSeparator: String,
+    val launcherName: String,
+    val launcherVersion: String
 ) {
     fun toMap(): Map<String, String> = mapOf(
         "auth_player_name" to account.username,
@@ -36,8 +36,8 @@ data class LaunchVariables(
         "user_type" to "msa",
         "version_type" to version.type.mojangId,
         "natives_directory" to nativesDir,
-        "launcher_name" to LAUNCHER_NAME,
-        "launcher_version" to LAUNCHER_VERSION,
+        "launcher_name" to launcherName,
+        "launcher_version" to launcherVersion,
         "classpath" to classpath,
         "library_directory" to libraryDir,
         "classpath_separator" to classpathSeparator,

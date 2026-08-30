@@ -105,7 +105,7 @@ fun main(args: Array<String>) {
 
         Tray(
             icon = Lucide.MountainSnow,
-            tooltip = stringResource(Res.string.appTitle),
+            tooltip = appGraph.appName,
             primaryAction = { trayHidden = false },
         ) {
             Item(stringResource(SharedRes.string.open)) { trayHidden = false }
@@ -118,7 +118,7 @@ fun main(args: Array<String>) {
             undecorated = true,
             visible = !trayHidden,
             state = windowState,
-            title = stringResource(Res.string.appTitle),
+            title = appGraph.appName,
             minimumSize = DpSize(960.dp, 540.dp),
         ) {
             CircuitCompositionLocals(appGraph.circuit) {

@@ -315,7 +315,7 @@ private fun InstanceHeaderStatus(instance: InstanceView) {
     if (instance.status !is InstanceStatus.Launching && instance.status !is InstanceStatus.Installing) return
 
     Column(
-        modifier = Modifier.width(200.dp),
+        modifier = Modifier.width(250.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterVertically)
     ) {

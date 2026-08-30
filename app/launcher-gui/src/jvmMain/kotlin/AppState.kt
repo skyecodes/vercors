@@ -12,6 +12,7 @@ data class AppState(
     val accentColor: Long?,
     val snackbarMessage: SnackbarMessage?,
     val installTaskbarProgress: InstallTaskbarProgress,
+    val appName: String
 )
 
 /** Aggregate taskbar-progress signal across every instance currently installing or launching. */
