@@ -678,27 +678,47 @@ private fun InstanceJavaOptionsSection(instance: InstanceView, state: InstanceOp
         InstanceMemorySliderRow(
             title = InstanceRes.string.maxMemory,
             description = InstanceRes.string.maxMemoryDesc,
+            checked = effectiveOptions.maxMemoryEnabled == true,
             value = effectiveOptions.maxMemoryMb ?: defaultMax,
             valueRange = 512..state.totalMemoryMb,
             stepSize = 128,
-            isOverridden = currentOptions.maxMemoryMb != null,
-            onReset = { updateOptions { it.copy(maxMemoryMb = null) } },
+            isOverridden = currentOptions.maxMemoryEnabled != null || currentOptions.maxMemoryMb != null,
+            onReset = { updateOptions { it.copy(maxMemoryEnabled = null, maxMemoryMb = null) } },
+            onCheckedChange = { checked ->
+                updateOptions { opts ->
+                    opts.copy(
+                        maxMemoryEnabled = checked,
+                        maxMemoryMb = if (checked) opts.maxMemoryMb ?: effectiveOptions.maxMemoryMb
+                        ?: defaultMax else opts.maxMemoryMb,
+                    )
+                }
+            },
             onValueChange = { newValue ->
                 updateOptions { opts ->
                     val clampedMin = opts.minMemoryMb?.let { min -> minOf(min, newValue) }
-                    opts.copy(maxMemoryMb = newValue, minMemoryMb = clampedMin)
+                    opts.copy(maxMemoryEnabled = true, maxMemoryMb = newValue, minMemoryMb = clampedMin)
                 }
             },
         )
         InstanceMemorySliderRow(
             title = InstanceRes.string.minMemory,
             description = InstanceRes.string.minMemoryDesc,
+            checked = effectiveOptions.minMemoryEnabled == true,
             value = effectiveOptions.minMemoryMb ?: defaultMinMemoryMb(),
             valueRange = 256..(effectiveOptions.maxMemoryMb ?: defaultMax),
             stepSize = 32,
-            isOverridden = currentOptions.minMemoryMb != null,
-            onReset = { updateOptions { it.copy(minMemoryMb = null) } },
-            onValueChange = { newValue -> updateOptions { it.copy(minMemoryMb = newValue) } },
+            isOverridden = currentOptions.minMemoryEnabled != null || currentOptions.minMemoryMb != null,
+            onReset = { updateOptions { it.copy(minMemoryEnabled = null, minMemoryMb = null) } },
+            onCheckedChange = { checked ->
+                updateOptions { opts ->
+                    opts.copy(
+                        minMemoryEnabled = checked,
+                        minMemoryMb = if (checked) opts.minMemoryMb ?: effectiveOptions.minMemoryMb
+                        ?: defaultMinMemoryMb() else opts.minMemoryMb,
+                    )
+                }
+            },
+            onValueChange = { newValue -> updateOptions { it.copy(minMemoryEnabled = true, minMemoryMb = newValue) } },
         )
         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
             AppText(text = stringResource(InstanceRes.string.extraJvmArgs), fontWeight = FontWeight.SemiBold)
@@ -834,11 +854,13 @@ private fun InstanceLibraryOverrideRow(
 private fun InstanceMemorySliderRow(
     title: StringResource,
     description: StringResource,
+    checked: Boolean,
     value: Int,
     valueRange: IntRange,
     stepSize: Int,
     isOverridden: Boolean,
     onReset: () -> Unit,
+    onCheckedChange: (Boolean) -> Unit,
     onValueChange: (Int) -> Unit,
 ) {
     val displayValue = value.coerceIn(valueRange)
@@ -850,17 +872,20 @@ private fun InstanceMemorySliderRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            AppCheckbox(checked = checked, onCheckedChange = onCheckedChange)
             AppSlider(
                 value = displayValue,
                 onValueChange = onValueChange,
                 valueRange = valueRange,
                 stepSize = stepSize,
+                enabled = checked,
                 modifier = Modifier.weight(1f)
             )
             AppNumberField(
                 value = displayValue,
                 onValueChange = onValueChange,
                 valueRange = valueRange,
+                enabled = checked,
             )
             AppText(text = stringResource(InstanceRes.string.megabytes), style = Theme[textStyles][label])
             ResetButton(

@@ -70,8 +70,8 @@ class LaunchCommandBuilder(
 }
 
 private fun JvmMemoryOptions.toJvmArgs(): List<String> = buildList {
-    minMemoryMb?.let { add("-Xms${it}M") }
-    maxMemoryMb?.let { add("-Xmx${it}M") }
+    if (minMemoryEnabled == true) minMemoryMb?.let { add("-Xms${it}M") }
+    if (maxMemoryEnabled == true) maxMemoryMb?.let { add("-Xmx${it}M") }
     addAll(extraArgs.orEmpty().trim().split(Regex("\\s+")).filter(String::isNotBlank))
 }
 
