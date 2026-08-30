@@ -207,6 +207,10 @@ expect suspend fun Path.lastModifiedOrNull(context: CoroutineContext = Dispatche
 /** Marks the file as executable (`chmod +x` on POSIX; a no-op on Windows, which has no executable bit). */
 expect suspend fun Path.setExecutable(context: CoroutineContext = Dispatchers.IO): Boolean
 
+/** Restricts the file to owner-only read/write (`chmod 600` on POSIX). Best-effort on Windows
+ *  (no real ACL restriction — see the JVM/mingw actuals); returns whether it succeeded. */
+expect suspend fun Path.restrictToOwner(context: CoroutineContext = Dispatchers.IO): Boolean
+
 /** Resolves symlinks (and, on Windows, junctions/reparse points) to the canonical absolute path, or `null` if the
  *  path doesn't exist or can't be resolved. Useful for deduplicating candidates that are really the same file
  *  reached through different symlinked paths (e.g. Linux distros symlinking `/usr/lib/jvm/default` to a specific

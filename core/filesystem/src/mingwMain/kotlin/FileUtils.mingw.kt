@@ -20,6 +20,10 @@ actual suspend fun Path.lastModifiedOrNull(context: CoroutineContext): Instant? 
 /** Windows has no executable permission bit — an `.exe` extension is sufficient. */
 actual suspend fun Path.setExecutable(context: CoroutineContext): Boolean = true
 
+/** TODO: Windows has no POSIX permission bits; real restriction needs ACL manipulation
+ *  (SetNamedSecurityInfoW + current-user SID lookup), not implemented yet. */
+actual suspend fun Path.restrictToOwner(context: CoroutineContext): Boolean = false
+
 /** Resolves NTFS symlinks/junctions via a real handle, unlike `_fullpath`, which only normalizes the path
  *  textually without touching reparse points. */
 @OptIn(ExperimentalForeignApi::class)

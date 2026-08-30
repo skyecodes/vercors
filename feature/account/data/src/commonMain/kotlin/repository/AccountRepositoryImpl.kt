@@ -94,8 +94,12 @@ class AccountRepositoryImpl(
     private suspend fun getEncryptionKey(): CryptographicKey {
         if (!keyFile.isRegularFile()) {
             if (keyFile.exists()) keyFile.deleteRecursively()
+            keyFile.sink { } // create/truncate empty before restricting permissions
+            keyFile.restrictToOwner()
             val key = cryptographyService.generateKey()
             keyFile.writeData(cryptographyService.encodeKey(key))
+        } else {
+            keyFile.restrictToOwner()
         }
         return cryptographyService.decodeKey(keyFile.readData())
     }

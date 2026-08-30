@@ -2,6 +2,9 @@ package app.vercors.core.filesystem
 
 import kotlinx.coroutines.withContext
 import kotlinx.io.files.Path
+import java.io.IOException
+import java.nio.file.Files
+import java.nio.file.attribute.PosixFilePermission
 import kotlin.coroutines.CoroutineContext
 import kotlin.io.path.createLinkPointingTo
 import kotlin.io.path.createParentDirectories
@@ -33,6 +36,26 @@ actual suspend fun Path.setExecutable(context: CoroutineContext): Boolean {
     val jvmPath = JvmPath(toString())
     return withContext(context) {
         jvmPath.toFile().setExecutable(true)
+    }
+}
+
+actual suspend fun Path.restrictToOwner(context: CoroutineContext): Boolean {
+    val jvmPath = JvmPath(toString())
+    return withContext(context) {
+        runCatching {
+            if ("posix" in jvmPath.fileSystem.supportedFileAttributeViews()) {
+                Files.setPosixFilePermissions(
+                    jvmPath, setOf(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE)
+                )
+            } else {
+                val file = jvmPath.toFile()
+                var result = file.setReadable(false, false)
+                result = result && file.setWritable(false, false)
+                result = result && file.setReadable(true, true)
+                result = result && file.setWritable(true, true)
+                if (!result) throw IOException("Failed to restrict permissions")
+            }
+        }.isSuccess
     }
 }
 

@@ -37,6 +37,13 @@ actual suspend fun Path.setExecutable(context: CoroutineContext): Boolean {
     }
 }
 
+actual suspend fun Path.restrictToOwner(context: CoroutineContext): Boolean {
+    val path = toString()
+    return withContext(context) {
+        chmod(path, 384u /* 0600 */) == 0
+    }
+}
+
 @OptIn(ExperimentalForeignApi::class)
 actual suspend fun Path.realPath(context: CoroutineContext): Path? {
     val path = toString()
