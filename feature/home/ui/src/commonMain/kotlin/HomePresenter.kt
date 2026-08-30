@@ -7,7 +7,9 @@ import app.vercors.feature.instance.ui.create.CreateInstanceDialog
 import app.vercors.feature.instance.ui.create.CreateInstanceResult
 import app.vercors.feature.instance.ui.details.InstanceDetailsScreen
 import app.vercors.feature.instance.ui.toBriefView
+import app.vercors.feature.project.domain.model.ProjectType
 import app.vercors.feature.project.ui.details.ProjectDetailsScreen
+import app.vercors.feature.project.ui.list.ProjectListScreen
 import app.vercors.feature.project.ui.toView
 import app.vercors.shared.ui.Presenter
 import app.vercors.shared.ui.Store
@@ -51,7 +53,8 @@ class HomePresenter(
             is HomeEvent.OnCreateInstanceResult -> {
                 setPromptCreateInstance(false)
                 val result = event.result
-                if (result is CreateInstanceResult.Created) navigator.goTo(InstanceDetailsScreen(result.instanceId))
+                if (result is CreateInstanceResult.Created) navigator.goTo(InstanceDetailsScreen(event.result.instanceId))
+                else if (result == CreateInstanceResult.SearchModpacks) navigator.goTo(ProjectListScreen(initialType = ProjectType.Modpack))
             }
 
             is HomeEvent.OnProjectClick -> navigator.goTo(ProjectDetailsScreen(event.projectId))

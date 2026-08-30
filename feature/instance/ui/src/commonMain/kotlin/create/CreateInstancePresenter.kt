@@ -46,6 +46,7 @@ class CreateInstancePresenter(
     @Composable
     override fun present(): Store<CreateInstanceState, CreateInstanceEvent> {
         val gameVersionList by observeGameVersionListView()
+        val (selectedInstanceType, setSelectedInstanceType) = remember { mutableStateOf(InstanceType.Custom) }
         val (instanceName, setInstanceName) = remember { mutableStateOf("") }
         val (selectedGameVersion, setSelectedGameVersion) = remember { mutableStateOf<GameVersionView?>(null) }
         val (selectedLoader, setSelectedLoader) = remember { mutableStateOf<ModLoaderType?>(null) }
@@ -70,10 +71,12 @@ class CreateInstancePresenter(
             selectedLoader = selectedLoader,
             loaderList = loaderList,
             selectedLoaderVersion = selectedLoaderVersion,
-            loaderVersionList = loaderVersionList
+            loaderVersionList = loaderVersionList,
+            selectedInstanceType = selectedInstanceType,
         ) + { event ->
             handleEvent(
                 event = event,
+                setSelectedInstanceType = setSelectedInstanceType,
                 instanceName = instanceName,
                 setInstanceName = setInstanceName,
                 selectedGameVersion = selectedGameVersion,
@@ -88,6 +91,7 @@ class CreateInstancePresenter(
 
     private fun handleEvent(
         event: CreateInstanceEvent,
+        setSelectedInstanceType: (InstanceType) -> Unit,
         instanceName: String,
         setInstanceName: (String) -> Unit,
         selectedGameVersion: GameVersionView?,
@@ -98,6 +102,7 @@ class CreateInstancePresenter(
         setSelectedLoaderVersion: (LoaderVersion?) -> Unit,
     ) {
         when (event) {
+            is CreateInstanceEvent.OnInstanceTypeChange -> setSelectedInstanceType(event.type)
             is CreateInstanceEvent.OnInstanceNameChange -> setInstanceName(event.name)
             is CreateInstanceEvent.OnGameVersionChange -> {
                 setSelectedGameVersion(event.version)
@@ -114,6 +119,7 @@ class CreateInstancePresenter(
             CreateInstanceEvent.OnCancelClick -> navigator.finish(CreateInstanceResult.Cancelled)
             CreateInstanceEvent.OnCreateInstanceClick ->
                 createInstance(instanceName, selectedGameVersion, selectedLoader, selectedLoaderVersion)
+            CreateInstanceEvent.OnOpenModpacksScreen -> navigator.finish(CreateInstanceResult.SearchModpacks)
         }
     }
 

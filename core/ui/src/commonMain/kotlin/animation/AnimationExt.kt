@@ -162,7 +162,7 @@ fun <S> AppAnimatedContent(
         contentAlignment,
         label,
         contentKey
-    ) { content(targetState) }
+    ) { content(it) }
     else content(targetState)
 }
 

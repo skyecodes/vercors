@@ -10,6 +10,7 @@ import opensavvy.state.progressive.ProgressiveOutcome
 
 @Immutable
 data class CreateInstanceState(
+    val selectedInstanceType: InstanceType,
     val instanceName: String,
     val selectedGameVersion: GameVersionView?,
     val gameVersionList: ProgressiveOutcome<GameVersionError.InvalidManifest, List<GameVersionView>>,
@@ -20,4 +21,11 @@ data class CreateInstanceState(
 ) {
     val canCreateInstance: Boolean = instanceName.length >= 3 && selectedGameVersion != null &&
             (selectedLoader == null || selectedLoaderVersion != null)
+}
+
+@Immutable
+enum class InstanceType {
+    Custom,
+    Modpack,
+    Import
 }

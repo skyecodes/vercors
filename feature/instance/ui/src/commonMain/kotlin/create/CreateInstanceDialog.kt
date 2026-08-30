@@ -18,6 +18,7 @@ import kotlinx.coroutines.CoroutineScope
 sealed interface CreateInstanceResult {
     data class Created(val instanceId: InstanceId) : CreateInstanceResult
     data object Cancelled : CreateInstanceResult
+    data object SearchModpacks : CreateInstanceResult
 }
 
 /** Shown as a dialog overlay rather than a full navigated screen — see [ConfirmDeleteDialog][app.vercors.feature.instance.ui.delete.ConfirmDeleteDialog] for the same pattern. */

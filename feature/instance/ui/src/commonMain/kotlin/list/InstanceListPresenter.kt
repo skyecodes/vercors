@@ -9,6 +9,8 @@ import app.vercors.feature.instance.ui.create.CreateInstanceDialog
 import app.vercors.feature.instance.ui.create.CreateInstanceResult
 import app.vercors.feature.instance.ui.details.InstanceDetailsScreen
 import app.vercors.feature.instance.ui.toBriefView
+import app.vercors.feature.project.domain.model.ProjectType
+import app.vercors.feature.project.ui.list.ProjectListScreen
 import app.vercors.shared.ui.Presenter
 import app.vercors.shared.ui.Store
 import com.slack.circuit.codegen.annotations.CircuitInject
@@ -69,6 +71,7 @@ class InstanceListPresenter(
                 setPromptCreateInstance(false)
                 val result = event.result
                 if (result is CreateInstanceResult.Created) navigator.goTo(InstanceDetailsScreen(result.instanceId))
+                else if (result == CreateInstanceResult.SearchModpacks) navigator.goTo(ProjectListScreen(initialType = ProjectType.Modpack))
             }
 
             is InstanceListEvent.OnInstanceClick -> navigator.goTo(InstanceDetailsScreen(event.instanceId))
