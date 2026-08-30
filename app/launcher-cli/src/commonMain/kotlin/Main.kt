@@ -1,14 +1,12 @@
 package app.vercors.launcher.cli
 
+import app.vercors.core.domain.AppConstants
 import app.vercors.shared.command.AbstractCommand
 import app.vercors.shared.data.AppPaths
 import com.github.ajalt.clikt.command.SuspendingCliktCommand
 import com.github.ajalt.clikt.command.main
 import com.github.ajalt.clikt.core.subcommands
-import dev.zacsweers.metro.AppScope
-import dev.zacsweers.metro.DependencyGraph
-import dev.zacsweers.metro.Provides
-import dev.zacsweers.metro.createGraphFactory
+import dev.zacsweers.metro.*
 import kotlinx.coroutines.*
 import kotlinx.io.files.Path
 
@@ -45,6 +43,26 @@ class MainCommand : SuspendingCliktCommand("vercors") {
 internal interface AppGraph {
     val appPaths: AppPaths
     val commands: Set<AbstractCommand>
+
+    @Provides
+    @SingleIn(AppScope::class)
+    @Named(AppConstants.APP_ID_KEY)
+    fun provideAppId(): String = BuildConfig.APP_ID
+
+    @Provides
+    @SingleIn(AppScope::class)
+    @Named(AppConstants.APP_NAME_KEY)
+    fun provideAppName(): String = BuildConfig.APP_NAME
+
+    @Provides
+    @SingleIn(AppScope::class)
+    @Named(AppConstants.APP_VERSION_KEY)
+    fun provideAppVersion(): String = BuildConfig.APP_VERSION
+
+    @Provides
+    @SingleIn(AppScope::class)
+    @Named(AppConstants.APP_VENDOR_KEY)
+    fun provideAppVendor(): String = BuildConfig.APP_VENDOR
 
     @DependencyGraph.Factory
     fun interface Factory {

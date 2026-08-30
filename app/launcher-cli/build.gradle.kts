@@ -2,6 +2,7 @@ import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 
 plugins {
     id("app.vercors.cli")
+    alias(libs.plugins.buildconfig)
 }
 
 dependencies {
@@ -51,4 +52,12 @@ kotlin {
             }
         }
     }
+}
+
+buildConfig {
+    packageName("app.vercors.launcher.cli")
+    buildConfigField("String", "APP_ID", "\"${property("appId")}\"")
+    buildConfigField("String", "APP_NAME", "\"${property("appName")}\"")
+    buildConfigField("String", "APP_VENDOR", "\"${property("appVendor")}\"")
+    buildConfigField("String", "APP_VERSION", "\"${property("appVersion")}\"")
 }

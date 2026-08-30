@@ -72,11 +72,11 @@ nucleus.application {
     nativeDistributions {
         targetFormats(*TargetFormat.entries.toTypedArray())
         modules("jdk.security.auth")
-        appName = "Vercors"
-        packageName = "vercors"
-        packageVersion = rootProject.version.toString()
+        appName = property("appName") as String
+        packageName = property("appId") as String
+        packageVersion = property("appVersion") as String
         description = "A modern Minecraft Launcher with mod support and much more!"
-        vendor = "skyecodes"
+        vendor = property("appVendor") as String
         homepage = "https://vercors.app"
         enableAotCache = true
 

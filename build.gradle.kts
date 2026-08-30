@@ -13,5 +13,5 @@ plugins {
     alias(libs.plugins.mokkery) apply false
 }
 
-group = "app.vercors"
-version = "0.1.0"
+group = property("appGroup") as String
+version = property("appVersion") as String
