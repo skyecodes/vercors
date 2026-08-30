@@ -60,10 +60,11 @@ fun main(args: Array<String>) {
     )
     appGraph = createGraphFactory<AppGraph.Factory>().create(scope)
     System.setProperty("app.vercors.logDir", appGraph.appPaths.logs.toString())
-    appGraph.metaApiConnectivityPoller // force eager construction so its background poll loop starts now
     logger = KotlinLogging.logger {}
     logger.info { "Hello World!" }
     NotificationManager.initialize()
+
+    appGraph.metaApiConnectivityPoller // force eager construction so its background poll loop starts now
 
     // nucleusApplication() hard-exits the process (exitProcess(0)) on the Tao backend the moment the
     // last window closes, so code placed after this call never runs. A shutdown hook still lets the
