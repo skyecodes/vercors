@@ -5,12 +5,16 @@ import androidx.compose.ui.graphics.Color
 import app.vercors.core.system.OsType
 import app.vercors.core.system.SystemService
 import app.vercors.core.ui.state.collectProgressiveAsState
+import app.vercors.core.ui.state.produceProgressiveState
 import app.vercors.feature.config.domain.usecase.ObserveConfigurationUseCase
 import app.vercors.feature.config.domain.usecase.UpdateConfigurationUseCase
 import app.vercors.feature.game.domain.model.JavaInstallationError
 import app.vercors.feature.game.domain.usecase.AddJavaInstallationUseCase
 import app.vercors.feature.game.domain.usecase.ObserveJavaInstallationsUseCase
 import app.vercors.feature.game.domain.usecase.ScanJavaInstallationsUseCase
+import app.vercors.feature.project.domain.model.PlatformError
+import app.vercors.feature.project.domain.model.ProjectPlatform
+import app.vercors.feature.project.domain.usecase.GetPlatformListUseCase
 import app.vercors.feature.theme.domain.model.ThemeDefinition
 import app.vercors.feature.theme.domain.model.ThemeNamedColor
 import app.vercors.feature.theme.domain.usecase.ObserveThemesUseCase
@@ -31,6 +35,9 @@ import dev.zacsweers.metro.Inject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import opensavvy.state.ExperimentalProgressiveRaiseApi
+import opensavvy.state.arrow.progressive
+import opensavvy.state.progressive.ProgressiveOutcome
 import opensavvy.state.progressive.value
 import opensavvy.state.progressive.valueOrNull
 import org.jetbrains.compose.resources.stringResource
@@ -41,6 +48,7 @@ class ConfigurationPresenter(
     private val observeThemes: ObserveThemesUseCase,
     private val observeConfiguration: ObserveConfigurationUseCase,
     private val updateConfiguration: UpdateConfigurationUseCase,
+    private val getPlatformList: GetPlatformListUseCase,
     private val observeJavaInstallations: ObserveJavaInstallationsUseCase,
     private val scanJavaInstallations: ScanJavaInstallationsUseCase,
     private val addJavaInstallation: AddJavaInstallationUseCase,
@@ -55,6 +63,7 @@ class ConfigurationPresenter(
         val themeList by observeThemeViewList()
         val configuration by observeConfiguration().collectProgressiveAsState()
         val javaInstallations by observeJavaInstallations().collectProgressiveAsState()
+        val platformList by observePlatformList()
         val (javaAddError, setJavaAddError) = remember { mutableStateOf<String?>(null) }
         val (javaScanInProgress, setJavaScanInProgress) = remember { mutableStateOf(false) }
         val totalMemoryMb = remember {
@@ -81,6 +90,11 @@ class ConfigurationPresenter(
             selectedAccent = selectedAccent,
             animations = cfg?.animations,
             uiScalePercent = cfg?.uiScalePercent,
+            metaApiUrl = cfg?.metaApiUrl,
+            parallelDownloads = cfg?.parallelDownloads,
+            parallelFilesystemOperations = cfg?.parallelFilesystemOperations,
+            preferredPlatform = cfg?.preferredPlatform,
+            platformList = platformList.valueOrNull ?: emptyList(),
             javaInstallations = javaInstallations.valueOrNull ?: emptyList(),
             preferredJavaByMajorVersion = cfg?.preferredJavaByMajorVersion ?: emptyMap(),
             javaAddError = javaAddError,
@@ -126,6 +140,22 @@ class ConfigurationPresenter(
 
             is ConfigurationEvent.SetUiScalePercent -> presenterScope.launch {
                 updateConfiguration { copy(uiScalePercent = event.value) }
+            }
+
+            is ConfigurationEvent.SetMetaApiUrl -> presenterScope.launch {
+                updateConfiguration { copy(metaApiUrl = event.value) }
+            }
+
+            is ConfigurationEvent.SetParallelDownloads -> presenterScope.launch {
+                updateConfiguration { copy(parallelDownloads = event.value) }
+            }
+
+            is ConfigurationEvent.SetParallelFilesystemOperations -> presenterScope.launch {
+                updateConfiguration { copy(parallelFilesystemOperations = event.value) }
+            }
+
+            is ConfigurationEvent.SetPreferredPlatform -> presenterScope.launch {
+                updateConfiguration { copy(preferredPlatform = event.value) }
             }
 
             is ConfigurationEvent.AddJavaInstallation ->
@@ -220,6 +250,13 @@ class ConfigurationPresenter(
             }
         }
     }
+
+    @Composable
+    @OptIn(ExperimentalProgressiveRaiseApi::class)
+    private fun observePlatformList(): State<ProgressiveOutcome<PlatformError, List<ProjectPlatform>>> =
+        produceProgressiveState {
+            value = progressive { getPlatformList() }
+        }
 
     @Composable
     private fun observeThemeViewList() = observeThemes()

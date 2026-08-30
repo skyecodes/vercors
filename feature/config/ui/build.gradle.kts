@@ -6,6 +6,7 @@ dependencies {
     commonMainApi(projects.feature.config.domain)
     commonMainApi(projects.feature.game.domain)
     commonMainImplementation(projects.feature.theme.domain)
+    commonMainImplementation(projects.feature.project.domain)
     commonMainImplementation(libs.filekit.dialogs.compose)
 }
 

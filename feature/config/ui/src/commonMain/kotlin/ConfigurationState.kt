@@ -2,6 +2,7 @@ package app.vercors.feature.config.ui
 
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color
+import app.vercors.feature.project.domain.model.ProjectPlatform
 import app.vercors.shared.domain.model.JavaInstallation
 import app.vercors.shared.domain.model.JvmMemoryOptions
 import app.vercors.shared.domain.model.NativeLibraryOptions
@@ -13,6 +14,11 @@ data class ConfigurationState(
     val selectedAccent: ThemeNamedColorView?,
     val animations: Boolean?,
     val uiScalePercent: Int?,
+    val metaApiUrl: String?,
+    val parallelDownloads: Int?,
+    val parallelFilesystemOperations: Int?,
+    val preferredPlatform: String?,
+    val platformList: List<ProjectPlatform>,
     val javaInstallations: List<JavaInstallation>,
     val preferredJavaByMajorVersion: Map<Int, String>,
     val javaAddError: String?,

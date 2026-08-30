@@ -48,6 +48,11 @@ fun Configuration(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 contentPadding = PaddingValues(vertical = 8.dp)
             ) {
+                item("general") {
+                    GeneralConfigurationCategory(
+                        state = state
+                    )
+                }
                 item("ui") {
                     UIConfigurationCategory(
                         state = state
@@ -65,6 +70,72 @@ fun Configuration(
                         )
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+context(eventSink: EventSink<ConfigurationEvent>)
+private fun GeneralConfigurationCategory(
+    state: ConfigurationState
+) {
+    ConfigurationCategory(
+        icon = Lucide.Settings,
+        titleRes = ConfigRes.string.general,
+    ) {
+        if (state.platformList.isNotEmpty()) {
+            ConfigurationRow(
+                title = ConfigRes.string.preferredPlatform,
+                description = ConfigRes.string.preferredPlatformDesc,
+            ) {
+                AppSelectField(
+                    value = state.platformList.find { it.id == state.preferredPlatform } ?: state.platformList.first(),
+                    items = state.platformList,
+                    onValueChange = { eventSink(ConfigurationEvent.SetPreferredPlatform(it.id)) },
+                    itemRenderer = { platform, _ ->
+                        AppText(text = platform.name)
+                    },
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+        ConfigurationRow(
+            title = ConfigRes.string.metaApiUrl,
+            description = ConfigRes.string.metaApiUrlDesc,
+        ) {
+            AppTextField(
+                initialValue = state.metaApiUrl.orEmpty(),
+                onValueChange = { eventSink(ConfigurationEvent.SetMetaApiUrl(it)) },
+                debounceMillis = 500,
+                backgroundColor = Theme[colors][surface2],
+                modifier = Modifier.weight(1f)
+            )
+        }
+        if (state.parallelDownloads != null) {
+            ConfigurationRow(
+                title = ConfigRes.string.parallelDownloads,
+                description = ConfigRes.string.parallelDownloadsDesc,
+            ) {
+                AppNumberField(
+                    value = state.parallelDownloads,
+                    onValueChange = { eventSink(ConfigurationEvent.SetParallelDownloads(it)) },
+                    valueRange = 1..64,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+        if (state.parallelFilesystemOperations != null) {
+            ConfigurationRow(
+                title = ConfigRes.string.parallelFilesystemOperations,
+                description = ConfigRes.string.parallelFilesystemOperationsDesc,
+            ) {
+                AppNumberField(
+                    value = state.parallelFilesystemOperations,
+                    onValueChange = { eventSink(ConfigurationEvent.SetParallelFilesystemOperations(it)) },
+                    valueRange = 1..64,
+                    modifier = Modifier.weight(1f)
+                )
             }
         }
     }

@@ -1,4 +1,14 @@
 <resources>
+    <string name="general">General</string>
+    <string name="preferredPlatform">Preferred platform</string>
+    <string name="preferredPlatformDesc">The mod platform selected by default when browsing or searching for content.</string>
+    <string name="metaApiUrl">Meta API URL</string>
+    <string name="metaApiUrlDesc">The backend service the launcher communicates with.</string>
+    <string name="parallelDownloads">Parallel downloads</string>
+    <string name="parallelDownloadsDesc">The maximum number of files downloaded simultaneously.</string>
+    <string name="parallelFilesystemOperations">Parallel filesystem operations</string>
+    <string name="parallelFilesystemOperationsDesc">The maximum number of concurrent filesystem operations performed at once.</string>
+
     <string name="ui">UI</string>
     <string name="theme">Theme</string>
     <string name="themeDesc">The UI theme of the application.</string>
