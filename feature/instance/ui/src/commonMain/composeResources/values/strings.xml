@@ -95,6 +95,8 @@
     <string name="logs">Logs</string>
 
     <string name="general">General</string>
+    <string name="unlockAdvancedOptions">Unlock advanced options</string>
+    <string name="unlockAdvancedOptionsWarning">Changing these settings may break this modpack. Only proceed if you know what you are doing.</string>
     <string name="java">Java</string>
 
     <string name="noModsInstalled">No mods installed</string>

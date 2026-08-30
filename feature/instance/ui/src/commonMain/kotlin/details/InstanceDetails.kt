@@ -526,26 +526,67 @@ private fun InstanceGeneralOptionsSection(instance: InstanceView, state: Instanc
             modifier = Modifier.widthIn(min = 300.dp)
         )
 
-        val gameVersion = remember(state.gameVersionList, state.editedInstance.gameVersion, instance.gameVersion) {
-            state.gameVersionList.find { it.id == (state.editedInstance.gameVersion ?: instance.gameVersion) }
+        var advancedOptionsUnlocked by remember(instance.id) { mutableStateOf(false) }
+
+        if (instance.modpackInfo != null) {
+            AdvancedOptionsUnlockRow(
+                checked = advancedOptionsUnlocked,
+                onCheckedChange = { advancedOptionsUnlocked = it }
+            )
         }
 
-        GameVersionSelector(
-            selectedVersion = gameVersion,
-            versionList = state.gameVersionList,
-            onVersionChange = {
-                it?.let {
-                    eventSink(InstanceOptionsEvent.UpdateInstance { state ->
-                        state.copy(
-                            gameVersion = it.id
-                        )
-                    })
-                }
-            },
-            label = stringResource(GameRes.string.gameVersion) + if (state.isGameVersionEdited) "*" else ""
-        )
+        AppAnimatedVisibility(
+            visible = instance.modpackInfo == null || advancedOptionsUnlocked
+        ) {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                val gameVersion =
+                    remember(state.gameVersionList, state.editedInstance.gameVersion, instance.gameVersion) {
+                        state.gameVersionList.find {
+                            it.id == (state.editedInstance.gameVersion ?: instance.gameVersion)
+                        }
+                    }
 
-        InstanceGeneralOptionsLoader(state, instance)
+                GameVersionSelector(
+                    selectedVersion = gameVersion,
+                    versionList = state.gameVersionList,
+                    onVersionChange = {
+                        it?.let {
+                            eventSink(InstanceOptionsEvent.UpdateInstance { state ->
+                                state.copy(
+                                    gameVersion = it.id
+                                )
+                            })
+                        }
+                    },
+                    label = stringResource(GameRes.string.gameVersion) + if (state.isGameVersionEdited) "*" else ""
+                )
+
+                InstanceGeneralOptionsLoader(state, instance)
+            }
+        }
+    }
+}
+
+@Composable
+private fun AdvancedOptionsUnlockRow(
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        AppCheckbox(
+            label = stringResource(InstanceRes.string.unlockAdvancedOptions),
+            invert = true,
+            checked = checked,
+            onCheckedChange = onCheckedChange
+        )
+        AppText(
+            text = stringResource(InstanceRes.string.unlockAdvancedOptionsWarning),
+            style = Theme[textStyles][label],
+            color = Theme[colors][error]
+        )
     }
 }
 
@@ -837,7 +878,7 @@ private fun defaultMinMemoryMb(): Int = 512
 private fun InstanceTabSection(
     titleRes: StringResource,
     icon: ImageVector,
-    content: @Composable () -> Unit
+    content: @Composable ColumnScope.() -> Unit
 ) {
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp)

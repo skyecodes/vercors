@@ -132,8 +132,8 @@ fun RowScope.AppAnimatedVisibility(
 fun ColumnScope.AppAnimatedVisibility(
     visible: Boolean,
     modifier: Modifier = Modifier,
-    enter: EnterTransition = fadeIn() + expandHorizontally(),
-    exit: ExitTransition = fadeOut() + shrinkHorizontally(),
+    enter: EnterTransition = fadeIn() + expandVertically(),
+    exit: ExitTransition = fadeOut() + shrinkVertically(),
     label: String = "AnimatedVisibility",
     content: @Composable () -> Unit,
 ) {
