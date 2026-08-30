@@ -7,6 +7,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -43,6 +44,7 @@ fun AppTopBar(
     appName: String
 ) {
     val nucleusWindow = LocalNucleusWindow.current
+    val isMaximized by nucleusWindow.maximizedFlow.collectAsState()
 
     Row(
         modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Max).windowDragArea()
@@ -84,8 +86,8 @@ fun AppTopBar(
                 contentDescription = stringResource(Res.string.minimize)
             )
             AppWindowButton(
-                onClick = { nucleusWindow.setMaximized(!nucleusWindow.isMaximized) },
-                imageVector = if (nucleusWindow.isMaximized) Lucide.Minimize2 else Lucide.Maximize2,
+                onClick = { nucleusWindow.setMaximized(!isMaximized) },
+                imageVector = if (isMaximized) Lucide.Minimize2 else Lucide.Maximize2,
                 contentDescription = stringResource(Res.string.maximize)
             )
 
