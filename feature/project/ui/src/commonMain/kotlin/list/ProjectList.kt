@@ -17,19 +17,17 @@ import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.vercors.core.domain.Page
-import app.vercors.core.ui.CoreRes
 import app.vercors.core.ui.animation.AppAnimatedVisibility
 import app.vercors.core.ui.component.*
 import app.vercors.core.ui.layout.AppError
+import app.vercors.core.ui.layout.AppFilterBar
 import app.vercors.core.ui.layout.AppPaginator
 import app.vercors.core.ui.modifier.appCard
 import app.vercors.core.ui.modifier.scrollGradient
-import app.vercors.core.ui.search
 import app.vercors.core.ui.theme.colors
 import app.vercors.core.ui.theme.surface2
 import app.vercors.feature.game.domain.model.ModLoaderType
@@ -92,10 +90,7 @@ private fun ProjectListHeader(
     filter: ProjectListFilter,
     providerList: List<ProjectPlatformView>?
 ) {
-    Row(
-        modifier = Modifier.appCard().padding(8.dp).fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
+    AppFilterBar {
         AppSelectField(
             value = filter.selectedPlatform,
             items = providerList ?: emptyList(),
@@ -122,12 +117,10 @@ private fun ProjectListHeader(
             modifier = Modifier.width(175.dp)
         )
 
-        AppTextField(
-            placeholder = { AppText(stringResource(CoreRes.string.search)) },
+        AppSearchField(
             initialValue = filter.searchQuery,
             onValueChange = { eventSink(ProjectListEvent.OnSearchQueryChange(it)) },
             debounceMillis = 750,
-            imeAction = ImeAction.Search,
             modifier = Modifier.weight(1f)
         )
     }
@@ -229,10 +222,9 @@ private fun ProjectVersionFilter(state: ProjectListState) {
     ) {
         val listState = rememberLazyListState()
 
-        AppTextField(
+        AppSearchField(
             initialValue = state.gameVersionSearchQuery,
             onValueChange = { eventSink(ProjectListEvent.OnGameVersionSearchQueryChange(it)) },
-            placeholder = { AppText(stringResource(CoreRes.string.search)) },
             modifier = Modifier.fillMaxWidth()
         )
         Row(

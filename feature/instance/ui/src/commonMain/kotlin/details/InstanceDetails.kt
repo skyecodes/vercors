@@ -25,28 +25,24 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import app.vercors.core.ui.CoreRes
 import app.vercors.core.ui.animation.AppAnimatedVisibility
 import app.vercors.core.ui.animation.appAnimateColorAsState
 import app.vercors.core.ui.animation.appAnimateFloatAsState
 import app.vercors.core.ui.component.*
-import app.vercors.core.ui.layout.AppError
-import app.vercors.core.ui.layout.AppLoading
-import app.vercors.core.ui.layout.AppTabGroup
-import app.vercors.core.ui.layout.AppTabScope
+import app.vercors.core.ui.layout.*
 import app.vercors.core.ui.modifier.appCard
-import app.vercors.core.ui.search
 import app.vercors.core.ui.theme.*
 import app.vercors.feature.game.ui.*
 import app.vercors.feature.instance.domain.model.InstanceFolder
 import app.vercors.feature.instance.domain.model.InstanceStatus
 import app.vercors.feature.instance.ui.*
-import app.vercors.feature.instance.ui.delete.ConfirmDeleteDialog
-import app.vercors.feature.instance.ui.delete.ConfirmRemoveDialog
 import app.vercors.feature.project.domain.model.ProjectType
 import app.vercors.shared.domain.model.JvmMemoryOptions
 import app.vercors.shared.domain.model.NativeLibraryOptions
 import app.vercors.shared.ui.*
+import app.vercors.shared.ui.overlay.ConfirmDialog
+import app.vercors.shared.ui.overlay.ConfirmDialogButton
+import app.vercors.shared.ui.overlay.ConfirmDialogButtonStyle
 import coil3.compose.rememberAsyncImagePainter
 import com.composables.icons.lucide.*
 import com.composeunstyled.ProvideTextStyle
@@ -94,26 +90,65 @@ fun InstanceDetails(
 
         if (state.promptDeleteConfirmation) {
             OverlayEffect {
-                val result = show(ConfirmDeleteDialog())
+                val result = show(
+                    ConfirmDialog(
+                        messageResource = InstanceRes.string.deleteInstanceConfirmation,
+                        actionButton = ConfirmDialogButton(
+                            textResource = SharedRes.string.delete,
+                            icon = Lucide.Trash,
+                            style = ConfirmDialogButtonStyle.Destructive,
+                        ),
+                    )
+                )
                 eventSink(InstanceDetailsEvent.ConfirmDelete(result))
             }
         }
 
         state.modsContent.state.promptRemoveConfirmation?.let { pending ->
             OverlayEffect(pending) {
-                val result = show(ConfirmRemoveDialog(pending.title))
+                val result = show(
+                    ConfirmDialog(
+                        messageResource = InstanceRes.string.removeContentConfirmation,
+                        messageArgs = listOf(pending.title),
+                        actionButton = ConfirmDialogButton(
+                            textResource = InstanceRes.string.remove,
+                            icon = Lucide.Trash,
+                            style = ConfirmDialogButtonStyle.Destructive,
+                        ),
+                    )
+                )
                 state.modsContent.eventSink(InstalledContentEvent.OnConfirmRemove(result))
             }
         }
         state.resourcePacksContent.state.promptRemoveConfirmation?.let { pending ->
             OverlayEffect(pending) {
-                val result = show(ConfirmRemoveDialog(pending.title))
+                val result = show(
+                    ConfirmDialog(
+                        messageResource = InstanceRes.string.removeContentConfirmation,
+                        messageArgs = listOf(pending.title),
+                        actionButton = ConfirmDialogButton(
+                            textResource = InstanceRes.string.remove,
+                            icon = Lucide.Trash,
+                            style = ConfirmDialogButtonStyle.Destructive,
+                        ),
+                    )
+                )
                 state.resourcePacksContent.eventSink(InstalledContentEvent.OnConfirmRemove(result))
             }
         }
         state.shaderPacksContent.state.promptRemoveConfirmation?.let { pending ->
             OverlayEffect(pending) {
-                val result = show(ConfirmRemoveDialog(pending.title))
+                val result = show(
+                    ConfirmDialog(
+                        messageResource = InstanceRes.string.removeContentConfirmation,
+                        messageArgs = listOf(pending.title),
+                        actionButton = ConfirmDialogButton(
+                            textResource = InstanceRes.string.remove,
+                            icon = Lucide.Trash,
+                            style = ConfirmDialogButtonStyle.Destructive,
+                        ),
+                    )
+                )
                 state.shaderPacksContent.eventSink(InstalledContentEvent.OnConfirmRemove(result))
             }
         }
@@ -127,7 +162,17 @@ fun InstanceDetails(
 
         state.promptInstallJava?.let { majorVersion ->
             OverlayEffect(majorVersion) {
-                val result = show(ConfirmInstallJavaDialog(majorVersion))
+                val result = show(
+                    ConfirmDialog(
+                        messageResource = InstanceRes.string.promptInstallJavaMessage,
+                        messageArgs = listOf(majorVersion),
+                        actionButton = ConfirmDialogButton(
+                            textResource = InstanceRes.string.installJava,
+                            icon = Lucide.Download,
+                            style = ConfirmDialogButtonStyle.Primary,
+                        ),
+                    )
+                )
                 if (result) eventSink(InstanceDetailsEvent.OnInstallJavaConfirm)
                 else eventSink(InstanceDetailsEvent.OnInstallJavaDismiss)
             }
@@ -493,8 +538,7 @@ private fun InstanceOptionsTab(instance: InstanceView, content: Store<InstanceOp
                 .scrollable(state = rememberScrollState(), orientation = Orientation.Horizontal),
         ) {
             LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                contentPadding = PaddingValues(8.dp)
+                verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 item {
                     InstanceGeneralOptionsSection(instance, state)
@@ -905,22 +949,10 @@ private fun InstanceTabSection(
     icon: ImageVector,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    Column(
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+    AppSection(
+        text = stringResource(titleRes),
+        icon = icon,
     ) {
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            AppIcon(
-                imageVector = icon,
-                contentDescription = null,
-            )
-            AppText(
-                text = stringResource(titleRes),
-                style = Theme[textStyles][title],
-            )
-        }
         Column(
             modifier = Modifier.appCard().padding(8.dp).fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -1026,9 +1058,8 @@ private fun InstalledContentFileListHeader(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        AppTextField(
+        AppSearchField(
             initialValue = searchQuery,
-            placeholder = { AppText(stringResource(CoreRes.string.search)) },
             onValueChange = onSearchQueryChange,
             modifier = Modifier.weight(1f)
         )
@@ -1382,10 +1413,9 @@ private fun InstanceLogsFilterBar(state: InstanceLogsState) {
             onValueChange = { eventSink(InstanceLogsEvent.OnLevelFilterToggle(it)) },
             itemRenderer = { value, _ -> AppSelectItem(text = value.name) },
         )
-        AppTextField(
+        AppSearchField(
             initialValue = state.searchQuery,
             onValueChange = { eventSink(InstanceLogsEvent.OnSearchQueryChange(it)) },
-            placeholder = { AppText(stringResource(CoreRes.string.search)) },
             modifier = Modifier.weight(1f)
         )
         AppCheckbox(

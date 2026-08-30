@@ -6,13 +6,13 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
-import app.vercors.core.ui.CoreRes
 import app.vercors.core.ui.animation.appAnimateItem
-import app.vercors.core.ui.component.*
-import app.vercors.core.ui.modifier.appCard
-import app.vercors.core.ui.search
+import app.vercors.core.ui.component.AppIconTextButton
+import app.vercors.core.ui.component.AppSearchField
+import app.vercors.core.ui.component.AppSelectField
+import app.vercors.core.ui.component.AppSelectItem
+import app.vercors.core.ui.layout.AppFilterBar
 import app.vercors.core.ui.theme.colors
 import app.vercors.core.ui.theme.onPrimary
 import app.vercors.core.ui.theme.primary
@@ -75,9 +75,7 @@ fun InstanceList(
 @Composable
 context(eventSink: EventSink<InstanceListEvent>)
 fun InstanceListFilterCard(state: InstanceListState) {
-    Row(
-        modifier = Modifier.appCard().padding(8.dp).fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    AppFilterBar(
         verticalAlignment = Alignment.CenterVertically
     ) {
         AppIconTextButton(
@@ -112,11 +110,9 @@ fun InstanceListFilterCard(state: InstanceListState) {
             modifier = Modifier.width(150.dp)
         )
 
-        AppTextField(
-            placeholder = { AppText(stringResource(CoreRes.string.search)) },
+        AppSearchField(
             initialValue = state.nameFilter,
             onValueChange = { eventSink(InstanceListEvent.OnNameFilterChange(it)) },
-            imeAction = ImeAction.Search,
             modifier = Modifier.weight(1f)
         )
     }

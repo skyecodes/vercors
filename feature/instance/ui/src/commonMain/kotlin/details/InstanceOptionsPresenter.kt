@@ -7,19 +7,19 @@ import app.vercors.core.system.SystemService
 import app.vercors.core.ui.state.collectProgressiveAsState
 import app.vercors.core.ui.state.produceAndCollectAsProgressiveState
 import app.vercors.feature.config.domain.usecase.ObserveConfigurationUseCase
-import app.vercors.feature.game.domain.model.GameVersionError
-import app.vercors.feature.game.domain.model.LoaderError
 import app.vercors.feature.game.domain.model.LoaderVersion
 import app.vercors.feature.game.domain.model.ModLoaderType
 import app.vercors.feature.game.domain.usecase.*
 import app.vercors.feature.game.ui.GameVersionView
-import app.vercors.feature.game.ui.toView
 import app.vercors.feature.instance.domain.model.Instance
 import app.vercors.feature.instance.domain.model.InstanceError
 import app.vercors.feature.instance.domain.model.InstanceId
 import app.vercors.feature.instance.domain.model.InstanceModLoader
 import app.vercors.feature.instance.domain.usecase.ObserveInstanceUseCase
 import app.vercors.feature.instance.domain.usecase.UpdateInstanceUseCase
+import app.vercors.feature.instance.ui.observeAvailableLoadersView
+import app.vercors.feature.instance.ui.observeGameVersionListView
+import app.vercors.feature.instance.ui.observeLoaderVersionsView
 import app.vercors.shared.domain.model.JavaInstallation
 import app.vercors.shared.domain.model.JvmMemoryOptions
 import app.vercors.shared.domain.model.NativeLibraryOptions
@@ -32,7 +32,6 @@ import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedFactory
 import dev.zacsweers.metro.AssistedInject
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import opensavvy.state.progressive.ProgressiveOutcome
@@ -177,9 +176,13 @@ class InstanceOptionsPresenter(
             null -> currentInstance?.loaderType
         }
 
-        val gameVersionList by observeGameVersionListView()
-        val loaderList by observeAvailableLoadersView(effectiveGameVersion)
-        val loaderVersionList by observeLoaderVersionsView(effectiveGameVersion, effectiveLoaderType)
+        val gameVersionList by observeGameVersionListView(observeGameVersionList)
+        val loaderList by observeAvailableLoadersView(observeAvailableLoaders, effectiveGameVersion)
+        val loaderVersionList by observeLoaderVersionsView(
+            observeLoaderVersions,
+            effectiveGameVersion,
+            effectiveLoaderType
+        )
 
         LaunchedEffect(editedInstance.modLoaderType, editedInstance.modLoaderVersion, loaderVersionList) {
             val versions = loaderVersionList.valueOrNull
@@ -305,28 +308,6 @@ class InstanceOptionsPresenter(
     @Composable
     private fun observeJavaInstallationsView(): State<ProgressiveOutcome<Nothing, List<JavaInstallation>>> =
         produceAndCollectAsProgressiveState { observeJavaInstallations() }
-
-    @Composable
-    private fun observeGameVersionListView(): State<ProgressiveOutcome<GameVersionError.InvalidManifest, List<GameVersionView>>> =
-        produceAndCollectAsProgressiveState {
-            observeGameVersionList().map { res -> res.map { it.toView() } }
-        }
-
-    @Composable
-    private fun observeAvailableLoadersView(gameVersion: String?): State<ProgressiveOutcome<LoaderError, List<ModLoaderType>>> =
-        produceAndCollectAsProgressiveState(gameVersion) {
-            gameVersion?.let { observeAvailableLoaders(it) } ?: flowOf(ProgressiveOutcome.Incomplete())
-        }
-
-    @Composable
-    private fun observeLoaderVersionsView(
-        gameVersion: String?,
-        loader: ModLoaderType?
-    ): State<ProgressiveOutcome<LoaderError, List<LoaderVersion>>> =
-        produceAndCollectAsProgressiveState(gameVersion, loader) {
-            if (gameVersion != null && loader != null) observeLoaderVersions(gameVersion, loader)
-            else flowOf(ProgressiveOutcome.Incomplete())
-        }
 
     @AssistedFactory
     fun interface Factory {

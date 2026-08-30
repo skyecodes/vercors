@@ -4,10 +4,10 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import app.vercors.core.ui.state.produceAndCollectAsProgressiveState
 import app.vercors.core.ui.state.update
-import app.vercors.feature.account.domain.service.LoginState
 import app.vercors.feature.account.domain.usecase.LoginUseCase
 import app.vercors.feature.account.ui.list.LoginDialog
 import app.vercors.feature.account.ui.list.LoginStateView
+import app.vercors.feature.account.ui.list.startLoginFlow
 import app.vercors.feature.game.domain.model.JavaRuntimeInstallStatus
 import app.vercors.feature.game.domain.usecase.InstallJavaRuntimeUseCase
 import app.vercors.feature.game.domain.usecase.ObserveJavaRuntimeInstallProgressUseCase
@@ -341,41 +341,7 @@ class InstanceDetailsPresenter(
         loginState: MutableState<LoginStateView>,
         setPromptLogin: (Boolean) -> Unit,
         setLoginJob: (Job?) -> Unit,
-    ) {
-        loginState.value = LoginStateView()
-        setPromptLogin(true)
-        val job = globalScope.launch { collectLoginState(loginState) }
-        job.invokeOnCompletion { if (it != null && it !is CancellationException) onLoginFailure(it, loginState) }
-        setLoginJob(job)
-    }
-
-    private suspend fun collectLoginState(state: MutableState<LoginStateView>) = login().collect {
-        when (it) {
-            is LoginState.RequireLogin -> state.update { copy(isLoggingIn = true, url = it.url) }
-            is LoginState.Progress -> state.update { copy(isLoggingIn = true, url = null, progress = it.step.progress) }
-            is LoginState.Success -> state.update {
-                copy(
-                    isLoggingIn = false,
-                    url = null,
-                    progress = null,
-                    success = true
-                )
-            }
-
-            is LoginState.Error -> state.update {
-                copy(
-                    isLoggingIn = false,
-                    url = null,
-                    progress = null,
-                    error = it.error
-                )
-            }
-        }
-    }
-
-    private fun onLoginFailure(error: Throwable, state: MutableState<LoginStateView>) {
-        state.update { copy(isLoggingIn = false, url = null, progress = null, error = error) }
-    }
+    ) = startLoginFlow(globalScope, login, loginState, setPromptLogin, setLoginJob)
 
     private fun handleCancelLogin(
         loginJob: Job?,

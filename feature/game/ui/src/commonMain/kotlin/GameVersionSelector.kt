@@ -3,15 +3,13 @@ package app.vercors.feature.game.ui
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import app.vercors.core.ui.component.AppCheckbox
-import app.vercors.core.ui.component.AppSelectField
-import app.vercors.core.ui.component.AppSelectItem
+import app.vercors.core.ui.component.AppLabeledSelectField
 import app.vercors.core.ui.theme.colors
 import app.vercors.core.ui.theme.surface2
 import com.composables.icons.lucide.Bug
@@ -56,22 +54,17 @@ fun GameVersionSelector(
         horizontalArrangement = Arrangement.spacedBy(16.dp),
         verticalAlignment = Alignment.Bottom
     ) {
-        AppSelectField(
+        AppLabeledSelectField(
             label = label,
             value = filteredSelectedVersion,
             items = filteredVersionList,
             onValueChange = onVersionChange,
-            itemRenderer = { value, _ ->
-                AppSelectItem(
-                    text = value?.displayName ?: "",
-                    icon = if (value?.isLatestRelease == true) Lucide.Star else if (value?.isLatestSnapshot == true) Lucide.Bug else null
-                )
-            },
+            displayName = { it?.displayName ?: "" },
+            badgeIcon = { if (it?.isLatestRelease == true) Lucide.Star else if (it?.isLatestSnapshot == true) Lucide.Bug else null },
             searchable = true,
             search = versionSearch,
             onSearchChange = { versionSearch = it },
             backgroundColor = backgroundColor,
-            modifier = Modifier.width(300.dp),
         )
 
         AppCheckbox(

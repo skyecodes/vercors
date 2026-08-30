@@ -1,12 +1,9 @@
 package app.vercors.feature.account.ui.list
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyItemScope
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
@@ -14,13 +11,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import app.vercors.core.ui.animation.AppAnimatedContent
 import app.vercors.core.ui.animation.AppAnimatedVisibility
-import app.vercors.core.ui.animation.appAnimateItem
 import app.vercors.core.ui.component.*
 import app.vercors.core.ui.layout.AppError
 import app.vercors.core.ui.layout.AppLoading
+import app.vercors.core.ui.layout.AppSection
 import app.vercors.core.ui.modifier.appCard
 import app.vercors.core.ui.modifier.clickableText
-import app.vercors.core.ui.modifier.scrollGradient
 import app.vercors.core.ui.theme.*
 import app.vercors.feature.account.ui.*
 import app.vercors.shared.ui.*
@@ -93,39 +89,21 @@ private fun AccountList(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        val listState = rememberLazyListState()
+        val scrollState = rememberScrollState()
 
         LaunchedEffect(accountList.selectedAccount) {
-            listState.animateScrollToItem(0)
+            scrollState.animateScrollTo(0)
         }
 
-        LazyColumn(
-            state = listState,
+        Column(
             verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.weight(1f).scrollGradient(
-                listState = listState,
-                orientation = Orientation.Vertical,
-                color = Theme[colors][background],
-            )
+            modifier = Modifier.weight(1f).padding(vertical = 8.dp).verticalScroll(scrollState)
         ) {
             accountList.selectedAccount?.let { currentAccount ->
-                item("selected") {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(start = 8.dp, top = 8.dp)
-                    ) {
-                        AppIcon(
-                            imageVector = Lucide.UserCheck,
-                            contentDescription = null,
-                        )
-                        AppText(
-                            text = stringResource(AccountRes.string.selectedAccount),
-                            style = Theme[textStyles][title]
-                        )
-                    }
-                }
-                item(currentAccount.id) {
+                AppSection(
+                    icon = Lucide.UserCheck,
+                    text = stringResource(AccountRes.string.selectedAccount)
+                ) {
                     AccountCard(
                         account = currentAccount,
                         isSelected = true
@@ -134,21 +112,20 @@ private fun AccountList(
             }
 
             if (accountList.otherAccounts.isNotEmpty()) {
-                item("other") {
-                    AppText(
-                        text = stringResource(AccountRes.string.otherAccounts),
-                        style = Theme[textStyles][title],
-                        modifier = Modifier.padding(start = 16.dp, top = 8.dp)
-                    )
-                }
-                items(accountList.otherAccounts, key = { it.id }) { account ->
-                    AccountCard(
-                        account = account,
-                        isSelected = false
-                    )
+                AppSection(
+                    icon = Lucide.Users,
+                    text = stringResource(AccountRes.string.otherAccounts)
+                ) {
+                    accountList.otherAccounts.forEach {
+                        AccountCard(
+                            account = it,
+                            isSelected = false
+                        )
+                    }
                 }
             }
         }
+
         Box(
             modifier = Modifier.fillMaxWidth(),
             contentAlignment = Alignment.Center
@@ -162,12 +139,12 @@ private fun AccountList(
 
 @Composable
 context(eventSink: EventSink<AccountListEvent>)
-private fun LazyItemScope.AccountCard(
+private fun AccountCard(
     account: AccountView,
     isSelected: Boolean,
 ) {
     Row(
-        modifier = Modifier.padding(horizontal = 8.dp).appCard().appAnimateItem().padding(8.dp).fillMaxWidth(),
+        modifier = Modifier.padding(horizontal = 8.dp).appCard().padding(8.dp).fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {

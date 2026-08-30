@@ -2,11 +2,9 @@ package app.vercors.feature.account.ui.list
 
 import androidx.compose.runtime.*
 import app.vercors.core.ui.state.produceAndCollectAsProgressiveState
-import app.vercors.core.ui.state.update
 import app.vercors.feature.account.domain.model.AccountError
 import app.vercors.feature.account.domain.model.AccountLoadingError
 import app.vercors.feature.account.domain.model.AccountNotFound
-import app.vercors.feature.account.domain.service.LoginState
 import app.vercors.feature.account.domain.usecase.*
 import app.vercors.shared.domain.usecase.CopyToClipboardUseCase
 import app.vercors.shared.ui.Presenter
@@ -89,13 +87,7 @@ class AccountListPresenter(
         loginState: MutableState<LoginStateView>,
         setPromptLogin: (Boolean) -> Unit,
         setLoginJob: (Job?) -> Unit,
-    ) {
-        loginState.value = LoginStateView()
-        setPromptLogin(true)
-        val job = presenterScope.launch { collectLoginState(loginState) }
-        job.invokeOnCompletion { if (it != null && it !is CancellationException) onFailure(it, loginState) }
-        setLoginJob(job)
-    }
+    ) = startLoginFlow(presenterScope, login, loginState, setPromptLogin, setLoginJob)
 
     @Composable
     private fun observeAccountListView(): State<ProgressiveOutcome<AccountLoadingError, AccountListView>> =
@@ -119,59 +111,6 @@ class AccountListPresenter(
                 is AccountLoadingError -> logger.error { "Failed to load account list" }
                 is AccountNotFound -> logger.error { "Account not found" }
             }
-        }
-    }
-
-    private suspend fun collectLoginState(
-        state: MutableState<LoginStateView>,
-    ) = login().collect {
-        when (it) {
-            is LoginState.RequireLogin -> {
-                state.update {
-                    copy(
-                        isLoggingIn = true,
-                        url = it.url
-                    )
-                }
-            }
-
-            is LoginState.Progress -> state.update {
-                copy(
-                    isLoggingIn = true,
-                    url = null,
-                    progress = it.step.progress
-                )
-            }
-
-            is LoginState.Success -> state.update {
-                copy(
-                    isLoggingIn = false,
-                    url = null,
-                    progress = null,
-                    success = true,
-                )
-            }
-
-            is LoginState.Error -> state.update {
-                copy(
-                    isLoggingIn = false,
-                    url = null,
-                    progress = null,
-                    error = it.error,
-                )
-            }
-        }
-    }
-
-    private fun onFailure(error: Throwable, loginState: MutableState<LoginStateView>) {
-        logger.error(error) { "Login failed" }
-        loginState.update {
-            copy(
-                isLoggingIn = false,
-                url = null,
-                progress = null,
-                error = error
-            )
         }
     }
 }

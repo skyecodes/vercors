@@ -1,13 +1,9 @@
 package app.vercors.feature.game.ui
 
-import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
-import app.vercors.core.ui.component.AppSelectField
-import app.vercors.core.ui.component.AppSelectItem
+import app.vercors.core.ui.component.AppLabeledSelectField
 import app.vercors.core.ui.theme.colors
 import app.vercors.core.ui.theme.surface2
 import app.vercors.feature.game.domain.model.LoaderVersion
@@ -26,20 +22,14 @@ fun LoaderVersionSelector(
 ) {
     val recommendedVersion = remember(versionList) { versionList.firstOrNull { it.stable } }
 
-    AppSelectField(
+    AppLabeledSelectField(
         label = label,
         value = selectedVersion,
         items = versionList,
         onValueChange = onVersionChange,
-        itemRenderer = { value, _ ->
-            val isRecommended = value != null && value == recommendedVersion
-            AppSelectItem(
-                text = value.displayName(isRecommended),
-                icon = if (isRecommended) Lucide.Star else null
-            )
-        },
+        displayName = { it.displayName(it != null && it == recommendedVersion) },
+        badgeIcon = { if (it != null && it == recommendedVersion) Lucide.Star else null },
         backgroundColor = backgroundColor,
-        modifier = Modifier.width(300.dp),
     )
 }
 

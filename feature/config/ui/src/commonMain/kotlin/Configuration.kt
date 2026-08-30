@@ -45,7 +45,7 @@ fun Configuration(
                 .scrollable(state = rememberScrollState(), orientation = Orientation.Horizontal),
         ) {
             LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
                 contentPadding = PaddingValues(vertical = 8.dp)
             ) {
                 item("general") {

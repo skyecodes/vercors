@@ -116,6 +116,39 @@ fun <T> AppSelectField(
     }
 }
 
+/**
+ * [AppSelectField] scaffolding shared by simple labeled dropdowns (e.g. game version/loader/loader-version
+ * selectors): wires [displayName]/[badgeIcon] into [AppSelectItem] and defaults to the 300dp-wide,
+ * `surface2`-backed shape those selectors all use.
+ */
+@Composable
+fun <T> AppLabeledSelectField(
+    label: String,
+    value: T,
+    items: List<T>,
+    onValueChange: (T) -> Unit,
+    displayName: @Composable (T) -> String,
+    badgeIcon: @Composable (T) -> ImageVector? = { null },
+    backgroundColor: Color = Theme[colors][surface2],
+    searchable: Boolean = false,
+    search: String = "",
+    onSearchChange: (String) -> Unit = {},
+    modifier: Modifier = Modifier.width(300.dp),
+) {
+    AppSelectField(
+        label = label,
+        value = value,
+        items = items,
+        onValueChange = onValueChange,
+        itemRenderer = { v, _ -> AppSelectItem(text = displayName(v), icon = badgeIcon(v)) },
+        searchable = searchable,
+        search = search,
+        onSearchChange = onSearchChange,
+        backgroundColor = backgroundColor,
+        modifier = modifier,
+    )
+}
+
 @Composable
 private fun <T> DropdownMenuPanelScope.DropdownOptionList(
     value: T,

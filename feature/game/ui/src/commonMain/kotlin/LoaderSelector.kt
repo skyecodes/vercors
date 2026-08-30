@@ -1,13 +1,9 @@
 package app.vercors.feature.game.ui
 
-import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
-import app.vercors.core.ui.component.AppSelectField
-import app.vercors.core.ui.component.AppSelectItem
+import app.vercors.core.ui.component.AppLabeledSelectField
 import app.vercors.core.ui.theme.colors
 import app.vercors.core.ui.theme.surface2
 import app.vercors.feature.game.domain.model.ModLoaderType
@@ -24,13 +20,13 @@ fun LoaderSelector(
 ) {
     val items = remember(availableLoaders) { listOf(null) + availableLoaders }
 
-    AppSelectField(
+    AppLabeledSelectField(
         label = label,
         value = selectedLoader,
         items = items,
         onValueChange = onLoaderChange,
-        itemRenderer = { value, _ -> AppSelectItem(text = value.displayName, icon = value?.icon) },
+        displayName = { it.displayName },
+        badgeIcon = { it?.icon },
         backgroundColor = backgroundColor,
-        modifier = Modifier.width(300.dp),
     )
 }
