@@ -8,12 +8,16 @@ import io.ktor.client.plugins.cache.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.json.Json
+import kotlin.time.Duration
 
 @ContributesTo(AppScope::class)
 interface NetworkProviders {
     @SingleIn(AppScope::class)
     @Provides
-    fun provideHttpClient(@Named("metaApiUrl") metaApiUrl: String): HttpClient =
+    fun provideHttpClient(
+        @Named("metaApiUrl") metaApiUrl: String,
+        @Named("networkTimeout") networkTimeout: Duration
+    ): HttpClient =
         HttpClient(platformHttpClientEngineFactory) {
             expectSuccess = true
             installPlatformTrustStore()
@@ -27,6 +31,11 @@ interface NetworkProviders {
             }
             install(HttpRequestRetry)
             install(HttpCache)
+            install(HttpTimeout) {
+                val networkTimeoutMillis = networkTimeout.inWholeMilliseconds
+                connectTimeoutMillis = networkTimeoutMillis
+                socketTimeoutMillis = networkTimeoutMillis
+            }
         }
 
     /** Minimal, no-retry, short-timeout client used only for [MetaApiConnectivityPoller]'s health pings —

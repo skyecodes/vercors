@@ -10,6 +10,7 @@ import kotlinx.coroutines.runBlocking
 import opensavvy.state.coroutines.now
 import opensavvy.state.outcome.mapFailure
 import opensavvy.state.outcome.value
+import kotlin.time.Duration
 
 @ContributesTo(AppScope::class)
 interface ConfigurationDomainProviders {
@@ -20,6 +21,10 @@ interface ConfigurationDomainProviders {
     @Provides
     @Named("metaApiUrl")
     fun provideMetaUrl(configuration: Configuration): String = configuration.metaApiUrl
+
+    @Provides
+    @Named("networkTimeout")
+    fun provideNetworkTimeout(configuration: Configuration): Duration = configuration.networkTimeout
 
     @Provides
     @Named("parallelFilesystemOperations")

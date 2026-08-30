@@ -41,6 +41,7 @@ import opensavvy.state.progressive.ProgressiveOutcome
 import opensavvy.state.progressive.value
 import opensavvy.state.progressive.valueOrNull
 import org.jetbrains.compose.resources.stringResource
+import kotlin.time.Duration.Companion.seconds
 
 @CircuitInject(ConfigurationScreen::class, AppScope::class)
 @Inject
@@ -91,6 +92,7 @@ class ConfigurationPresenter(
             animations = cfg?.animations,
             uiScalePercent = cfg?.uiScalePercent,
             metaApiUrl = cfg?.metaApiUrl,
+            networkTimeoutSeconds = cfg?.networkTimeout?.inWholeSeconds?.toInt(),
             parallelDownloads = cfg?.parallelDownloads,
             parallelFilesystemOperations = cfg?.parallelFilesystemOperations,
             preferredPlatform = cfg?.preferredPlatform,
@@ -144,6 +146,10 @@ class ConfigurationPresenter(
 
             is ConfigurationEvent.SetMetaApiUrl -> presenterScope.launch {
                 updateConfiguration { copy(metaApiUrl = event.value) }
+            }
+
+            is ConfigurationEvent.SetNetworkTimeout -> presenterScope.launch {
+                updateConfiguration { copy(networkTimeout = event.value.seconds) }
             }
 
             is ConfigurationEvent.SetParallelDownloads -> presenterScope.launch {

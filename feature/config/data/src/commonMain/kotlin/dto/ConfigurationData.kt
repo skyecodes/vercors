@@ -8,6 +8,7 @@ import app.vercors.shared.data.dto.toData
 import app.vercors.shared.data.dto.toDomain
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlin.time.Duration.Companion.milliseconds
 
 @Serializable
 data class ConfigurationData(
@@ -26,6 +27,7 @@ data class ConfigurationData(
     val nativeLibraryOptions: NativeLibraryOptionsData = NativeLibraryOptionsData(),
     val wrapLogLines: Boolean = true,
     val uiScalePercent: Int = 100,
+    val networkTimeout: Long = 10_000
 )
 
 internal fun ConfigurationData.toDomain(): Configuration = Configuration(
@@ -44,6 +46,7 @@ internal fun ConfigurationData.toDomain(): Configuration = Configuration(
     nativeLibraryOptions = nativeLibraryOptions.toDomain(),
     wrapLogLines = wrapLogLines,
     uiScalePercent = uiScalePercent,
+    networkTimeout = networkTimeout.milliseconds
 )
 
 internal fun Configuration.toData(): ConfigurationData = ConfigurationData(
@@ -62,6 +65,7 @@ internal fun Configuration.toData(): ConfigurationData = ConfigurationData(
     nativeLibraryOptions = nativeLibraryOptions.toData(),
     wrapLogLines = wrapLogLines,
     uiScalePercent = uiScalePercent,
+    networkTimeout = networkTimeout.inWholeMilliseconds
 )
 
 @Serializable

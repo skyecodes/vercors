@@ -14,6 +14,7 @@ sealed interface ConfigurationEvent : Event {
     data class SetUiScalePercent(val value: Int) : ConfigurationEvent
 
     data class SetMetaApiUrl(val value: String) : ConfigurationEvent
+    data class SetNetworkTimeout(val value: Int) : ConfigurationEvent
     data class SetParallelDownloads(val value: Int) : ConfigurationEvent
     data class SetParallelFilesystemOperations(val value: Int) : ConfigurationEvent
     data class SetPreferredPlatform(val value: String) : ConfigurationEvent

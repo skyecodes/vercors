@@ -15,6 +15,7 @@ data class ConfigurationState(
     val animations: Boolean?,
     val uiScalePercent: Int?,
     val metaApiUrl: String?,
+    val networkTimeoutSeconds: Int?,
     val parallelDownloads: Int?,
     val parallelFilesystemOperations: Int?,
     val preferredPlatform: String?,

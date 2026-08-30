@@ -3,6 +3,8 @@ package app.vercors.feature.config.domain.model
 import app.vercors.shared.domain.model.JavaInstallation
 import app.vercors.shared.domain.model.JvmMemoryOptions
 import app.vercors.shared.domain.model.NativeLibraryOptions
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
 data class Configuration(
     val metaApiUrl: String,
@@ -14,12 +16,13 @@ data class Configuration(
     val homeCategories: List<HomeCategoryConfig>,
     val selectedThemeId: String,
     val selectedAccent: String,
-    val preferredJavaByMajorVersion: Map<Int, String> = emptyMap(),
-    val javaInstallations: List<JavaInstallation> = emptyList(),
-    val jvmMemoryOptions: JvmMemoryOptions = JvmMemoryOptions(),
-    val nativeLibraryOptions: NativeLibraryOptions = NativeLibraryOptions(),
-    val wrapLogLines: Boolean = true,
-    val uiScalePercent: Int = 100,
+    val preferredJavaByMajorVersion: Map<Int, String>,
+    val javaInstallations: List<JavaInstallation>,
+    val jvmMemoryOptions: JvmMemoryOptions,
+    val nativeLibraryOptions: NativeLibraryOptions,
+    val wrapLogLines: Boolean,
+    val uiScalePercent: Int,
+    val networkTimeout: Duration
 ) {
     companion object {
         const val DEFAULT_THEME_ID = "catppuccin_mocha"
@@ -42,6 +45,7 @@ data class Configuration(
             nativeLibraryOptions = NativeLibraryOptions(),
             wrapLogLines = true,
             uiScalePercent = DEFAULT_UI_SCALE_PERCENT,
+            networkTimeout = 10.seconds
         )
     }
 }

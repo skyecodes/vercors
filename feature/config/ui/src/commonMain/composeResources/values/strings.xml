@@ -4,6 +4,9 @@
     <string name="preferredPlatformDesc">The mod platform selected by default when browsing or searching for content.</string>
     <string name="metaApiUrl">Meta API URL</string>
     <string name="metaApiUrlDesc">The backend service the launcher communicates with.</string>
+    <string name="networkTimeout">Network timeout</string>
+    <string name="networkTimeoutDesc">The maximum time to wait for a network request before failing, in seconds.</string>
+    <string name="restartRequired">Requires a restart to take effect.</string>
     <string name="parallelDownloads">Parallel downloads</string>
     <string name="parallelDownloadsDesc">The maximum number of files downloaded simultaneously.</string>
     <string name="parallelFilesystemOperations">Parallel filesystem operations</string>

@@ -103,6 +103,7 @@ private fun GeneralConfigurationCategory(
         ConfigurationRow(
             title = ConfigRes.string.metaApiUrl,
             description = ConfigRes.string.metaApiUrlDesc,
+            requiresRestart = true,
         ) {
             AppTextField(
                 initialValue = state.metaApiUrl.orEmpty(),
@@ -111,6 +112,20 @@ private fun GeneralConfigurationCategory(
                 backgroundColor = Theme[colors][surface2],
                 modifier = Modifier.weight(1f)
             )
+        }
+        if (state.networkTimeoutSeconds != null) {
+            ConfigurationRow(
+                title = ConfigRes.string.networkTimeout,
+                description = ConfigRes.string.networkTimeoutDesc,
+                requiresRestart = true,
+            ) {
+                AppNumberField(
+                    value = state.networkTimeoutSeconds,
+                    onValueChange = { eventSink(ConfigurationEvent.SetNetworkTimeout(it)) },
+                    valueRange = 1..120,
+                    modifier = Modifier.weight(1f)
+                )
+            }
         }
         if (state.parallelDownloads != null) {
             ConfigurationRow(
@@ -500,6 +515,7 @@ private fun ConfigurationCategory(
 private fun ConfigurationRow(
     title: StringResource,
     description: StringResource,
+    requiresRestart: Boolean = false,
     content: @Composable RowScope.() -> Unit
 ) {
     Row(
@@ -513,6 +529,13 @@ private fun ConfigurationRow(
         ) {
             AppText(text = stringResource(title), fontWeight = FontWeight.SemiBold)
             AppText(text = stringResource(description), style = Theme[textStyles][label])
+            if (requiresRestart) {
+                AppText(
+                    text = stringResource(ConfigRes.string.restartRequired),
+                    style = Theme[textStyles][label],
+                    color = Theme[colors][onBackground].copy(alpha = 0.6f)
+                )
+            }
         }
         content()
     }
