@@ -8,7 +8,7 @@ import app.vercors.feature.config.domain.usecase.ObserveConfigurationUseCase
 import app.vercors.feature.config.domain.usecase.UpdateConfigurationUseCase
 import app.vercors.feature.instance.domain.model.InstanceStatus
 import app.vercors.feature.instance.domain.usecase.ObserveInstanceListUseCase
-import app.vercors.feature.instance.ui.details.progress
+import app.vercors.feature.instance.ui.progress
 import app.vercors.feature.theme.domain.usecase.ObserveThemesUseCase
 import app.vercors.shared.ui.Presenter
 import app.vercors.shared.ui.SnackbarMessage

@@ -1,31 +1,34 @@
 package app.vercors.feature.instance.ui
 
 import androidx.compose.animation.ExperimentalSharedTransitionApi
-import androidx.compose.foundation.Image
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import app.vercors.core.ui.animation.AppAnimatedContent
 import app.vercors.core.ui.animation.appSharedElement
-import app.vercors.core.ui.component.AppIcon
 import app.vercors.core.ui.component.AppLoadingPlaceholder
 import app.vercors.core.ui.component.AppLoadingTextPlaceholder
+import app.vercors.core.ui.component.AppProgressIndicator
 import app.vercors.core.ui.component.AppText
 import app.vercors.core.ui.modifier.appCard
 import app.vercors.feature.instance.domain.model.InstanceId
-import com.composables.icons.lucide.Gamepad2
-import com.composables.icons.lucide.Lucide
+import app.vercors.feature.instance.domain.model.InstanceStatus
 import com.slack.circuit.sharedelements.SharedElementTransitionScope
 
 @OptIn(ExperimentalSharedTransitionApi::class)
@@ -33,6 +36,9 @@ import com.slack.circuit.sharedelements.SharedElementTransitionScope
 fun BriefInstanceCard(
     instance: BriefInstanceView?,
     onInstanceClick: (InstanceId) -> Unit,
+    onInstanceLaunchClick: (InstanceId) -> Unit,
+    onInstanceStopClick: (InstanceId) -> Unit,
+    onInstanceKillClick: (InstanceId) -> Unit,
     modifier: Modifier,
     origin: InstanceSharedElementOrigin
 ) = SharedElementTransitionScope {
@@ -43,23 +49,19 @@ fun BriefInstanceCard(
             modifier = modifier.hoverable(interactionSource = interactionSource)
                 .instanceSharedElement(instance.id, "card", origin),
             interactionSource = interactionSource,
-            onClick = { onInstanceClick(instance.id) },
+            onCardClick = { onInstanceClick(instance.id) },
+            forceShowAction = instance.status !is InstanceStatus.Idle && instance.status !is InstanceStatus.Failed,
             icon = {
-                if (instance.iconFilePath != null) {
-                    Image(
-                        painter = rememberInstanceIconPainter(instance.iconFilePath, instance.updatedAt),
-                        contentDescription = instance.name,
-                        modifier = Modifier.size(36.dp).clip(RoundedCornerShape(6.dp))
-                            .instanceSharedElement(instance.id, "icon", origin),
-                        contentScale = ContentScale.Crop
-                    )
-                } else {
-                    AppIcon(
-                        imageVector = Lucide.Gamepad2,
-                        contentDescription = instance.name,
-                        modifier = Modifier.size(36.dp).instanceSharedElement(instance.id, "icon", origin),
-                    )
-                }
+                InstanceIcon(
+                    instanceId = instance.id,
+                    name = instance.name,
+                    iconFilePath = instance.iconFilePath,
+                    updatedAt = instance.updatedAt,
+                    status = instance.status,
+                    size = 36.dp,
+                    shape = RoundedCornerShape(6.dp),
+                    origin = origin,
+                )
             },
             title = {
                 AppText(
@@ -95,6 +97,20 @@ fun BriefInstanceCard(
                     )
                 }
             },
+            actionArea = {
+                when (instance.status) {
+                    is InstanceStatus.Idle, is InstanceStatus.Failed ->
+                        InstanceLaunchButton(onClick = { onInstanceLaunchClick(instance.id) })
+
+                    is InstanceStatus.Launching, is InstanceStatus.Installing -> AppProgressIndicator(
+                        progress = instance.status.progress ?: 0f,
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp)
+                    )
+
+                    is InstanceStatus.Running -> InstanceStopButton(onClick = { onInstanceStopClick(instance.id) })
+                    is InstanceStatus.Stopping -> InstanceKillButton(onClick = { onInstanceKillClick(instance.id) })
+                }
+            }
         )
     } else {
         BriefInstanceCardLayout(
@@ -102,7 +118,8 @@ fun BriefInstanceCard(
             icon = { AppLoadingPlaceholder(Modifier.size(36.dp)) },
             title = { AppLoadingTextPlaceholder(Modifier.width(100.dp)) },
             type = { AppLoadingTextPlaceholder(Modifier.width(50.dp)) },
-            loaderVersion = { AppLoadingTextPlaceholder(Modifier.width(50.dp)) }
+            loaderVersion = { AppLoadingTextPlaceholder(Modifier.width(50.dp)) },
+            actionArea = {}
         )
     }
 }
@@ -112,27 +129,46 @@ context(_: SharedElementTransitionScope)
 fun BriefInstanceCardLayout(
     modifier: Modifier,
     interactionSource: MutableInteractionSource? = null,
-    onClick: (() -> Unit)? = null,
+    onCardClick: (() -> Unit)? = null,
+    forceShowAction: Boolean = false,
     icon: @Composable context(SharedElementTransitionScope) ColumnScope.() -> Unit,
     title: @Composable context(SharedElementTransitionScope) ColumnScope.() -> Unit,
     type: @Composable context(SharedElementTransitionScope) ColumnScope.() -> Unit,
     loaderVersion: @Composable context(SharedElementTransitionScope) ColumnScope.() -> Unit,
+    actionArea: @Composable () -> Unit,
 ) {
+    val hovered: Boolean by interactionSource?.collectIsHoveredAsState() ?: remember { mutableStateOf(false) }
     Column(
         modifier = modifier.appCard(
             interactionSource = interactionSource,
-            onClick = onClick
+            onClick = onCardClick
         ),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically)
     ) {
         icon()
         title()
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
+        AppAnimatedContent(
+            targetState = hovered || forceShowAction,
+            transitionSpec = { fadeIn() togetherWith fadeOut() }
         ) {
-            type()
-            loaderVersion()
+            Box(
+                modifier = Modifier.height(40.dp).fillMaxWidth(),
+                contentAlignment = Alignment.Center
+            ) {
+                if (it) {
+                    actionArea()
+                } else {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center,
+                        modifier = Modifier.fillMaxHeight()
+                    ) {
+                        type()
+                        loaderVersion()
+                    }
+                }
+            }
         }
     }
 }

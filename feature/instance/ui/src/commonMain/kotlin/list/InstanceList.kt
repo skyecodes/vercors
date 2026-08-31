@@ -62,8 +62,11 @@ fun InstanceList(
                         BriefInstanceCard(
                             instance = instance,
                             onInstanceClick = { eventSink(InstanceListEvent.OnInstanceClick(it)) },
+                            onInstanceLaunchClick = { eventSink(InstanceListEvent.OnInstanceLaunchClick(it)) },
+                            onInstanceStopClick = { eventSink(InstanceListEvent.OnInstanceStopClick(it)) },
+                            onInstanceKillClick = { eventSink(InstanceListEvent.OnInstanceKillClick(it)) },
                             modifier = Modifier.fillMaxWidth().height(150.dp).appAnimateItem(),
-                            origin = InstanceSharedElementOrigin.InstanceList
+                            origin = InstanceSharedElementOrigin.InstanceList,
                         )
                     }
                 }

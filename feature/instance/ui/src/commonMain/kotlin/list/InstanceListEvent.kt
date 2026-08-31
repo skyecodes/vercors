@@ -12,5 +12,8 @@ sealed interface InstanceListEvent : Event {
     data class OnLoaderFilterChange(val loader: String) : InstanceListEvent
     data class OnVersionFilterChange(val version: String) : InstanceListEvent
     data class OnInstanceClick(val instanceId: InstanceId) : InstanceListEvent
+    data class OnInstanceLaunchClick(val instanceId: InstanceId) : InstanceListEvent
+    data class OnInstanceStopClick(val instanceId: InstanceId) : InstanceListEvent
+    data class OnInstanceKillClick(val instanceId: InstanceId) : InstanceListEvent
     data object OnResetFilterClick : InstanceListEvent
 }

@@ -123,6 +123,12 @@ class InstanceDetailsPresenter(
         }
         val currentInstance = instance.valueOrNull
 
+        LaunchedEffect(screen.instanceId, screen.autoLaunch) {
+            if (screen.autoLaunch) {
+                handleLaunch(setSelectedTab, setPromptInstallJava, loginState, setPromptLogin, setLoginJob)
+            }
+        }
+
         return InstanceDetailsState(
             instance = instance,
             promptInstallJava = promptInstallJava,

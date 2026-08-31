@@ -182,6 +182,9 @@ private fun <T> LazyListScope.homeCardItem(
             BriefInstanceCard(
                 instance = element,
                 onInstanceClick = { eventSink(HomeEvent.OnInstanceClick(it)) },
+                onInstanceLaunchClick = { eventSink(HomeEvent.OnInstanceLaunchClick(it)) },
+                onInstanceStopClick = { eventSink(HomeEvent.OnInstanceStopClick(it)) },
+                onInstanceKillClick = { eventSink(HomeEvent.OnInstanceKillClick(it)) },
                 modifier = modifier.size(width = 150.dp, height = 150.dp),
                 origin = InstanceSharedElementOrigin.Home
             )
@@ -212,6 +215,9 @@ private fun LazyListScope.fakeCardItem(
             HomeSectionType.RecentlyPlayed -> BriefInstanceCard(
                 instance = null,
                 onInstanceClick = {},
+                onInstanceLaunchClick = {},
+                onInstanceStopClick = {},
+                onInstanceKillClick = {},
                 modifier = modifier.size(width = 150.dp, height = 150.dp),
                 origin = InstanceSharedElementOrigin.Home
             )

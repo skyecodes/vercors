@@ -12,4 +12,7 @@ sealed interface HomeEvent : Event {
     data class OnCreateInstanceResult(val result: CreateInstanceResult) : HomeEvent
     data class OnProjectClick(val projectId: ProjectId) : HomeEvent
     data class OnInstanceClick(val instanceId: InstanceId) : HomeEvent
+    data class OnInstanceLaunchClick(val instanceId: InstanceId) : HomeEvent
+    data class OnInstanceStopClick(val instanceId: InstanceId) : HomeEvent
+    data class OnInstanceKillClick(val instanceId: InstanceId) : HomeEvent
 }

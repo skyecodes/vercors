@@ -3,23 +3,35 @@ package app.vercors.feature.instance.ui.list
 import androidx.compose.runtime.*
 import app.vercors.core.domain.filterIsRight
 import app.vercors.core.ui.state.produceAndCollectAsProgressiveState
+import app.vercors.feature.instance.domain.model.InstanceId
 import app.vercors.feature.instance.domain.usecase.ObserveInstanceListUseCase
 import app.vercors.feature.instance.ui.BriefInstanceView
 import app.vercors.feature.instance.ui.create.CreateInstanceDialog
 import app.vercors.feature.instance.ui.create.CreateInstanceResult
 import app.vercors.feature.instance.ui.details.InstanceDetailsScreen
+import app.vercors.feature.instance.ui.details.InstanceDetailsTab
+import app.vercors.feature.instance.ui.message
 import app.vercors.feature.instance.ui.toBriefView
+import app.vercors.feature.launcher.domain.model.InstanceLaunchError
+import app.vercors.feature.launcher.domain.usecase.KillInstanceUseCase
+import app.vercors.feature.launcher.domain.usecase.LaunchInstanceUseCase
+import app.vercors.feature.launcher.domain.usecase.StopInstanceUseCase
 import app.vercors.feature.project.domain.model.ProjectType
 import app.vercors.feature.project.ui.list.ProjectListScreen
 import app.vercors.shared.ui.Presenter
+import app.vercors.shared.ui.SnackbarService
 import app.vercors.shared.ui.Store
+import app.vercors.shared.ui.error
+import arrow.core.raise.context.either
 import com.slack.circuit.codegen.annotations.CircuitInject
 import com.slack.circuit.runtime.Navigator
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedFactory
 import dev.zacsweers.metro.AssistedInject
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import opensavvy.state.progressive.ProgressiveOutcome
 import opensavvy.state.progressive.map
 
@@ -27,7 +39,12 @@ import opensavvy.state.progressive.map
 class InstanceListPresenter(
     @Assisted private val navigator: Navigator,
     private val observeInstanceList: ObserveInstanceListUseCase,
-    private val createInstanceDialog: CreateInstanceDialog
+    private val createInstanceDialog: CreateInstanceDialog,
+    private val globalScope: CoroutineScope,
+    private val launchInstance: LaunchInstanceUseCase,
+    private val stopInstance: StopInstanceUseCase,
+    private val killInstance: KillInstanceUseCase,
+    private val snackbarService: SnackbarService,
 ) : Presenter<InstanceListState, InstanceListEvent> {
     @Composable
     override fun present(): Store<InstanceListState, InstanceListEvent> {
@@ -75,6 +92,9 @@ class InstanceListPresenter(
             }
 
             is InstanceListEvent.OnInstanceClick -> navigator.goTo(InstanceDetailsScreen(event.instanceId))
+            is InstanceListEvent.OnInstanceLaunchClick -> handleLaunchClick(event.instanceId)
+            is InstanceListEvent.OnInstanceStopClick -> globalScope.launch { stopInstance(event.instanceId) }
+            is InstanceListEvent.OnInstanceKillClick -> globalScope.launch { killInstance(event.instanceId) }
             is InstanceListEvent.OnNameFilterChange -> setNameFilter(event.name)
             is InstanceListEvent.OnVersionFilterChange -> setVersionFilter(event.version)
             is InstanceListEvent.OnLoaderFilterChange -> setLoaderFilter(event.loader)
@@ -84,6 +104,23 @@ class InstanceListPresenter(
                 setVersionFilter("")
                 setLoaderFilter("")
                 setTypeFilter("")
+            }
+        }
+    }
+
+    private fun handleLaunchClick(instanceId: InstanceId) = globalScope.launch {
+        either { launchInstance(instanceId) }.onLeft { error ->
+            when (error) {
+                is InstanceLaunchError.NoCompatibleJava, InstanceLaunchError.LoginRequired ->
+                    navigator.goTo(
+                        InstanceDetailsScreen(
+                            instanceId,
+                            initialTab = InstanceDetailsTab.Logs,
+                            autoLaunch = true
+                        )
+                    )
+
+                else -> snackbarService.error { error.message }
             }
         }
     }

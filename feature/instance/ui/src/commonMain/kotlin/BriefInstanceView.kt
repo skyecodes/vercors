@@ -4,6 +4,7 @@ import androidx.compose.runtime.Immutable
 import app.vercors.feature.game.ui.displayName
 import app.vercors.feature.instance.domain.model.InstanceAndStatus
 import app.vercors.feature.instance.domain.model.InstanceId
+import app.vercors.feature.instance.domain.model.InstanceStatus
 import app.vercors.feature.instance.ui.details.displayType
 import kotlin.time.Instant
 
@@ -15,7 +16,7 @@ data class BriefInstanceView(
     val loader: String,
     val type: String,
     val iconFilePath: String?,
-    /** Bumped whenever the icon changes — used to bust the image cache when [iconFilePath] is reused unchanged. */
+    val status: InstanceStatus,
     val updatedAt: Instant
 )
 
@@ -26,5 +27,6 @@ fun InstanceAndStatus.toBriefView(): BriefInstanceView = BriefInstanceView(
     loader = instance.modLoader?.type.displayName,
     type = instance.displayType,
     iconFilePath = instance.iconFilePath,
+    status = status,
     updatedAt = instance.updatedAt
 )
