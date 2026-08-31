@@ -7,6 +7,7 @@ import app.vercors.feature.game.domain.model.ModLoaderType
 import app.vercors.feature.game.ui.GameVersionView
 import app.vercors.feature.project.domain.model.*
 import app.vercors.feature.project.ui.BriefProjectView
+import app.vercors.feature.project.ui.install.ProjectInstallTarget
 import opensavvy.state.progressive.ProgressiveOutcome
 import opensavvy.state.progressive.valueOrNull
 
@@ -17,7 +18,8 @@ data class ProjectListState(
     val gameVersionSearchQuery: String,
     val showSnapshot: Boolean,
     val filter: ProjectListFilter,
-    val projects: ProgressiveOutcome<ProjectSearchError, Page<BriefProjectView>>
+    val projects: ProgressiveOutcome<ProjectSearchError, Page<BriefProjectView>>,
+    val installTarget: ProjectInstallTarget?,
 ) {
     val filteredGameVersionList: List<GameVersionView> = gameVersionList.valueOrNull?.filter {
         (gameVersionSearchQuery.isBlank() || it.id.contains(

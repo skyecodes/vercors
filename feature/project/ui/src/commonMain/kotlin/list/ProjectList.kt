@@ -4,6 +4,7 @@ import androidx.compose.animation.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -21,6 +22,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.vercors.core.domain.Page
+import app.vercors.core.ui.animation.AppAnimatedContent
 import app.vercors.core.ui.animation.AppAnimatedVisibility
 import app.vercors.core.ui.component.*
 import app.vercors.core.ui.layout.AppError
@@ -36,6 +38,9 @@ import app.vercors.feature.project.domain.model.ProjectSearchError
 import app.vercors.feature.project.domain.model.ProjectSortBy
 import app.vercors.feature.project.domain.model.ProjectType
 import app.vercors.feature.project.ui.*
+import app.vercors.feature.project.ui.details.isInstallable
+import app.vercors.feature.project.ui.install.ProjectInstallButton
+import app.vercors.feature.project.ui.install.ProjectInstallTarget
 import app.vercors.shared.ui.EventSink
 import app.vercors.shared.ui.SharedRes
 import app.vercors.shared.ui.Store
@@ -44,6 +49,7 @@ import coil3.compose.rememberAsyncImagePainter
 import com.composables.icons.lucide.*
 import com.composeunstyled.theme.Theme
 import com.slack.circuit.codegen.annotations.CircuitInject
+import com.slack.circuit.overlay.OverlayEffect
 import com.slack.circuit.sharedelements.SharedElementTransitionScope
 import dev.zacsweers.metro.AppScope
 import opensavvy.state.progressive.*
@@ -59,6 +65,15 @@ fun ProjectList(
     val (state, eventSink) = store
 
     with(eventSink) {
+        state.installTarget?.let { target ->
+            OverlayEffect {
+                when (target) {
+                    is ProjectInstallTarget.Project -> eventSink(ProjectListEvent.OnInstallResult(show(target.dialog)))
+                    is ProjectInstallTarget.Modpack -> eventSink(ProjectListEvent.OnInstallModpackResult(show(target.dialog)))
+                }
+            }
+        }
+
         Column(
             modifier = modifier.fillMaxSize().padding(top = 8.dp, start = 8.dp, end = 8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -584,6 +599,11 @@ private fun LazyItemScope.ProjectListItemCard(
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
+            },
+            installButton = if (project.type.isInstallable) {
+                { ProjectInstallButton(onClick = { eventSink(ProjectListEvent.OnInstallProjectClick(project)) }) }
+            } else {
+                null
             }
         )
     } else {
@@ -594,6 +614,7 @@ private fun LazyItemScope.ProjectListItemCard(
             description = { AppLoadingTextPlaceholder(Modifier.width(300.dp)) },
             downloads = { AppLoadingTextPlaceholder(Modifier.width(100.dp)) },
             updated = { AppLoadingTextPlaceholder(Modifier.width(100.dp)) },
+            installButton = null,
         )
     }
 }
@@ -610,7 +631,9 @@ private fun LazyItemScope.ProjectListItemCardLayout(
     description: @Composable context(SharedElementTransitionScope) ColumnScope.() -> Unit,
     downloads: @Composable context(SharedElementTransitionScope) ColumnScope.() -> Unit,
     updated: @Composable context(SharedElementTransitionScope) ColumnScope.() -> Unit,
+    installButton: (@Composable () -> Unit)? = null,
 ) {
+    val hovered: Boolean by interactionSource?.collectIsHoveredAsState() ?: remember { mutableStateOf(false) }
     Row(
         modifier = modifier.fillMaxWidth()
             .appCard(interactionSource = interactionSource, onClick = onClick)
@@ -632,13 +655,35 @@ private fun LazyItemScope.ProjectListItemCardLayout(
             }
             description()
         }
-        Column(
-            verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterVertically),
-            horizontalAlignment = Alignment.End,
-            modifier = Modifier.fillMaxHeight()
-        ) {
-            downloads()
-            updated()
+        if (installButton == null) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterVertically),
+                horizontalAlignment = Alignment.End,
+                modifier = Modifier.fillMaxHeight()
+            ) {
+                downloads()
+                updated()
+            }
+        } else {
+            AppAnimatedContent(
+                targetState = hovered,
+                modifier = Modifier.fillMaxHeight()
+            ) {
+                if (it) {
+                    Box(contentAlignment = Alignment.CenterEnd, modifier = Modifier.fillMaxHeight()) {
+                        installButton()
+                    }
+                } else {
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterVertically),
+                        horizontalAlignment = Alignment.End,
+                        modifier = Modifier.fillMaxHeight()
+                    ) {
+                        downloads()
+                        updated()
+                    }
+                }
+            }
         }
     }
 }

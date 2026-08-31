@@ -54,6 +54,10 @@ internal fun ModrinthProjectResult.convert(): BriefProjectData = BriefProjectDat
     id = projectId,
     platform = MODRINTH_PLATFORM_ID,
     name = title,
+    // Falls back to Mod for a Modrinth type this launcher doesn't otherwise recognize — in practice unreachable,
+    // since project search already filters results down to known types.
+    type = projectType.convert() ?: ProjectTypeData.Mod,
+    loaders = categories.orEmpty().mapNotNull { it.toProjectLoaderDataOrNull() },
     description = description,
     author = author,
     url = "https://modrinth.com/project/$projectId",

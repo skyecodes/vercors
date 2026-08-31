@@ -46,6 +46,8 @@ import app.vercors.feature.instance.ui.*
 import app.vercors.feature.project.domain.model.ProjectId
 import app.vercors.feature.project.domain.model.ProjectType
 import app.vercors.feature.project.ui.*
+import app.vercors.feature.project.ui.install.ProjectInstallButton
+import app.vercors.feature.project.ui.install.ProjectInstallTarget
 import app.vercors.feature.project.ui.list.icon
 import app.vercors.shared.ui.*
 import coil3.compose.rememberAsyncImagePainter
@@ -73,6 +75,15 @@ fun Home(
             OverlayEffect {
                 val result = show(state.createInstanceDialog)
                 eventSink(HomeEvent.OnCreateInstanceResult(result))
+            }
+        }
+
+        state.installTarget?.let { target ->
+            OverlayEffect {
+                when (target) {
+                    is ProjectInstallTarget.Project -> eventSink(HomeEvent.OnInstallResult(show(target.dialog)))
+                    is ProjectInstallTarget.Modpack -> eventSink(HomeEvent.OnInstallModpackResult(show(target.dialog)))
+                }
             }
         }
 
@@ -194,6 +205,7 @@ private fun <T> LazyListScope.homeCardItem(
             HomeProjectCard(
                 project = element,
                 onProjectClick = { eventSink(HomeEvent.OnProjectClick(it)) },
+                onInstallClick = { eventSink(HomeEvent.OnInstallProjectClick(it)) },
                 modifier = modifier
             )
         }
@@ -225,6 +237,7 @@ private fun LazyListScope.fakeCardItem(
             else -> HomeProjectCard(
                 project = null,
                 onProjectClick = {},
+                onInstallClick = {},
                 modifier = modifier
             )
         }
@@ -278,6 +291,7 @@ private fun NoInstanceFoundDisplay() {
 private fun HomeProjectCard(
     project: BriefProjectView?,
     onProjectClick: (ProjectId) -> Unit,
+    onInstallClick: (BriefProjectView) -> Unit,
     modifier: Modifier
 ) = SharedElementTransitionScope {
     if (project != null) {
@@ -318,55 +332,9 @@ private fun HomeProjectCard(
                 )
             },
             image = {
-                val blurRadius by appAnimateDpAsState(if (isHovered) 4.dp else 0.dp)
-                val projectImageModifier = Modifier.fillMaxSize().blur(blurRadius)
-
-                project.imageUrl?.let {
-                    Image(
-                        painter = rememberAsyncImagePainter(it),
-                        contentDescription = project.name,
-                        modifier = projectImageModifier,
-                        contentScale = ContentScale.Crop
-                    )
-                } ?: Image(
-                    bitmap = imageResource(ProjectRes.drawable.pack),
-                    contentDescription = project.name,
-                    modifier = projectImageModifier,
-                    contentScale = ContentScale.Crop
-                )
-
-                val gradientBackground = arrayOf(
-                    0.0f to Theme[colors][surface],
-                    1f to Theme[colors][surface].copy(alpha = 0.7f)
-                )
-
-                Column(
-                    modifier = Modifier.background(Brush.verticalGradient(colorStops = gradientBackground))
-                        .appAnimateContentSize()
-                            then if (isHovered) Modifier.fillMaxSize() else Modifier.fillMaxWidth().height(0.dp)
-                ) {
-                    AppText(
-                        text = project.description,
-                        fontSize = 12.sp,
-                        modifier = Modifier.padding(8.dp)
-                            .projectSharedElement(project.id, "description", ProjectSharedElementOrigin.Home),
-                    )
-                }
-
-                Row(
-                    modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(8.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    HomeProjectChip(
-                        icon = Lucide.Download,
-                        text = project.downloadsReadable
-                    )
-                    HomeProjectChip(
-                        icon = Lucide.History,
-                        text = project.lastUpdatedReadable
-                    )
-                }
+                HomeProjectBackgroundImage(project, isHovered)
+                HomeProjectDescriptionOverlay(project, isHovered, onInstallClick)
+                HomeProjectStatsRow(project)
             }
         )
     } else {
@@ -376,6 +344,79 @@ private fun HomeProjectCard(
             title = { AppLoadingTextPlaceholder(Modifier.width(150.dp)) },
             author = { AppLoadingTextPlaceholder(Modifier.width(100.dp)) },
             image = { AppLoadingPlaceholder(Modifier.fillMaxSize()) },
+        )
+    }
+}
+
+@Composable
+private fun HomeProjectBackgroundImage(project: BriefProjectView, isHovered: Boolean) {
+    val blurRadius by appAnimateDpAsState(if (isHovered) 4.dp else 0.dp)
+    val projectImageModifier = Modifier.fillMaxSize().blur(blurRadius)
+
+    project.imageUrl?.let {
+        Image(
+            painter = rememberAsyncImagePainter(it),
+            contentDescription = project.name,
+            modifier = projectImageModifier,
+            contentScale = ContentScale.Crop
+        )
+    } ?: Image(
+        bitmap = imageResource(ProjectRes.drawable.pack),
+        contentDescription = project.name,
+        modifier = projectImageModifier,
+        contentScale = ContentScale.Crop
+    )
+}
+
+@Composable
+context(_: SharedElementTransitionScope)
+private fun HomeProjectDescriptionOverlay(
+    project: BriefProjectView,
+    isHovered: Boolean,
+    onInstallClick: (BriefProjectView) -> Unit,
+) {
+    val gradientBackground = arrayOf(
+        0.0f to Theme[colors][surface],
+        1f to Theme[colors][surface].copy(alpha = 0.7f)
+    )
+
+    Column(
+        modifier = Modifier.background(Brush.verticalGradient(colorStops = gradientBackground))
+            .appAnimateContentSize()
+                then if (isHovered) Modifier.fillMaxSize() else Modifier.fillMaxWidth().height(0.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        AppText(
+            text = project.description,
+            fontSize = 12.sp,
+            modifier = Modifier.padding(8.dp)
+                .projectSharedElement(project.id, "description", ProjectSharedElementOrigin.Home),
+            minLines = 3,
+            maxLines = 3
+        )
+        if (isHovered) {
+            ProjectInstallButton(
+                onClick = { onInstallClick(project) },
+                modifier = Modifier.padding(horizontal = 8.dp)
+            )
+        }
+    }
+}
+
+@Composable
+private fun BoxScope.HomeProjectStatsRow(project: BriefProjectView) {
+    Row(
+        modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(8.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        HomeProjectChip(
+            icon = Lucide.Download,
+            text = project.downloadsReadable
+        )
+        HomeProjectChip(
+            icon = Lucide.History,
+            text = project.lastUpdatedReadable
         )
     }
 }

@@ -16,6 +16,7 @@ import app.vercors.feature.launcher.domain.usecase.LaunchInstanceUseCase
 import app.vercors.feature.launcher.domain.usecase.StopInstanceUseCase
 import app.vercors.feature.project.domain.model.ProjectType
 import app.vercors.feature.project.ui.details.ProjectDetailsScreen
+import app.vercors.feature.project.ui.install.*
 import app.vercors.feature.project.ui.list.ProjectListScreen
 import app.vercors.feature.project.ui.toView
 import app.vercors.shared.ui.Presenter
@@ -45,25 +46,34 @@ class HomePresenter(
     private val stopInstance: StopInstanceUseCase,
     private val killInstance: KillInstanceUseCase,
     private val snackbarService: SnackbarService,
+    private val installProjectDialogFactory: InstallProjectDialog.Factory,
+    private val installModpackDialogFactory: InstallModpackDialog.Factory,
 ) : Presenter<HomeState, HomeEvent> {
     @Composable
     override fun present(): Store<HomeState, HomeEvent> {
         val sections by observeHomeState()
         val (promptCreateInstance, setPromptCreateInstance) = remember { mutableStateOf(false) }
+        val (installTarget, setInstallTarget) = remember { mutableStateOf<ProjectInstallTarget?>(null) }
 
         return HomeState(
             sections = sections,
             promptCreateInstance = promptCreateInstance,
-            createInstanceDialog = createInstanceDialog
+            createInstanceDialog = createInstanceDialog,
+            installTarget = installTarget,
         ) + { event ->
             handleEvent(
                 event = event,
-                setPromptCreateInstance = setPromptCreateInstance
+                setPromptCreateInstance = setPromptCreateInstance,
+                setInstallTarget = setInstallTarget,
             )
         }
     }
 
-    private fun handleEvent(event: HomeEvent, setPromptCreateInstance: (Boolean) -> Unit) {
+    private fun handleEvent(
+        event: HomeEvent,
+        setPromptCreateInstance: (Boolean) -> Unit,
+        setInstallTarget: (ProjectInstallTarget?) -> Unit,
+    ) {
         when (event) {
             HomeEvent.OnCreateInstanceClick -> setPromptCreateInstance(true)
             is HomeEvent.OnCreateInstanceResult -> {
@@ -78,6 +88,23 @@ class HomePresenter(
             is HomeEvent.OnInstanceLaunchClick -> handleLaunchClick(event.instanceId)
             is HomeEvent.OnInstanceStopClick -> globalScope.launch { stopInstance(event.instanceId) }
             is HomeEvent.OnInstanceKillClick -> globalScope.launch { killInstance(event.instanceId) }
+            is HomeEvent.OnInstallProjectClick -> setInstallTarget(
+                event.project.toInstallTarget(
+                    preferredInstanceId = null,
+                    installProjectDialogFactory = installProjectDialogFactory,
+                    installModpackDialogFactory = installModpackDialogFactory,
+                )
+            )
+
+            is HomeEvent.OnInstallResult -> {
+                setInstallTarget(null)
+                if (event.result is InstallProjectResult.GoToInstance) navigator.goTo(InstanceDetailsScreen(event.result.instanceId))
+            }
+
+            is HomeEvent.OnInstallModpackResult -> {
+                setInstallTarget(null)
+                if (event.result is InstallModpackResult.Installed) navigator.goTo(InstanceDetailsScreen(event.result.instanceId))
+            }
         }
     }
 

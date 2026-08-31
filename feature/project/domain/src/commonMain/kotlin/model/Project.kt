@@ -35,6 +35,8 @@ data class ProjectLinks(
 data class BriefProject(
     val id: ProjectId,
     val name: String,
+    val type: ProjectType,
+    val loaders: List<ModLoaderType>,
     val description: String,
     val author: String,
     val url: String,

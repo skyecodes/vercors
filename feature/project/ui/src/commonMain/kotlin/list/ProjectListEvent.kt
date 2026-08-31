@@ -5,6 +5,9 @@ import app.vercors.feature.game.ui.GameVersionView
 import app.vercors.feature.project.domain.model.ProjectId
 import app.vercors.feature.project.domain.model.ProjectSortBy
 import app.vercors.feature.project.domain.model.ProjectType
+import app.vercors.feature.project.ui.BriefProjectView
+import app.vercors.feature.project.ui.install.InstallModpackResult
+import app.vercors.feature.project.ui.install.InstallProjectResult
 import app.vercors.shared.ui.Event
 
 sealed interface ProjectListEvent : Event {
@@ -22,4 +25,7 @@ sealed interface ProjectListEvent : Event {
     data object OnClearFilters : ProjectListEvent
     data class OnProjectClick(val projectId: ProjectId) : ProjectListEvent
     data object OnSearchButtonClick : ProjectListEvent
+    data class OnInstallProjectClick(val project: BriefProjectView) : ProjectListEvent
+    data class OnInstallResult(val result: InstallProjectResult) : ProjectListEvent
+    data class OnInstallModpackResult(val result: InstallModpackResult) : ProjectListEvent
 }

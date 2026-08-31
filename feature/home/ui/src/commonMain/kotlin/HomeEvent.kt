@@ -4,6 +4,9 @@ import androidx.compose.runtime.Immutable
 import app.vercors.feature.instance.domain.model.InstanceId
 import app.vercors.feature.instance.ui.create.CreateInstanceResult
 import app.vercors.feature.project.domain.model.ProjectId
+import app.vercors.feature.project.ui.BriefProjectView
+import app.vercors.feature.project.ui.install.InstallModpackResult
+import app.vercors.feature.project.ui.install.InstallProjectResult
 import app.vercors.shared.ui.Event
 
 @Immutable
@@ -15,4 +18,7 @@ sealed interface HomeEvent : Event {
     data class OnInstanceLaunchClick(val instanceId: InstanceId) : HomeEvent
     data class OnInstanceStopClick(val instanceId: InstanceId) : HomeEvent
     data class OnInstanceKillClick(val instanceId: InstanceId) : HomeEvent
+    data class OnInstallProjectClick(val project: BriefProjectView) : HomeEvent
+    data class OnInstallResult(val result: InstallProjectResult) : HomeEvent
+    data class OnInstallModpackResult(val result: InstallModpackResult) : HomeEvent
 }

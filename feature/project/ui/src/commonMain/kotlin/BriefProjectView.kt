@@ -1,8 +1,10 @@
 package app.vercors.feature.project.ui
 
 import androidx.compose.runtime.Immutable
+import app.vercors.feature.game.domain.model.ModLoaderType
 import app.vercors.feature.project.domain.model.BriefProject
 import app.vercors.feature.project.domain.model.ProjectId
+import app.vercors.feature.project.domain.model.ProjectType
 import nl.jacobras.humanreadable.HumanReadable
 import kotlin.time.Instant
 
@@ -10,6 +12,8 @@ import kotlin.time.Instant
 data class BriefProjectView(
     val id: ProjectId,
     val name: String,
+    val type: ProjectType,
+    val loaders: List<ModLoaderType>,
     val description: String,
     val author: String,
     val url: String,
@@ -25,6 +29,8 @@ data class BriefProjectView(
 fun BriefProject.toView(): BriefProjectView = BriefProjectView(
     id = id,
     name = name,
+    type = type,
+    loaders = loaders,
     description = description,
     author = author,
     url = url,

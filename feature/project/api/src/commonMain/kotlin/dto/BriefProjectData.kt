@@ -8,6 +8,8 @@ data class BriefProjectData(
     val id: String,
     val platform: String,
     val name: String,
+    val type: ProjectTypeData,
+    val loaders: List<ProjectLoaderData>,
     val description: String,
     val author: String,
     val url: String,

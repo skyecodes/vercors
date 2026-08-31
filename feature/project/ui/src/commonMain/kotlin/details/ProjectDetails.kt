@@ -27,13 +27,12 @@ import app.vercors.core.ui.layout.AppError
 import app.vercors.core.ui.layout.AppLoading
 import app.vercors.core.ui.modifier.appCard
 import app.vercors.core.ui.theme.colors
-import app.vercors.core.ui.theme.onPrimary
-import app.vercors.core.ui.theme.primary
 import app.vercors.core.ui.theme.surface2
 import app.vercors.feature.game.ui.*
 import app.vercors.feature.project.domain.model.ProjectId
 import app.vercors.feature.project.domain.model.ProjectType
 import app.vercors.feature.project.ui.*
+import app.vercors.feature.project.ui.install.ProjectInstallButton
 import app.vercors.shared.ui.EventSink
 import app.vercors.shared.ui.SharedRes
 import app.vercors.shared.ui.Store
@@ -141,13 +140,7 @@ private fun ProjectDetailsHeader(projectId: ProjectId, project: ProjectDetailsVi
             )
         }
         if (project.type.isInstallable) {
-            AppIconTextButton(
-                onClick = { eventSink(ProjectDetailsEvent.OnInstallClick) },
-                text = stringResource(ProjectRes.string.install),
-                imageVector = Lucide.Download,
-                backgroundColor = Theme[colors][primary],
-                contentColor = Theme[colors][onPrimary],
-            )
+            ProjectInstallButton(onClick = { eventSink(ProjectDetailsEvent.OnInstallClick) })
         }
 
         val uriHandler = LocalUriHandler.current

@@ -14,6 +14,7 @@ import app.vercors.feature.game.domain.model.GameVersionError
 import app.vercors.feature.game.domain.usecase.ObserveGameVersionListUseCase
 import app.vercors.feature.game.ui.GameVersionView
 import app.vercors.feature.game.ui.toView
+import app.vercors.feature.instance.ui.details.InstanceDetailsScreen
 import app.vercors.feature.project.domain.model.PlatformError
 import app.vercors.feature.project.domain.model.ProjectSearchError
 import app.vercors.feature.project.domain.model.ProjectType
@@ -21,6 +22,7 @@ import app.vercors.feature.project.domain.usecase.GetPlatformListUseCase
 import app.vercors.feature.project.domain.usecase.SearchProjectsUseCase
 import app.vercors.feature.project.ui.BriefProjectView
 import app.vercors.feature.project.ui.details.ProjectDetailsScreen
+import app.vercors.feature.project.ui.install.*
 import app.vercors.feature.project.ui.toView
 import app.vercors.shared.ui.Presenter
 import app.vercors.shared.ui.Store
@@ -47,7 +49,9 @@ class ProjectListPresenter(
     private val getPlatformList: GetPlatformListUseCase,
     private val searchProjects: SearchProjectsUseCase,
     private val getGameVersionList: ObserveGameVersionListUseCase,
-    private val observeConfiguration: ObserveConfigurationUseCase
+    private val observeConfiguration: ObserveConfigurationUseCase,
+    private val installProjectDialogFactory: InstallProjectDialog.Factory,
+    private val installModpackDialogFactory: InstallModpackDialog.Factory,
 ) : Presenter<ProjectListState, ProjectListEvent> {
     @Composable
     override fun present(): Store<ProjectListState, ProjectListEvent> {
@@ -61,6 +65,7 @@ class ProjectListPresenter(
         val filter = rememberRetained { mutableStateOf(ProjectListFilter()) }
         val lastSearchedFilter = rememberRetained { mutableStateOf<ProjectListFilter?>(null) }
         val projects = rememberRetained { mutableProgressiveStateOf<ProjectSearchError, Page<BriefProjectView>>() }
+        val (installTarget, setInstallTarget) = remember { mutableStateOf<ProjectInstallTarget?>(null) }
 
         LaunchedEffect(platformList, preferredPlatform) {
             val defaultPlatform =
@@ -105,6 +110,7 @@ class ProjectListPresenter(
             showSnapshot = showSnapshot.value,
             filter = filter.value,
             projects = projects.value,
+            installTarget = installTarget,
         ) + { event ->
             handleEvent(
                 event = event,
@@ -114,6 +120,7 @@ class ProjectListPresenter(
                 projects = projects,
                 gameVersionSearchQuery = gameVersionSearchQuery,
                 showSnapshot = showSnapshot,
+                setInstallTarget = setInstallTarget,
             )
         }
     }
@@ -144,7 +151,8 @@ class ProjectListPresenter(
         lastSearchedFilter: MutableState<ProjectListFilter?>,
         projects: MutableState<ProgressiveOutcome<ProjectSearchError, Page<BriefProjectView>>>,
         gameVersionSearchQuery: MutableState<String>,
-        showSnapshot: MutableState<Boolean>
+        showSnapshot: MutableState<Boolean>,
+        setInstallTarget: (ProjectInstallTarget?) -> Unit,
     ) {
         when (event) {
             is ProjectListEvent.OnProjectPlatformChange -> filter.updateAndResetPage { copy(selectedPlatform = event.platform) }
@@ -181,6 +189,24 @@ class ProjectListPresenter(
             is ProjectListEvent.OnProjectClick -> navigator.goTo(
                 ProjectDetailsScreen(event.projectId, preferredInstanceId = screen.sourceInstanceId)
             )
+
+            is ProjectListEvent.OnInstallProjectClick -> setInstallTarget(
+                event.project.toInstallTarget(
+                    preferredInstanceId = screen.sourceInstanceId,
+                    installProjectDialogFactory = installProjectDialogFactory,
+                    installModpackDialogFactory = installModpackDialogFactory,
+                )
+            )
+
+            is ProjectListEvent.OnInstallResult -> {
+                setInstallTarget(null)
+                if (event.result is InstallProjectResult.GoToInstance) navigator.goTo(InstanceDetailsScreen(event.result.instanceId))
+            }
+
+            is ProjectListEvent.OnInstallModpackResult -> {
+                setInstallTarget(null)
+                if (event.result is InstallModpackResult.Installed) navigator.goTo(InstanceDetailsScreen(event.result.instanceId))
+            }
         }
     }
 

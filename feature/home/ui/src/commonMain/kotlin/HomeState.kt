@@ -6,6 +6,7 @@ import app.vercors.feature.home.domain.model.HomeSectionType
 import app.vercors.feature.instance.ui.BriefInstanceView
 import app.vercors.feature.instance.ui.create.CreateInstanceDialog
 import app.vercors.feature.project.ui.BriefProjectView
+import app.vercors.feature.project.ui.install.ProjectInstallTarget
 import opensavvy.state.progressive.ProgressiveOutcome
 
 @Immutable
@@ -13,6 +14,7 @@ data class HomeState(
     val sections: List<Section<*>>,
     val promptCreateInstance: Boolean,
     val createInstanceDialog: CreateInstanceDialog,
+    val installTarget: ProjectInstallTarget?,
 ) {
     @Immutable
     sealed class Section<T>(

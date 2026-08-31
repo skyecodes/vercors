@@ -13,6 +13,8 @@ internal fun CurseForgeProject.convertBrief(): BriefProjectData = BriefProjectDa
     id = id.toString(),
     platform = CURSEFORGE_PLATFORM_ID,
     name = name,
+    type = toProjectType(),
+    loaders = toProjectLoaders(),
     description = summary,
     author = authors.first().name,
     url = "https://www.curseforge.com/minecraft/${classId.toCurseForgeUrlSegment()}/$slug",
@@ -26,15 +28,13 @@ internal fun CurseForgeProject.convert(descriptionHtml: String): ProjectData = P
     id = id.toString(),
     platform = CURSEFORGE_PLATFORM_ID,
     name = name,
-    // Falls back to Mod for a classId this launcher doesn't otherwise recognize — in practice unreachable,
-    // since project search already filters results down to known classIds.
-    type = classId.toProjectTypeData() ?: ProjectTypeData.Mod,
+    type = toProjectType(),
     description = summary,
     url = "https://www.curseforge.com/minecraft/${classId.toCurseForgeUrlSegment()}/$slug",
     body = descriptionHtml.toMarkdown(),
     logoUrl = logo.thumbnailUrl,
     gameVersions = latestFilesIndexes.map { it.gameVersion }.distinct(),
-    loaders = latestFilesIndexes.mapNotNull { it.modLoader?.toProjectLoaderDataOrNull() }.distinct(),
+    loaders = toProjectLoaders(),
     categories = categories.map { it.convert() },
     authors = authors.map { ProjectAuthorData(name = it.name, url = it.url) },
     links = ProjectLinksData(
@@ -45,6 +45,13 @@ internal fun CurseForgeProject.convert(descriptionHtml: String): ProjectData = P
         discordUrl = null
     )
 )
+
+// Falls back to Mod for a classId this launcher doesn't otherwise recognize — in practice unreachable, since
+// project search already filters results down to known classIds.
+private fun CurseForgeProject.toProjectType(): ProjectTypeData = classId.toProjectTypeData() ?: ProjectTypeData.Mod
+
+private fun CurseForgeProject.toProjectLoaders(): List<ProjectLoaderData> =
+    latestFilesIndexes.mapNotNull { it.modLoader?.toProjectLoaderDataOrNull() }.distinct()
 
 private fun CurseForgeModLoaderType.toProjectLoaderDataOrNull(): ProjectLoaderData? = when (this) {
     CurseForgeModLoaderType.Forge -> ProjectLoaderData.Forge
