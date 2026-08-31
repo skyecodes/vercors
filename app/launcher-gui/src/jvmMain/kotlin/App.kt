@@ -14,13 +14,14 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import app.vercors.core.ui.animation.LocalAnimation
-import app.vercors.core.ui.theme.AppTheme
-import app.vercors.core.ui.theme.background
-import app.vercors.core.ui.theme.backgroundAlt
-import app.vercors.core.ui.theme.colors
+import app.vercors.core.ui.component.AppIconTextButton
+import app.vercors.core.ui.layout.AppConfirmDialog
+import app.vercors.core.ui.theme.*
 import app.vercors.feature.home.ui.HomeScreen
-import app.vercors.shared.ui.Screen
-import app.vercors.shared.ui.Store
+import app.vercors.shared.ui.*
+import com.composables.icons.lucide.LogOut
+import com.composables.icons.lucide.Lucide
+import com.composables.icons.lucide.X
 import com.composeunstyled.theme.Theme
 import com.slack.circuit.codegen.annotations.CircuitInject
 import com.slack.circuit.foundation.NavigableCircuitContent
@@ -30,11 +31,13 @@ import com.slack.circuit.overlay.ContentWithOverlays
 import com.slack.circuit.runtime.Navigator
 import com.slack.circuit.runtime.navigation.NavStack
 import com.slack.circuit.sharedelements.SharedElementTransitionLayout
+import dev.nucleusframework.application.LocalNucleusApplicationScope
 import dev.nucleusframework.application.LocalNucleusWindow
 import dev.nucleusframework.taskbarprogress.tao.hideTaskbarProgress
 import dev.nucleusframework.taskbarprogress.tao.showTaskbarIndeterminate
 import dev.nucleusframework.taskbarprogress.tao.showTaskbarProgress
 import dev.zacsweers.metro.AppScope
+import org.jetbrains.compose.resources.stringResource
 
 @CircuitInject(AppScreen::class, AppScope::class)
 @Composable
@@ -48,6 +51,8 @@ fun App(
     val navigator = rememberCircuitNavigator(navStack) {}
 
     val nucleusWindow = LocalNucleusWindow.current
+    val nucleusApplicationScope = LocalNucleusApplicationScope.current
+    val quitConfirmation = LocalQuitConfirmation.current
     LaunchedEffect(state.installTaskbarProgress) {
         when (val progress = state.installTaskbarProgress) {
             InstallTaskbarProgress.None -> nucleusWindow.hideTaskbarProgress()
@@ -57,8 +62,6 @@ fun App(
     }
 
     if (state.config != null && state.theme != null && state.accentColor != null) {
-        // The native window is independent of this density override and does not auto-resize with it,
-        // so a user zooming in past what the window currently fits must resize/maximize manually.
         val density = LocalDensity.current
         val scaledDensity = remember(density, state.config.uiScalePercent) {
             Density(density.density * (state.config.uiScalePercent / 100f), density.fontScale)
@@ -99,6 +102,28 @@ fun App(
                             message = state.snackbarMessage,
                             onDismiss = { eventSink(AppEvent.DismissSnackbar) },
                         )
+                        if (quitConfirmation.requested) {
+                            AppConfirmDialog(
+                                confirmText = stringResource(Res.string.quitRunningInstancesConfirmation),
+                                confirmButton = {
+                                    AppIconTextButton(
+                                        onClick = quitConfirmation.onDismiss,
+                                        text = stringResource(SharedRes.string.cancel),
+                                        imageVector = Lucide.X,
+                                    )
+                                },
+                                dismissButton = {
+                                    AppIconTextButton(
+                                        onClick = { nucleusApplicationScope.exitApplication() },
+                                        text = stringResource(SharedRes.string.quit),
+                                        imageVector = Lucide.LogOut,
+                                        backgroundColor = Theme[colors][error],
+                                        contentColor = Theme[colors][onError],
+                                    )
+                                },
+                                onClickOutside = quitConfirmation.onDismiss,
+                            )
+                        }
                     }
                 }
             }

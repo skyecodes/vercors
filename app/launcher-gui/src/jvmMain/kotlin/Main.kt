@@ -21,6 +21,7 @@ import com.composables.icons.lucide.MountainSnow
 import com.slack.circuit.foundation.CircuitCompositionLocals
 import com.slack.circuit.foundation.CircuitContent
 import dev.nucleusframework.application.DecoratedWindow
+import dev.nucleusframework.application.SingleInstanceRestoreEffect
 import dev.nucleusframework.application.nucleusApplication
 import dev.nucleusframework.composenativetray.tray.api.Tray
 import dev.nucleusframework.notification.common.NotificationManager
@@ -66,9 +67,6 @@ fun main(args: Array<String>) {
 
     appGraph.metaApiConnectivityPoller // force eager construction so its background poll loop starts now
 
-    // nucleusApplication() hard-exits the process (exitProcess(0)) on the Tao backend the moment the
-    // last window closes, so code placed after this call never runs. A shutdown hook still lets the
-    // background scope wind down (and this log line print) before the JVM actually terminates.
     Runtime.getRuntime().addShutdownHook(
         Thread {
             scope.cancel()
@@ -95,14 +93,17 @@ fun main(args: Array<String>) {
         }
 
         val instances by appGraph.observeInstanceList().collectProgressiveAsState()
-        val hasRunningInstance = instances.valueOrNull
-            ?.any { it.getOrNull()?.status is InstanceStatus.Running } == true
+        val hasRunningInstance by derivedStateOf {
+            instances.valueOrNull?.any { it.getOrNull()?.status is InstanceStatus.Running } == true
+        }
 
         var trayHidden by remember { mutableStateOf(false) }
-        // Reopens the window on its own once the instance that caused the hide stops running.
         LaunchedEffect(hasRunningInstance) {
             if (!hasRunningInstance) trayHidden = false
         }
+        SingleInstanceRestoreEffect { trayHidden = false }
+
+        var showQuitConfirmation by remember { mutableStateOf(false) }
 
         Tray(
             icon = Lucide.MountainSnow,
@@ -111,7 +112,14 @@ fun main(args: Array<String>) {
         ) {
             Item(stringResource(SharedRes.string.open)) { trayHidden = false }
             Divider()
-            Item(stringResource(SharedRes.string.quit)) { exitApplication() }
+            Item(stringResource(SharedRes.string.quit)) {
+                if (hasRunningInstance) {
+                    trayHidden = false
+                    showQuitConfirmation = true
+                } else {
+                    exitApplication()
+                }
+            }
         }
 
         DecoratedWindow(
@@ -122,8 +130,15 @@ fun main(args: Array<String>) {
             title = appGraph.appName,
             minimumSize = DpSize(960.dp, 540.dp),
         ) {
-            CircuitCompositionLocals(appGraph.circuit) {
-                CircuitContent(AppScreen)
+            CompositionLocalProvider(
+                LocalQuitConfirmation provides QuitConfirmationState(
+                    requested = showQuitConfirmation,
+                    onDismiss = { showQuitConfirmation = false },
+                )
+            ) {
+                CircuitCompositionLocals(appGraph.circuit) {
+                    CircuitContent(AppScreen)
+                }
             }
         }
     }
