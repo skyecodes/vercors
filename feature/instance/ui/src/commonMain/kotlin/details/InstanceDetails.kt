@@ -674,7 +674,7 @@ private fun InstanceJavaOptionsSection(instance: InstanceView, state: InstanceOp
                 itemRenderer = { value, _ ->
                     AppSelectItem(value?.path ?: inheritLabel)
                 },
-                modifier = Modifier.width(450.dp),
+                modifier = Modifier.weight(1f),
             )
             ResetButton(selectedId != null) {
                 eventSink(InstanceOptionsEvent.OnJavaOverrideChange(null))
