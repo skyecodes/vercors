@@ -1,7 +1,11 @@
 package app.vercors.launcher.gui
 
+import androidx.compose.runtime.ProvidableCompositionLocal
+import androidx.compose.runtime.staticCompositionLocalOf
 import app.vercors.core.domain.AppConstants
 import app.vercors.core.network.MetaApiConnectivityPoller
+import app.vercors.feature.instance.domain.usecase.CreateInstanceUseCase
+import app.vercors.feature.instance.domain.usecase.DeleteInstanceUseCase
 import app.vercors.feature.instance.domain.usecase.ObserveInstanceListUseCase
 import app.vercors.shared.data.AppPaths
 import app.vercors.shared.ui.SnackbarService
@@ -23,6 +27,9 @@ internal interface AppGraph {
     val metaApiConnectivityPoller: MetaApiConnectivityPoller
     val httpClient: HttpClient
     val observeInstanceList: ObserveInstanceListUseCase
+    val createInstance: CreateInstanceUseCase
+    val deleteInstance: DeleteInstanceUseCase
+
     @Named(AppConstants.APP_NAME_KEY)
     val appName: String
 
@@ -68,3 +75,8 @@ internal interface AppGraph {
         fun create(@Provides coroutineScope: CoroutineScope): AppGraph
     }
 }
+
+internal val LocalAppGraph: ProvidableCompositionLocal<AppGraph> =
+    staticCompositionLocalOf {
+        error("LocalAppGraph not provided — use it inside CircuitContent(AppScreen).")
+    }

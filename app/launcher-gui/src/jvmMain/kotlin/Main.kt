@@ -134,7 +134,8 @@ fun main(args: Array<String>) {
                 LocalQuitConfirmation provides QuitConfirmationState(
                     requested = showQuitConfirmation,
                     onDismiss = { showQuitConfirmation = false },
-                )
+                ),
+                LocalAppGraph provides appGraph,
             ) {
                 CircuitCompositionLocals(appGraph.circuit) {
                     CircuitContent(AppScreen)

@@ -53,6 +53,11 @@ fun App(
     val nucleusWindow = LocalNucleusWindow.current
     val nucleusApplicationScope = LocalNucleusApplicationScope.current
     val quitConfirmation = LocalQuitConfirmation.current
+
+    if (nucleusApplicationScope.isAotTraining) {
+        nucleusApplicationScope.runAotTraining(navigator, LocalAppGraph.current)
+    }
+
     LaunchedEffect(state.installTaskbarProgress) {
         when (val progress = state.installTaskbarProgress) {
             InstallTaskbarProgress.None -> nucleusWindow.hideTaskbarProgress()
