@@ -17,33 +17,39 @@ import opensavvy.spine.server.arrow.routeWithRaise
 import opensavvy.spine.server.respond
 import opensavvy.spine.server.route
 import kotlin.time.Duration.Companion.hours
+import kotlin.time.Duration.Companion.minutes
 
 fun Route.gameRoutes(loaderService: LoaderService, json: Json) {
     route(Game.versions) {
+        call.response.cache(5.minutes)
         call.respondRedirect("https://piston-meta.mojang.com/mc/game/version_manifest_v2.json")
     }
     route(Game.runtimes) {
+        call.response.cache(5.minutes)
         call.respondRedirect("https://piston-meta.mojang.com/v1/products/java-runtime/2ec0cc96c44e5a76b9c8b7c39df7210883d12871/all.json")
     }
-    cache(1.hours) {
-        routeWithRaise(Loaders.list) {
-            val gameVersion = idOf(Game.GameVersionId)
-            respond(loaderService.getAvailableLoaders(gameVersion))
+    routeWithRaise(Loaders.list) {
+        val gameVersion = idOf(Game.GameVersionId)
+        val result = loaderService.getAvailableLoaders(gameVersion)
+        call.response.cache(1.hours)
+        respond(result)
+    }
+    routeWithRaise(Loaders.LoaderId.versions) {
+        val gameVersion = idOf(Game.GameVersionId)
+        val loaderType = decodeLoaderId(json, idOf(Loaders.LoaderId))
+        val result = loaderService.getLoaderVersions(gameVersion, loaderType)
+        call.response.cache(5.minutes)
+        respond(result)
+    }
+    routeWithRaise(Loaders.LoaderId.installUrl) {
+        val gameVersion = idOf(Game.GameVersionId)
+        val loaderType = decodeLoaderId(json, idOf(Loaders.LoaderId))
+        val loaderVersion = ensureNotNull(parameters.loaderVersion) {
+            LoaderErrorData("MissingParameter", "Missing required parameter: loaderVersion")
         }
-        routeWithRaise(Loaders.LoaderId.versions) {
-            val gameVersion = idOf(Game.GameVersionId)
-            val loaderType = decodeLoaderId(json, idOf(Loaders.LoaderId))
-            respond(loaderService.getLoaderVersions(gameVersion, loaderType))
-        }
-        routeWithRaise(Loaders.LoaderId.installUrl) {
-            val gameVersion = idOf(Game.GameVersionId)
-            val loaderType = decodeLoaderId(json, idOf(Loaders.LoaderId))
-            val loaderVersion = ensureNotNull(parameters.loaderVersion) {
-                LoaderErrorData("MissingParameter", "Missing required parameter: loaderVersion")
-            }
-            val url = loaderService.getInstallUrl(gameVersion, loaderType, loaderVersion)
-            call.respondRedirect(url)
-        }
+        val url = loaderService.getInstallUrl(gameVersion, loaderType, loaderVersion)
+        call.response.cache(1.hours)
+        call.respondRedirect(url)
     }
 }
 

@@ -10,11 +10,7 @@ dependencies {
 
     commonMainImplementation(libs.ktor.server.cio)
     commonMainImplementation(libs.ktor.server.content.negotiation)
-    commonMainImplementation(libs.ktor.server.caching.headers)
     commonMainImplementation(libs.ktor.server.status.pages)
-    commonMainImplementation(libs.ktor.simple.cache)
-    commonMainImplementation(libs.ktor.simple.redis.cache)
-    commonMainImplementation(libs.ktor.simple.memory.cache)
     commonMainImplementation(libs.ktor.client.core)
     commonMainImplementation(libs.ktor.client.cio)
     commonMainImplementation(libs.ktor.client.content.negotiation)

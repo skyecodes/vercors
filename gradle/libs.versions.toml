@@ -13,7 +13,6 @@ buildconfig = "6.0.10"
 serialization = "1.11.0"
 io = "0.9.1"
 ktor = "3.5.2"
-ktor-simple-cache = "0.72.1"
 spine = "0.12.1"
 ktorfit = "2.7.5"
 kfswatch = "1.4.0"
@@ -77,9 +76,6 @@ ktor-server-cio = { module = "io.ktor:ktor-server-cio", version.ref = "ktor" }
 ktor-server-content-negotiation = { module = "io.ktor:ktor-server-content-negotiation", version.ref = "ktor" }
 ktor-server-caching-headers = { module = "io.ktor:ktor-server-caching-headers", version.ref = "ktor" }
 ktor-server-status-pages = { module = "io.ktor:ktor-server-status-pages", version.ref = "ktor" }
-ktor-simple-cache = { module = "com.ucasoft.ktor:ktor-simple-cache", version.ref = "ktor-simple-cache" }
-ktor-simple-redis-cache = { module = "com.ucasoft.ktor:ktor-simple-redis-cache", version.ref = "ktor-simple-cache" }
-ktor-simple-memory-cache = { module = "com.ucasoft.ktor:ktor-simple-memory-cache", version.ref = "ktor-simple-cache" }
 ktor-server-test-host = { module = "io.ktor:ktor-server-test-host", version.ref = "ktor" }
 ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
 ktor-client-cio = { module = "io.ktor:ktor-client-cio", version.ref = "ktor" }

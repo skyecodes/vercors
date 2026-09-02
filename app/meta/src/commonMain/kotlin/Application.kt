@@ -5,10 +5,6 @@ import app.vercors.feature.game.backend.gameRoutes
 import app.vercors.feature.game.backend.loader.LoaderService
 import app.vercors.feature.project.backend.ProjectService
 import app.vercors.feature.project.backend.projectRoutes
-import app.vercors.shared.backend.platformEnv
-import com.ucasoft.ktor.simpleCache.SimpleCache
-import com.ucasoft.ktor.simpleMemoryCache.memoryCache
-import com.ucasoft.ktor.simpleRedisCache.redisCache
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.DependencyGraph
 import dev.zacsweers.metro.Provides
@@ -42,18 +38,6 @@ internal fun Application.module(appGraph: AppGraph) {
         json(Json {
             explicitNulls = false
         })
-    }
-
-    install(SimpleCache) {
-        val cacheHost = platformEnv("CACHE_HOST")
-        if (cacheHost != null) {
-            redisCache {
-                host = cacheHost
-                port = platformEnv("CACHE_PORT")?.toIntOrNull() ?: 6379
-            }
-        } else {
-            memoryCache {}
-        }
     }
 
     routing {
