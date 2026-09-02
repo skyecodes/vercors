@@ -1,6 +1,7 @@
 <resources>
     <string name="noAccountFound">No Minecraft account found</string>
     <string name="logIn">Log in</string>
+    <string name="addAccount">Add account</string>
     <string name="requireMicrosoftLogin">Please log into your Microsoft account from your web browser.</string>
     <string name="selectedAccount">Selected account</string>
     <string name="otherAccounts">Other accounts</string>

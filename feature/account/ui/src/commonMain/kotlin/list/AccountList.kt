@@ -62,7 +62,7 @@ fun AccountList(
 }
 
 @Composable
-context(_: EventSink<AccountListEvent>)
+context(eventSink: EventSink<AccountListEvent>)
 private fun NoAccountsFoundDisplay(
     modifier: Modifier
 ) {
@@ -75,12 +75,19 @@ private fun NoAccountsFoundDisplay(
             text = stringResource(AccountRes.string.noAccountFound)
         )
 
-        LoginButton()
+        AppIconTextButton(
+            onClick = { eventSink(AccountListEvent.Login) },
+            text = stringResource(AccountRes.string.logIn),
+            imageVector = Lucide.LogIn,
+            backgroundColor = Theme[colors][primary],
+            contentColor = Theme[colors][onPrimary],
+            modifier = modifier
+        )
     }
 }
 
 @Composable
-context(_: EventSink<AccountListEvent>)
+context(eventSink: EventSink<AccountListEvent>)
 private fun AccountList(
     accountList: AccountListView,
     modifier: Modifier
@@ -97,7 +104,7 @@ private fun AccountList(
 
         Column(
             verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.weight(1f).padding(vertical = 8.dp).verticalScroll(scrollState)
+            modifier = Modifier.padding(8.dp).verticalScroll(scrollState)
         ) {
             accountList.selectedAccount?.let { currentAccount ->
                 AppSection(
@@ -130,8 +137,13 @@ private fun AccountList(
             modifier = Modifier.fillMaxWidth(),
             contentAlignment = Alignment.Center
         ) {
-            LoginButton(
-                modifier = Modifier.padding(bottom = 16.dp, top = 8.dp)
+            AppIconTextButton(
+                onClick = { eventSink(AccountListEvent.Login) },
+                text = stringResource(AccountRes.string.addAccount),
+                imageVector = Lucide.UserPlus,
+                backgroundColor = Theme[colors][primary],
+                contentColor = Theme[colors][onPrimary],
+                modifier = modifier
             )
         }
     }
@@ -144,7 +156,7 @@ private fun AccountCard(
     isSelected: Boolean,
 ) {
     Row(
-        modifier = Modifier.padding(horizontal = 8.dp).appCard().padding(8.dp).fillMaxWidth(),
+        modifier = Modifier.appCard().padding(8.dp).fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -211,19 +223,4 @@ private fun AccountCard(
             )
         }
     }
-}
-
-@Composable
-context(eventSink: EventSink<AccountListEvent>)
-private fun LoginButton(
-    modifier: Modifier = Modifier,
-) {
-    AppIconTextButton(
-        onClick = { eventSink(AccountListEvent.Login) },
-        text = stringResource(AccountRes.string.logIn),
-        imageVector = Lucide.LogIn,
-        backgroundColor = Theme[colors][primary],
-        contentColor = Theme[colors][onPrimary],
-        modifier = modifier
-    )
 }
