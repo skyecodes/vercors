@@ -23,6 +23,7 @@ import app.vercors.feature.launcher.domain.model.InstanceLaunchEvent
 import app.vercors.feature.launcher.domain.service.LauncherService
 import app.vercors.shared.domain.model.JvmMemoryOptions
 import app.vercors.shared.domain.model.NativeLibraryOptions
+import arrow.core.getOrElse
 import arrow.core.raise.Raise
 import arrow.core.raise.RaiseCancellationException
 import arrow.core.raise.context.either
@@ -245,8 +246,9 @@ class LaunchInstanceUseCase(
 
         logger.info { "Loading instance metadata" }
         instanceRepository.updateInstanceStatus(instanceId, InstanceStatus.Launching.LoadingMetadata)
-        val vanillaVersion = withError({ InstanceLaunchError.GameVersion(it) }) {
-            gameRepository.getVersionDetails(instance.gameVersion)
+        val vanillaVersion = either { gameRepository.getVersionDetails(instance.gameVersion) }.getOrElse {
+            instanceRepository.updateInstanceStatus(instanceId, InstanceStatus.Idle)
+            raise(InstanceLaunchError.GameVersion(it))
         }
         val version = instance.modLoader?.let { modLoader ->
             logger.info { "Installing ${modLoader.type} ${modLoader.version}..." }
@@ -254,12 +256,15 @@ class LaunchInstanceUseCase(
                 instanceId,
                 InstanceStatus.Launching.InstallingLoader(modLoader.type)
             )
-            withError({ InstanceLaunchError.ModLoaderInstall(it) }) {
-                modLoaderInstallerService.resolve(vanillaVersion, modLoader.type, modLoader.version)
-            }
+            either { modLoaderInstallerService.resolve(vanillaVersion, modLoader.type, modLoader.version) }
+                .getOrElse {
+                    instanceRepository.updateInstanceStatus(instanceId, InstanceStatus.Idle)
+                    raise(InstanceLaunchError.ModLoaderInstall(it))
+                }
         } ?: vanillaVersion
-        val assetIndex = withError({ InstanceLaunchError.GameVersion(it) }) {
-            gameRepository.getAssetIndex(version.assetIndex)
+        val assetIndex = either { gameRepository.getAssetIndex(version.assetIndex) }.getOrElse {
+            instanceRepository.updateInstanceStatus(instanceId, InstanceStatus.Idle)
+            raise(InstanceLaunchError.GameVersion(it))
         }
         val javaExecutable = version.javaVersion?.let { javaVersion ->
             resolveJavaInstallation(javaVersion.majorVersion, instance.javaInstallationId)?.path

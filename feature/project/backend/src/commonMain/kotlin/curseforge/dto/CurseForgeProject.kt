@@ -21,7 +21,7 @@ data class CurseForgeProject(
     val latestFiles: List<CurseForgeFile>,
     val latestFilesIndexes: List<FileIndex>,
     val links: ModLinks,
-    val logo: ModAsset,
+    val logo: ModAsset? = null,
     val mainFileId: Int,
     val name: String,
     val primaryCategoryId: Int,

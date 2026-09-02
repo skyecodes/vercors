@@ -153,6 +153,5 @@ private fun RemoteError.toLoaderError(): LoaderError = when (this) {
     RemoteError.Network -> LoaderError("network", "Could not connect to the server")
     RemoteError.Timeout -> LoaderError("timeout", "The server took too long to respond")
     RemoteError.Serialization -> LoaderError("serialization", "Received an unexpected response from the server")
-    is RemoteError.Http.Client -> LoaderError("http_$status", body)
-    is RemoteError.Http.Server -> LoaderError("http_$status", body)
+    is RemoteError.Http -> LoaderError("http_$status", body)
 }

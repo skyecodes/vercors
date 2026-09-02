@@ -2,6 +2,7 @@ package app.vercors.core.network
 
 import arrow.core.raise.Raise
 import arrow.core.raise.catch
+import arrow.core.raise.context.ensure
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.plugins.*
 import io.ktor.client.statement.*
@@ -18,27 +19,8 @@ private val logger = KotlinLogging.logger {}
 
 suspend fun HttpResponse.bodyAsSource(): Source = bodyAsChannel().asSource().buffered()
 
-/**
- * Platform-specific extra classification for [isNetworkUnreachable] — e.g. the JVM/CIO engine throws
- * `java.nio.channels.UnresolvedAddressException` (an `IllegalArgumentException`, not an `IOException`) when
- * DNS resolution fails locally, before any connection is even attempted.
- */
 expect fun Throwable.isPlatformNetworkUnreachable(): Boolean
 
-/**
- * True for exceptions that mean the request never reached the server (connection refused/unreachable,
- * DNS failure, timeout at the socket level) rather than a real HTTP response or an unrelated logic error.
- * Kotlin/Native's Curl HTTP engine reports these as a plain IllegalStateException instead of an IOException
- * subtype — see io.ktor.client.engine.curl.internal.CurlMultiApiHandler.collectFailedResponse. Explicitly
- * excludes CancellationException (a JVM IllegalStateException subtype) so callers outside Arrow's own
- * cancellation-safe `catch()` — like AuthenticationServiceImpl — can't accidentally swallow cancellation.
- * Also explicitly excludes Ktor's [ResponseException] (base of [ClientRequestException]/[ServerResponseException]/
- * [RedirectResponseException], thrown by the response validator whenever a client is configured with
- * `expectSuccess = true` and the server answers with a non-2xx status) — it's also an IllegalStateException
- * subtype on every target, but receiving *any* HTTP response, even an error one, is definitive proof the server
- * was reached. Without this exclusion, a routine expired/invalid token (e.g. Microsoft/Xbox/Minecraft returning
- * 400/401) gets misclassified as the server being unreachable instead of the real "invalid credentials" case.
- */
 fun Throwable.isNetworkUnreachable(): Boolean =
     this !is CancellationException && this !is ResponseException &&
             (this is IOException || this is IllegalStateException || isPlatformNetworkUnreachable())
@@ -49,41 +31,26 @@ suspend fun <T> makeRequest(callProducer: suspend () -> T): T = catch({ callProd
     when {
         it.isNetworkUnreachable() -> err.raise(RemoteError.Network)
         it is HttpRequestTimeoutException -> err.raise(RemoteError.Timeout)
-        it is ClientRequestException -> err.raise(
-            RemoteError.Http.Client(
-                it.response.status.value,
-                it.response.bodyAsText()
-            )
-        )
-
-        it is ServerResponseException -> err.raise(
-            RemoteError.Http.Server(
-                it.response.status.value,
-                it.response.bodyAsText()
-            )
-        )
-
+        it is ResponseException -> err.raise(convertToRemoteError(it.response))
         it is SerializationException || it is ContentConvertException -> err.raise(RemoteError.Serialization)
-        it is SpineReceptionException -> when (val status = it.response.status.value) {
-            in 400..499 -> err.raise(RemoteError.Http.Client(status, it.response.bodyAsText()))
-            in 500..599 -> err.raise(RemoteError.Http.Server(status, it.response.bodyAsText()))
-            else -> throw it
-        }
+        it is SpineReceptionException -> err.raise(convertToRemoteError(it.response))
 
         else -> throw it
     }
 }
 
-/**
- * Like [makeRequest], but for calls bound to the app's own meta API specifically: short-circuits to
- * [RemoteError.Network] without attempting the request at all when [MetaApiConnectivity] already knows the
- * meta API is unreachable, instead of paying the shared HttpClient's retry/backoff delay again. Must NOT be
- * used for calls to other hosts (external CDNs, Microsoft/Xbox/Mojang auth) — their reachability is
- * unrelated to the meta API's.
- */
+private suspend fun convertToRemoteError(response: HttpResponse) =
+    when (val status = response.status.value) {
+        in 300..399 -> RemoteError.Http.Redirect(status, response.bodyAsText())
+        in 400..499 -> RemoteError.Http.Client(status, response.bodyAsText())
+        in 500..599 -> RemoteError.Http.Server(status, response.bodyAsText())
+        else -> RemoteError.Http.Other(status, response.bodyAsText())
+    }
+
+
 context(err: Raise<RemoteError>)
 suspend fun <T> makeMetaApiRequest(callProducer: suspend () -> T): T {
-    if (!MetaApiConnectivity.isReachable.value) err.raise(RemoteError.Network)
+    ensure(MetaApiConnectivity.isReachable.value) { RemoteError.Network }
     return makeRequest(callProducer)
 }
 
@@ -98,5 +65,7 @@ sealed interface RemoteError {
 
         data class Client(override val status: Int, override val body: String) : Http
         data class Server(override val status: Int, override val body: String) : Http
+        data class Redirect(override val status: Int, override val body: String) : Http
+        data class Other(override val status: Int, override val body: String) : Http
     }
 }

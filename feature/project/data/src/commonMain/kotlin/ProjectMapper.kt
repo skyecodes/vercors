@@ -101,8 +101,7 @@ internal fun RemoteError.toPlatformError(): PlatformError = when (this) {
     RemoteError.Network -> PlatformError("network", "Could not connect to the server")
     RemoteError.Timeout -> PlatformError("timeout", "The server took too long to respond")
     RemoteError.Serialization -> PlatformError("serialization", "Received an unexpected response from the server")
-    is RemoteError.Http.Client -> PlatformError("http_$status", body)
-    is RemoteError.Http.Server -> PlatformError("http_$status", body)
+    is RemoteError.Http -> PlatformError("http_$status", body)
 }
 
 internal fun PlatformNotFoundData.toDomain(): PlatformNotFound = PlatformNotFound(platformId)

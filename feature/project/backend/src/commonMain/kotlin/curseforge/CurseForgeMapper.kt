@@ -20,7 +20,7 @@ internal fun CurseForgeProject.convertBrief(): BriefProjectData = BriefProjectDa
     url = "https://www.curseforge.com/minecraft/${classId.toCurseForgeUrlSegment()}/$slug",
     downloads = downloadCount,
     lastUpdated = dateModified,
-    logoUrl = logo.thumbnailUrl,
+    logoUrl = logo?.thumbnailUrl,
     imageUrl = screenshots.firstOrNull()?.url
 )
 
@@ -32,7 +32,7 @@ internal fun CurseForgeProject.convert(descriptionHtml: String): ProjectData = P
     description = summary,
     url = "https://www.curseforge.com/minecraft/${classId.toCurseForgeUrlSegment()}/$slug",
     body = descriptionHtml.toMarkdown(),
-    logoUrl = logo.thumbnailUrl,
+    logoUrl = logo?.thumbnailUrl,
     gameVersions = latestFilesIndexes.map { it.gameVersion }.distinct(),
     loaders = toProjectLoaders(),
     categories = categories.map { it.convert() },
