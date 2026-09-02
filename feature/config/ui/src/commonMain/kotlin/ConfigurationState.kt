@@ -30,6 +30,8 @@ data class ConfigurationState(
     val showNativeLibraryOptions: Boolean,
     val detectedGlfwPath: String?,
     val detectedOpenAlPath: String?,
+    val contentCacheSizeBytes: Long?,
+    val promptClearContentCache: Boolean,
 )
 
 @Immutable

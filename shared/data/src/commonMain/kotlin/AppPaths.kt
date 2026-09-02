@@ -35,6 +35,7 @@ class AppPaths(root: Path) {
     val imageCache = Path(data, "cache", "image")
     val metadataCacheRoot = Path(data, "cache", "metadata")
     val iconCacheRoot = Path(data, "cache", "icon")
+    val contentCacheRoot = Path(data, "cache", "projects")
 
     /** Scratch space for in-progress downloads — deliberately outside any directory a content directory watcher observes. */
     val downloadsTmp = Path(data, "tmp")
@@ -84,6 +85,11 @@ class AppPaths(root: Path) {
     fun metadataCache(kind: String): Path = Path(metadataCacheRoot, kind)
 
     fun iconCache(kind: String): Path = Path(iconCacheRoot, kind)
+
+    /** Where a downloaded mod/resource pack/shader pack is cached, keyed by content kind + sha1, so identical
+     *  files can be hardlinked into every instance that needs them instead of re-downloaded/re-stored per instance. */
+    fun contentCacheObjectFile(kind: ContentCacheKind, sha1: String): Path =
+        Path(contentCacheRoot, kind.name.lowercase(), sha1.take(2), sha1)
 
     fun instanceIconFile(instanceId: String, extension: String): Path = Path(gameDir(instanceId), "icon.$extension")
 

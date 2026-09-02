@@ -49,4 +49,11 @@
     <string name="useSystemOpenAlDesc">Use the OpenAL library installed on this system instead of the bundled one.</string>
     <string name="useDefaultPath">Leave empty to use the default system path</string>
     <string name="browse">Browse</string>
+
+    <string name="storage">Storage</string>
+    <string name="contentCache">Content cache</string>
+    <string name="contentCacheDesc">Downloaded mods, resource packs and shader packs are cached here and shared between instances that use the same file.</string>
+    <string name="clearCache">Clear cache</string>
+    <string name="clearCacheConfirmation">Clear the content cache? Already-installed files in your instances won\'t be affected, but future installs of the same files will need to be re-downloaded.</string>
+    <string name="contentCacheCleared">Content cache cleared</string>
 </resources>

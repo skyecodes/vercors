@@ -14,22 +14,22 @@ import app.vercors.core.ui.component.AppText
 import app.vercors.core.ui.modifier.appCard
 
 @Composable
-fun AppDialog(onClickOutside: () -> Unit, content: @Composable BoxScope.() -> Unit) {
+fun AppDialog(
+    modifier: Modifier = Modifier,
+    onClickOutside: () -> Unit,
+    content: @Composable BoxScope.() -> Unit
+) {
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.Black.copy(alpha = 0.5f))
-            // Deliberately a raw tap-gesture detector rather than Modifier.clickable: clickable makes this scrim
-            // focusable and wires up Enter/Space as keyboard-activated clicks, and since key events bubble from
-            // whatever's currently focused up through this ancestor, pressing space while typing in a field inside
-            // the dialog (e.g. the instance name field) would trigger onClickOutside and close the dialog.
             .pointerInput(onClickOutside) {
                 detectTapGestures(onTap = { onClickOutside() })
             },
         contentAlignment = Alignment.Center
     ) {
         Box(
-            modifier = Modifier
+            modifier = modifier
                 .appCard()
                 .padding(16.dp)
                 .clickable(enabled = false) {}
@@ -46,7 +46,10 @@ fun AppConfirmDialog(
     dismissButton: @Composable RowScope.() -> Unit,
     onClickOutside: () -> Unit
 ) {
-    AppDialog(onClickOutside = onClickOutside) {
+    AppDialog(
+        modifier = Modifier.widthIn(max = 600.dp),
+        onClickOutside = onClickOutside
+    ) {
         Column(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {

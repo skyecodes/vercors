@@ -22,10 +22,7 @@ import app.vercors.feature.project.domain.model.*
 import app.vercors.feature.project.domain.model.modpack.*
 import app.vercors.feature.project.domain.repository.ProjectRepository
 import app.vercors.shared.api.ApiV1
-import app.vercors.shared.data.AppPaths
-import app.vercors.shared.data.FileValidationFailure
-import app.vercors.shared.data.FileValidationRequest
-import app.vercors.shared.data.FileValidationService
+import app.vercors.shared.data.*
 import arrow.core.NonEmptyList
 import arrow.core.raise.Raise
 import arrow.core.raise.context.ensureNotNull
@@ -212,6 +209,7 @@ class ProjectRepositoryImpl(
         onProgress: (Progress) -> Unit
     ) {
         val targetDir = type.targetDir(instanceId)
+        val cacheKind = type.toContentCacheKind()
         val downloads = candidates.map { candidate ->
             val finalPath = Path(targetDir, candidate.fileName)
             val tempPath = Path(appPaths.downloadsTmp, "${Uuid.random()}-${candidate.fileName}")
@@ -222,7 +220,8 @@ class ProjectRepositoryImpl(
                 path = tempPath,
                 size = candidate.size,
                 sha1 = candidate.sha1,
-                md5 = candidate.md5
+                md5 = candidate.md5,
+                cacheKind = cacheKind
             )
             Triple(request, tempPath, finalPath)
         }
@@ -249,6 +248,20 @@ class ProjectRepositoryImpl(
         ProjectType.ResourcePack -> appPaths.resourcePacksDir(instanceId)
         ProjectType.ShaderPack -> appPaths.shaderPacksDir(instanceId)
         ProjectType.DataPack, ProjectType.World -> error("Install is not supported for project type $this")
+    }
+
+    private fun ProjectType.toContentCacheKind(): ContentCacheKind? = when (this) {
+        ProjectType.Mod, ProjectType.Modpack -> ContentCacheKind.Mod
+        ProjectType.ResourcePack -> ContentCacheKind.ResourcePack
+        ProjectType.ShaderPack -> ContentCacheKind.ShaderPack
+        ProjectType.DataPack, ProjectType.World -> null
+    }
+
+    private fun ModpackFileKind.toContentCacheKind(): ContentCacheKind? = when (this) {
+        ModpackFileKind.Mod -> ContentCacheKind.Mod
+        ModpackFileKind.ResourcePack -> ContentCacheKind.ResourcePack
+        ModpackFileKind.ShaderPack -> ContentCacheKind.ShaderPack
+        ModpackFileKind.Other -> null
     }
 
     context(_: Raise<ProjectDetailsError>)
@@ -329,9 +342,17 @@ class ProjectRepositoryImpl(
         val autoFiles = manifest.files.filter { it.manualDownloadUrl == null }
         val requests = autoFiles.map { file ->
             val targetPath = Path(gameDir, *file.targetPath.pathSegments())
+            val cacheKind = file.kind.toContentCacheKind()
             val downloadUrl = file.downloadUrl
             if (downloadUrl != null) {
-                FileValidationRequest.Url(downloadUrl, targetPath, file.size, file.sha1, file.md5)
+                FileValidationRequest.Url(
+                    downloadUrl,
+                    targetPath,
+                    file.size,
+                    file.sha1,
+                    file.md5,
+                    cacheKind = cacheKind
+                )
             } else {
                 val providerProjectId = ensureNotNull(file.providerProjectId) { ModpackInvalidFileEntry }
                 val providerFileId = ensureNotNull(file.providerFileId) { ModpackInvalidFileEntry }
@@ -342,7 +363,8 @@ class ProjectRepositoryImpl(
                     targetPath,
                     file.size,
                     file.sha1,
-                    file.md5
+                    file.md5,
+                    cacheKind
                 )
             }
         }
@@ -404,7 +426,16 @@ class ProjectRepositoryImpl(
         }
         recover({
             with(fileValidationService) {
-                FileValidationRequest.Url(url = "", path = targetPath, size = size, sha1 = sha1, md5 = md5).validate()
+                val request = FileValidationRequest.Url(
+                    url = "",
+                    path = targetPath,
+                    size = size,
+                    sha1 = sha1,
+                    md5 = md5,
+                    cacheKind = type.toContentCacheKind()
+                )
+                request.validate()
+                request.populateCache()
             }
         }) { _: FileValidationFailure ->
             if (targetPath.exists()) targetPath.deleteRecursively()

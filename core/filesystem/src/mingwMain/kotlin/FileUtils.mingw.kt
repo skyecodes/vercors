@@ -7,9 +7,19 @@ import platform.windows.*
 import kotlin.coroutines.CoroutineContext
 import kotlin.time.Instant
 
+@OptIn(ExperimentalForeignApi::class)
 actual suspend fun Path.createLink(target: Path, context: CoroutineContext, isSymbolic: Boolean): Boolean {
-    // TODO find out a way to hardlink/symlink on mingw
-    return false
+    // CreateSymbolicLinkW isn't implemented — linkOrCopyTo's final fallback (a real copy) is an acceptable
+    // substitute for the rare paths that specifically request a symlink.
+    if (isSymbolic) return false
+    // withContext's lambda has CoroutineScope as its implicit receiver, which shadows bare Path member calls
+    // like toString() — capture both path strings before entering it (same footgun as realPath below).
+    val existingFileName = toString()
+    val newFileName = target.toString()
+    return withContext(context) {
+        // Win32 argument order is reversed from POSIX link(): new link name first, existing file second.
+        CreateHardLinkW(newFileName, existingFileName, null) != 0
+    }
 }
 
 actual suspend fun Path.lastModifiedOrNull(context: CoroutineContext): Instant? {

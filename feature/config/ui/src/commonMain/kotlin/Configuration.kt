@@ -20,9 +20,13 @@ import app.vercors.core.ui.theme.*
 import app.vercors.shared.domain.model.JavaInstallation
 import app.vercors.shared.ui.EventSink
 import app.vercors.shared.ui.Store
+import app.vercors.shared.ui.overlay.ConfirmDialog
+import app.vercors.shared.ui.overlay.ConfirmDialogButton
+import app.vercors.shared.ui.overlay.ConfirmDialogButtonStyle
 import com.composables.icons.lucide.*
 import com.composeunstyled.theme.Theme
 import com.slack.circuit.codegen.annotations.CircuitInject
+import com.slack.circuit.overlay.OverlayEffect
 import dev.zacsweers.metro.AppScope
 import io.github.vinceglb.filekit.dialogs.FileKitType
 import io.github.vinceglb.filekit.dialogs.compose.rememberDirectoryPickerLauncher
@@ -39,6 +43,22 @@ fun Configuration(
 ) {
     val (state, eventSink) = store
     with(eventSink) {
+        if (state.promptClearContentCache) {
+            OverlayEffect {
+                val result = show(
+                    ConfirmDialog(
+                        messageResource = ConfigRes.string.clearCacheConfirmation,
+                        actionButton = ConfirmDialogButton(
+                            ConfigRes.string.clearCache,
+                            Lucide.Trash,
+                            ConfirmDialogButtonStyle.Destructive
+                        ),
+                    )
+                )
+                eventSink(ConfigurationEvent.OnConfirmClearContentCache(result))
+            }
+        }
+
         Column(
             modifier = modifier.padding(horizontal = 8.dp)
                 .fillMaxWidth()
@@ -69,6 +89,11 @@ fun Configuration(
                             state = state
                         )
                     }
+                }
+                item("storage") {
+                    StorageConfigurationCategory(
+                        state = state
+                    )
                 }
             }
         }
@@ -340,6 +365,51 @@ private fun NativeLibraryConfigurationCategory(
             )
         }
     }
+}
+
+@Composable
+context(eventSink: EventSink<ConfigurationEvent>)
+private fun StorageConfigurationCategory(
+    state: ConfigurationState
+) {
+    ConfigurationCategory(
+        icon = Lucide.HardDrive,
+        titleRes = ConfigRes.string.storage,
+    ) {
+        ConfigurationRow(
+            title = ConfigRes.string.contentCache,
+            description = ConfigRes.string.contentCacheDesc,
+        ) {
+            Row(
+                modifier = Modifier.weight(1f),
+                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                state.contentCacheSizeBytes?.let {
+                    AppText(text = it.toHumanReadableSize())
+                }
+                AppIconTextButton(
+                    onClick = { eventSink(ConfigurationEvent.PromptClearContentCache) },
+                    text = stringResource(ConfigRes.string.clearCache),
+                    imageVector = Lucide.Trash,
+                    backgroundColor = Theme[colors][error],
+                    contentColor = Theme[colors][onError]
+                )
+            }
+        }
+    }
+}
+
+private fun Long.toHumanReadableSize(): String {
+    if (this < 1024) return "$this B"
+    val units = listOf("KB", "MB", "GB", "TB")
+    var value = this / 1024.0
+    var unitIndex = 0
+    while (value >= 1024 && unitIndex < units.lastIndex) {
+        value /= 1024
+        unitIndex++
+    }
+    return "${(value * 10).toInt() / 10.0} ${units[unitIndex]}"
 }
 
 @Composable

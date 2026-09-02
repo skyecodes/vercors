@@ -42,7 +42,7 @@ internal class HashedJsonCacheImpl<T>(
         }
     }
 
-    private fun fileFor(hash: String): Path = Path(directoryPath, "$hash.json")
+    private fun fileFor(hash: String): Path = Path(directoryPath, hash.take(2), "$hash.json")
 }
 
 @SingleIn(AppScope::class)

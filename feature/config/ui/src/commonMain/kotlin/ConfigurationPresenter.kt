@@ -6,6 +6,8 @@ import app.vercors.core.system.OsType
 import app.vercors.core.system.SystemService
 import app.vercors.core.ui.state.collectProgressiveAsState
 import app.vercors.core.ui.state.produceProgressiveState
+import app.vercors.feature.config.domain.usecase.ClearContentCacheUseCase
+import app.vercors.feature.config.domain.usecase.GetContentCacheSizeUseCase
 import app.vercors.feature.config.domain.usecase.ObserveConfigurationUseCase
 import app.vercors.feature.config.domain.usecase.UpdateConfigurationUseCase
 import app.vercors.feature.game.domain.model.JavaInstallationError
@@ -57,6 +59,8 @@ class ConfigurationPresenter(
     private val getTotalPhysicalMemory: GetTotalPhysicalMemoryUseCase,
     private val detectNativeLibraryPath: DetectNativeLibraryPathUseCase,
     private val systemService: SystemService,
+    private val getContentCacheSize: GetContentCacheSizeUseCase,
+    private val clearContentCache: ClearContentCacheUseCase,
 ) : Presenter<ConfigurationState, ConfigurationEvent> {
     @Composable
     override fun present(): Store<ConfigurationState, ConfigurationEvent> {
@@ -79,6 +83,9 @@ class ConfigurationPresenter(
                 detectedOpenAlPath = detectNativeLibraryPath(NativeLibraryType.OpenAl)
             }
         }
+        var contentCacheSizeBytes by remember { mutableStateOf<Long?>(null) }
+        LaunchedEffect(Unit) { contentCacheSizeBytes = getContentCacheSize() }
+        val (promptClearContentCache, setPromptClearContentCache) = remember { mutableStateOf(false) }
         val cfg = configuration.valueOrNull
         val selectedTheme = themeList.find { it.id == cfg?.selectedThemeId }
         val selectedAccent = selectedTheme?.accents?.find { it.id == cfg?.selectedAccent }
@@ -107,6 +114,8 @@ class ConfigurationPresenter(
             showNativeLibraryOptions = showNativeLibraryOptions,
             detectedGlfwPath = detectedGlfwPath,
             detectedOpenAlPath = detectedOpenAlPath,
+            contentCacheSizeBytes = contentCacheSizeBytes,
+            promptClearContentCache = promptClearContentCache,
         ) + { event ->
             handleEvent(
                 event = event,
@@ -114,7 +123,9 @@ class ConfigurationPresenter(
                 themeList = themeList,
                 setJavaAddError = setJavaAddError,
                 javaScanInProgress = javaScanInProgress,
-                setJavaScanInProgress = setJavaScanInProgress
+                setJavaScanInProgress = setJavaScanInProgress,
+                setPromptClearContentCache = setPromptClearContentCache,
+                setContentCacheSizeBytes = { contentCacheSizeBytes = it },
             )
         }
     }
@@ -126,6 +137,8 @@ class ConfigurationPresenter(
         setJavaAddError: (String?) -> Unit,
         javaScanInProgress: Boolean,
         setJavaScanInProgress: (Boolean) -> Unit,
+        setPromptClearContentCache: (Boolean) -> Unit,
+        setContentCacheSizeBytes: (Long?) -> Unit,
     ) {
         when (event) {
             is ConfigurationEvent.SelectTheme -> presenterScope.launch {
@@ -210,6 +223,30 @@ class ConfigurationPresenter(
             is ConfigurationEvent.SetOpenAlPath -> presenterScope.launch {
                 updateConfiguration { copy(nativeLibraryOptions = nativeLibraryOptions.copy(openAlPath = event.value)) }
             }
+
+            ConfigurationEvent.PromptClearContentCache -> setPromptClearContentCache(true)
+
+            is ConfigurationEvent.OnConfirmClearContentCache -> handleConfirmClearContentCache(
+                event = event,
+                presenterScope = presenterScope,
+                setPromptClearContentCache = setPromptClearContentCache,
+                setContentCacheSizeBytes = setContentCacheSizeBytes,
+            )
+        }
+    }
+
+    private fun handleConfirmClearContentCache(
+        event: ConfigurationEvent.OnConfirmClearContentCache,
+        presenterScope: CoroutineScope,
+        setPromptClearContentCache: (Boolean) -> Unit,
+        setContentCacheSizeBytes: (Long?) -> Unit,
+    ) {
+        setPromptClearContentCache(false)
+        if (!event.result) return
+        presenterScope.launch {
+            clearContentCache()
+            setContentCacheSizeBytes(getContentCacheSize())
+            snackbarService.success { stringResource(ConfigRes.string.contentCacheCleared) }
         }
     }
 

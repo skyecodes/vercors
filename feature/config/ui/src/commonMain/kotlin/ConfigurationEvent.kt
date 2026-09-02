@@ -36,4 +36,7 @@ sealed interface ConfigurationEvent : Event {
     data class SetGlfwPath(val value: String) : ConfigurationEvent
     data class ToggleUseSystemOpenAl(val checked: Boolean) : ConfigurationEvent
     data class SetOpenAlPath(val value: String) : ConfigurationEvent
+
+    data object PromptClearContentCache : ConfigurationEvent
+    data class OnConfirmClearContentCache(val result: Boolean) : ConfigurationEvent
 }

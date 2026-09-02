@@ -158,7 +158,7 @@ internal class ContentDirScannerEngine(
             version = metadata.version,
             loader = metadata.loader?.let { runCatching { ModLoaderType.valueOf(it) }.getOrNull() },
             fileSize = size,
-            iconFilePath = metadata.iconExtension?.let { Path(iconCacheDir, "$sha1.$it").toString() },
+            iconFilePath = metadata.iconExtension?.let { Path(iconCacheDir, sha1.take(2), "$sha1.$it").toString() },
             providers = metadata.providers.map { ModProvider(it.platformId, it.projectId, it.fileId) },
             enabled = isContentFileEnabled(filePath.name),
             lastModified = filePath.lastModifiedOrNull()
@@ -179,7 +179,7 @@ internal class ContentDirScannerEngine(
     private suspend fun parseAndCache(filePath: Path, sha1: String): ContentFileMetadata {
         val parsed = parser.parse(filePath)
         val iconExtension = parsed.iconEntryPath
-            ?.let { extractIcon(filePath, it, iconCacheDir, sha1) }
+            ?.let { extractIcon(filePath, it, Path(iconCacheDir, sha1.take(2)), sha1) }
             ?.substringAfterLast('.', "")
             ?.takeIf { it.isNotEmpty() }
         val metadata = ContentFileMetadata(

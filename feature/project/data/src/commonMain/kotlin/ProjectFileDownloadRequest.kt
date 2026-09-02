@@ -4,6 +4,7 @@ import app.vercors.feature.project.api.Platforms
 import app.vercors.feature.project.api.ProjectFiles
 import app.vercors.feature.project.api.Projects
 import app.vercors.shared.api.ApiV1
+import app.vercors.shared.data.ContentCacheKind
 import app.vercors.shared.data.FileValidationRequest
 import kotlinx.io.files.Path
 import opensavvy.spine.api.div
@@ -18,7 +19,8 @@ internal fun projectFileDownloadRequest(
     path: Path,
     size: Long? = null,
     sha1: String? = null,
-    md5: String? = null
+    md5: String? = null,
+    cacheKind: ContentCacheKind? = null
 ): FileValidationRequest = FileValidationRequest.Channel(
     channel = { httpClient ->
         httpClient.request(
@@ -29,5 +31,6 @@ internal fun projectFileDownloadRequest(
     path = path,
     size = size,
     sha1 = sha1,
-    md5 = md5
+    md5 = md5,
+    cacheKind = cacheKind
 )

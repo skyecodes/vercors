@@ -42,6 +42,7 @@ class FileValidationServiceImpl(
     private val cryptographyService: CryptographyService,
     private val json: Json,
     private val httpClient: HttpClient,
+    private val appPaths: AppPaths,
 ) : FileValidationService {
     @OptIn(ExperimentalRaiseAccumulateApi::class, ExperimentalAtomicApi::class)
     context(_: Raise<NonEmptyList<FileValidationFailure>>)
@@ -108,11 +109,31 @@ class FileValidationServiceImpl(
         }
     }
 
+    /** Only sha1 is used as a cache key — some providers (CurseForge) only ever supply md5, which stays relevant
+     *  to [validate] but is never strong enough on its own to key the shared cache off of. */
+    private fun FileValidationRequest.cacheObjectPath(): Path? {
+        val kind = cacheKind ?: return null
+        val hash = sha1 ?: return null
+        return appPaths.contentCacheObjectFile(kind, hash)
+    }
+
     context(_: Raise<RemoteError>)
     override suspend fun FileValidationRequest.download() {
         // A blank URL means this file can only ever be produced locally (e.g. a mod loader installer's
         // patched jar) — there's nothing to fetch.
         ensure(this !is FileValidationRequest.Url || url.isNotBlank()) { RemoteError.Network }
+        val cacheObject = cacheObjectPath()
+        if (cacheObject != null && cacheObject.exists()) {
+            // path may already exist (e.g. alwaysRedownload, or reinstalling a modpack) — createLink fails with
+            // EEXIST on an existing target, which linkOrCopyTo silently swallows and falls back to a full copy,
+            // so delete first to actually take the hardlink path.
+            if (path.exists()) path.delete()
+            if (cacheObject.linkOrCopyTo(path)) {
+                logger.trace { "Served $path from content cache ($cacheObject)" }
+                return
+            }
+            logger.warn { "Content cache hit for $path but linking from $cacheObject failed; falling back to network" }
+        }
         logger.trace { "Downloading file $this" }
         // Download to a sibling temp file and only replace the existing copy once the download has fully
         // succeeded — a failed request (e.g. offline) must never destroy a previously cached, still-valid file.
@@ -138,9 +159,16 @@ class FileValidationServiceImpl(
         }
     }
 
+    override suspend fun FileValidationRequest.populateCache() {
+        val cacheObject = cacheObjectPath() ?: return
+        if (cacheObject.exists()) return
+        path.linkOrCopyTo(cacheObject)
+    }
+
     context(_: Raise<FileValidationFailure>)
     override suspend fun FileValidationRequest.downloadAndValidate() {
         either { download() }.mapLeft { FileValidationFailure.DownloadFailed(path, it) }.bind()
         validate()
+        populateCache()
     }
 }

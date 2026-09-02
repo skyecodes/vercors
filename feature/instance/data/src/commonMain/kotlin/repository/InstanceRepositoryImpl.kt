@@ -126,7 +126,21 @@ class InstanceRepositoryImpl(
 
     override suspend fun copyInstanceFiles(sourceId: InstanceId, targetId: InstanceId) {
         val sourceDir = appPaths.gameDir(sourceId)
-        if (sourceDir.exists()) sourceDir.copyRecursively(appPaths.gameDir(targetId))
+        if (!sourceDir.exists()) return
+        val targetDir = appPaths.gameDir(targetId)
+        // mods/resourcepacks/shaderpacks are hardlinked instead of byte-copied — they're read-only game content
+        // shared identically between the two instances, unlike saves/config/options.txt, which are genuinely
+        // per-instance mutable state and must stay real copies.
+        val hardlinkedNames = setOf(
+            appPaths.modsDir(sourceId).name,
+            appPaths.resourcePacksDir(sourceId).name,
+            appPaths.shaderPacksDir(sourceId).name,
+        )
+        for (child in sourceDir.list()) {
+            val dest = Path(targetDir, child.name)
+            if (child.name in hardlinkedNames && child.isDirectory()) child.linkRecursively(dest)
+            else child.copyRecursively(dest)
+        }
         logger.info { "Copied game directory for instance $sourceId to $targetId" }
     }
 

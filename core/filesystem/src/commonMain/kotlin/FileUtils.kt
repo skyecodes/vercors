@@ -202,6 +202,23 @@ suspend fun Path.linkOrCopyTo(target: Path, context: CoroutineContext = Dispatch
             tryOrFalse { createLink(target, context, true) } ||
             tryOrFalse { copyTo(target, context); true }
 
+/** Like [copyRecursively], but hardlinks (falling back to a symlink, then a real copy — see [linkOrCopyTo]) each
+ *  file instead of copying its bytes. */
+suspend fun Path.linkRecursively(target: Path, context: CoroutineContext = Dispatchers.IO) {
+    if (isDirectory(context)) {
+        target.createDirectories(context)
+        for (child in list(context)) {
+            child.linkRecursively(Path(target, child.name), context)
+        }
+    } else {
+        linkOrCopyTo(target, context)
+    }
+}
+
+suspend fun Path.sizeRecursively(context: CoroutineContext = Dispatchers.IO): Long =
+    if (isDirectory(context)) list(context).sumOf { it.sizeRecursively(context) }
+    else metadataOrNull(context)?.size ?: 0
+
 private suspend fun tryOrFalse(block: suspend () -> Boolean) = try {
     block()
 } catch (_: Exception) {
