@@ -62,6 +62,12 @@ fun InstanceList(
             }
         }
 
+        state.copyInstanceDialog?.let { dialog ->
+            OverlayEffect(dialog) {
+                eventSink(InstanceListEvent.OnCopyInstanceResult(show(dialog)))
+            }
+        }
+
         Column(
             modifier = modifier.padding(8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -89,6 +95,14 @@ fun InstanceList(
                                         instanceId,
                                         platformId,
                                         projectId
+                                    )
+                                )
+                            },
+                            onCopyClick = { instanceId, name ->
+                                eventSink(
+                                    InstanceListEvent.OnCopyInstanceClick(
+                                        instanceId,
+                                        name
                                     )
                                 )
                             },

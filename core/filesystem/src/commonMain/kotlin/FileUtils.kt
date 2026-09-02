@@ -76,6 +76,20 @@ suspend fun Path.deleteRecursively(
     delete(context)
 }
 
+suspend fun Path.copyRecursively(
+    target: Path,
+    context: CoroutineContext = Dispatchers.IO
+) {
+    if (isDirectory(context)) {
+        target.createDirectories(context)
+        for (child in list(context)) {
+            child.copyRecursively(Path(target, child.name), context)
+        }
+    } else {
+        copyTo(target, context)
+    }
+}
+
 inline fun <T> Path.source(
     block: (Source) -> T
 ): T = SystemFileSystem.source(this).buffered().use(block)

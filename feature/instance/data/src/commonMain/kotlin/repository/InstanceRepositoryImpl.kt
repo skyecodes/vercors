@@ -124,6 +124,12 @@ class InstanceRepositoryImpl(
         logger.info { "Deleted game directory for instance $instanceId" }
     }
 
+    override suspend fun copyInstanceFiles(sourceId: InstanceId, targetId: InstanceId) {
+        val sourceDir = appPaths.gameDir(sourceId)
+        if (sourceDir.exists()) sourceDir.copyRecursively(appPaths.gameDir(targetId))
+        logger.info { "Copied game directory for instance $sourceId to $targetId" }
+    }
+
     context(_: Raise<InstanceError>)
     override suspend fun findInstance(id: InstanceId): Instance =
         ensureNotNull(instances.now().value[id]?.bind()) { InstanceNotFound(id) }

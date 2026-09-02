@@ -5,10 +5,14 @@ import app.vercors.core.domain.filterIsRight
 import app.vercors.core.ui.state.produceAndCollectAsProgressiveState
 import app.vercors.feature.instance.domain.model.InstanceFolder
 import app.vercors.feature.instance.domain.model.InstanceId
+import app.vercors.feature.instance.domain.usecase.CopyInstanceUseCase
 import app.vercors.feature.instance.domain.usecase.DeleteInstanceUseCase
 import app.vercors.feature.instance.domain.usecase.ObserveInstanceListUseCase
 import app.vercors.feature.instance.domain.usecase.OpenInstanceFolderUseCase
 import app.vercors.feature.instance.ui.*
+import app.vercors.feature.instance.ui.copy.CopyInstanceDialog
+import app.vercors.feature.instance.ui.copy.CopyInstanceResult
+import app.vercors.feature.instance.ui.copy.CopyInstanceTarget
 import app.vercors.feature.instance.ui.create.CreateInstanceDialog
 import app.vercors.feature.instance.ui.create.CreateInstanceResult
 import app.vercors.feature.instance.ui.details.InstanceDetailsScreen
@@ -51,6 +55,7 @@ class InstanceListPresenter(
     private val snackbarService: SnackbarService,
     private val openInstanceFolder: OpenInstanceFolderUseCase,
     private val deleteInstance: DeleteInstanceUseCase,
+    private val copyInstance: CopyInstanceUseCase,
 ) : Presenter<InstanceListState, InstanceListEvent> {
     @Composable
     override fun present(): Store<InstanceListState, InstanceListEvent> {
@@ -61,6 +66,10 @@ class InstanceListPresenter(
         val (typeFilter, setTypeFilter) = remember { mutableStateOf("") }
         val (promptCreateInstance, setPromptCreateInstance) = remember { mutableStateOf(false) }
         val (pendingDeleteInstanceId, setPendingDeleteInstanceId) = remember { mutableStateOf<InstanceId?>(null) }
+        val (pendingCopyInstance, setPendingCopyInstance) = remember { mutableStateOf<CopyInstanceTarget?>(null) }
+        val copyInstanceDialog = pendingCopyInstance?.let { target ->
+            remember(target) { CopyInstanceDialog(target, globalScope, copyInstance, snackbarService) }
+        }
         return InstanceListState(
             instances = instances,
             nameFilter = nameFilter,
@@ -70,6 +79,7 @@ class InstanceListPresenter(
             promptCreateInstance = promptCreateInstance,
             createInstanceDialog = createInstanceDialog,
             pendingDeleteInstanceId = pendingDeleteInstanceId,
+            copyInstanceDialog = copyInstanceDialog,
         ) + { event ->
             handleEvent(
                 event = event,
@@ -80,6 +90,7 @@ class InstanceListPresenter(
                 setPromptCreateInstance = setPromptCreateInstance,
                 pendingDeleteInstanceId = pendingDeleteInstanceId,
                 setPendingDeleteInstanceId = setPendingDeleteInstanceId,
+                setPendingCopyInstance = setPendingCopyInstance,
             )
         }
     }
@@ -93,6 +104,7 @@ class InstanceListPresenter(
         setPromptCreateInstance: (Boolean) -> Unit,
         pendingDeleteInstanceId: InstanceId?,
         setPendingDeleteInstanceId: (InstanceId?) -> Unit,
+        setPendingCopyInstance: (CopyInstanceTarget?) -> Unit,
     ) {
         when (event) {
             InstanceListEvent.OnCreateInstanceClick -> setPromptCreateInstance(true)
@@ -129,6 +141,14 @@ class InstanceListPresenter(
                 pendingDeleteInstanceId = pendingDeleteInstanceId,
                 setPendingDeleteInstanceId = setPendingDeleteInstanceId,
             )
+
+            is InstanceListEvent.OnCopyInstanceClick ->
+                setPendingCopyInstance(CopyInstanceTarget(event.instanceId, event.name))
+
+            is InstanceListEvent.OnCopyInstanceResult -> {
+                setPendingCopyInstance(null)
+                if (event.result is CopyInstanceResult.Copied) navigator.goTo(InstanceDetailsScreen(event.result.instanceId))
+            }
         }
     }
 

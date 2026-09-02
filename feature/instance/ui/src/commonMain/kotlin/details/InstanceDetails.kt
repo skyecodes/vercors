@@ -104,6 +104,12 @@ fun InstanceDetails(
             }
         }
 
+        if (state.promptCopyInstance) {
+            OverlayEffect {
+                eventSink(InstanceDetailsEvent.OnCopyInstanceResult(show(state.copyInstanceDialog)))
+            }
+        }
+
         state.modsContent.state.promptRemoveConfirmation?.let { pending ->
             OverlayEffect(pending) {
                 val result = show(
@@ -489,6 +495,13 @@ private fun InstanceHeaderMenu(instance: InstanceView) {
                 onClick = { eventSink(InstanceDetailsEvent.OnRestoreIconClick) },
                 text = stringResource(InstanceRes.string.restoreIcon),
                 imageVector = Lucide.Image
+            )
+        }
+        if (instance.status is InstanceStatus.Idle || instance.status is InstanceStatus.Failed) {
+            AppMenuItem(
+                onClick = { eventSink(InstanceDetailsEvent.OnCopyClick) },
+                text = stringResource(InstanceRes.string.copyInstance),
+                imageVector = Lucide.Copy
             )
         }
         AppMenuItem(

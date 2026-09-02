@@ -5,6 +5,7 @@ import app.vercors.feature.home.domain.model.HomeSectionError
 import app.vercors.feature.home.domain.model.HomeSectionType
 import app.vercors.feature.instance.domain.model.InstanceId
 import app.vercors.feature.instance.ui.BriefInstanceView
+import app.vercors.feature.instance.ui.copy.CopyInstanceDialog
 import app.vercors.feature.instance.ui.create.CreateInstanceDialog
 import app.vercors.feature.project.ui.BriefProjectView
 import app.vercors.feature.project.ui.install.ProjectInstallTarget
@@ -17,6 +18,7 @@ data class HomeState(
     val createInstanceDialog: CreateInstanceDialog,
     val installTarget: ProjectInstallTarget?,
     val pendingDeleteInstanceId: InstanceId?,
+    val copyInstanceDialog: CopyInstanceDialog?,
 ) {
     @Immutable
     sealed class Section<T>(

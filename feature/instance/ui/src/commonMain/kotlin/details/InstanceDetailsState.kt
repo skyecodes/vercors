@@ -6,6 +6,7 @@ import app.vercors.feature.account.ui.list.LoginDialog
 import app.vercors.feature.game.domain.model.ModLoaderType
 import app.vercors.feature.game.ui.displayName
 import app.vercors.feature.instance.domain.model.*
+import app.vercors.feature.instance.ui.copy.CopyInstanceDialog
 import app.vercors.feature.instance.ui.install.FinishInstallationDialog
 import app.vercors.shared.domain.model.JvmMemoryOptions
 import app.vercors.shared.domain.model.NativeLibraryOptions
@@ -19,6 +20,8 @@ data class InstanceDetailsState(
     val promptInstallJava: Int?,
     val selectedTab: InstanceDetailsTab,
     val promptDeleteConfirmation: Boolean,
+    val promptCopyInstance: Boolean,
+    val copyInstanceDialog: CopyInstanceDialog,
     val optionsContent: Store<InstanceOptionsState, InstanceOptionsEvent>,
     val modsContent: Store<InstalledContentState, InstalledContentEvent>,
     val resourcePacksContent: Store<InstalledContentState, InstalledContentEvent>,

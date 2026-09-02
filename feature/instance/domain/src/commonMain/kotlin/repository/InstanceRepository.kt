@@ -21,6 +21,9 @@ interface InstanceRepository {
     /** Deletes an instance's on-disk game directory — [deleteInstance] only removes its metadata. */
     suspend fun deleteInstanceFiles(instanceId: InstanceId)
 
+    /** Recursively copies [sourceId]'s on-disk game directory into [targetId]'s. No-ops if the source dir doesn't exist. */
+    suspend fun copyInstanceFiles(sourceId: InstanceId, targetId: InstanceId)
+
     context(_: Raise<InstanceError>)
     suspend fun findInstance(id: InstanceId): Instance
 

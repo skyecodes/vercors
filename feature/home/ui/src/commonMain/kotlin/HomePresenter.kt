@@ -5,9 +5,13 @@ import app.vercors.feature.home.domain.usecase.HomeSection
 import app.vercors.feature.home.domain.usecase.ObserveHomeSectionListUseCase
 import app.vercors.feature.instance.domain.model.InstanceFolder
 import app.vercors.feature.instance.domain.model.InstanceId
+import app.vercors.feature.instance.domain.usecase.CopyInstanceUseCase
 import app.vercors.feature.instance.domain.usecase.DeleteInstanceUseCase
 import app.vercors.feature.instance.domain.usecase.OpenInstanceFolderUseCase
 import app.vercors.feature.instance.ui.InstanceRes
+import app.vercors.feature.instance.ui.copy.CopyInstanceDialog
+import app.vercors.feature.instance.ui.copy.CopyInstanceResult
+import app.vercors.feature.instance.ui.copy.CopyInstanceTarget
 import app.vercors.feature.instance.ui.create.CreateInstanceDialog
 import app.vercors.feature.instance.ui.create.CreateInstanceResult
 import app.vercors.feature.instance.ui.details.InstanceDetailsScreen
@@ -58,6 +62,7 @@ class HomePresenter(
     private val installModpackDialogFactory: InstallModpackDialog.Factory,
     private val openInstanceFolder: OpenInstanceFolderUseCase,
     private val deleteInstance: DeleteInstanceUseCase,
+    private val copyInstance: CopyInstanceUseCase,
 ) : Presenter<HomeState, HomeEvent> {
     @Composable
     override fun present(): Store<HomeState, HomeEvent> {
@@ -65,6 +70,10 @@ class HomePresenter(
         val (promptCreateInstance, setPromptCreateInstance) = remember { mutableStateOf(false) }
         val (installTarget, setInstallTarget) = remember { mutableStateOf<ProjectInstallTarget?>(null) }
         val (pendingDeleteInstanceId, setPendingDeleteInstanceId) = remember { mutableStateOf<InstanceId?>(null) }
+        val (pendingCopyInstance, setPendingCopyInstance) = remember { mutableStateOf<CopyInstanceTarget?>(null) }
+        val copyInstanceDialog = pendingCopyInstance?.let { target ->
+            remember(target) { CopyInstanceDialog(target, globalScope, copyInstance, snackbarService) }
+        }
 
         return HomeState(
             sections = sections,
@@ -72,6 +81,7 @@ class HomePresenter(
             createInstanceDialog = createInstanceDialog,
             installTarget = installTarget,
             pendingDeleteInstanceId = pendingDeleteInstanceId,
+            copyInstanceDialog = copyInstanceDialog,
         ) + { event ->
             handleEvent(
                 event = event,
@@ -79,6 +89,7 @@ class HomePresenter(
                 setInstallTarget = setInstallTarget,
                 pendingDeleteInstanceId = pendingDeleteInstanceId,
                 setPendingDeleteInstanceId = setPendingDeleteInstanceId,
+                setPendingCopyInstance = setPendingCopyInstance,
             )
         }
     }
@@ -89,6 +100,7 @@ class HomePresenter(
         setInstallTarget: (ProjectInstallTarget?) -> Unit,
         pendingDeleteInstanceId: InstanceId?,
         setPendingDeleteInstanceId: (InstanceId?) -> Unit,
+        setPendingCopyInstance: (CopyInstanceTarget?) -> Unit,
     ) {
         when (event) {
             HomeEvent.OnCreateInstanceClick -> setPromptCreateInstance(true)
@@ -133,6 +145,14 @@ class HomePresenter(
                 pendingDeleteInstanceId = pendingDeleteInstanceId,
                 setPendingDeleteInstanceId = setPendingDeleteInstanceId,
             )
+
+            is HomeEvent.OnCopyInstanceClick ->
+                setPendingCopyInstance(CopyInstanceTarget(event.instanceId, event.name))
+
+            is HomeEvent.OnCopyInstanceResult -> {
+                setPendingCopyInstance(null)
+                if (event.result is CopyInstanceResult.Copied) navigator.goTo(InstanceDetailsScreen(event.result.instanceId))
+            }
         }
     }
 

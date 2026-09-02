@@ -49,6 +49,7 @@ fun BriefInstanceCard(
     onInstanceKillClick: (InstanceId) -> Unit,
     onOpenInstanceFolderClick: (InstanceId) -> Unit,
     onOpenProjectClick: (InstanceId, String, String) -> Unit,
+    onCopyClick: (InstanceId, String) -> Unit,
     onDeleteClick: (InstanceId) -> Unit,
     modifier: Modifier,
     origin: InstanceSharedElementOrigin
@@ -68,6 +69,7 @@ fun BriefInstanceCard(
                 onInstanceClick = onInstanceClick,
                 onOpenInstanceFolderClick = onOpenInstanceFolderClick,
                 onOpenProjectClick = onOpenProjectClick,
+                onCopyClick = onCopyClick,
                 onDeleteClick = onDeleteClick,
             ),
             icon = {
@@ -150,6 +152,7 @@ private fun instanceContextMenuItems(
     onInstanceClick: (InstanceId) -> Unit,
     onOpenInstanceFolderClick: (InstanceId) -> Unit,
     onOpenProjectClick: (InstanceId, String, String) -> Unit,
+    onCopyClick: (InstanceId, String) -> Unit,
     onDeleteClick: (InstanceId) -> Unit,
 ): () -> List<ContextMenuItem> {
     val launchLabel = stringResource(InstanceRes.string.launch)
@@ -158,6 +161,7 @@ private fun instanceContextMenuItems(
     val openProjectLabel = instance.modpackInfo?.let {
         stringResource(InstanceRes.string.openProject, it.platformId.toPlatformDisplayName())
     }
+    val copyLabel = stringResource(InstanceRes.string.copyInstance)
     val deleteLabel = stringResource(SharedRes.string.delete)
     val errorColor = Theme[colors][error]
     val successColor = Theme[colors][success]
@@ -189,6 +193,13 @@ private fun instanceContextMenuItems(
                     onClick = { onOpenProjectClick(instance.id, info.platformId, info.projectId) },
                 )
             },
+            if (instance.status is InstanceStatus.Idle || instance.status is InstanceStatus.Failed) {
+                AppContextMenuItem(
+                    label = copyLabel,
+                    imageVector = Lucide.Copy,
+                    onClick = { onCopyClick(instance.id, instance.name) },
+                )
+            } else null,
             AppContextMenuItem(
                 label = deleteLabel,
                 imageVector = Lucide.Trash,

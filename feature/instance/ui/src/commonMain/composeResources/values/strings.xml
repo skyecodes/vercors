@@ -5,6 +5,7 @@
     <string name="kill">Kill</string>
 
     <string name="createInstance">Create a new instance</string>
+    <string name="copyInstance">Copy Instance</string>
     <string name="instanceType">Instance type</string>
     <string name="custom">Custom</string>
     <string name="modpack">Modpack</string>

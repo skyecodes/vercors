@@ -15,6 +15,9 @@ import app.vercors.feature.instance.domain.model.InstanceError
 import app.vercors.feature.instance.domain.model.InstanceStatus
 import app.vercors.feature.instance.domain.usecase.*
 import app.vercors.feature.instance.ui.*
+import app.vercors.feature.instance.ui.copy.CopyInstanceDialog
+import app.vercors.feature.instance.ui.copy.CopyInstanceResult
+import app.vercors.feature.instance.ui.copy.CopyInstanceTarget
 import app.vercors.feature.instance.ui.install.*
 import app.vercors.feature.instance.ui.list.InstanceListScreen
 import app.vercors.feature.launcher.domain.model.InstanceLaunchError
@@ -83,6 +86,7 @@ class InstanceDetailsPresenter(
     private val getProject: GetProjectUseCase,
     private val setInstanceIconFromUrl: SetInstanceIconFromUrlUseCase,
     private val openInstanceFolder: OpenInstanceFolderUseCase,
+    private val copyInstance: CopyInstanceUseCase,
 ) : Presenter<InstanceDetailsState, InstanceDetailsEvent> {
     @Composable
     override fun present(): Store<InstanceDetailsState, InstanceDetailsEvent> {
@@ -106,6 +110,7 @@ class InstanceDetailsPresenter(
         }.present()
 
         val (promptDeleteConfirmation, setPromptDeleteConfirmation) = rememberSaveable { mutableStateOf(false) }
+        val (promptCopyInstance, setPromptCopyInstance) = rememberSaveable { mutableStateOf(false) }
         val (promptFinishInstallation, setPromptFinishInstallation) = rememberSaveable { mutableStateOf(false) }
         val finishInstallationDialog = remember(screen.instanceId) {
             FinishInstallationDialog(screen.instanceId, observeManualDownloadItems) { url -> copyToClipboard(url) }
@@ -122,6 +127,14 @@ class InstanceDetailsPresenter(
             mutableStateOf(screen.initialTab ?: InstanceDetailsTab.Options)
         }
         val currentInstance = instance.valueOrNull
+        val copyInstanceDialog = remember(screen.instanceId, currentInstance?.name) {
+            CopyInstanceDialog(
+                target = CopyInstanceTarget(screen.instanceId, currentInstance?.name ?: ""),
+                globalScope = globalScope,
+                copyInstance = copyInstance,
+                snackbarService = snackbarService
+            )
+        }
 
         LaunchedEffect(screen.instanceId, screen.autoLaunch) {
             if (screen.autoLaunch) {
@@ -133,6 +146,8 @@ class InstanceDetailsPresenter(
             instance = instance,
             promptInstallJava = promptInstallJava,
             promptDeleteConfirmation = promptDeleteConfirmation,
+            promptCopyInstance = promptCopyInstance,
+            copyInstanceDialog = copyInstanceDialog,
             selectedTab = selectedTab,
             optionsContent = optionsContent,
             modsContent = modsContent,
@@ -149,6 +164,7 @@ class InstanceDetailsPresenter(
             handleEvent(
                 event = event,
                 setPromptDeleteConfirmation = setPromptDeleteConfirmation,
+                setPromptCopyInstance = setPromptCopyInstance,
                 setSelectedTab = setSelectedTab,
                 currentInstance = currentInstance,
                 setPromptFinishInstallation = setPromptFinishInstallation,
@@ -169,6 +185,7 @@ class InstanceDetailsPresenter(
     private fun handleEvent(
         event: InstanceDetailsEvent,
         setPromptDeleteConfirmation: (Boolean) -> Unit,
+        setPromptCopyInstance: (Boolean) -> Unit,
         setSelectedTab: (InstanceDetailsTab) -> Unit,
         currentInstance: InstanceView?,
         setPromptFinishInstallation: (Boolean) -> Unit,
@@ -219,6 +236,11 @@ class InstanceDetailsPresenter(
 
             InstanceDetailsEvent.Delete -> setPromptDeleteConfirmation(true)
             is InstanceDetailsEvent.ConfirmDelete -> handleConfirmDelete(event, setPromptDeleteConfirmation)
+            InstanceDetailsEvent.OnCopyClick -> setPromptCopyInstance(true)
+            is InstanceDetailsEvent.OnCopyInstanceResult -> {
+                setPromptCopyInstance(false)
+                if (event.result is CopyInstanceResult.Copied) navigator.goTo(InstanceDetailsScreen(event.result.instanceId))
+            }
             InstanceDetailsEvent.Cancel -> cancelInstance(screen.instanceId)
             InstanceDetailsEvent.CancelSetup -> cancelInstanceSetup(screen.instanceId)
             InstanceDetailsEvent.Stop -> globalScope.launch { stopInstance(screen.instanceId) }

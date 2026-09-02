@@ -2,6 +2,7 @@ package app.vercors.feature.instance.ui.details
 
 import androidx.compose.runtime.Immutable
 import app.vercors.feature.instance.domain.model.InstanceFolder
+import app.vercors.feature.instance.ui.copy.CopyInstanceResult
 import app.vercors.feature.project.domain.model.ProjectType
 import app.vercors.shared.ui.Event
 
@@ -14,6 +15,8 @@ sealed interface InstanceDetailsEvent : Event {
     data object Kill : InstanceDetailsEvent
     data object Delete : InstanceDetailsEvent
     data class ConfirmDelete(val result: Boolean) : InstanceDetailsEvent
+    data object OnCopyClick : InstanceDetailsEvent
+    data class OnCopyInstanceResult(val result: CopyInstanceResult) : InstanceDetailsEvent
     data class SelectTab(val tab: InstanceDetailsTab) : InstanceDetailsEvent
     data object OnInstallJavaConfirm : InstanceDetailsEvent
     data object OnInstallJavaDismiss : InstanceDetailsEvent
