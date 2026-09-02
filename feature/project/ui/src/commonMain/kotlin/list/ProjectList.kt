@@ -17,6 +17,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -31,6 +32,7 @@ import app.vercors.core.ui.layout.AppPaginator
 import app.vercors.core.ui.modifier.appCard
 import app.vercors.core.ui.modifier.scrollGradient
 import app.vercors.core.ui.theme.colors
+import app.vercors.core.ui.theme.primary
 import app.vercors.core.ui.theme.surface2
 import app.vercors.feature.game.domain.model.ModLoaderType
 import app.vercors.feature.game.ui.*
@@ -41,10 +43,7 @@ import app.vercors.feature.project.ui.*
 import app.vercors.feature.project.ui.details.isInstallable
 import app.vercors.feature.project.ui.install.ProjectInstallButton
 import app.vercors.feature.project.ui.install.ProjectInstallTarget
-import app.vercors.shared.ui.EventSink
-import app.vercors.shared.ui.SharedRes
-import app.vercors.shared.ui.Store
-import app.vercors.shared.ui.sortBy
+import app.vercors.shared.ui.*
 import coil3.compose.rememberAsyncImagePainter
 import com.composables.icons.lucide.*
 import com.composeunstyled.theme.Theme
@@ -528,6 +527,7 @@ private fun LazyItemScope.ProjectListItemCard(
                 .projectSharedElement(project.id, "card", ProjectSharedElementOrigin.ProjectList),
             interactionSource = interactionSource,
             onClick = { eventSink(ProjectListEvent.OnProjectClick(project.id)) },
+            contextMenuItems = projectContextMenuItems(project),
             icon = {
                 Image(
                     painter = rememberAsyncImagePainter(project.logoUrl),
@@ -620,11 +620,45 @@ private fun LazyItemScope.ProjectListItemCard(
 }
 
 @Composable
+context(eventSink: EventSink<ProjectListEvent>)
+private fun projectContextMenuItems(project: BriefProjectView): () -> List<ContextMenuItem> {
+    val uriHandler = LocalUriHandler.current
+    val installLabel = stringResource(ProjectRes.string.install)
+    val openDetailsLabel = stringResource(SharedRes.string.openDetails)
+    val openInBrowserLabel = stringResource(SharedRes.string.openInBrowser)
+    val primaryColor = Theme[colors][primary]
+
+    return {
+        listOfNotNull(
+            if (project.type.isInstallable) {
+                AppContextMenuItem(
+                    label = installLabel,
+                    imageVector = Lucide.Download,
+                    contentColor = primaryColor,
+                    onClick = { eventSink(ProjectListEvent.OnInstallProjectClick(project)) },
+                )
+            } else null,
+            AppContextMenuItem(
+                label = openDetailsLabel,
+                imageVector = Lucide.Info,
+                onClick = { eventSink(ProjectListEvent.OnProjectClick(project.id)) },
+            ),
+            AppContextMenuItem(
+                label = openInBrowserLabel,
+                imageVector = Lucide.ExternalLink,
+                onClick = { uriHandler.openUri(project.url) },
+            ),
+        )
+    }
+}
+
+@Composable
 context(_: SharedElementTransitionScope)
 private fun LazyItemScope.ProjectListItemCardLayout(
     modifier: Modifier = Modifier,
     interactionSource: MutableInteractionSource? = null,
     onClick: (() -> Unit)? = null,
+    contextMenuItems: () -> List<ContextMenuItem> = { emptyList() },
     icon: @Composable context(SharedElementTransitionScope) RowScope.(Modifier) -> Unit,
     title: @Composable context(SharedElementTransitionScope) RowScope.() -> Unit,
     author: @Composable context(SharedElementTransitionScope) RowScope.() -> Unit,
@@ -634,53 +668,55 @@ private fun LazyItemScope.ProjectListItemCardLayout(
     installButton: (@Composable () -> Unit)? = null,
 ) {
     val hovered: Boolean by interactionSource?.collectIsHoveredAsState() ?: remember { mutableStateOf(false) }
-    Row(
-        modifier = modifier.fillMaxWidth()
-            .appCard(interactionSource = interactionSource, onClick = onClick)
-            .padding(8.dp)
-            .height(IntrinsicSize.Max),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        icon(Modifier.size(64.dp))
-        Column(
-            modifier = Modifier.weight(1f).fillMaxHeight(),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
+    ContextMenuArea(items = contextMenuItems) {
+        Row(
+            modifier = modifier.fillMaxWidth()
+                .appCard(interactionSource = interactionSource, onClick = onClick)
+                .padding(8.dp)
+                .height(IntrinsicSize.Max),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                title()
-                author()
-            }
-            description()
-        }
-        if (installButton == null) {
+            icon(Modifier.size(64.dp))
             Column(
-                verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterVertically),
-                horizontalAlignment = Alignment.End,
-                modifier = Modifier.fillMaxHeight()
+                modifier = Modifier.weight(1f).fillMaxHeight(),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                downloads()
-                updated()
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    title()
+                    author()
+                }
+                description()
             }
-        } else {
-            AppAnimatedContent(
-                targetState = hovered,
-                modifier = Modifier.fillMaxHeight()
-            ) {
-                if (it) {
-                    Box(contentAlignment = Alignment.CenterEnd, modifier = Modifier.fillMaxHeight()) {
-                        installButton()
-                    }
-                } else {
-                    Column(
-                        verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterVertically),
-                        horizontalAlignment = Alignment.End,
-                        modifier = Modifier.fillMaxHeight()
-                    ) {
-                        downloads()
-                        updated()
+            if (installButton == null) {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterVertically),
+                    horizontalAlignment = Alignment.End,
+                    modifier = Modifier.fillMaxHeight()
+                ) {
+                    downloads()
+                    updated()
+                }
+            } else {
+                AppAnimatedContent(
+                    targetState = hovered,
+                    modifier = Modifier.fillMaxHeight()
+                ) {
+                    if (it) {
+                        Box(contentAlignment = Alignment.CenterEnd, modifier = Modifier.fillMaxHeight()) {
+                            installButton()
+                        }
+                    } else {
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterVertically),
+                            horizontalAlignment = Alignment.End,
+                            modifier = Modifier.fillMaxHeight()
+                        ) {
+                            downloads()
+                            updated()
+                        }
                     }
                 }
             }

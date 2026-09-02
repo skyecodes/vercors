@@ -934,13 +934,6 @@ private fun InstanceTabSection(
     }
 }
 
-/** Platform names aren't translated, so this is a plain lookup rather than a string resource. */
-private fun String.toPlatformDisplayName(): String = when (this) {
-    "modrinth" -> "Modrinth"
-    "curseforge" -> "CurseForge"
-    else -> this
-}
-
 private enum class ContentSortBy {
     Name,
     LastModified

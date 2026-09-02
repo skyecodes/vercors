@@ -3,11 +3,16 @@ package app.vercors.feature.home.ui
 import androidx.compose.runtime.*
 import app.vercors.feature.home.domain.usecase.HomeSection
 import app.vercors.feature.home.domain.usecase.ObserveHomeSectionListUseCase
+import app.vercors.feature.instance.domain.model.InstanceFolder
 import app.vercors.feature.instance.domain.model.InstanceId
+import app.vercors.feature.instance.domain.usecase.DeleteInstanceUseCase
+import app.vercors.feature.instance.domain.usecase.OpenInstanceFolderUseCase
+import app.vercors.feature.instance.ui.InstanceRes
 import app.vercors.feature.instance.ui.create.CreateInstanceDialog
 import app.vercors.feature.instance.ui.create.CreateInstanceResult
 import app.vercors.feature.instance.ui.details.InstanceDetailsScreen
 import app.vercors.feature.instance.ui.details.InstanceDetailsTab
+import app.vercors.feature.instance.ui.errorOpenFolderFailed
 import app.vercors.feature.instance.ui.message
 import app.vercors.feature.instance.ui.toBriefView
 import app.vercors.feature.launcher.domain.model.InstanceLaunchError
@@ -15,6 +20,7 @@ import app.vercors.feature.launcher.domain.usecase.KillInstanceUseCase
 import app.vercors.feature.launcher.domain.usecase.LaunchInstanceUseCase
 import app.vercors.feature.launcher.domain.usecase.StopInstanceUseCase
 import app.vercors.feature.project.domain.model.ProjectType
+import app.vercors.feature.project.domain.model.from
 import app.vercors.feature.project.ui.details.ProjectDetailsScreen
 import app.vercors.feature.project.ui.install.*
 import app.vercors.feature.project.ui.list.ProjectListScreen
@@ -32,9 +38,11 @@ import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedFactory
 import dev.zacsweers.metro.AssistedInject
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import opensavvy.state.progressive.map
+import org.jetbrains.compose.resources.stringResource
 
 @AssistedInject
 class HomePresenter(
@@ -48,23 +56,29 @@ class HomePresenter(
     private val snackbarService: SnackbarService,
     private val installProjectDialogFactory: InstallProjectDialog.Factory,
     private val installModpackDialogFactory: InstallModpackDialog.Factory,
+    private val openInstanceFolder: OpenInstanceFolderUseCase,
+    private val deleteInstance: DeleteInstanceUseCase,
 ) : Presenter<HomeState, HomeEvent> {
     @Composable
     override fun present(): Store<HomeState, HomeEvent> {
         val sections by observeHomeState()
         val (promptCreateInstance, setPromptCreateInstance) = remember { mutableStateOf(false) }
         val (installTarget, setInstallTarget) = remember { mutableStateOf<ProjectInstallTarget?>(null) }
+        val (pendingDeleteInstanceId, setPendingDeleteInstanceId) = remember { mutableStateOf<InstanceId?>(null) }
 
         return HomeState(
             sections = sections,
             promptCreateInstance = promptCreateInstance,
             createInstanceDialog = createInstanceDialog,
             installTarget = installTarget,
+            pendingDeleteInstanceId = pendingDeleteInstanceId,
         ) + { event ->
             handleEvent(
                 event = event,
                 setPromptCreateInstance = setPromptCreateInstance,
                 setInstallTarget = setInstallTarget,
+                pendingDeleteInstanceId = pendingDeleteInstanceId,
+                setPendingDeleteInstanceId = setPendingDeleteInstanceId,
             )
         }
     }
@@ -73,6 +87,8 @@ class HomePresenter(
         event: HomeEvent,
         setPromptCreateInstance: (Boolean) -> Unit,
         setInstallTarget: (ProjectInstallTarget?) -> Unit,
+        pendingDeleteInstanceId: InstanceId?,
+        setPendingDeleteInstanceId: (InstanceId?) -> Unit,
     ) {
         when (event) {
             HomeEvent.OnCreateInstanceClick -> setPromptCreateInstance(true)
@@ -105,6 +121,36 @@ class HomePresenter(
                 setInstallTarget(null)
                 if (event.result is InstallModpackResult.Installed) navigator.goTo(InstanceDetailsScreen(event.result.instanceId))
             }
+
+            is HomeEvent.OnOpenInstanceFolderClick -> handleOpenInstanceFolderClick(event.instanceId)
+            is HomeEvent.OnOpenProjectFromInstanceClick -> navigator.goTo(
+                ProjectDetailsScreen(event.projectId from event.platformId, preferredInstanceId = event.instanceId)
+            )
+
+            is HomeEvent.OnDeleteInstanceClick -> setPendingDeleteInstanceId(event.instanceId)
+            is HomeEvent.OnConfirmDeleteInstance -> handleConfirmDeleteInstance(
+                event = event,
+                pendingDeleteInstanceId = pendingDeleteInstanceId,
+                setPendingDeleteInstanceId = setPendingDeleteInstanceId,
+            )
+        }
+    }
+
+    private fun handleOpenInstanceFolderClick(instanceId: InstanceId) = globalScope.launch {
+        val opened = openInstanceFolder(instanceId, InstanceFolder.Root)
+        if (!opened) snackbarService.error { stringResource(InstanceRes.string.errorOpenFolderFailed) }
+    }
+
+    private fun handleConfirmDeleteInstance(
+        event: HomeEvent.OnConfirmDeleteInstance,
+        pendingDeleteInstanceId: InstanceId?,
+        setPendingDeleteInstanceId: (InstanceId?) -> Unit,
+    ) {
+        setPendingDeleteInstanceId(null)
+        if (!event.result) return
+        val instanceId = pendingDeleteInstanceId ?: return
+        globalScope.launch {
+            either { deleteInstance(instanceId) }.onLeft { error -> snackbarService.error { error.message } }
         }
     }
 
@@ -129,7 +175,10 @@ class HomePresenter(
     private fun observeHomeState(): State<List<HomeState.Section<out Any>>> =
         produceAndCollectAsRetainedState(initial = emptyList()) {
             either { observeHomeSectionList() }.fold(
-                ifLeft = { error("A configuration error occurred: $it") }, // TODO check if error handling can be better here
+                ifLeft = {
+                    snackbarService.error { "A configuration error occurred: $it" }
+                    flowOf(emptyList())
+                },
                 ifRight = { flow ->
                     flow.map { list ->
                         list.map { section ->

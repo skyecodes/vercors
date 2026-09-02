@@ -3,6 +3,7 @@ package app.vercors.feature.home.ui
 import androidx.compose.runtime.Immutable
 import app.vercors.feature.home.domain.model.HomeSectionError
 import app.vercors.feature.home.domain.model.HomeSectionType
+import app.vercors.feature.instance.domain.model.InstanceId
 import app.vercors.feature.instance.ui.BriefInstanceView
 import app.vercors.feature.instance.ui.create.CreateInstanceDialog
 import app.vercors.feature.project.ui.BriefProjectView
@@ -15,6 +16,7 @@ data class HomeState(
     val promptCreateInstance: Boolean,
     val createInstanceDialog: CreateInstanceDialog,
     val installTarget: ProjectInstallTarget?,
+    val pendingDeleteInstanceId: InstanceId?,
 ) {
     @Immutable
     sealed class Section<T>(

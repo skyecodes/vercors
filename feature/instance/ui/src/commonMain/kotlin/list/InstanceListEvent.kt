@@ -15,5 +15,14 @@ sealed interface InstanceListEvent : Event {
     data class OnInstanceLaunchClick(val instanceId: InstanceId) : InstanceListEvent
     data class OnInstanceStopClick(val instanceId: InstanceId) : InstanceListEvent
     data class OnInstanceKillClick(val instanceId: InstanceId) : InstanceListEvent
+    data class OnOpenInstanceFolderClick(val instanceId: InstanceId) : InstanceListEvent
+    data class OnOpenProjectFromInstanceClick(
+        val instanceId: InstanceId,
+        val platformId: String,
+        val projectId: String
+    ) : InstanceListEvent
+
+    data class OnDeleteInstanceClick(val instanceId: InstanceId) : InstanceListEvent
+    data class OnConfirmDeleteInstance(val result: Boolean) : InstanceListEvent
     data object OnResetFilterClick : InstanceListEvent
 }

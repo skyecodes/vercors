@@ -17,12 +17,13 @@ import app.vercors.core.ui.theme.colors
 import app.vercors.core.ui.theme.onPrimary
 import app.vercors.core.ui.theme.primary
 import app.vercors.feature.instance.ui.*
-import app.vercors.shared.ui.EventSink
-import app.vercors.shared.ui.SharedRes
-import app.vercors.shared.ui.Store
-import app.vercors.shared.ui.create
+import app.vercors.shared.ui.*
+import app.vercors.shared.ui.overlay.ConfirmDialog
+import app.vercors.shared.ui.overlay.ConfirmDialogButton
+import app.vercors.shared.ui.overlay.ConfirmDialogButtonStyle
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Plus
+import com.composables.icons.lucide.Trash
 import com.composeunstyled.theme.Theme
 import com.slack.circuit.codegen.annotations.CircuitInject
 import com.slack.circuit.overlay.OverlayEffect
@@ -42,6 +43,22 @@ fun InstanceList(
             OverlayEffect {
                 val result = show(state.createInstanceDialog)
                 eventSink(InstanceListEvent.OnCreateInstanceResult(result))
+            }
+        }
+
+        state.pendingDeleteInstanceId?.let {
+            OverlayEffect(it) {
+                val result = show(
+                    ConfirmDialog(
+                        messageResource = InstanceRes.string.deleteInstanceConfirmation,
+                        actionButton = ConfirmDialogButton(
+                            SharedRes.string.delete,
+                            Lucide.Trash,
+                            ConfirmDialogButtonStyle.Destructive
+                        ),
+                    )
+                )
+                eventSink(InstanceListEvent.OnConfirmDeleteInstance(result))
             }
         }
 
@@ -65,6 +82,17 @@ fun InstanceList(
                             onInstanceLaunchClick = { eventSink(InstanceListEvent.OnInstanceLaunchClick(it)) },
                             onInstanceStopClick = { eventSink(InstanceListEvent.OnInstanceStopClick(it)) },
                             onInstanceKillClick = { eventSink(InstanceListEvent.OnInstanceKillClick(it)) },
+                            onOpenInstanceFolderClick = { eventSink(InstanceListEvent.OnOpenInstanceFolderClick(it)) },
+                            onOpenProjectClick = { instanceId, platformId, projectId ->
+                                eventSink(
+                                    InstanceListEvent.OnOpenProjectFromInstanceClick(
+                                        instanceId,
+                                        platformId,
+                                        projectId
+                                    )
+                                )
+                            },
+                            onDeleteClick = { eventSink(InstanceListEvent.OnDeleteInstanceClick(it)) },
                             modifier = Modifier.fillMaxWidth().height(150.dp).appAnimateItem(),
                             origin = InstanceSharedElementOrigin.InstanceList,
                         )

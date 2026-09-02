@@ -1,6 +1,7 @@
 package app.vercors.launcher.gui
 
 import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.foundation.LocalContextMenuRepresentation
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -14,6 +15,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import app.vercors.core.ui.animation.LocalAnimation
+import app.vercors.core.ui.component.AppContextMenuRepresentation
 import app.vercors.core.ui.component.AppIconTextButton
 import app.vercors.core.ui.layout.AppConfirmDialog
 import app.vercors.core.ui.theme.*
@@ -74,6 +76,7 @@ fun App(
         CompositionLocalProvider(
             LocalDensity provides scaledDensity,
             LocalAnimation provides state.config.animations,
+            LocalContextMenuRepresentation provides AppContextMenuRepresentation,
         ) {
             (AppTheme(
                 themeColors = state.theme.colors,

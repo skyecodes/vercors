@@ -18,6 +18,15 @@ sealed interface HomeEvent : Event {
     data class OnInstanceLaunchClick(val instanceId: InstanceId) : HomeEvent
     data class OnInstanceStopClick(val instanceId: InstanceId) : HomeEvent
     data class OnInstanceKillClick(val instanceId: InstanceId) : HomeEvent
+    data class OnOpenInstanceFolderClick(val instanceId: InstanceId) : HomeEvent
+    data class OnOpenProjectFromInstanceClick(
+        val instanceId: InstanceId,
+        val platformId: String,
+        val projectId: String
+    ) : HomeEvent
+
+    data class OnDeleteInstanceClick(val instanceId: InstanceId) : HomeEvent
+    data class OnConfirmDeleteInstance(val result: Boolean) : HomeEvent
     data class OnInstallProjectClick(val project: BriefProjectView) : HomeEvent
     data class OnInstallResult(val result: InstallProjectResult) : HomeEvent
     data class OnInstallModpackResult(val result: InstallModpackResult) : HomeEvent

@@ -1,11 +1,9 @@
 package app.vercors.feature.home.ui
 
 import androidx.compose.animation.ExperimentalSharedTransitionApi
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
+import androidx.compose.foundation.*
 import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.gestures.scrollBy
-import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.*
@@ -26,6 +24,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -46,10 +45,14 @@ import app.vercors.feature.instance.ui.*
 import app.vercors.feature.project.domain.model.ProjectId
 import app.vercors.feature.project.domain.model.ProjectType
 import app.vercors.feature.project.ui.*
+import app.vercors.feature.project.ui.details.isInstallable
 import app.vercors.feature.project.ui.install.ProjectInstallButton
 import app.vercors.feature.project.ui.install.ProjectInstallTarget
 import app.vercors.feature.project.ui.list.icon
 import app.vercors.shared.ui.*
+import app.vercors.shared.ui.overlay.ConfirmDialog
+import app.vercors.shared.ui.overlay.ConfirmDialogButton
+import app.vercors.shared.ui.overlay.ConfirmDialogButtonStyle
 import coil3.compose.rememberAsyncImagePainter
 import com.composables.icons.lucide.*
 import com.composeunstyled.theme.Theme
@@ -84,6 +87,22 @@ fun Home(
                     is ProjectInstallTarget.Project -> eventSink(HomeEvent.OnInstallResult(show(target.dialog)))
                     is ProjectInstallTarget.Modpack -> eventSink(HomeEvent.OnInstallModpackResult(show(target.dialog)))
                 }
+            }
+        }
+
+        state.pendingDeleteInstanceId?.let {
+            OverlayEffect(it) {
+                val result = show(
+                    ConfirmDialog(
+                        messageResource = InstanceRes.string.deleteInstanceConfirmation,
+                        actionButton = ConfirmDialogButton(
+                            SharedRes.string.delete,
+                            Lucide.Trash,
+                            ConfirmDialogButtonStyle.Destructive
+                        ),
+                    )
+                )
+                eventSink(HomeEvent.OnConfirmDeleteInstance(result))
             }
         }
 
@@ -196,6 +215,11 @@ private fun <T> LazyListScope.homeCardItem(
                 onInstanceLaunchClick = { eventSink(HomeEvent.OnInstanceLaunchClick(it)) },
                 onInstanceStopClick = { eventSink(HomeEvent.OnInstanceStopClick(it)) },
                 onInstanceKillClick = { eventSink(HomeEvent.OnInstanceKillClick(it)) },
+                onOpenInstanceFolderClick = { eventSink(HomeEvent.OnOpenInstanceFolderClick(it)) },
+                onOpenProjectClick = { instanceId, platformId, projectId ->
+                    eventSink(HomeEvent.OnOpenProjectFromInstanceClick(instanceId, platformId, projectId))
+                },
+                onDeleteClick = { eventSink(HomeEvent.OnDeleteInstanceClick(it)) },
                 modifier = modifier.size(width = 150.dp, height = 150.dp),
                 origin = InstanceSharedElementOrigin.Home
             )
@@ -230,6 +254,9 @@ private fun LazyListScope.fakeCardItem(
                 onInstanceLaunchClick = {},
                 onInstanceStopClick = {},
                 onInstanceKillClick = {},
+                onOpenInstanceFolderClick = {},
+                onOpenProjectClick = { _, _, _ -> },
+                onDeleteClick = {},
                 modifier = modifier.size(width = 150.dp, height = 150.dp),
                 origin = InstanceSharedElementOrigin.Home
             )
@@ -304,6 +331,11 @@ private fun HomeProjectCard(
                 .projectSharedElement(project.id, "card", ProjectSharedElementOrigin.Home),
             interactionSource = interactionSource,
             onClick = { onProjectClick(project.id) },
+            contextMenuItems = projectContextMenuItems(
+                project = project,
+                onInstallClick = onInstallClick,
+                onProjectClick = onProjectClick,
+            ),
             icon = {
                 Image(
                     painter = rememberAsyncImagePainter(project.logoUrl),
@@ -344,6 +376,42 @@ private fun HomeProjectCard(
             title = { AppLoadingTextPlaceholder(Modifier.width(150.dp)) },
             author = { AppLoadingTextPlaceholder(Modifier.width(100.dp)) },
             image = { AppLoadingPlaceholder(Modifier.fillMaxSize()) },
+        )
+    }
+}
+
+@Composable
+private fun projectContextMenuItems(
+    project: BriefProjectView,
+    onInstallClick: (BriefProjectView) -> Unit,
+    onProjectClick: (ProjectId) -> Unit,
+): () -> List<ContextMenuItem> {
+    val uriHandler = LocalUriHandler.current
+    val installLabel = stringResource(ProjectRes.string.install)
+    val openDetailsLabel = stringResource(SharedRes.string.openDetails)
+    val openInBrowserLabel = stringResource(SharedRes.string.openInBrowser)
+    val primaryColor = Theme[colors][primary]
+
+    return {
+        listOfNotNull(
+            if (project.type.isInstallable) {
+                AppContextMenuItem(
+                    label = installLabel,
+                    imageVector = Lucide.Download,
+                    contentColor = primaryColor,
+                    onClick = { onInstallClick(project) },
+                )
+            } else null,
+            AppContextMenuItem(
+                label = openDetailsLabel,
+                imageVector = Lucide.Info,
+                onClick = { onProjectClick(project.id) },
+            ),
+            AppContextMenuItem(
+                label = openInBrowserLabel,
+                imageVector = Lucide.ExternalLink,
+                onClick = { uriHandler.openUri(project.url) },
+            ),
         )
     }
 }
@@ -427,30 +495,33 @@ private fun HomeProjectCardLayout(
     modifier: Modifier,
     interactionSource: MutableInteractionSource? = null,
     onClick: (() -> Unit)? = null,
+    contextMenuItems: () -> List<ContextMenuItem> = { emptyList() },
     icon: @Composable context(SharedElementTransitionScope) RowScope.(Modifier) -> Unit,
     title: @Composable context(SharedElementTransitionScope) ColumnScope.() -> Unit,
     author: @Composable context(SharedElementTransitionScope) ColumnScope.() -> Unit,
     image: @Composable context(SharedElementTransitionScope) BoxScope.() -> Unit,
 ) {
-    Column(
-        modifier = modifier
-            .appCard(interactionSource = interactionSource, onClick = onClick)
-            .size(width = 250.dp, height = 180.dp)
-    ) {
-        Row(
-            modifier = Modifier.padding(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ContextMenuArea(items = contextMenuItems) {
+        Column(
+            modifier = modifier
+                .appCard(interactionSource = interactionSource, onClick = onClick)
+                .size(width = 250.dp, height = 180.dp)
         ) {
-            icon(Modifier.size(36.dp))
-            Column {
-                title()
-                author()
+            Row(
+                modifier = Modifier.padding(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                icon(Modifier.size(36.dp))
+                Column {
+                    title()
+                    author()
+                }
             }
-        }
 
-        Box(modifier = Modifier.weight(1f)) {
-            image()
+            Box(modifier = Modifier.weight(1f)) {
+                image()
+            }
         }
     }
 }

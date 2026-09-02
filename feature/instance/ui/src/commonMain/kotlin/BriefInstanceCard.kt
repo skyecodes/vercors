@@ -4,6 +4,8 @@ import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.ContextMenuArea
+import androidx.compose.foundation.ContextMenuItem
 import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
@@ -22,14 +24,20 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.vercors.core.ui.animation.AppAnimatedContent
 import app.vercors.core.ui.animation.appSharedElement
-import app.vercors.core.ui.component.AppLoadingPlaceholder
-import app.vercors.core.ui.component.AppLoadingTextPlaceholder
-import app.vercors.core.ui.component.AppProgressIndicator
-import app.vercors.core.ui.component.AppText
+import app.vercors.core.ui.component.*
 import app.vercors.core.ui.modifier.appCard
+import app.vercors.core.ui.theme.colors
+import app.vercors.core.ui.theme.error
+import app.vercors.core.ui.theme.success
 import app.vercors.feature.instance.domain.model.InstanceId
 import app.vercors.feature.instance.domain.model.InstanceStatus
+import app.vercors.shared.ui.SharedRes
+import app.vercors.shared.ui.delete
+import app.vercors.shared.ui.openDetails
+import com.composables.icons.lucide.*
+import com.composeunstyled.theme.Theme
 import com.slack.circuit.sharedelements.SharedElementTransitionScope
+import org.jetbrains.compose.resources.stringResource
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
@@ -39,6 +47,9 @@ fun BriefInstanceCard(
     onInstanceLaunchClick: (InstanceId) -> Unit,
     onInstanceStopClick: (InstanceId) -> Unit,
     onInstanceKillClick: (InstanceId) -> Unit,
+    onOpenInstanceFolderClick: (InstanceId) -> Unit,
+    onOpenProjectClick: (InstanceId, String, String) -> Unit,
+    onDeleteClick: (InstanceId) -> Unit,
     modifier: Modifier,
     origin: InstanceSharedElementOrigin
 ) = SharedElementTransitionScope {
@@ -51,6 +62,14 @@ fun BriefInstanceCard(
             interactionSource = interactionSource,
             onCardClick = { onInstanceClick(instance.id) },
             forceShowAction = instance.status !is InstanceStatus.Idle && instance.status !is InstanceStatus.Failed,
+            contextMenuItems = instanceContextMenuItems(
+                instance = instance,
+                onInstanceLaunchClick = onInstanceLaunchClick,
+                onInstanceClick = onInstanceClick,
+                onOpenInstanceFolderClick = onOpenInstanceFolderClick,
+                onOpenProjectClick = onOpenProjectClick,
+                onDeleteClick = onDeleteClick,
+            ),
             icon = {
                 InstanceIcon(
                     instanceId = instance.id,
@@ -125,12 +144,69 @@ fun BriefInstanceCard(
 }
 
 @Composable
+private fun instanceContextMenuItems(
+    instance: BriefInstanceView,
+    onInstanceLaunchClick: (InstanceId) -> Unit,
+    onInstanceClick: (InstanceId) -> Unit,
+    onOpenInstanceFolderClick: (InstanceId) -> Unit,
+    onOpenProjectClick: (InstanceId, String, String) -> Unit,
+    onDeleteClick: (InstanceId) -> Unit,
+): () -> List<ContextMenuItem> {
+    val launchLabel = stringResource(InstanceRes.string.launch)
+    val openDetailsLabel = stringResource(SharedRes.string.openDetails)
+    val openInstanceFolderLabel = stringResource(InstanceRes.string.openInstanceFolder)
+    val openProjectLabel = instance.modpackInfo?.let {
+        stringResource(InstanceRes.string.openProject, it.platformId.toPlatformDisplayName())
+    }
+    val deleteLabel = stringResource(SharedRes.string.delete)
+    val errorColor = Theme[colors][error]
+    val successColor = Theme[colors][success]
+
+    return {
+        listOfNotNull(
+            if (instance.status is InstanceStatus.Idle || instance.status is InstanceStatus.Failed) {
+                AppContextMenuItem(
+                    label = launchLabel,
+                    imageVector = Lucide.Play,
+                    contentColor = successColor,
+                    onClick = { onInstanceLaunchClick(instance.id) },
+                )
+            } else null,
+            AppContextMenuItem(
+                label = openDetailsLabel,
+                imageVector = Lucide.Info,
+                onClick = { onInstanceClick(instance.id) },
+            ),
+            AppContextMenuItem(
+                label = openInstanceFolderLabel,
+                imageVector = Lucide.Folder,
+                onClick = { onOpenInstanceFolderClick(instance.id) },
+            ),
+            instance.modpackInfo?.let { info ->
+                AppContextMenuItem(
+                    label = openProjectLabel!!,
+                    imageVector = Lucide.ArrowRight,
+                    onClick = { onOpenProjectClick(instance.id, info.platformId, info.projectId) },
+                )
+            },
+            AppContextMenuItem(
+                label = deleteLabel,
+                imageVector = Lucide.Trash,
+                contentColor = errorColor,
+                onClick = { onDeleteClick(instance.id) },
+            ),
+        )
+    }
+}
+
+@Composable
 context(_: SharedElementTransitionScope)
 fun BriefInstanceCardLayout(
     modifier: Modifier,
     interactionSource: MutableInteractionSource? = null,
     onCardClick: (() -> Unit)? = null,
     forceShowAction: Boolean = false,
+    contextMenuItems: () -> List<ContextMenuItem> = { emptyList() },
     icon: @Composable context(SharedElementTransitionScope) ColumnScope.() -> Unit,
     title: @Composable context(SharedElementTransitionScope) ColumnScope.() -> Unit,
     type: @Composable context(SharedElementTransitionScope) ColumnScope.() -> Unit,
@@ -138,34 +214,36 @@ fun BriefInstanceCardLayout(
     actionArea: @Composable () -> Unit,
 ) {
     val hovered: Boolean by interactionSource?.collectIsHoveredAsState() ?: remember { mutableStateOf(false) }
-    Column(
-        modifier = modifier.appCard(
-            interactionSource = interactionSource,
-            onClick = onCardClick
-        ),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically)
-    ) {
-        icon()
-        title()
-        AppAnimatedContent(
-            targetState = hovered || forceShowAction,
-            transitionSpec = { fadeIn() togetherWith fadeOut() }
+    ContextMenuArea(items = contextMenuItems) {
+        Column(
+            modifier = modifier.appCard(
+                interactionSource = interactionSource,
+                onClick = onCardClick
+            ),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically)
         ) {
-            Box(
-                modifier = Modifier.height(40.dp).fillMaxWidth(),
-                contentAlignment = Alignment.Center
+            icon()
+            title()
+            AppAnimatedContent(
+                targetState = hovered || forceShowAction,
+                transitionSpec = { fadeIn() togetherWith fadeOut() }
             ) {
-                if (it) {
-                    actionArea()
-                } else {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center,
-                        modifier = Modifier.fillMaxHeight()
-                    ) {
-                        type()
-                        loaderVersion()
+                Box(
+                    modifier = Modifier.height(40.dp).fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (it) {
+                        actionArea()
+                    } else {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center,
+                            modifier = Modifier.fillMaxHeight()
+                        ) {
+                            type()
+                            loaderVersion()
+                        }
                     }
                 }
             }

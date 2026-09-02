@@ -3,20 +3,23 @@ package app.vercors.feature.instance.ui.list
 import androidx.compose.runtime.*
 import app.vercors.core.domain.filterIsRight
 import app.vercors.core.ui.state.produceAndCollectAsProgressiveState
+import app.vercors.feature.instance.domain.model.InstanceFolder
 import app.vercors.feature.instance.domain.model.InstanceId
+import app.vercors.feature.instance.domain.usecase.DeleteInstanceUseCase
 import app.vercors.feature.instance.domain.usecase.ObserveInstanceListUseCase
-import app.vercors.feature.instance.ui.BriefInstanceView
+import app.vercors.feature.instance.domain.usecase.OpenInstanceFolderUseCase
+import app.vercors.feature.instance.ui.*
 import app.vercors.feature.instance.ui.create.CreateInstanceDialog
 import app.vercors.feature.instance.ui.create.CreateInstanceResult
 import app.vercors.feature.instance.ui.details.InstanceDetailsScreen
 import app.vercors.feature.instance.ui.details.InstanceDetailsTab
-import app.vercors.feature.instance.ui.message
-import app.vercors.feature.instance.ui.toBriefView
 import app.vercors.feature.launcher.domain.model.InstanceLaunchError
 import app.vercors.feature.launcher.domain.usecase.KillInstanceUseCase
 import app.vercors.feature.launcher.domain.usecase.LaunchInstanceUseCase
 import app.vercors.feature.launcher.domain.usecase.StopInstanceUseCase
 import app.vercors.feature.project.domain.model.ProjectType
+import app.vercors.feature.project.domain.model.from
+import app.vercors.feature.project.ui.details.ProjectDetailsScreen
 import app.vercors.feature.project.ui.list.ProjectListScreen
 import app.vercors.shared.ui.Presenter
 import app.vercors.shared.ui.SnackbarService
@@ -34,6 +37,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import opensavvy.state.progressive.ProgressiveOutcome
 import opensavvy.state.progressive.map
+import org.jetbrains.compose.resources.stringResource
 
 @AssistedInject
 class InstanceListPresenter(
@@ -45,6 +49,8 @@ class InstanceListPresenter(
     private val stopInstance: StopInstanceUseCase,
     private val killInstance: KillInstanceUseCase,
     private val snackbarService: SnackbarService,
+    private val openInstanceFolder: OpenInstanceFolderUseCase,
+    private val deleteInstance: DeleteInstanceUseCase,
 ) : Presenter<InstanceListState, InstanceListEvent> {
     @Composable
     override fun present(): Store<InstanceListState, InstanceListEvent> {
@@ -54,6 +60,7 @@ class InstanceListPresenter(
         val (loaderFilter, setLoaderFilter) = remember { mutableStateOf("") }
         val (typeFilter, setTypeFilter) = remember { mutableStateOf("") }
         val (promptCreateInstance, setPromptCreateInstance) = remember { mutableStateOf(false) }
+        val (pendingDeleteInstanceId, setPendingDeleteInstanceId) = remember { mutableStateOf<InstanceId?>(null) }
         return InstanceListState(
             instances = instances,
             nameFilter = nameFilter,
@@ -61,7 +68,8 @@ class InstanceListPresenter(
             loaderFilter = loaderFilter,
             typeFilter = typeFilter,
             promptCreateInstance = promptCreateInstance,
-            createInstanceDialog = createInstanceDialog
+            createInstanceDialog = createInstanceDialog,
+            pendingDeleteInstanceId = pendingDeleteInstanceId,
         ) + { event ->
             handleEvent(
                 event = event,
@@ -70,6 +78,8 @@ class InstanceListPresenter(
                 setLoaderFilter = setLoaderFilter,
                 setTypeFilter = setTypeFilter,
                 setPromptCreateInstance = setPromptCreateInstance,
+                pendingDeleteInstanceId = pendingDeleteInstanceId,
+                setPendingDeleteInstanceId = setPendingDeleteInstanceId,
             )
         }
     }
@@ -81,6 +91,8 @@ class InstanceListPresenter(
         setLoaderFilter: (String) -> Unit,
         setTypeFilter: (String) -> Unit,
         setPromptCreateInstance: (Boolean) -> Unit,
+        pendingDeleteInstanceId: InstanceId?,
+        setPendingDeleteInstanceId: (InstanceId?) -> Unit,
     ) {
         when (event) {
             InstanceListEvent.OnCreateInstanceClick -> setPromptCreateInstance(true)
@@ -105,6 +117,36 @@ class InstanceListPresenter(
                 setLoaderFilter("")
                 setTypeFilter("")
             }
+
+            is InstanceListEvent.OnOpenInstanceFolderClick -> handleOpenInstanceFolderClick(event.instanceId)
+            is InstanceListEvent.OnOpenProjectFromInstanceClick -> navigator.goTo(
+                ProjectDetailsScreen(event.projectId from event.platformId, preferredInstanceId = event.instanceId)
+            )
+
+            is InstanceListEvent.OnDeleteInstanceClick -> setPendingDeleteInstanceId(event.instanceId)
+            is InstanceListEvent.OnConfirmDeleteInstance -> handleConfirmDeleteInstance(
+                event = event,
+                pendingDeleteInstanceId = pendingDeleteInstanceId,
+                setPendingDeleteInstanceId = setPendingDeleteInstanceId,
+            )
+        }
+    }
+
+    private fun handleOpenInstanceFolderClick(instanceId: InstanceId) = globalScope.launch {
+        val opened = openInstanceFolder(instanceId, InstanceFolder.Root)
+        if (!opened) snackbarService.error { stringResource(InstanceRes.string.errorOpenFolderFailed) }
+    }
+
+    private fun handleConfirmDeleteInstance(
+        event: InstanceListEvent.OnConfirmDeleteInstance,
+        pendingDeleteInstanceId: InstanceId?,
+        setPendingDeleteInstanceId: (InstanceId?) -> Unit,
+    ) {
+        setPendingDeleteInstanceId(null)
+        if (!event.result) return
+        val instanceId = pendingDeleteInstanceId ?: return
+        globalScope.launch {
+            either { deleteInstance(instanceId) }.onLeft { error -> snackbarService.error { error.message } }
         }
     }
 

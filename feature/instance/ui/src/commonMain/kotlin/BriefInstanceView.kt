@@ -4,6 +4,7 @@ import androidx.compose.runtime.Immutable
 import app.vercors.feature.game.ui.displayName
 import app.vercors.feature.instance.domain.model.InstanceAndStatus
 import app.vercors.feature.instance.domain.model.InstanceId
+import app.vercors.feature.instance.domain.model.InstanceModpackInfo
 import app.vercors.feature.instance.domain.model.InstanceStatus
 import app.vercors.feature.instance.ui.details.displayType
 import kotlin.time.Instant
@@ -17,7 +18,8 @@ data class BriefInstanceView(
     val type: String,
     val iconFilePath: String?,
     val status: InstanceStatus,
-    val updatedAt: Instant
+    val updatedAt: Instant,
+    val modpackInfo: InstanceModpackInfo?,
 )
 
 fun InstanceAndStatus.toBriefView(): BriefInstanceView = BriefInstanceView(
@@ -28,5 +30,13 @@ fun InstanceAndStatus.toBriefView(): BriefInstanceView = BriefInstanceView(
     type = instance.displayType,
     iconFilePath = instance.iconFilePath,
     status = status,
-    updatedAt = instance.updatedAt
+    updatedAt = instance.updatedAt,
+    modpackInfo = instance.modpackInfo,
 )
+
+/** Platform names aren't translated, so this is a plain lookup rather than a string resource. */
+fun String.toPlatformDisplayName(): String = when (this) {
+    "modrinth" -> "Modrinth"
+    "curseforge" -> "CurseForge"
+    else -> this
+}
