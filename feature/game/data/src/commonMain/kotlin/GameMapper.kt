@@ -36,13 +36,24 @@ internal fun MojangVersionInfo.toDomain(): GameVersionDetails = GameVersionDetai
     serverDownload = downloads.server?.toDomain(),
     libraries = libraries.map { it.toDomain() },
     javaVersion = javaVersion?.toDomain(),
-    gameArgs = arguments?.game?.map { it.toDomain() },
+    // Old (pre-1.13) Mojang version JSON has no "arguments.game" list, only a single legacy
+    // "minecraftArguments" string — tokenize it so old vanilla versions still get real game args.
+    gameArgs = arguments?.game?.map { it.toDomain() } ?: minecraftArguments?.toBasicArguments(),
     jvmArgs = arguments?.jvm?.map { it.toDomain() },
     clientLogging = logging?.client?.toDomain(),
     mainClass = mainClass,
     assets = assets,
     assetIndex = assetIndex.toDomain()
 )
+
+/**
+ * Splits an old-format, single-string `minecraftArguments` value (e.g. Forge's legacy `versionInfo` or
+ * vanilla's own pre-1.13 version JSON) into plain positional [GameVersionDetails.Argument]s. The string already
+ * uses `${key}`-style placeholders, the same substitution syntax `GameArgumentResolver` expects for modern
+ * `arguments.game` entries — so no separate token syntax handling is needed here.
+ */
+internal fun String.toBasicArguments(): List<GameVersionDetails.Argument> =
+    trim().split(Regex("\\s+")).filter { it.isNotBlank() }.map { GameVersionDetails.Argument.Basic(it) }
 
 internal fun MojangVersionInfo.Downloads.Download.toDomain(): GameVersionDetails.Download = GameVersionDetails.Download(
     sha1 = sha1,

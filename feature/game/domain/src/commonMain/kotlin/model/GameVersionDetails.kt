@@ -107,7 +107,11 @@ data class GameVersionDetails(
         val loaderCoordinates = profile.libraries.map { it.coordinate }.toSet()
         return copy(
             libraries = libraries.filterNot { it.coordinate in loaderCoordinates } + profile.libraries,
-            gameArgs = (gameArgs.orEmpty() + profile.gameArgs.orEmpty()).ifEmpty { null },
+            gameArgs = if (profile.replacesGameArgs) {
+                profile.gameArgs
+            } else {
+                (gameArgs.orEmpty() + profile.gameArgs.orEmpty()).ifEmpty { null }
+            },
             jvmArgs = (jvmArgs.orEmpty() + profile.jvmArgs.orEmpty()).ifEmpty { null },
             mainClass = profile.mainClass,
             omitClientFromClasspath = omitClientFromClasspath || profile.omitClientFromClasspath

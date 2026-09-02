@@ -5,6 +5,7 @@ import app.vercors.core.system.OsType
 import app.vercors.core.system.ProcessRunner
 import app.vercors.core.system.SystemService
 import app.vercors.feature.game.data.dto.InstallProfileData
+import app.vercors.feature.game.data.dto.LegacyForgeInstallProfile
 import app.vercors.feature.game.data.dto.LoaderVersionProfile
 import app.vercors.feature.game.data.dto.MojangVersionInfo
 import app.vercors.feature.game.data.toDomain
@@ -20,12 +21,14 @@ import arrow.core.raise.context.raise
 import arrow.core.raise.context.withError
 import de.jonasbroeckmann.kzip.Zip
 import de.jonasbroeckmann.kzip.open
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.io.files.Path
 import kotlinx.serialization.json.Json
 
+private val logger = KotlinLogging.logger {}
 private val PLACEHOLDER_REGEX = Regex("\\{([A-Za-z_]+)}")
 private const val MAX_ERROR_OUTPUT_LENGTH = 4000
 
@@ -39,10 +42,12 @@ private suspend fun installMutexFor(key: String): Mutex = installMutexesLock.wit
 }
 
 /**
- * Downloads and runs a Forge/NeoForge-family installer: extracts `install_profile.json` + `version.json`
- * from the installer jar, downloads the libraries both reference, resolves each processor's placeholder
- * arguments and runs it (client-side processors only), then returns the resulting profile — caching it so
- * later launches skip straight past all of this.
+ * Downloads and runs a Forge/NeoForge-family installer, dispatching on whichever installer format it turns out
+ * to be (see [InstallerProfiles]): the modern, processor-based format extracts `install_profile.json` +
+ * `version.json` from the installer jar, downloads the libraries both reference, resolves each processor's
+ * placeholder arguments and runs it (client-side processors only), then returns the resulting profile —
+ * caching it so later launches skip straight past all of this. The legacy (pre-1.13 Forge) format has no
+ * processors/patching step at all — see [InstallerProfiles.Legacy]/[extractProfiles].
  */
 context(_: Raise<ModLoaderInstallError>)
 internal suspend fun installForgeFamily(
@@ -71,7 +76,43 @@ internal suspend fun installForgeFamily(
     downloadInstallerJar(loaderType, installerRequest, fileValidationService)
     downloadVanillaClientJar(loaderType, gameVersion, appPaths, fileValidationService)
 
-    val (installProfile, versionProfile) = extractProfiles(loaderType, installerJarPath, json)
+    when (val profiles = extractProfiles(loaderType, installerJarPath, appPaths, json)) {
+        is InstallerProfiles.Modern -> installModernForgeFamily(
+            loaderType = loaderType,
+            gameVersion = gameVersion,
+            appPaths = appPaths,
+            fileValidationService = fileValidationService,
+            processRunner = processRunner,
+            systemService = systemService,
+            json = json,
+            rootDir = rootDir,
+            installerJarPath = installerJarPath,
+            profileCachePath = profileCachePath,
+            profiles = profiles
+        )
+
+        // Not written to profileCachePath: every launch re-extracts the already-downloaded, on-disk installer
+        // jar (a small, bounded local I/O cost, no network involved) rather than caching a second profile
+        // format alongside LoaderVersionProfile's modern-shaped one. Revisit if this becomes a real cost.
+        is InstallerProfiles.Legacy -> profiles.profile.toDomain()
+    }
+}
+
+context(_: Raise<ModLoaderInstallError>)
+private suspend fun installModernForgeFamily(
+    loaderType: ModLoaderType,
+    gameVersion: GameVersionDetails,
+    appPaths: AppPaths,
+    fileValidationService: FileValidationService,
+    processRunner: ProcessRunner,
+    systemService: SystemService,
+    json: Json,
+    rootDir: Path,
+    installerJarPath: Path,
+    profileCachePath: Path,
+    profiles: InstallerProfiles.Modern
+): LoaderInstallProfile {
+    val (installProfile, versionProfile) = profiles
     downloadInstallProfileLibraries(loaderType, installProfile, appPaths, fileValidationService)
 
     val resolvedData = resolveInstallData(installProfile, installerJarPath, rootDir, appPaths)
@@ -105,7 +146,14 @@ internal suspend fun installForgeFamily(
     val patchedArtifact = buildPatchedArtifact(loaderType, installProfile, resolvedData, appPaths)
     val finalProfile = versionProfile.copy(localArtifacts = listOfNotNull(patchedArtifact))
     profileCachePath.writeJson(LoaderVersionProfile.serializer(), finalProfile, json)
-    finalProfile.toDomain().copy(omitClientFromClasspath = true)
+    return finalProfile.toDomain().copy(omitClientFromClasspath = true)
+}
+
+private sealed interface InstallerProfiles {
+    data class Modern(val installProfile: InstallProfileData, val versionProfile: LoaderVersionProfile) :
+        InstallerProfiles
+
+    data class Legacy(val profile: LegacyForgeInstallProfile) : InstallerProfiles
 }
 
 /**
@@ -160,20 +208,52 @@ private suspend fun downloadVanillaClientJar(
     }
 }
 
+/**
+ * Reads `install_profile.json` from the installer jar and, based on whether it also has a `version.json`
+ * entry, decodes either the modern (processor-based) or legacy (pre-1.13 Forge) profile shape — `version.json`
+ * only exists in the modern format, so its absence (checked via [Zip.entryOrNull], not by catching an
+ * exception) is the confirmed, reliable signal to distinguish the two. For a legacy profile, the universal jar
+ * named in `install.filePath` is extracted straight from the already-open installer jar to its library path —
+ * legacy Forge never binary-patches the client jar, so unlike the modern flow, there's no separate processor
+ * step needed to produce it.
+ */
 context(_: Raise<ModLoaderInstallError>)
-private fun extractProfiles(
+private suspend fun extractProfiles(
     loaderType: ModLoaderType,
     installerJarPath: Path,
+    appPaths: AppPaths,
     json: Json
-): Pair<InstallProfileData, LoaderVersionProfile> = runCatching {
+): InstallerProfiles = runCatching {
     Zip.open(installerJarPath).use { zip ->
         val installProfileText = zip.entry(Path("install_profile.json")) { readToBytes() }.decodeToString()
-        val versionText = zip.entry(Path("version.json")) { readToBytes() }.decodeToString()
-        json.decodeFromString(InstallProfileData.serializer(), installProfileText) to
+        val versionText = zip.entryOrNull(Path("version.json")) { readToBytes() }?.decodeToString()
+        if (versionText != null) {
+            InstallerProfiles.Modern(
+                json.decodeFromString(InstallProfileData.serializer(), installProfileText),
                 json.decodeFromString(LoaderVersionProfile.serializer(), versionText)
+            )
+        } else {
+            val legacyProfile = json.decodeFromString(LegacyForgeInstallProfile.serializer(), installProfileText)
+            // versionInfo.libraries typically also lists this same coordinate (with a real-looking maven "url")
+            // as if it were a normal downloadable library — it isn't; that URL 404s on the real maven. The
+            // installer produces it locally instead, and every legacy Minecraft launcher places it at exactly
+            // this coordinate's own (unclassified) library path, not a separate "-universal.jar" classifier —
+            // toDomain() relies on that by filtering any self-referencing entry out of versionInfo.libraries
+            // and substituting this locally-extracted, non-fetched one in its place.
+            val universalFile = appPaths.libraryFile(mavenCoordinateToPath(legacyProfile.install.path))
+            universalFile.createParentDirectories()
+            zip.entryOrNull(Path(legacyProfile.install.filePath)) { readToPath(universalFile) } ?: raise(
+                ModLoaderInstallError.FetchFailed(
+                    loaderType,
+                    "Universal jar entry not found in installer: ${legacyProfile.install.filePath}"
+                )
+            )
+            InstallerProfiles.Legacy(legacyProfile)
+        }
     }
 }.getOrElse { e ->
     if (e is CancellationException) throw e
+    logger.error(e) { "Failed to extract $loaderType installer profiles from $installerJarPath" }
     raise(ModLoaderInstallError.FetchFailed(loaderType, e.message ?: "Unable to read the installer jar"))
 }
 
@@ -231,14 +311,9 @@ private suspend fun runProcessors(
         val command = listOf("java", "-cp", classpath, mainClass) + args
         val result = processRunner.run(command, workingDir = rootDir.toString())
         if (result.exitCode != 0) {
-            raise(
-                ModLoaderInstallError.ProcessFailed(
-                    loaderType,
-                    mainClass,
-                    result.exitCode,
-                    result.stderr.ifBlank { result.stdout }.takeLast(MAX_ERROR_OUTPUT_LENGTH)
-                )
-            )
+            val output = result.stderr.ifBlank { result.stdout }.takeLast(MAX_ERROR_OUTPUT_LENGTH)
+            logger.error { "$loaderType processor $mainClass exited with code ${result.exitCode}:\n$output" }
+            raise(ModLoaderInstallError.ProcessFailed(loaderType, mainClass, result.exitCode, output))
         }
     }
 }
@@ -252,14 +327,11 @@ private suspend fun buildPatchedArtifact(
 ): MojangVersionInfo.Library.Downloads.Artifact? =
     installProfile.data["PATCHED"]?.client?.let { rawPatched ->
         val relativePath = mavenCoordinateToPath(rawPatched.removeSurrounding("[", "]"))
-        val size = appPaths.libraryFile(relativePath).metadataOrNull()?.size ?: raise(
-            ModLoaderInstallError.ProcessFailed(
-                loaderType,
-                "binarypatcher",
-                -1,
-                "Patched client jar was not produced at ${appPaths.libraryFile(relativePath)}"
-            )
-        )
+        val size = appPaths.libraryFile(relativePath).metadataOrNull()?.size ?: run {
+            val message = "Patched client jar was not produced at ${appPaths.libraryFile(relativePath)}"
+            logger.error { message }
+            raise(ModLoaderInstallError.ProcessFailed(loaderType, "binarypatcher", -1, message))
+        }
         MojangVersionInfo.Library.Downloads.Artifact(
             path = relativePath,
             // Forge's install_profile.json provides this; NeoForge's doesn't — null skips the hash
@@ -284,6 +356,7 @@ private fun Path.readMainClassOrRaise(loaderType: ModLoaderType, processorJar: S
     }
     return result.getOrElse { e ->
         if (e is CancellationException) throw e
+        logger.error(e) { "Failed to read main class from processor jar $processorJar ($this)" }
         raise(
             ModLoaderInstallError.ProcessFailed(
                 loaderType,
