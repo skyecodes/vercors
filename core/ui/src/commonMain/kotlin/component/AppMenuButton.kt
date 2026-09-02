@@ -11,6 +11,7 @@ import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.unit.dp
 import app.vercors.core.ui.modifier.appCard
+import app.vercors.core.ui.modifier.appMenuShadow
 import app.vercors.core.ui.theme.colors
 import app.vercors.core.ui.theme.surface2
 import com.composables.icons.lucide.EllipsisVertical
@@ -39,7 +40,8 @@ fun AppMenuButton(
         alignment = anchor.alignment,
         panel = {
             DropdownMenuPanel(
-                modifier = menuModifier.appCard(backgroundColor = backgroundColor)
+                modifier = menuModifier.appMenuShadow()
+                    .appCard(backgroundColor = backgroundColor)
                     .width(IntrinsicSize.Max),
             ) {
                 menuContent()

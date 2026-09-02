@@ -19,6 +19,7 @@ import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import androidx.compose.ui.window.rememberPopupPositionProviderAtPosition
 import app.vercors.core.ui.modifier.appCard
+import app.vercors.core.ui.modifier.appMenuShadow
 import app.vercors.core.ui.theme.colors
 import app.vercors.core.ui.theme.surface2
 import com.composeunstyled.LocalContentColor
@@ -55,7 +56,8 @@ object AppContextMenuRepresentation : ContextMenuRepresentation {
             properties = PopupProperties(focusable = true),
         ) {
             Column(
-                modifier = Modifier.appCard(backgroundColor = Theme[colors][surface2])
+                modifier = Modifier.appMenuShadow()
+                    .appCard(backgroundColor = Theme[colors][surface2])
                     .width(IntrinsicSize.Max)
                     .padding(vertical = 4.dp),
             ) {

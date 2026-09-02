@@ -21,6 +21,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import app.vercors.core.ui.CoreRes
 import app.vercors.core.ui.modifier.appCard
+import app.vercors.core.ui.modifier.appMenuShadow
 import app.vercors.core.ui.search
 import app.vercors.core.ui.theme.colors
 import app.vercors.core.ui.theme.onBackground
@@ -66,7 +67,8 @@ fun <T> AppSelectField(
             onExpandedChange = { expanded = it },
             panel = {
                 DropdownMenuPanel(
-                    modifier = Modifier.appCard(backgroundColor = Theme[colors][surface2])
+                    modifier = Modifier.appMenuShadow()
+                        .appCard(backgroundColor = Theme[colors][surface2])
                         .width(with(density) { anchorWidth.toDp() })
                         .heightIn(max = 400.dp),
                 ) {
