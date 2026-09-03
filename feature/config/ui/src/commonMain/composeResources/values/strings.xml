@@ -11,6 +11,12 @@
     <string name="parallelDownloadsDesc">The maximum number of files downloaded simultaneously.</string>
     <string name="parallelFilesystemOperations">Parallel filesystem operations</string>
     <string name="parallelFilesystemOperationsDesc">The maximum number of concurrent filesystem operations performed at once.</string>
+    <string name="startupScreen">Startup screen</string>
+    <string name="startupScreenDesc">The screen shown when the launcher opens.</string>
+    <string name="startupScreenLastPlayedInstance">Last played instance</string>
+    <string name="homeSections">Home sections</string>
+    <string name="homeSectionsDesc">Which sections are shown on the Home screen, and in what order.</string>
+    <string name="homeCategoryModpacks">Modpacks</string>
 
     <string name="ui">UI</string>
     <string name="theme">Theme</string>

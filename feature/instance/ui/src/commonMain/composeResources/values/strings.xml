@@ -89,9 +89,6 @@
     <string name="changes">Unsaved changes</string>
 
     <string name="options">Options</string>
-    <string name="mods">Mods</string>
-    <string name="resourcePacks">Resource Packs</string>
-    <string name="shaderPacks">Shader Packs</string>
     <string name="dataPacks">Data Packs</string>
     <string name="worlds">Worlds</string>
     <string name="logs">Logs</string>

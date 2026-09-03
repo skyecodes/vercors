@@ -2,6 +2,7 @@ package app.vercors.launcher.gui
 
 import androidx.compose.runtime.Immutable
 import app.vercors.feature.config.domain.model.Configuration
+import app.vercors.feature.instance.domain.model.InstanceId
 import app.vercors.feature.theme.domain.model.ThemeDefinition
 import app.vercors.shared.ui.SnackbarMessage
 
@@ -12,7 +13,9 @@ data class AppState(
     val accentColor: Long?,
     val snackbarMessage: SnackbarMessage?,
     val installTaskbarProgress: InstallTaskbarProgress,
-    val appName: String
+    val appName: String,
+    val instancesLoaded: Boolean,
+    val lastPlayedInstanceId: InstanceId?
 )
 
 /** Aggregate taskbar-progress signal across every instance currently installing or launching. */

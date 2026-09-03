@@ -6,6 +6,7 @@ import app.vercors.core.system.OsType
 import app.vercors.core.system.SystemService
 import app.vercors.core.ui.state.collectProgressiveAsState
 import app.vercors.core.ui.state.produceProgressiveState
+import app.vercors.feature.config.domain.model.HomeCategoryConfig
 import app.vercors.feature.config.domain.usecase.ClearContentCacheUseCase
 import app.vercors.feature.config.domain.usecase.GetContentCacheSizeUseCase
 import app.vercors.feature.config.domain.usecase.ObserveConfigurationUseCase
@@ -104,6 +105,8 @@ class ConfigurationPresenter(
             parallelFilesystemOperations = cfg?.parallelFilesystemOperations,
             preferredPlatform = cfg?.preferredPlatform,
             platformList = platformList.valueOrNull ?: emptyList(),
+            startupScreen = cfg?.startupScreen,
+            homeCategories = cfg?.homeCategories ?: HomeCategoryConfig.entries,
             javaInstallations = javaInstallations.valueOrNull ?: emptyList(),
             preferredJavaByMajorVersion = cfg?.preferredJavaByMajorVersion ?: emptyMap(),
             javaAddError = javaAddError,
@@ -175,6 +178,14 @@ class ConfigurationPresenter(
 
             is ConfigurationEvent.SetPreferredPlatform -> presenterScope.launch {
                 updateConfiguration { copy(preferredPlatform = event.value) }
+            }
+
+            is ConfigurationEvent.SetStartupScreen -> presenterScope.launch {
+                updateConfiguration { copy(startupScreen = event.value) }
+            }
+
+            is ConfigurationEvent.SetHomeCategories -> presenterScope.launch {
+                updateConfiguration { copy(homeCategories = event.value) }
             }
 
             is ConfigurationEvent.AddJavaInstallation ->

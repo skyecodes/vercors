@@ -2,6 +2,8 @@ package app.vercors.feature.config.ui
 
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color
+import app.vercors.feature.config.domain.model.HomeCategoryConfig
+import app.vercors.feature.config.domain.model.StartupScreen
 import app.vercors.feature.project.domain.model.ProjectPlatform
 import app.vercors.shared.domain.model.JavaInstallation
 import app.vercors.shared.domain.model.JvmMemoryOptions
@@ -20,6 +22,8 @@ data class ConfigurationState(
     val parallelFilesystemOperations: Int?,
     val preferredPlatform: String?,
     val platformList: List<ProjectPlatform>,
+    val startupScreen: StartupScreen?,
+    val homeCategories: List<HomeCategoryConfig>,
     val javaInstallations: List<JavaInstallation>,
     val preferredJavaByMajorVersion: Map<Int, String>,
     val javaAddError: String?,

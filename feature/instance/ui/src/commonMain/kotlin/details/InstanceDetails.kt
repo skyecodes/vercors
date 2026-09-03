@@ -1475,9 +1475,9 @@ private val InstanceDetailsTab.title: String
     @Composable get() = when (this) {
         InstanceDetailsTab.Logs -> stringResource(InstanceRes.string.logs)
         InstanceDetailsTab.Options -> stringResource(InstanceRes.string.options)
-        InstanceDetailsTab.Mods -> stringResource(InstanceRes.string.mods)
-        InstanceDetailsTab.ResourcePacks -> stringResource(InstanceRes.string.resourcePacks)
-        InstanceDetailsTab.ShaderPacks -> stringResource(InstanceRes.string.shaderPacks)
+        InstanceDetailsTab.Mods -> stringResource(SharedRes.string.mods)
+        InstanceDetailsTab.ResourcePacks -> stringResource(SharedRes.string.resourcePacks)
+        InstanceDetailsTab.ShaderPacks -> stringResource(SharedRes.string.shaderPacks)
         InstanceDetailsTab.DataPacks -> stringResource(InstanceRes.string.dataPacks)
         InstanceDetailsTab.Worlds -> stringResource(InstanceRes.string.worlds)
     }

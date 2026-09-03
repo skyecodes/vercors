@@ -2,6 +2,7 @@ package app.vercors.feature.config.data.dto
 
 import app.vercors.feature.config.domain.model.Configuration
 import app.vercors.feature.config.domain.model.HomeCategoryConfig
+import app.vercors.feature.config.domain.model.StartupScreen
 import app.vercors.shared.data.dto.JvmMemoryOptionsData
 import app.vercors.shared.data.dto.NativeLibraryOptionsData
 import app.vercors.shared.data.dto.toData
@@ -19,6 +20,7 @@ data class ConfigurationData(
     val animations: Boolean,
     val preferredPlatform: String,
     val homeCategories: List<HomeCategoryConfigData>,
+    val startupScreen: StartupScreenData = StartupScreenData.Home,
     val selectedThemeId: String,
     val selectedAccent: String,
     val preferredJavaByMajorVersion: Map<Int, String> = emptyMap(),
@@ -38,6 +40,7 @@ internal fun ConfigurationData.toDomain(): Configuration = Configuration(
     animations = animations,
     preferredPlatform = preferredPlatform,
     homeCategories = homeCategories.map { it.toDomain() },
+    startupScreen = startupScreen.toDomain(),
     selectedThemeId = selectedThemeId,
     selectedAccent = selectedAccent,
     preferredJavaByMajorVersion = preferredJavaByMajorVersion,
@@ -57,6 +60,7 @@ internal fun Configuration.toData(): ConfigurationData = ConfigurationData(
     animations = animations,
     preferredPlatform = preferredPlatform,
     homeCategories = homeCategories.map { it.toData() },
+    startupScreen = startupScreen.toData(),
     selectedThemeId = selectedThemeId,
     selectedAccent = selectedAccent,
     preferredJavaByMajorVersion = preferredJavaByMajorVersion,
@@ -100,4 +104,43 @@ private fun HomeCategoryConfig.toData(): HomeCategoryConfigData = when (this) {
     HomeCategoryConfig.Mods -> HomeCategoryConfigData.Mods
     HomeCategoryConfig.ResourcePacks -> HomeCategoryConfigData.ResourcePacks
     HomeCategoryConfig.ShaderPacks -> HomeCategoryConfigData.ShaderPacks
+}
+
+@Serializable
+enum class StartupScreenData {
+    @SerialName("home")
+    Home,
+
+    @SerialName("instances")
+    Instances,
+
+    @SerialName("content")
+    Content,
+
+    @SerialName("settings")
+    Settings,
+
+    @SerialName("accounts")
+    Accounts,
+
+    @SerialName("last_played_instance")
+    LastPlayedInstance
+}
+
+private fun StartupScreenData.toDomain(): StartupScreen = when (this) {
+    StartupScreenData.Home -> StartupScreen.Home
+    StartupScreenData.Instances -> StartupScreen.Instances
+    StartupScreenData.Content -> StartupScreen.Content
+    StartupScreenData.Settings -> StartupScreen.Settings
+    StartupScreenData.Accounts -> StartupScreen.Accounts
+    StartupScreenData.LastPlayedInstance -> StartupScreen.LastPlayedInstance
+}
+
+private fun StartupScreen.toData(): StartupScreenData = when (this) {
+    StartupScreen.Home -> StartupScreenData.Home
+    StartupScreen.Instances -> StartupScreenData.Instances
+    StartupScreen.Content -> StartupScreenData.Content
+    StartupScreen.Settings -> StartupScreenData.Settings
+    StartupScreen.Accounts -> StartupScreenData.Accounts
+    StartupScreen.LastPlayedInstance -> StartupScreenData.LastPlayedInstance
 }

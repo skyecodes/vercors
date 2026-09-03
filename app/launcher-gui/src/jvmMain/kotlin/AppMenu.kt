@@ -25,7 +25,7 @@ import app.vercors.feature.instance.ui.details.InstanceDetailsScreen
 import app.vercors.feature.instance.ui.list.InstanceListScreen
 import app.vercors.feature.project.ui.details.ProjectDetailsScreen
 import app.vercors.feature.project.ui.list.ProjectListScreen
-import app.vercors.shared.ui.Screen
+import app.vercors.shared.ui.*
 import com.composables.icons.lucide.*
 import com.composeunstyled.theme.Theme
 import org.jetbrains.compose.resources.StringResource
@@ -154,27 +154,27 @@ private enum class TopLevelDestination(
 ) {
     Home(
         screen = HomeScreen,
-        text = Res.string.home,
+        text = SharedRes.string.home,
         icon = Lucide.House
     ),
     Instances(
         screen = InstanceListScreen,
-        text = Res.string.instances,
+        text = SharedRes.string.instances,
         icon = Lucide.Gamepad2
     ),
     Content(
         screen = ProjectListScreen(),
-        text = Res.string.content,
+        text = SharedRes.string.content,
         icon = Lucide.Box
     ),
     Settings(
         screen = ConfigurationScreen,
-        text = Res.string.settings,
+        text = SharedRes.string.settings,
         icon = Lucide.Settings
     ),
     Account(
         screen = AccountListScreen,
-        text = Res.string.account,
+        text = SharedRes.string.account,
         icon = Lucide.User
     )
 }

@@ -66,6 +66,11 @@ class AppPresenter(
         val installTaskbarProgress = instances.valueOrNull
             ?.let { list -> computeInstallTaskbarProgress(list.mapNotNull { it.getOrNull()?.status }) }
             ?: InstallTaskbarProgress.None
+        val lastPlayedInstanceId = instances.valueOrNull
+            ?.mapNotNull { it.getOrNull()?.instance }
+            ?.filter { it.lastPlayedAt != null }
+            ?.maxByOrNull { it.lastPlayedAt!! }
+            ?.id
 
         return AppState(
             config = cfg,
@@ -73,7 +78,9 @@ class AppPresenter(
             accentColor = accent,
             snackbarMessage = snackbarMessage,
             installTaskbarProgress = installTaskbarProgress,
-            appName = appName
+            appName = appName,
+            instancesLoaded = instances.valueOrNull != null,
+            lastPlayedInstanceId = lastPlayedInstanceId
         ) + {
             when (it) {
                 AppEvent.ToggleDrawer -> backgroundScope.launch {

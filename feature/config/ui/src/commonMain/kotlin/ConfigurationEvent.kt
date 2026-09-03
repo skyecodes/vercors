@@ -1,5 +1,7 @@
 package app.vercors.feature.config.ui
 
+import app.vercors.feature.config.domain.model.HomeCategoryConfig
+import app.vercors.feature.config.domain.model.StartupScreen
 import app.vercors.shared.ui.Event
 
 sealed interface ConfigurationEvent : Event {
@@ -18,6 +20,8 @@ sealed interface ConfigurationEvent : Event {
     data class SetParallelDownloads(val value: Int) : ConfigurationEvent
     data class SetParallelFilesystemOperations(val value: Int) : ConfigurationEvent
     data class SetPreferredPlatform(val value: String) : ConfigurationEvent
+    data class SetStartupScreen(val value: StartupScreen) : ConfigurationEvent
+    data class SetHomeCategories(val value: List<HomeCategoryConfig>) : ConfigurationEvent
 
     @JvmInline
     value class AddJavaInstallation(val path: String) : ConfigurationEvent

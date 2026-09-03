@@ -3,23 +3,37 @@ package app.vercors.feature.config.ui
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyItemScope
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerHoverIcon
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
+import app.vercors.core.ui.animation.appAnimateItem
 import app.vercors.core.ui.component.*
 import app.vercors.core.ui.modifier.appCard
+import app.vercors.core.ui.modifier.clickableText
 import app.vercors.core.ui.theme.*
+import app.vercors.feature.config.domain.model.HomeCategoryConfig
+import app.vercors.feature.config.domain.model.StartupScreen
 import app.vercors.shared.domain.model.JavaInstallation
-import app.vercors.shared.ui.EventSink
-import app.vercors.shared.ui.Store
+import app.vercors.shared.ui.*
 import app.vercors.shared.ui.overlay.ConfirmDialog
 import app.vercors.shared.ui.overlay.ConfirmDialogButton
 import app.vercors.shared.ui.overlay.ConfirmDialogButtonStyle
@@ -34,6 +48,7 @@ import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
 import io.github.vinceglb.filekit.path
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
+import kotlin.math.roundToInt
 
 @CircuitInject(ConfigurationScreen::class, AppScope::class)
 @Composable
@@ -125,6 +140,32 @@ private fun GeneralConfigurationCategory(
                 )
             }
         }
+        if (state.startupScreen != null) {
+            ConfigurationRow(
+                title = ConfigRes.string.startupScreen,
+                description = ConfigRes.string.startupScreenDesc,
+            ) {
+                AppSelectField(
+                    value = state.startupScreen,
+                    items = StartupScreen.entries,
+                    onValueChange = { eventSink(ConfigurationEvent.SetStartupScreen(it)) },
+                    itemRenderer = { startupScreen, _ ->
+                        AppText(text = stringResource(startupScreen.label()))
+                    },
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                AppText(text = stringResource(ConfigRes.string.homeSections), fontWeight = FontWeight.SemiBold)
+                AppText(text = stringResource(ConfigRes.string.homeSectionsDesc), style = Theme[textStyles][label])
+            }
+            HomeCategoriesReorderList(homeCategories = state.homeCategories)
+        }
         ConfigurationRow(
             title = ConfigRes.string.metaApiUrl,
             description = ConfigRes.string.metaApiUrlDesc,
@@ -178,6 +219,179 @@ private fun GeneralConfigurationCategory(
                 )
             }
         }
+    }
+}
+
+private fun StartupScreen.label(): StringResource = when (this) {
+    StartupScreen.Home -> SharedRes.string.home
+    StartupScreen.Instances -> SharedRes.string.instances
+    StartupScreen.Content -> SharedRes.string.content
+    StartupScreen.Settings -> SharedRes.string.settings
+    StartupScreen.Accounts -> SharedRes.string.account
+    StartupScreen.LastPlayedInstance -> ConfigRes.string.startupScreenLastPlayedInstance
+}
+
+private fun HomeCategoryConfig.label(): StringResource = when (this) {
+    HomeCategoryConfig.Instances -> SharedRes.string.instances
+    HomeCategoryConfig.Modpacks -> ConfigRes.string.homeCategoryModpacks
+    HomeCategoryConfig.Mods -> SharedRes.string.mods
+    HomeCategoryConfig.ResourcePacks -> SharedRes.string.resourcePacks
+    HomeCategoryConfig.ShaderPacks -> SharedRes.string.shaderPacks
+}
+
+private val HOME_CATEGORY_ROW_HEIGHT = 32.dp
+
+private fun <T> List<T>.moved(from: Int, to: Int): List<T> =
+    toMutableList().apply { add(to, removeAt(from)) }
+
+@Composable
+context(eventSink: EventSink<ConfigurationEvent>)
+private fun HomeCategoriesReorderList(homeCategories: List<HomeCategoryConfig>) {
+    val uncheckedCategories = remember(homeCategories) {
+        val checkedSet = homeCategories.toSet()
+        HomeCategoryConfig.entries.filterNot { it in checkedSet }
+    }
+    val orderState = remember(homeCategories) { mutableStateOf(homeCategories) }
+    val draggedIndexState = remember { mutableStateOf<Int?>(null) }
+    val dragOffsetState = remember { mutableStateOf(0f) }
+    val rowHeightPx = with(LocalDensity.current) { HOME_CATEGORY_ROW_HEIGHT.toPx() }
+
+    LazyColumn(
+        modifier = Modifier.fillMaxWidth().height((HOME_CATEGORY_ROW_HEIGHT * HomeCategoryConfig.entries.size)),
+    ) {
+        itemsIndexed(orderState.value, key = { _, it -> it }) { index, it ->
+            CheckedHomeCategoryRow(
+                category = it,
+                index = index,
+                rowHeightPx = rowHeightPx,
+                orderState = orderState,
+                draggedIndexState = draggedIndexState,
+                dragOffsetState = dragOffsetState,
+            )
+        }
+        items(uncheckedCategories, key = { it }) { category ->
+            UncheckedHomeCategoryRow(category = category, homeCategories = homeCategories)
+        }
+    }
+}
+
+@Composable
+context(eventSink: EventSink<ConfigurationEvent>)
+private fun LazyItemScope.CheckedHomeCategoryRow(
+    category: HomeCategoryConfig,
+    index: Int,
+    rowHeightPx: Float,
+    orderState: MutableState<List<HomeCategoryConfig>>,
+    draggedIndexState: MutableState<Int?>,
+    dragOffsetState: MutableState<Float>,
+) {
+    val order = orderState.value
+    val isDragged = index == draggedIndexState.value
+    val latestIndex = rememberUpdatedState(index)
+    Row(
+        modifier = Modifier.fillMaxWidth()
+            .height(HOME_CATEGORY_ROW_HEIGHT)
+            .let { if (isDragged) it else it.appAnimateItem() }
+            .zIndex(if (isDragged) 1f else 0f)
+            .offset { IntOffset(0, if (isDragged) dragOffsetState.value.roundToInt() else 0) },
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        ReorderArrow(
+            imageVector = Lucide.ChevronUp,
+            enabled = index > 0,
+            onClick = { eventSink(ConfigurationEvent.SetHomeCategories(order.moved(index, index - 1))) },
+        )
+        ReorderArrow(
+            imageVector = Lucide.ChevronDown,
+            enabled = index < order.lastIndex,
+            onClick = { eventSink(ConfigurationEvent.SetHomeCategories(order.moved(index, index + 1))) },
+        )
+        AppIcon(
+            imageVector = Lucide.GripVertical,
+            contentDescription = null,
+            modifier = Modifier.size(16.dp)
+                .pointerHoverIcon(icon = PointerIcon.Hand)
+                .homeCategoryDragHandle(latestIndex, rowHeightPx, orderState, draggedIndexState, dragOffsetState) {
+                    eventSink(ConfigurationEvent.SetHomeCategories(orderState.value))
+                }
+        )
+        AppCheckbox(
+            checked = true,
+            onCheckedChange = { eventSink(ConfigurationEvent.SetHomeCategories(order - category)) }
+        )
+        AppText(text = stringResource(category.label()), modifier = Modifier.weight(1f))
+    }
+}
+
+@Composable
+private fun ReorderArrow(imageVector: ImageVector, enabled: Boolean, onClick: () -> Unit) {
+    AppIcon(
+        imageVector = imageVector,
+        contentDescription = null,
+        modifier = Modifier.size(16.dp).let { if (enabled) it.clickableText(onClick) else it.alpha(0.3f) }
+    )
+}
+
+private fun Modifier.homeCategoryDragHandle(
+    index: State<Int>,
+    rowHeightPx: Float,
+    orderState: MutableState<List<HomeCategoryConfig>>,
+    draggedIndexState: MutableState<Int?>,
+    dragOffsetState: MutableState<Float>,
+    onDragFinished: () -> Unit,
+): Modifier = pointerInput(Unit) {
+    detectDragGestures(
+        onDragStart = {
+            draggedIndexState.value = index.value
+            dragOffsetState.value = 0f
+        },
+        onDragEnd = {
+            draggedIndexState.value = null
+            dragOffsetState.value = 0f
+            onDragFinished()
+        },
+        onDragCancel = {
+            draggedIndexState.value = null
+            dragOffsetState.value = 0f
+        },
+        onDrag = { change, dragAmount ->
+            change.consume()
+            val currentIndex = draggedIndexState.value ?: return@detectDragGestures
+            val order = orderState.value
+            dragOffsetState.value += dragAmount.y
+            val targetIndex = (currentIndex + (dragOffsetState.value / rowHeightPx).roundToInt())
+                .coerceIn(0, order.lastIndex)
+            if (targetIndex != currentIndex) {
+                orderState.value = order.moved(currentIndex, targetIndex)
+                dragOffsetState.value -= (targetIndex - currentIndex) * rowHeightPx
+                draggedIndexState.value = targetIndex
+            }
+        }
+    )
+}
+
+@Composable
+context(eventSink: EventSink<ConfigurationEvent>)
+private fun LazyItemScope.UncheckedHomeCategoryRow(
+    category: HomeCategoryConfig,
+    homeCategories: List<HomeCategoryConfig>
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth().height(HOME_CATEGORY_ROW_HEIGHT).appAnimateItem(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Spacer(modifier = Modifier.size(64.dp))
+        AppCheckbox(
+            checked = false,
+            onCheckedChange = { eventSink(ConfigurationEvent.SetHomeCategories(homeCategories + category)) }
+        )
+        AppText(
+            text = stringResource(category.label()),
+            modifier = Modifier.weight(1f),
+            color = Theme[colors][onBackground].copy(alpha = 0.6f)
+        )
     }
 }
 
