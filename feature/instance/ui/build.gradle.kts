@@ -14,9 +14,7 @@ dependencies {
     commonMainImplementation(libs.kotlinx.datetime)
     commonMainImplementation(libs.filekit.dialogs.compose)
     commonMainImplementation(libs.nucleus.notification.common)
-    commonMainImplementation(libs.nucleus.notification.windows)
-    commonMainImplementation(libs.nucleus.notification.linux)
-    commonMainImplementation(libs.nucleus.notification.macos)
+    commonMainImplementation(libs.human.readable)
 }
 
 compose.resources {

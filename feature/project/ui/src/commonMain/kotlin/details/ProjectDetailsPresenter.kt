@@ -104,7 +104,7 @@ private fun ProjectType.toInstanceDetailsTab(): InstanceDetailsTab = when (this)
     ProjectType.Mod -> InstanceDetailsTab.Mods
     ProjectType.ResourcePack -> InstanceDetailsTab.ResourcePacks
     ProjectType.ShaderPack -> InstanceDetailsTab.ShaderPacks
-    ProjectType.DataPack -> InstanceDetailsTab.DataPacks
     ProjectType.World -> InstanceDetailsTab.Worlds
-    ProjectType.Modpack -> InstanceDetailsTab.Options
+    // No dedicated tab for these — falls back to the instance's Options tab, same as Modpack.
+    ProjectType.DataPack, ProjectType.Modpack -> InstanceDetailsTab.Options
 }

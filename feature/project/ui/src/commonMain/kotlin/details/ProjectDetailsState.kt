@@ -50,10 +50,10 @@ data class ProjectLinksView(
     val discordUrl: String?
 )
 
-/** Install is only wired up for these types — DataPack/World need their own, different flows. */
+/** Install is only wired up for these types — DataPack needs its own, different flow (out of scope for now). */
 val ProjectType.isInstallable: Boolean
     get() = this == ProjectType.Mod || this == ProjectType.ResourcePack || this == ProjectType.ShaderPack ||
-            this == ProjectType.Modpack
+            this == ProjectType.Modpack || this == ProjectType.World
 
 fun Project.toView(): ProjectDetailsView = ProjectDetailsView(
     id = id,

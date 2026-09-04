@@ -195,6 +195,7 @@ class InstanceRepositoryImpl(
             InstanceFolder.ResourcePacks -> appPaths.resourcePacksDir(instanceId)
             InstanceFolder.ShaderPacks -> appPaths.shaderPacksDir(instanceId)
             InstanceFolder.Config -> appPaths.configDir(instanceId)
+            InstanceFolder.Saves -> appPaths.savesDir(instanceId)
         }
         if (!dir.exists()) dir.createDirectories()
         return systemService.openInFileManager(dir.toString())

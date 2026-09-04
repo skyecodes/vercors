@@ -82,6 +82,10 @@ class AppPaths(root: Path) {
 
     fun configDir(instanceId: String): Path = Path(gameDir(instanceId), "config")
 
+    fun savesDir(instanceId: String): Path = Path(gameDir(instanceId), "saves")
+
+    fun worldDir(instanceId: String, worldName: String): Path = Path(savesDir(instanceId), worldName)
+
     fun metadataCache(kind: String): Path = Path(metadataCacheRoot, kind)
 
     fun iconCache(kind: String): Path = Path(iconCacheRoot, kind)

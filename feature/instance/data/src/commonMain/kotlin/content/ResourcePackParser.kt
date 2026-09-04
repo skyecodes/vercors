@@ -33,6 +33,7 @@ internal class ResourcePackParser(private val json: Json) : ContentFileParser {
                 val description = if ("pack.mcmeta" in entryPaths) {
                     val text = zip.entry(Path("pack.mcmeta")) { readToBytes() }.decodeToString()
                     json.decodeFromString(PackMcmeta.serializer(), text).pack.description?.toDisplayText()
+                        ?.stripMinecraftFormatting()
                 } else null
                 val iconEntryPath = "pack.png".takeIf { it in entryPaths }
                 ParsedContentInfo(

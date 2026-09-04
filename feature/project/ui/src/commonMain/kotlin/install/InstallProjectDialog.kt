@@ -10,10 +10,7 @@ import app.vercors.feature.instance.domain.usecase.ObserveInstanceListUseCase
 import app.vercors.feature.instance.domain.usecase.RecordInstalledContentOriginUseCase
 import app.vercors.feature.project.domain.model.ProjectId
 import app.vercors.feature.project.domain.model.ProjectType
-import app.vercors.feature.project.domain.usecase.AwaitManualDownloadUseCase
-import app.vercors.feature.project.domain.usecase.DownloadProjectFilesUseCase
-import app.vercors.feature.project.domain.usecase.GetProjectFilesUseCase
-import app.vercors.feature.project.domain.usecase.GetProjectUseCase
+import app.vercors.feature.project.domain.usecase.*
 import app.vercors.shared.domain.usecase.CopyToClipboardUseCase
 import app.vercors.shared.ui.SnackbarService
 import app.vercors.shared.ui.overlay.DialogOverlay
@@ -43,6 +40,8 @@ class InstallProjectDialog(
     private val getProjectFiles: GetProjectFilesUseCase,
     private val downloadProjectFiles: DownloadProjectFilesUseCase,
     private val awaitManualDownload: AwaitManualDownloadUseCase,
+    private val installWorldFile: InstallWorldFileUseCase,
+    private val awaitManualWorldDownload: AwaitManualWorldDownloadUseCase,
     private val recordInstalledContentOrigin: RecordInstalledContentOriginUseCase,
     private val copyToClipboard: CopyToClipboardUseCase,
     private val snackbarService: SnackbarService
@@ -66,6 +65,8 @@ class InstallProjectDialog(
                 getProjectFiles = getProjectFiles,
                 downloadProjectFiles = downloadProjectFiles,
                 awaitManualDownload = awaitManualDownload,
+                installWorldFile = installWorldFile,
+                awaitManualWorldDownload = awaitManualWorldDownload,
                 recordInstalledContentOrigin = recordInstalledContentOrigin,
                 copyToClipboard = copyToClipboard,
                 snackbarService = snackbarService

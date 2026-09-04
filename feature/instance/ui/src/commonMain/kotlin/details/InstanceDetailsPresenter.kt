@@ -58,6 +58,7 @@ class InstanceDetailsPresenter(
     private val globalScope: CoroutineScope,
     private val observeInstance: ObserveInstanceUseCase,
     private val installedContentPresenterFactory: InstalledContentPresenter.Factory,
+    private val installedWorldsPresenterFactory: InstalledWorldsPresenter.Factory,
     private val instanceLogsPresenterFactory: InstanceLogsPresenter.Factory,
     private val instanceOptionsPresenterFactory: InstanceOptionsPresenter.Factory,
     private val launchInstance: LaunchInstanceUseCase,
@@ -104,6 +105,9 @@ class InstanceDetailsPresenter(
         }.present()
         val shaderPacksContent = remember(screen.instanceId) {
             installedContentPresenterFactory.create(screen.instanceId, ContentKind.ShaderPack)
+        }.present()
+        val worldsContent = remember(screen.instanceId) {
+            installedWorldsPresenterFactory.create(screen.instanceId)
         }.present()
         val logsContent = remember(screen.instanceId) {
             instanceLogsPresenterFactory.create(screen.instanceId)
@@ -153,6 +157,7 @@ class InstanceDetailsPresenter(
             modsContent = modsContent,
             resourcePacksContent = resourcePacksContent,
             shaderPacksContent = shaderPacksContent,
+            worldsContent = worldsContent,
             logsContent = logsContent,
             promptFinishInstallation = promptFinishInstallation,
             finishInstallationDialog = finishInstallationDialog,

@@ -11,6 +11,7 @@ import app.vercors.feature.instance.ui.install.FinishInstallationDialog
 import app.vercors.shared.domain.model.JvmMemoryOptions
 import app.vercors.shared.domain.model.NativeLibraryOptions
 import app.vercors.shared.ui.Store
+import nl.jacobras.humanreadable.HumanReadable
 import opensavvy.state.progressive.ProgressiveOutcome
 import kotlin.time.Instant
 
@@ -26,6 +27,7 @@ data class InstanceDetailsState(
     val modsContent: Store<InstalledContentState, InstalledContentEvent>,
     val resourcePacksContent: Store<InstalledContentState, InstalledContentEvent>,
     val shaderPacksContent: Store<InstalledContentState, InstalledContentEvent>,
+    val worldsContent: Store<InstalledWorldsState, InstalledWorldsEvent>,
     val logsContent: Store<InstanceLogsState, InstanceLogsEvent>,
     val promptFinishInstallation: Boolean,
     val finishInstallationDialog: FinishInstallationDialog,
@@ -109,6 +111,33 @@ fun InstalledContentFile.toView(): InstalledContentFileView = InstalledContentFi
     providers = providers,
     lastModified = lastModified
 )
+
+@Immutable
+data class InstalledWorldView(
+    val folderName: String,
+    val displayName: String,
+    val iconFilePath: String?,
+    val lastModified: Instant?,
+) {
+    val lastModifiedReadable = lastModified?.let { HumanReadable.timeAgo(it) }
+}
+
+fun InstalledWorld.toView(): InstalledWorldView = InstalledWorldView(
+    folderName = folderName,
+    displayName = folderName.stripMinecraftFormattingForDisplay(),
+    iconFilePath = iconFilePath,
+    lastModified = lastModified
+)
+
+/**
+ * World folder names are left untouched on disk (they may legitimately come from the save's own in-game name,
+ * `§`-codes included) — this only cleans up how the name is *shown* in the UI, never what's written to disk or
+ * used to identify the folder (removal, dedup, etc. all keep using the real folder name).
+ */
+private val MINECRAFT_FORMATTING_CODE = Regex("§.")
+
+internal fun String.stripMinecraftFormattingForDisplay(): String =
+    replace(MINECRAFT_FORMATTING_CODE, "").replace("§", "").ifBlank { this }
 
 @Immutable
 data class JavaInstallProgressView(

@@ -30,6 +30,7 @@ import arrow.core.raise.context.raise
 import arrow.core.raise.context.withError
 import arrow.core.raise.recover
 import de.jonasbroeckmann.kzip.Zip
+import de.jonasbroeckmann.kzip.extractTo
 import de.jonasbroeckmann.kzip.forEachEntry
 import de.jonasbroeckmann.kzip.open
 import dev.zacsweers.metro.AppScope
@@ -406,15 +407,7 @@ class ProjectRepositoryImpl(
         sha1: String?,
         md5: String?
     ) {
-        val downloadsDir = Path(ensureNotNull(systemService.downloadsDir()) { ManualDownloadFailed })
-        val sourcePath = Path(downloadsDir, fileName)
-        if (!sourcePath.exists()) {
-            fileWatcherService.watchDirectory(downloadsDir)
-                .first { it.type == FileEvent.Type.CREATE && it.path.name == fileName }
-        }
-        // The file existing (or having just been created) doesn't mean the browser is done writing to it — wait
-        // for it to stop growing before touching it, so we never move/validate a still-downloading file.
-        awaitDownloadStable(sourcePath, size)
+        val sourcePath = awaitStableDownloadInDownloadsFolder(fileName, size)
         val targetPath = Path(type.targetDir(instanceId), fileName)
         try {
             sourcePath.copyTo(targetPath)
@@ -440,6 +433,111 @@ class ProjectRepositoryImpl(
         }) { _: FileValidationFailure ->
             if (targetPath.exists()) targetPath.deleteRecursively()
             raise(ManualDownloadIntegrityMismatch)
+        }
+    }
+
+    /**
+     * Suspends until [fileName] appears in the OS Downloads folder (or immediately if it's already there) and
+     * stops growing — shared preamble for [awaitManualDownload] and [awaitManualWorldDownload], which only differ
+     * in how the stabilized file is materialized afterward (move into a flat directory vs. extract as a world).
+     */
+    context(_: Raise<ManualDownloadError>)
+    private suspend fun awaitStableDownloadInDownloadsFolder(fileName: String, size: Long?): Path {
+        val downloadsDir = Path(ensureNotNull(systemService.downloadsDir()) { ManualDownloadFailed })
+        val sourcePath = Path(downloadsDir, fileName)
+        if (!sourcePath.exists()) {
+            fileWatcherService.watchDirectory(downloadsDir)
+                .first { it.type == FileEvent.Type.CREATE && it.path.name == fileName }
+        }
+        // The file existing (or having just been created) doesn't mean the browser is done writing to it — wait
+        // for it to stop growing before touching it, so we never move/validate a still-downloading file.
+        awaitDownloadStable(sourcePath, size)
+        return sourcePath
+    }
+
+    context(_: Raise<ProjectFileDownloadError>)
+    override suspend fun installWorldFile(
+        candidate: ProjectFileDownloadCandidate,
+        instanceId: String,
+        onProgress: (Progress) -> Unit
+    ) {
+        val zipPath = Path(appPaths.downloadsTmp, "${Uuid.random()}-${candidate.fileName}")
+        val request = projectFileDownloadRequest(
+            platformId = candidate.projectId.platform,
+            projectId = candidate.projectId.id,
+            fileId = candidate.fileId,
+            path = zipPath,
+            size = candidate.size,
+            sha1 = candidate.sha1,
+            md5 = candidate.md5
+        )
+        recover({
+            fileValidationService.submit(listOf(request), onProgress)
+        }) { _: NonEmptyList<FileValidationFailure> ->
+            raise(ProjectFileDownloadFailed)
+        }
+        try {
+            extractWorldZip(zipPath, instanceId, candidate.fileName)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            raise(ProjectFileDownloadFailed)
+        } finally {
+            if (zipPath.exists()) zipPath.deleteRecursively()
+        }
+    }
+
+    context(_: Raise<ManualDownloadError>)
+    override suspend fun awaitManualWorldDownload(
+        fileName: String,
+        instanceId: String,
+        size: Long?,
+        sha1: String?,
+        md5: String?
+    ) {
+        val sourcePath = awaitStableDownloadInDownloadsFolder(fileName, size)
+        recover({
+            with(fileValidationService) {
+                FileValidationRequest.Url(url = "", path = sourcePath, size = size, sha1 = sha1, md5 = md5).validate()
+            }
+        }) { _: FileValidationFailure ->
+            if (sourcePath.exists()) sourcePath.deleteRecursively()
+            raise(ManualDownloadIntegrityMismatch)
+        }
+        try {
+            extractWorldZip(sourcePath, instanceId, fileName)
+            sourcePath.delete()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            raise(ManualDownloadFailed)
+        }
+    }
+
+    /**
+     * Extracts [zipPath] (a downloaded World file — a zip of a save folder) into [instanceId]'s `saves/`
+     * directory as a new, uniquely-named world. Unlike every other content type, the archive isn't a single file
+     * to move into place — it's extracted wholesale to a scratch directory first, then the resulting layout is
+     * inspected: if extraction produced exactly one top-level directory, that directory *is* the world (its own
+     * name is used, e.g. an export shaped like `<WorldName>/level.dat`); otherwise the zip's root itself is the
+     * world root (`level.dat` at the top), and the archive's own file name (minus `.zip`) is used instead.
+     */
+    private suspend fun extractWorldZip(zipPath: Path, instanceId: String, sourceFileName: String) {
+        val savesDir = appPaths.savesDir(instanceId)
+        savesDir.createDirectories()
+        val scratchDir = Path(appPaths.downloadsTmp, "world-extract-${Uuid.random()}")
+        Zip.open(zipPath).use { zip -> zip.extractTo(scratchDir) }
+        try {
+            val singleTopLevelDir = scratchDir.list().singleOrNull()?.takeIf { it.isDirectory() }
+            val (sourceDir, baseName) = if (singleTopLevelDir != null) {
+                singleTopLevelDir to singleTopLevelDir.name
+            } else {
+                scratchDir to sourceFileName.removeSuffix(".zip")
+            }
+            val existingNames = savesDir.list().map { it.name }.toSet()
+            sourceDir.moveTo(appPaths.worldDir(instanceId, uniqueWorldFolderName(existingNames, baseName)))
+        } finally {
+            if (scratchDir.exists()) scratchDir.deleteRecursively()
         }
     }
 
@@ -486,6 +584,14 @@ class ProjectRepositoryImpl(
 }
 
 private fun String.pathSegments(): Array<String> = split('/').filter { it.isNotBlank() }.toTypedArray()
+
+/** Dedupes [base] against [existingNames] by appending " (2)", " (3)", ... until it no longer collides. */
+internal fun uniqueWorldFolderName(existingNames: Set<String>, base: String): String {
+    if (base !in existingNames) return base
+    var suffix = 2
+    while ("$base ($suffix)" in existingNames) suffix++
+    return "$base ($suffix)"
+}
 
 private fun ModLoaderType.toMetaData() = when (this) {
     ModLoaderType.Forge -> ProjectLoaderData.Forge

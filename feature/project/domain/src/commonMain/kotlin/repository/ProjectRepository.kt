@@ -84,4 +84,27 @@ interface ProjectRepository {
         sha1: String?,
         md5: String?
     )
+
+    /** Downloads [candidate] (a World project file, a zip of a save folder) and extracts it as a new world under
+     *  the instance's `saves/` directory, deduplicating its folder name against any existing world. */
+    context(_: Raise<ProjectFileDownloadError>)
+    suspend fun installWorldFile(
+        candidate: ProjectFileDownloadCandidate,
+        instanceId: String,
+        onProgress: (Progress) -> Unit = {}
+    )
+
+    /**
+     * Suspends until [fileName] appears in the OS Downloads folder (or immediately if it's already there), then
+     * extracts it as a new world under the instance's `saves/` directory. World counterpart of
+     * [awaitManualDownload].
+     */
+    context(_: Raise<ManualDownloadError>)
+    suspend fun awaitManualWorldDownload(
+        fileName: String,
+        instanceId: String,
+        size: Long?,
+        sha1: String?,
+        md5: String?
+    )
 }

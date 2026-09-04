@@ -158,6 +158,22 @@ fun InstanceDetails(
                 state.shaderPacksContent.eventSink(InstalledContentEvent.OnConfirmRemove(result))
             }
         }
+        state.worldsContent.state.promptRemoveConfirmation?.let { pending ->
+            OverlayEffect(pending) {
+                val result = show(
+                    ConfirmDialog(
+                        messageResource = InstanceRes.string.removeContentConfirmation,
+                        messageArgs = listOf(pending.folderName.stripMinecraftFormattingForDisplay()),
+                        actionButton = ConfirmDialogButton(
+                            textResource = InstanceRes.string.remove,
+                            icon = Lucide.Trash,
+                            style = ConfirmDialogButtonStyle.Destructive,
+                        ),
+                    )
+                )
+                state.worldsContent.eventSink(InstalledWorldsEvent.OnConfirmRemove(result))
+            }
+        }
 
         if (state.promptFinishInstallation) {
             OverlayEffect {
@@ -241,17 +257,14 @@ private fun AppTabScope.InstanceDetailsTabTitle(tab: InstanceDetailsTab, state: 
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        val installedFiles = when (tab) {
-            InstanceDetailsTab.Mods -> state.modsContent.state.files
-            InstanceDetailsTab.ResourcePacks -> state.resourcePacksContent.state.files
-            InstanceDetailsTab.ShaderPacks -> state.shaderPacksContent.state.files
+        val badgeCount = when (tab) {
+            InstanceDetailsTab.Mods -> state.modsContent.state.files?.count { it.enabled }
+            InstanceDetailsTab.ResourcePacks -> state.resourcePacksContent.state.files?.count { it.enabled }
+            InstanceDetailsTab.ShaderPacks -> state.shaderPacksContent.state.files?.count { it.enabled }
+            InstanceDetailsTab.Worlds -> state.worldsContent.state.worlds?.size
             else -> null
         }
-        val title = if (installedFiles != null) {
-            "${tab.title} (${installedFiles.count { it.enabled }})"
-        } else {
-            tab.title
-        }
+        val title = if (badgeCount != null) "${tab.title} ($badgeCount)" else tab.title
         AppIconTextButtonContent(
             text = title,
             imageVector = tab.icon
@@ -267,8 +280,7 @@ private fun InstanceDetailsTabContent(tab: InstanceDetailsTab, instance: Instanc
         InstanceDetailsTab.Mods -> InstanceModsTab(state, state.modsContent)
         InstanceDetailsTab.ResourcePacks -> InstanceResourcePacksTab(state.resourcePacksContent)
         InstanceDetailsTab.ShaderPacks -> InstanceShaderPacksTab(state.shaderPacksContent)
-        InstanceDetailsTab.DataPacks -> InstanceDataPacksTab(state)
-        InstanceDetailsTab.Worlds -> InstanceWorldsTab(state)
+        InstanceDetailsTab.Worlds -> InstanceWorldsTab(state.worldsContent)
         InstanceDetailsTab.Logs -> state.logsContent.state.logs?.let { InstanceLogsTab(state.logsContent) }
     }
 }
@@ -1317,16 +1329,6 @@ private fun InstanceShaderPacksTab(
 }
 
 @Composable
-private fun InstanceDataPacksTab(state: InstanceDetailsState) {
-    AppText("Data Packs")
-}
-
-@Composable
-private fun InstanceWorldsTab(state: InstanceDetailsState) {
-    AppText("Worlds")
-}
-
-@Composable
 private fun InstanceLogsTab(content: Store<InstanceLogsState, InstanceLogsEvent>) {
     val (state, eventSink) = content
     val logs = state.filteredLogs ?: emptyList()
@@ -1467,7 +1469,6 @@ private val InstanceDetailsTab.icon: ImageVector
         InstanceDetailsTab.Mods -> Lucide.Box
         InstanceDetailsTab.ResourcePacks -> Lucide.Paintbrush
         InstanceDetailsTab.ShaderPacks -> Lucide.Glasses
-        InstanceDetailsTab.DataPacks -> Lucide.Braces
         InstanceDetailsTab.Worlds -> Lucide.Earth
     }
 
@@ -1478,6 +1479,5 @@ private val InstanceDetailsTab.title: String
         InstanceDetailsTab.Mods -> stringResource(SharedRes.string.mods)
         InstanceDetailsTab.ResourcePacks -> stringResource(SharedRes.string.resourcePacks)
         InstanceDetailsTab.ShaderPacks -> stringResource(SharedRes.string.shaderPacks)
-        InstanceDetailsTab.DataPacks -> stringResource(InstanceRes.string.dataPacks)
         InstanceDetailsTab.Worlds -> stringResource(InstanceRes.string.worlds)
     }

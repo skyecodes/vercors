@@ -15,11 +15,9 @@ import app.vercors.feature.instance.domain.usecase.RecordInstalledContentOriginU
 import app.vercors.feature.instance.ui.install.ManualDownloadCandidate
 import app.vercors.feature.instance.ui.install.runManualDownloads
 import app.vercors.feature.instance.ui.install.toFractionOrNull
+import app.vercors.feature.instance.ui.message
 import app.vercors.feature.project.domain.model.*
-import app.vercors.feature.project.domain.usecase.AwaitManualDownloadUseCase
-import app.vercors.feature.project.domain.usecase.DownloadProjectFilesUseCase
-import app.vercors.feature.project.domain.usecase.GetProjectFilesUseCase
-import app.vercors.feature.project.domain.usecase.GetProjectUseCase
+import app.vercors.feature.project.domain.usecase.*
 import app.vercors.feature.project.ui.message
 import app.vercors.shared.domain.usecase.CopyToClipboardUseCase
 import app.vercors.shared.ui.Presenter
@@ -50,6 +48,8 @@ class InstallProjectPresenter(
     private val getProjectFiles: GetProjectFilesUseCase,
     private val downloadProjectFiles: DownloadProjectFilesUseCase,
     private val awaitManualDownload: AwaitManualDownloadUseCase,
+    private val installWorldFile: InstallWorldFileUseCase,
+    private val awaitManualWorldDownload: AwaitManualWorldDownloadUseCase,
     private val recordInstalledContentOrigin: RecordInstalledContentOriginUseCase,
     private val copyToClipboard: CopyToClipboardUseCase,
     private val snackbarService: SnackbarService
@@ -283,6 +283,9 @@ class InstallProjectPresenter(
         onProgressChanged: (Float) -> Unit,
         onFinished: (success: Boolean) -> Unit
     ): Job {
+        if (projectType == ProjectType.World) {
+            return confirmInstallWorld(instanceId, file, onManualDownloadItemsChanged, onProgressChanged, onFinished)
+        }
         val candidates = buildList {
             add(InstallCandidate(projectId, file))
             selectedDependencies.forEach { add(InstallCandidate(it.projectId, it.file)) }
@@ -303,9 +306,12 @@ class InstallProjectPresenter(
                     ) { progress ->
                         onProgressChanged((progress.toFractionOrNull() ?: 0f) * autoCandidates.size / totalCount)
                     }
+                    // Reached only for Mod/ResourcePack/ShaderPack (World/Modpack/DataPack never get here — see
+                    // the early World branch above and `isInstallable`), so a ContentKind always exists.
+                    val kind = requireNotNull(projectType.toContentKindOrNull())
                     autoCandidates.forEach { candidate ->
                         recordInstalledContentOrigin(
-                            projectType.toContentKind(),
+                            kind,
                             instanceId,
                             candidate.file.fileName,
                             candidate.projectId.platform,
@@ -348,6 +354,60 @@ class InstallProjectPresenter(
         return job
     }
 
+    /**
+     * World installs are a single file with no dependencies and no content-kind/provider tracking (there's no
+     * "already installed" concept to dedupe against, unlike mods) — handled as its own, simpler path rather than
+     * folded into [confirmInstall]'s multi-candidate/dependency-batching logic above. The downloaded archive is
+     * extracted as a new world directory rather than moved into a flat folder — see
+     * [app.vercors.feature.project.domain.repository.ProjectRepository.installWorldFile].
+     */
+    private fun confirmInstallWorld(
+        instanceId: InstanceId,
+        file: ProjectFileView,
+        onManualDownloadItemsChanged: (List<ManualDownloadItem>) -> Unit,
+        onProgressChanged: (Float) -> Unit,
+        onFinished: (success: Boolean) -> Unit
+    ): Job {
+        val job = globalScope.launch {
+            val manualDownloadUrl = file.manualDownloadUrl
+            val ok = if (manualDownloadUrl == null) {
+                recover({
+                    val candidate =
+                        ProjectFileDownloadCandidate(projectId, file.id, file.fileName, file.size, file.sha1, file.md5)
+                    installWorldFile(candidate, instanceId) { progress ->
+                        onProgressChanged(progress.toFractionOrNull() ?: 0f)
+                    }
+                    true
+                }) { error: ProjectFileDownloadError ->
+                    snackbarService.error { error.message }
+                    false
+                }
+            } else {
+                onManualDownloadItemsChanged(
+                    listOf(
+                        ManualDownloadItem(
+                            file.fileName,
+                            manualDownloadUrl,
+                            downloaded = false
+                        )
+                    )
+                )
+                recover({
+                    awaitManualWorldDownload(file.fileName, instanceId, file.size, file.sha1, file.md5)
+                    true
+                }) { error: ManualDownloadError ->
+                    snackbarService.error { error.message }
+                    false
+                }
+            }
+            onManualDownloadItemsChanged(emptyList())
+            onProgressChanged(1f)
+            onFinished(ok)
+        }
+        job.invokeOnCompletion { error -> if (error != null) onFinished(false) }
+        return job
+    }
+
     @Composable
     private fun observeInstanceListView(): State<ProgressiveOutcome<Nothing, List<InstallableInstanceView>>> =
         produceAndCollectAsProgressiveState {
@@ -364,10 +424,11 @@ class InstallProjectPresenter(
         instanceId: InstanceId?
     ): State<ProgressiveOutcome<Nothing, List<ModProvider>>> =
         produceAndCollectAsProgressiveState(instanceId) {
-            if (instanceId == null) {
-                flowOf(ProgressiveOutcome.Incomplete())
+            val kind = projectType.toContentKindOrNull()
+            if (instanceId == null || kind == null) {
+                flowOf(ProgressiveOutcome.Success(emptyList<ModProvider>()))
             } else {
-                observeInstalledContent(projectType.toContentKind(), instanceId).map { outcome ->
+                observeInstalledContent(kind, instanceId).map { outcome ->
                     outcome.map { list -> list.flatMap { it.providers } }
                 }
             }
@@ -386,11 +447,11 @@ internal fun pickRecommendedFile(files: List<ProjectFileView>): ProjectFileView?
     files.filter { it.releaseChannel == ProjectReleaseChannel.Release }.maxByOrNull { it.publishedAt }
         ?: files.maxByOrNull { it.publishedAt }
 
-/** Install is only wired up for these three types — see [app.vercors.feature.project.ui.details.isInstallable]. */
-private fun ProjectType.toContentKind(): ContentKind = when (this) {
+/** Only Mod/ResourcePack/ShaderPack have a [ContentKind] (an "already installed" concept to dedupe dependencies
+ *  against) — Modpack never reaches this presenter, World has no dependencies, and DataPack isn't installable. */
+private fun ProjectType.toContentKindOrNull(): ContentKind? = when (this) {
     ProjectType.Mod -> ContentKind.Mod
     ProjectType.ResourcePack -> ContentKind.ResourcePack
     ProjectType.ShaderPack -> ContentKind.ShaderPack
-    ProjectType.Modpack, ProjectType.DataPack, ProjectType.World ->
-        error("Install is not supported for project type $this")
+    ProjectType.Modpack, ProjectType.DataPack, ProjectType.World -> null
 }

@@ -11,6 +11,10 @@ internal fun isContentFileEnabled(actualFileName: String): Boolean = !actualFile
 /** The file's stable identity, used as the cache store key — never includes the `.disabled` suffix. */
 internal fun contentLogicalFileName(actualFileName: String): String = actualFileName.removeSuffix(DISABLED_SUFFIX)
 
-/** [actualFileName] stripped of both `.disabled` and the extension, for deriving a fallback title. */
+/**
+ * [actualFileName] stripped of both `.disabled` and the extension, for deriving a fallback title. Also strips
+ * raw Minecraft formatting codes — some packs are distributed with their in-game display name (which can contain
+ * `§`-prefixed color/style codes) reused verbatim as the file name.
+ */
 internal fun contentBaseName(actualFileName: String, extension: String): String =
-    contentLogicalFileName(actualFileName).removeSuffix(".$extension")
+    contentLogicalFileName(actualFileName).removeSuffix(".$extension").stripMinecraftFormatting()

@@ -6,5 +6,6 @@ enum class InstanceFolder {
     Mods,
     ResourcePacks,
     ShaderPacks,
-    Config
+    Config,
+    Saves
 }

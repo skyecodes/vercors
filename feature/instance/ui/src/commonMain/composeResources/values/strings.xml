@@ -89,7 +89,6 @@
     <string name="changes">Unsaved changes</string>
 
     <string name="options">Options</string>
-    <string name="dataPacks">Data Packs</string>
     <string name="worlds">Worlds</string>
     <string name="logs">Logs</string>
 
@@ -101,6 +100,7 @@
     <string name="noModsInstalled">No mods installed</string>
     <string name="noResourcePacksInstalled">No resource packs installed</string>
     <string name="noShaderPacksInstalled">No shader packs installed</string>
+    <string name="noWorldsInstalled">No worlds installed</string>
     <string name="noMatchingFiles">No matching files found</string>
     <string name="wrapLines">Wrap lines</string>
 
@@ -110,12 +110,14 @@
     <string name="addMod">Add a mod</string>
     <string name="addResourcePack">Add a resource pack</string>
     <string name="addShaderPack">Add a shader pack</string>
+    <string name="addWorld">Add a world</string>
     <string name="importMod">Import a mod</string>
     <string name="importResourcePack">Import a resource pack</string>
     <string name="importShaderPack">Import a shader pack</string>
     <string name="openModsFolder">Open Mods Folder</string>
     <string name="openResourcePacksFolder">Open Resource Packs Folder</string>
     <string name="openShaderPacksFolder">Open Shader Packs Folder</string>
+    <string name="openWorldsFolder">Open Worlds Folder</string>
     <string name="openConfigFolder">Open Config Folder</string>
     <string name="openInstanceFolder">Open Instance Folder</string>
     <string name="disable">Disable</string>

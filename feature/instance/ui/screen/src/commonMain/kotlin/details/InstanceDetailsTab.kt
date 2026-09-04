@@ -5,7 +5,6 @@ enum class InstanceDetailsTab {
     Mods,
     ResourcePacks,
     ShaderPacks,
-    DataPacks,
     Worlds,
     Logs
 }
