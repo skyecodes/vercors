@@ -1408,6 +1408,12 @@ private fun InstanceLogsFilterBar(state: InstanceLogsState) {
     }
 }
 
+private const val MAX_LOG_LINE_LENGTH = 4000
+
+private fun String.truncateLongLines(maxLength: Int = MAX_LOG_LINE_LENGTH): String =
+    if (length <= maxLength && '\n' !in this) this
+    else lineSequence().joinToString("\n") { if (it.length > maxLength) it.take(maxLength) + "…" else it }
+
 @Composable
 private fun InstanceLogMessage(
     it: InstanceLogEventView,
@@ -1455,7 +1461,7 @@ private fun InstanceLogMessage(
                 )
             }
             AppText(
-                text = it.message,
+                text = remember(it.message) { it.message.truncateLongLines() },
                 color = color,
                 maxLines = if (wrapLines) Int.MAX_VALUE else 1,
             )

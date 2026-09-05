@@ -75,8 +75,7 @@ fun main(args: Array<String>) {
     )
 
     nucleusApplication(args) {
-        val windowState = rememberWindowState()
-        windowState.size = DpSize(1280.dp, 720.dp)
+        val windowState = rememberWindowState(size = DpSize(1280.dp, 720.dp))
 
         setSingletonImageLoaderFactory {
             ImageLoader.Builder(it)

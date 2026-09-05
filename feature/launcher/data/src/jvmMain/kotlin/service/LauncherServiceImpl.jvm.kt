@@ -107,10 +107,10 @@ private suspend fun ProducerScope<InstanceLaunchEvent>.processLog4jLog(
     line: String,
     xml: XML
 ) {
-    currentStack += line.replace("\t", "\n")
+    currentStack += line
     if (line.endsWith("</Event>")) {
         try {
-            val fullLog = currentStack.joinToString("").trim()
+            val fullLog = currentStack.joinToString("\n").trim()
             val splitIndex = fullLog.indexOf("<Event")
             if (splitIndex > 0) sendLog(InstanceLogEvent.GamePlain(fullLog.substring(0, splitIndex)))
             val logEvent: Log4jEvent = xml.decodeFromString(fullLog.substring(splitIndex))
