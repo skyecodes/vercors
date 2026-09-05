@@ -21,12 +21,11 @@ import androidx.compose.ui.unit.sp
 import app.vercors.core.ui.component.*
 import app.vercors.core.ui.layout.AppLoading
 import app.vercors.core.ui.modifier.appCard
-import app.vercors.core.ui.theme.colors
-import app.vercors.core.ui.theme.error
-import app.vercors.core.ui.theme.onBackground
-import app.vercors.core.ui.theme.surface2
+import app.vercors.core.ui.theme.*
 import app.vercors.feature.instance.domain.model.InstanceFolder
+import app.vercors.feature.instance.domain.model.InstanceStatus
 import app.vercors.feature.instance.ui.*
+import app.vercors.feature.launcher.domain.model.QuickPlayTarget
 import app.vercors.feature.project.domain.model.ProjectType
 import app.vercors.shared.ui.EventSink
 import app.vercors.shared.ui.Store
@@ -39,12 +38,17 @@ import org.jetbrains.compose.resources.stringResource
 
 @Composable
 context(eventSink: EventSink<InstanceDetailsEvent>)
-fun InstanceWorldsTab(content: Store<InstalledWorldsState, InstalledWorldsEvent>) {
+fun InstanceWorldsTab(instance: InstanceView, content: Store<InstalledWorldsState, InstalledWorldsEvent>) {
+    val canQuickJoin = instance.status is InstanceStatus.Idle || instance.status is InstanceStatus.Failed
     with(content.eventSink) {
         InstalledWorldList(
             worlds = content.state.worlds,
+            canQuickJoin = canQuickJoin,
             onAddClick = { eventSink(InstanceDetailsEvent.OnAddContentClick(ProjectType.World)) },
-            onOpenFolder = { eventSink(InstanceDetailsEvent.OnOpenInstanceFolderClick(InstanceFolder.Saves)) }
+            onOpenFolder = { eventSink(InstanceDetailsEvent.OnOpenInstanceFolderClick(InstanceFolder.Saves)) },
+            onQuickJoinClick = { folderName ->
+                eventSink(InstanceDetailsEvent.QuickJoin(QuickPlayTarget.Singleplayer(folderName)))
+            }
         )
     }
 }
@@ -53,8 +57,10 @@ fun InstanceWorldsTab(content: Store<InstalledWorldsState, InstalledWorldsEvent>
 context(eventSink: EventSink<InstalledWorldsEvent>)
 private fun InstalledWorldList(
     worlds: List<InstalledWorldView>?,
+    canQuickJoin: Boolean,
     onAddClick: () -> Unit,
     onOpenFolder: () -> Unit,
+    onQuickJoinClick: (String) -> Unit,
 ) {
     var searchQuery by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
@@ -104,7 +110,9 @@ private fun InstalledWorldList(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     contentPadding = PaddingValues(vertical = 8.dp)
                 ) {
-                    items(filteredWorlds, key = { it.folderName }) { world -> InstalledWorldRow(world) }
+                    items(filteredWorlds, key = { it.folderName }) { world ->
+                        InstalledWorldRow(world, canQuickJoin, onQuickJoinClick)
+                    }
                 }
                 VerticalScrollbar(adapter = rememberScrollbarAdapter(listState))
             }
@@ -114,7 +122,7 @@ private fun InstalledWorldList(
 
 @Composable
 context(eventSink: EventSink<InstalledWorldsEvent>)
-private fun InstalledWorldRow(world: InstalledWorldView) {
+private fun InstalledWorldRow(world: InstalledWorldView, canQuickJoin: Boolean, onQuickJoinClick: (String) -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -163,13 +171,13 @@ private fun InstalledWorldRow(world: InstalledWorldView) {
             }
         }
 
-        AppMenuButton {
-            AppMenuItem(
-                onClick = { eventSink(InstalledWorldsEvent.OnRemoveClick(world.folderName)) },
-                text = stringResource(InstanceRes.string.remove),
-                imageVector = Lucide.Trash,
-                contentColor = Theme[colors][error]
-            )
-        }
+        AppIconTextButton(
+            onClick = { onQuickJoinClick(world.folderName) },
+            text = stringResource(InstanceRes.string.quickJoin),
+            imageVector = Lucide.Play,
+            enabled = canQuickJoin,
+            backgroundColor = Theme[colors][success],
+            contentColor = Theme[colors][onSuccess]
+        )
     }
 }

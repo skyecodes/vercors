@@ -6,6 +6,7 @@ import app.vercors.feature.game.domain.model.GameVersionDetails
 import app.vercors.feature.instance.domain.model.Instance
 import app.vercors.feature.launcher.domain.model.InstanceLaunchEvent
 import app.vercors.feature.launcher.domain.model.InstanceLaunchFeature
+import app.vercors.feature.launcher.domain.model.QuickPlayTarget
 import app.vercors.shared.domain.model.JvmMemoryOptions
 import app.vercors.shared.domain.model.NativeLibraryOptions
 import kotlinx.coroutines.flow.Flow
@@ -19,6 +20,7 @@ interface LauncherService {
         features: List<InstanceLaunchFeature>,
         javaExecutable: String,
         jvmMemoryOptions: JvmMemoryOptions,
-        nativeLibraryOptions: NativeLibraryOptions
+        nativeLibraryOptions: NativeLibraryOptions,
+        quickPlayTarget: QuickPlayTarget? = null
     ): Flow<InstanceLaunchEvent>
 }

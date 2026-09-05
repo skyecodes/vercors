@@ -21,7 +21,8 @@ data class LaunchVariables(
     val libraryDir: String,
     val classpathSeparator: String,
     val launcherName: String,
-    val launcherVersion: String
+    val launcherVersion: String,
+    val quickPlayTarget: QuickPlayTarget? = null
 ) {
     fun toMap(): Map<String, String> = mapOf(
         "auth_player_name" to account.username,
@@ -47,5 +48,9 @@ data class LaunchVariables(
         "uuid" to account.id.toString(),
         "accessToken" to account.accessToken,
         "game_assets" to assetsDir
-    )
+    ) + when (val target = quickPlayTarget) {
+        is QuickPlayTarget.Singleplayer -> mapOf("quickPlaySingleplayer" to target.worldFolderName)
+        is QuickPlayTarget.Multiplayer -> mapOf("quickPlayMultiplayer" to target.serverAddress)
+        null -> emptyMap()
+    }
 }

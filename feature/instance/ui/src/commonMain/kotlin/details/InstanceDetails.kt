@@ -262,6 +262,7 @@ private fun AppTabScope.InstanceDetailsTabTitle(tab: InstanceDetailsTab, state: 
             InstanceDetailsTab.ResourcePacks -> state.resourcePacksContent.state.files?.count { it.enabled }
             InstanceDetailsTab.ShaderPacks -> state.shaderPacksContent.state.files?.count { it.enabled }
             InstanceDetailsTab.Worlds -> state.worldsContent.state.worlds?.size
+            InstanceDetailsTab.Servers -> state.serversContent.state.servers?.size
             else -> null
         }
         val title = if (badgeCount != null) "${tab.title} ($badgeCount)" else tab.title
@@ -280,7 +281,8 @@ private fun InstanceDetailsTabContent(tab: InstanceDetailsTab, instance: Instanc
         InstanceDetailsTab.Mods -> InstanceModsTab(state, state.modsContent)
         InstanceDetailsTab.ResourcePacks -> InstanceResourcePacksTab(state.resourcePacksContent)
         InstanceDetailsTab.ShaderPacks -> InstanceShaderPacksTab(state.shaderPacksContent)
-        InstanceDetailsTab.Worlds -> InstanceWorldsTab(state.worldsContent)
+        InstanceDetailsTab.Worlds -> InstanceWorldsTab(instance, state.worldsContent)
+        InstanceDetailsTab.Servers -> InstanceServersTab(instance, state.serversContent)
         InstanceDetailsTab.Logs -> state.logsContent.state.logs?.let { InstanceLogsTab(state.logsContent) }
     }
 }
@@ -1470,6 +1472,7 @@ private val InstanceDetailsTab.icon: ImageVector
         InstanceDetailsTab.ResourcePacks -> Lucide.Paintbrush
         InstanceDetailsTab.ShaderPacks -> Lucide.Glasses
         InstanceDetailsTab.Worlds -> Lucide.Earth
+        InstanceDetailsTab.Servers -> Lucide.Server
     }
 
 private val InstanceDetailsTab.title: String
@@ -1480,4 +1483,5 @@ private val InstanceDetailsTab.title: String
         InstanceDetailsTab.ResourcePacks -> stringResource(SharedRes.string.resourcePacks)
         InstanceDetailsTab.ShaderPacks -> stringResource(SharedRes.string.shaderPacks)
         InstanceDetailsTab.Worlds -> stringResource(InstanceRes.string.worlds)
+        InstanceDetailsTab.Servers -> stringResource(InstanceRes.string.servers)
     }

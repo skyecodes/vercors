@@ -8,6 +8,7 @@ import app.vercors.feature.instance.domain.model.Instance
 import app.vercors.feature.instance.domain.model.InstanceLogEvent
 import app.vercors.feature.launcher.domain.model.InstanceLaunchEvent
 import app.vercors.feature.launcher.domain.model.InstanceLaunchFeature
+import app.vercors.feature.launcher.domain.model.QuickPlayTarget
 import app.vercors.feature.launcher.domain.service.LaunchRuleEvaluator
 import app.vercors.feature.launcher.domain.service.LauncherService
 import app.vercors.shared.data.AppPaths
@@ -55,6 +56,7 @@ class LauncherServiceImpl(
         javaExecutable: String,
         jvmMemoryOptions: JvmMemoryOptions,
         nativeLibraryOptions: NativeLibraryOptions,
+        quickPlayTarget: QuickPlayTarget?,
     ): Flow<InstanceLaunchEvent> = channelFlow {
         logger.info { "Launching instance ${instance.name}..." }
         val effectiveVersion = ruleEvaluator.applyRules(version, features)
@@ -72,7 +74,8 @@ class LauncherServiceImpl(
             effectiveVersion,
             javaExecutable,
             jvmMemoryOptions,
-            nativeLibraryOptions
+            nativeLibraryOptions,
+            quickPlayTarget
         )
         logLaunchCommand(command, effectiveVersion.mainClass, account)
         val gameDir = appPaths.gameDir(instance.id)

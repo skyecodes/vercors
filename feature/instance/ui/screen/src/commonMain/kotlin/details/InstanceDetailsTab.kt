@@ -6,5 +6,6 @@ enum class InstanceDetailsTab {
     ResourcePacks,
     ShaderPacks,
     Worlds,
+    Servers,
     Logs
 }

@@ -86,6 +86,8 @@ class AppPaths(root: Path) {
 
     fun worldDir(instanceId: String, worldName: String): Path = Path(savesDir(instanceId), worldName)
 
+    fun serversDatFile(instanceId: String): Path = Path(gameDir(instanceId), "servers.dat")
+
     fun metadataCache(kind: String): Path = Path(metadataCacheRoot, kind)
 
     fun iconCache(kind: String): Path = Path(iconCacheRoot, kind)

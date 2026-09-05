@@ -28,6 +28,7 @@ data class InstanceDetailsState(
     val resourcePacksContent: Store<InstalledContentState, InstalledContentEvent>,
     val shaderPacksContent: Store<InstalledContentState, InstalledContentEvent>,
     val worldsContent: Store<InstalledWorldsState, InstalledWorldsEvent>,
+    val serversContent: Store<InstanceServersState, InstanceServersEvent>,
     val logsContent: Store<InstanceLogsState, InstanceLogsEvent>,
     val promptFinishInstallation: Boolean,
     val finishInstallationDialog: FinishInstallationDialog,
@@ -138,6 +139,17 @@ private val MINECRAFT_FORMATTING_CODE = Regex("§.")
 
 internal fun String.stripMinecraftFormattingForDisplay(): String =
     replace(MINECRAFT_FORMATTING_CODE, "").replace("§", "").ifBlank { this }
+
+@Immutable
+data class InstalledServerView(
+    val name: String,
+    val address: String,
+)
+
+fun InstalledServer.toView(): InstalledServerView = InstalledServerView(
+    name = name.stripMinecraftFormattingForDisplay(),
+    address = address,
+)
 
 @Immutable
 data class JavaInstallProgressView(

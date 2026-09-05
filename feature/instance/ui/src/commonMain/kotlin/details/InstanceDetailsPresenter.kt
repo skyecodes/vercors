@@ -21,6 +21,7 @@ import app.vercors.feature.instance.ui.copy.CopyInstanceTarget
 import app.vercors.feature.instance.ui.install.*
 import app.vercors.feature.instance.ui.list.InstanceListScreen
 import app.vercors.feature.launcher.domain.model.InstanceLaunchError
+import app.vercors.feature.launcher.domain.model.QuickPlayTarget
 import app.vercors.feature.launcher.domain.usecase.CancelInstanceUseCase
 import app.vercors.feature.launcher.domain.usecase.KillInstanceUseCase
 import app.vercors.feature.launcher.domain.usecase.LaunchInstanceUseCase
@@ -59,6 +60,7 @@ class InstanceDetailsPresenter(
     private val observeInstance: ObserveInstanceUseCase,
     private val installedContentPresenterFactory: InstalledContentPresenter.Factory,
     private val installedWorldsPresenterFactory: InstalledWorldsPresenter.Factory,
+    private val instanceServersPresenterFactory: InstanceServersPresenter.Factory,
     private val instanceLogsPresenterFactory: InstanceLogsPresenter.Factory,
     private val instanceOptionsPresenterFactory: InstanceOptionsPresenter.Factory,
     private val launchInstance: LaunchInstanceUseCase,
@@ -109,6 +111,9 @@ class InstanceDetailsPresenter(
         val worldsContent = remember(screen.instanceId) {
             installedWorldsPresenterFactory.create(screen.instanceId)
         }.present()
+        val serversContent = remember(screen.instanceId) {
+            instanceServersPresenterFactory.create(screen.instanceId)
+        }.present()
         val logsContent = remember(screen.instanceId) {
             instanceLogsPresenterFactory.create(screen.instanceId)
         }.present()
@@ -127,6 +132,9 @@ class InstanceDetailsPresenter(
         val (promptJavaInstall, setPromptJavaInstall) = remember { mutableStateOf(false) }
         val installJavaProgressDialog = remember { InstallJavaProgressDialog(javaInstallState) }
         val (javaInstallJob, setJavaInstallJob) = remember { mutableStateOf<Job?>(null) }
+        val (pendingQuickPlayTarget, setPendingQuickPlayTarget) = remember {
+            mutableStateOf<QuickPlayTarget?>(null)
+        }
         val (selectedTab, setSelectedTab) = rememberSaveable {
             mutableStateOf(screen.initialTab ?: InstanceDetailsTab.Options)
         }
@@ -142,7 +150,10 @@ class InstanceDetailsPresenter(
 
         LaunchedEffect(screen.instanceId, screen.autoLaunch) {
             if (screen.autoLaunch) {
-                handleLaunch(setSelectedTab, setPromptInstallJava, loginState, setPromptLogin, setLoginJob)
+                handleLaunch(
+                    setSelectedTab, setPromptInstallJava, loginState, setPromptLogin, setLoginJob,
+                    setPendingQuickPlayTarget
+                )
             }
         }
 
@@ -158,6 +169,7 @@ class InstanceDetailsPresenter(
             resourcePacksContent = resourcePacksContent,
             shaderPacksContent = shaderPacksContent,
             worldsContent = worldsContent,
+            serversContent = serversContent,
             logsContent = logsContent,
             promptFinishInstallation = promptFinishInstallation,
             finishInstallationDialog = finishInstallationDialog,
@@ -182,7 +194,9 @@ class InstanceDetailsPresenter(
                 javaInstallState = javaInstallState,
                 setPromptJavaInstall = setPromptJavaInstall,
                 javaInstallJob = javaInstallJob,
-                setJavaInstallJob = setJavaInstallJob
+                setJavaInstallJob = setJavaInstallJob,
+                pendingQuickPlayTarget = pendingQuickPlayTarget,
+                setPendingQuickPlayTarget = setPendingQuickPlayTarget
             )
         }
     }
@@ -203,11 +217,19 @@ class InstanceDetailsPresenter(
         javaInstallState: MutableState<JavaInstallProgressView>,
         setPromptJavaInstall: (Boolean) -> Unit,
         javaInstallJob: Job?,
-        setJavaInstallJob: (Job?) -> Unit
+        setJavaInstallJob: (Job?) -> Unit,
+        pendingQuickPlayTarget: QuickPlayTarget?,
+        setPendingQuickPlayTarget: (QuickPlayTarget?) -> Unit
     ) {
         when (event) {
             InstanceDetailsEvent.Launch -> handleLaunch(
-                setSelectedTab, setPromptInstallJava, loginState, setPromptLogin, setLoginJob
+                setSelectedTab, setPromptInstallJava, loginState, setPromptLogin, setLoginJob,
+                setPendingQuickPlayTarget
+            )
+
+            is InstanceDetailsEvent.QuickJoin -> handleLaunch(
+                setSelectedTab, setPromptInstallJava, loginState, setPromptLogin, setLoginJob,
+                setPendingQuickPlayTarget, event.target
             )
 
             InstanceDetailsEvent.OnInstallJavaConfirm -> handleInstallJavaConfirm(
@@ -227,7 +249,9 @@ class InstanceDetailsPresenter(
                 setPromptInstallJava,
                 loginState,
                 setPromptLogin,
-                setLoginJob
+                setLoginJob,
+                setPendingQuickPlayTarget,
+                pendingQuickPlayTarget
             )
 
             InstanceDetailsEvent.CancelLogin -> handleCancelLogin(
@@ -236,7 +260,9 @@ class InstanceDetailsPresenter(
                 setPromptLogin,
                 setLoginJob,
                 setSelectedTab,
-                setPromptInstallJava
+                setPromptInstallJava,
+                setPendingQuickPlayTarget,
+                pendingQuickPlayTarget
             )
 
             InstanceDetailsEvent.Delete -> setPromptDeleteConfirmation(true)
@@ -359,9 +385,12 @@ class InstanceDetailsPresenter(
         loginState: MutableState<LoginStateView>,
         setPromptLogin: (Boolean) -> Unit,
         setLoginJob: (Job?) -> Unit,
+        setPendingQuickPlayTarget: (QuickPlayTarget?) -> Unit,
+        quickPlayTarget: QuickPlayTarget? = null,
     ) = globalScope.launch {
+        setPendingQuickPlayTarget(quickPlayTarget)
         setSelectedTab(InstanceDetailsTab.Logs)
-        either { launchInstance(screen.instanceId) }.onLeft { error ->
+        either { launchInstance(screen.instanceId, quickPlayTarget) }.onLeft { error ->
             when (error) {
                 is InstanceLaunchError.NoCompatibleJava -> setPromptInstallJava(error.majorVersion)
                 InstanceLaunchError.LoginRequired -> startLogin(loginState, setPromptLogin, setLoginJob)
@@ -383,11 +412,16 @@ class InstanceDetailsPresenter(
         setLoginJob: (Job?) -> Unit,
         setSelectedTab: (InstanceDetailsTab) -> Unit,
         setPromptInstallJava: (Int?) -> Unit,
+        setPendingQuickPlayTarget: (QuickPlayTarget?) -> Unit,
+        pendingQuickPlayTarget: QuickPlayTarget?,
     ) {
         loginJob?.cancel(CancellationException("Login cancelled by user"))
         setPromptLogin(false)
         if (loginState.value.success) {
-            handleLaunch(setSelectedTab, setPromptInstallJava, loginState, setPromptLogin, setLoginJob)
+            handleLaunch(
+                setSelectedTab, setPromptInstallJava, loginState, setPromptLogin, setLoginJob,
+                setPendingQuickPlayTarget, pendingQuickPlayTarget
+            )
         }
     }
 
@@ -440,12 +474,17 @@ class InstanceDetailsPresenter(
         loginState: MutableState<LoginStateView>,
         setPromptLogin: (Boolean) -> Unit,
         setLoginJob: (Job?) -> Unit,
+        setPendingQuickPlayTarget: (QuickPlayTarget?) -> Unit,
+        pendingQuickPlayTarget: QuickPlayTarget?,
     ) {
         javaInstallJob?.cancel()
         setPromptJavaInstall(false)
         val succeeded = javaInstallState.value.done && javaInstallState.value.error == null
         if (succeeded) {
-            handleLaunch(setSelectedTab, setPromptInstallJava, loginState, setPromptLogin, setLoginJob)
+            handleLaunch(
+                setSelectedTab, setPromptInstallJava, loginState, setPromptLogin, setLoginJob,
+                setPendingQuickPlayTarget, pendingQuickPlayTarget
+            )
         }
     }
 

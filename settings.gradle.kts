@@ -42,6 +42,7 @@ include(":app:meta:distribution")
 
 include(":core:cryptography")
 include(":core:domain")
+include(":core:nbt")
 include(":core:network")
 include(":core:filesystem")
 include(":core:system")

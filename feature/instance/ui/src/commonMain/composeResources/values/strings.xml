@@ -90,7 +90,9 @@
 
     <string name="options">Options</string>
     <string name="worlds">Worlds</string>
+    <string name="servers">Servers</string>
     <string name="logs">Logs</string>
+    <string name="quickJoin">Quick Join</string>
 
     <string name="general">General</string>
     <string name="unlockAdvancedOptions">Unlock advanced options</string>
@@ -101,6 +103,7 @@
     <string name="noResourcePacksInstalled">No resource packs installed</string>
     <string name="noShaderPacksInstalled">No shader packs installed</string>
     <string name="noWorldsInstalled">No worlds installed</string>
+    <string name="noServersAdded">No servers added</string>
     <string name="noMatchingFiles">No matching files found</string>
     <string name="wrapLines">Wrap lines</string>
 

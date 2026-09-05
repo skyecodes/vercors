@@ -5,6 +5,7 @@ import app.vercors.feature.account.domain.model.Account
 import app.vercors.feature.game.domain.model.GameVersionDetails
 import app.vercors.feature.instance.domain.model.Instance
 import app.vercors.feature.launcher.domain.model.LaunchVariables
+import app.vercors.feature.launcher.domain.model.QuickPlayTarget
 import app.vercors.feature.launcher.domain.service.resolve
 import app.vercors.feature.launcher.domain.service.substituteVariables
 import app.vercors.shared.data.AppPaths
@@ -27,7 +28,8 @@ class LaunchCommandBuilder(
         version: GameVersionDetails,
         javaExecutable: String,
         jvmMemoryOptions: JvmMemoryOptions,
-        nativeLibraryOptions: NativeLibraryOptions
+        nativeLibraryOptions: NativeLibraryOptions,
+        quickPlayTarget: QuickPlayTarget? = null
     ): List<String> {
         val nativesDir = appPaths.nativesDir(instance.id)
         val classpath = buildList {
@@ -46,7 +48,8 @@ class LaunchCommandBuilder(
             libraryDir = appPaths.libraries.toString(),
             classpathSeparator = platformPathSeparator,
             launcherName = launcherName,
-            launcherVersion = launcherVersion
+            launcherVersion = launcherVersion,
+            quickPlayTarget = quickPlayTarget
         ).toMap()
         val jvmArgs = version.jvmArgs?.resolve(variables)
         val gameArgs = version.gameArgs?.resolve(variables)

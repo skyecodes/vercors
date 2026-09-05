@@ -3,12 +3,14 @@ package app.vercors.feature.instance.ui.details
 import androidx.compose.runtime.Immutable
 import app.vercors.feature.instance.domain.model.InstanceFolder
 import app.vercors.feature.instance.ui.copy.CopyInstanceResult
+import app.vercors.feature.launcher.domain.model.QuickPlayTarget
 import app.vercors.feature.project.domain.model.ProjectType
 import app.vercors.shared.ui.Event
 
 @Immutable
 sealed interface InstanceDetailsEvent : Event {
     data object Launch : InstanceDetailsEvent
+    data class QuickJoin(val target: QuickPlayTarget) : InstanceDetailsEvent
     data object Cancel : InstanceDetailsEvent
     data object CancelSetup : InstanceDetailsEvent
     data object Stop : InstanceDetailsEvent

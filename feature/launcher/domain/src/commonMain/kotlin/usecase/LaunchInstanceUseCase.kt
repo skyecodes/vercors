@@ -20,6 +20,8 @@ import app.vercors.feature.instance.domain.repository.InstanceRepository
 import app.vercors.feature.instance.domain.usecase.UpdateInstanceUseCase
 import app.vercors.feature.launcher.domain.model.InstanceLaunchError
 import app.vercors.feature.launcher.domain.model.InstanceLaunchEvent
+import app.vercors.feature.launcher.domain.model.InstanceLaunchFeature
+import app.vercors.feature.launcher.domain.model.QuickPlayTarget
 import app.vercors.feature.launcher.domain.service.LauncherService
 import app.vercors.shared.domain.model.JvmMemoryOptions
 import app.vercors.shared.domain.model.NativeLibraryOptions
@@ -61,7 +63,7 @@ class LaunchInstanceUseCase(
     private val coroutineScope: CoroutineScope,
 ) {
     context(_: Raise<InstanceLaunchError>)
-    suspend operator fun invoke(instanceId: InstanceId) {
+    suspend operator fun invoke(instanceId: InstanceId, quickPlayTarget: QuickPlayTarget? = null) {
         val job = coroutineScope.async { prepareInstance(instanceId) }
         job.invokeOnCompletion { instanceRepository.updateInstanceJob(instanceId, null) }
         instanceRepository.updateInstanceJob(instanceId, job)
@@ -78,6 +80,12 @@ class LaunchInstanceUseCase(
             return
         } ?: return
 
+        val features = when (quickPlayTarget) {
+            is QuickPlayTarget.Singleplayer -> listOf(InstanceLaunchFeature.IsQuickPlaySingleplayer)
+            is QuickPlayTarget.Multiplayer -> listOf(InstanceLaunchFeature.IsQuickPlayMultiplayer)
+            null -> emptyList()
+        }
+
         var playtimeJob: Job? = null
         try {
             launcherService.launch(
@@ -85,10 +93,11 @@ class LaunchInstanceUseCase(
                 account = account,
                 version = version,
                 assetIndex = assetIndex,
-                features = emptyList(),
+                features = features,
                 javaExecutable = javaExecutable,
                 jvmMemoryOptions = jvmMemoryOptions,
-                nativeLibraryOptions = nativeLibraryOptions
+                nativeLibraryOptions = nativeLibraryOptions,
+                quickPlayTarget = quickPlayTarget
             ).catch {
                 when (it) {
                     is CancellationException -> {
