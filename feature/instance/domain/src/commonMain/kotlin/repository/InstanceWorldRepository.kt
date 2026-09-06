@@ -9,4 +9,8 @@ interface InstanceWorldRepository {
 
     /** Permanently deletes the world's directory (and everything in it) from disk. */
     suspend fun removeWorld(instanceId: InstanceId, folderName: String)
+
+    /** Extracts [sourcePath] (a local `.zip` of a save folder, never deleted) into [instanceId]'s `saves/`
+     *  directory as a new world. Returns `false` without extracting anything if [sourcePath] isn't a `.zip` file. */
+    suspend fun importWorld(instanceId: InstanceId, sourcePath: String): Boolean
 }

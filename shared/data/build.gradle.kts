@@ -10,4 +10,5 @@ dependencies {
     commonMainApi(projects.core.cryptography)
     commonMainApi(projects.shared.domain)
     commonMainImplementation(libs.arrow.resilience)
+    commonMainImplementation(libs.kzip)
 }

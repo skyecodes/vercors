@@ -2,11 +2,12 @@ package app.vercors.feature.instance.ui.details
 
 import androidx.compose.runtime.*
 import app.vercors.feature.instance.domain.model.InstanceId
+import app.vercors.feature.instance.domain.usecase.ImportWorldUseCase
 import app.vercors.feature.instance.domain.usecase.ObserveInstalledWorldsUseCase
 import app.vercors.feature.instance.domain.usecase.RemoveWorldUseCase
-import app.vercors.shared.ui.Event
-import app.vercors.shared.ui.Presenter
-import app.vercors.shared.ui.Store
+import app.vercors.feature.instance.ui.InstanceRes
+import app.vercors.feature.instance.ui.errorImportFailed
+import app.vercors.shared.ui.*
 import com.slack.circuit.retained.produceAndCollectAsRetainedState
 import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedFactory
@@ -15,6 +16,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import opensavvy.state.progressive.valueOrNull
+import org.jetbrains.compose.resources.stringResource
 
 @Immutable
 data class InstalledWorldsState(
@@ -29,6 +31,7 @@ data class PendingWorldRemoval(val folderName: String)
 sealed interface InstalledWorldsEvent : Event {
     data class OnRemoveClick(val folderName: String) : InstalledWorldsEvent
     data class OnConfirmRemove(val result: Boolean) : InstalledWorldsEvent
+    data class OnImportClick(val sourcePath: String) : InstalledWorldsEvent
 }
 
 @AssistedInject
@@ -36,7 +39,9 @@ class InstalledWorldsPresenter(
     @Assisted private val instanceId: InstanceId,
     private val observeInstalledWorlds: ObserveInstalledWorldsUseCase,
     private val removeWorld: RemoveWorldUseCase,
+    private val importWorld: ImportWorldUseCase,
     private val globalScope: CoroutineScope,
+    private val snackbarService: SnackbarService,
 ) : Presenter<InstalledWorldsState, InstalledWorldsEvent> {
     @Composable
     override fun present(): Store<InstalledWorldsState, InstalledWorldsEvent> {
@@ -69,6 +74,11 @@ class InstalledWorldsPresenter(
 
             is InstalledWorldsEvent.OnConfirmRemove ->
                 handleConfirmRemove(event, promptRemoveConfirmation, setPromptRemoveConfirmation)
+
+            is InstalledWorldsEvent.OnImportClick -> globalScope.launch {
+                val imported = importWorld(instanceId, event.sourcePath)
+                if (!imported) snackbarService.error { stringResource(InstanceRes.string.errorImportFailed) }
+            }
         }
     }
 

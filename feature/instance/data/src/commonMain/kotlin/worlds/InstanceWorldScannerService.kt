@@ -5,9 +5,11 @@ import app.vercors.core.filesystem.*
 import app.vercors.feature.instance.domain.model.InstalledWorld
 import app.vercors.feature.instance.domain.model.InstanceId
 import app.vercors.shared.data.AppPaths
+import app.vercors.shared.data.extractWorldZip
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
@@ -76,7 +78,7 @@ class InstanceWorldScannerService(
             return
         }
         val resolved = dir.list()
-            .filter { it.isDirectory() }
+            .filter { it.isDirectory() && Path(it, "level.dat").exists() }
             .map { toInstalledWorld(it) }
             .associateBy { it.folderName }
         state.update { resolved.successfulWithProgress() }
@@ -96,5 +98,25 @@ class InstanceWorldScannerService(
         val worldDir = appPaths.worldDir(instanceId, folderName)
         if (worldDir.exists()) worldDir.deleteRecursively()
         stateFor(instanceId).update { it.map { map -> map - folderName } }
+    }
+
+    /**
+     * Extracts [sourcePath] (a local `.zip` of a save folder, never deleted) into [instanceId]'s `saves/`
+     * directory as a new world, then immediately reconciles — not relying on the watcher to eventually catch up.
+     * Returns `false` without extracting anything if [sourcePath] isn't a `.zip` file, or if extraction fails for
+     * any reason (e.g. a corrupt/invalid archive).
+     */
+    suspend fun importWorld(instanceId: InstanceId, sourcePath: String): Boolean {
+        val zipPath = Path(sourcePath)
+        if (!zipPath.name.endsWith(".zip")) return false
+        try {
+            appPaths.extractWorldZip(zipPath, instanceId, zipPath.name)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            return false
+        }
+        reconcile(instanceId, stateFor(instanceId))
+        return true
     }
 }

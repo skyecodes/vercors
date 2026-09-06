@@ -33,6 +33,9 @@ import coil3.compose.rememberAsyncImagePainter
 import com.composables.icons.lucide.*
 import com.composeunstyled.ProvideContentColor
 import com.composeunstyled.theme.Theme
+import io.github.vinceglb.filekit.dialogs.FileKitType
+import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
+import io.github.vinceglb.filekit.path
 import okio.Path.Companion.toPath
 import org.jetbrains.compose.resources.stringResource
 
@@ -64,6 +67,9 @@ private fun InstalledWorldList(
 ) {
     var searchQuery by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
+    val importPickerLauncher = rememberFilePickerLauncher(type = FileKitType.File("zip")) { file ->
+        file?.let { eventSink(InstalledWorldsEvent.OnImportClick(it.path)) }
+    }
 
     LaunchedEffect(searchQuery) { listState.scrollToItem(0) }
 
@@ -87,6 +93,11 @@ private fun InstalledWorldList(
                     onClick = onAddClick,
                     text = stringResource(InstanceRes.string.addWorld),
                     imageVector = Lucide.Plus
+                )
+                AppMenuItem(
+                    onClick = importPickerLauncher::launch,
+                    text = stringResource(InstanceRes.string.importWorld),
+                    imageVector = Lucide.FileUp
                 )
                 AppMenuItem(
                     onClick = onOpenFolder,

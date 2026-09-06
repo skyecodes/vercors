@@ -30,7 +30,6 @@ import arrow.core.raise.context.raise
 import arrow.core.raise.context.withError
 import arrow.core.raise.recover
 import de.jonasbroeckmann.kzip.Zip
-import de.jonasbroeckmann.kzip.extractTo
 import de.jonasbroeckmann.kzip.forEachEntry
 import de.jonasbroeckmann.kzip.open
 import dev.zacsweers.metro.AppScope
@@ -477,7 +476,7 @@ class ProjectRepositoryImpl(
             raise(ProjectFileDownloadFailed)
         }
         try {
-            extractWorldZip(zipPath, instanceId, candidate.fileName)
+            appPaths.extractWorldZip(zipPath, instanceId, candidate.fileName)
         } catch (e: CancellationException) {
             throw e
         } catch (_: Exception) {
@@ -505,39 +504,12 @@ class ProjectRepositoryImpl(
             raise(ManualDownloadIntegrityMismatch)
         }
         try {
-            extractWorldZip(sourcePath, instanceId, fileName)
+            appPaths.extractWorldZip(sourcePath, instanceId, fileName)
             sourcePath.delete()
         } catch (e: CancellationException) {
             throw e
         } catch (_: Exception) {
             raise(ManualDownloadFailed)
-        }
-    }
-
-    /**
-     * Extracts [zipPath] (a downloaded World file — a zip of a save folder) into [instanceId]'s `saves/`
-     * directory as a new, uniquely-named world. Unlike every other content type, the archive isn't a single file
-     * to move into place — it's extracted wholesale to a scratch directory first, then the resulting layout is
-     * inspected: if extraction produced exactly one top-level directory, that directory *is* the world (its own
-     * name is used, e.g. an export shaped like `<WorldName>/level.dat`); otherwise the zip's root itself is the
-     * world root (`level.dat` at the top), and the archive's own file name (minus `.zip`) is used instead.
-     */
-    private suspend fun extractWorldZip(zipPath: Path, instanceId: String, sourceFileName: String) {
-        val savesDir = appPaths.savesDir(instanceId)
-        savesDir.createDirectories()
-        val scratchDir = Path(appPaths.downloadsTmp, "world-extract-${Uuid.random()}")
-        Zip.open(zipPath).use { zip -> zip.extractTo(scratchDir) }
-        try {
-            val singleTopLevelDir = scratchDir.list().singleOrNull()?.takeIf { it.isDirectory() }
-            val (sourceDir, baseName) = if (singleTopLevelDir != null) {
-                singleTopLevelDir to singleTopLevelDir.name
-            } else {
-                scratchDir to sourceFileName.removeSuffix(".zip")
-            }
-            val existingNames = savesDir.list().map { it.name }.toSet()
-            sourceDir.moveTo(appPaths.worldDir(instanceId, uniqueWorldFolderName(existingNames, baseName)))
-        } finally {
-            if (scratchDir.exists()) scratchDir.deleteRecursively()
         }
     }
 
@@ -584,14 +556,6 @@ class ProjectRepositoryImpl(
 }
 
 private fun String.pathSegments(): Array<String> = split('/').filter { it.isNotBlank() }.toTypedArray()
-
-/** Dedupes [base] against [existingNames] by appending " (2)", " (3)", ... until it no longer collides. */
-internal fun uniqueWorldFolderName(existingNames: Set<String>, base: String): String {
-    if (base !in existingNames) return base
-    var suffix = 2
-    while ("$base ($suffix)" in existingNames) suffix++
-    return "$base ($suffix)"
-}
 
 private fun ModLoaderType.toMetaData() = when (this) {
     ModLoaderType.Forge -> ProjectLoaderData.Forge

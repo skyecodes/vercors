@@ -117,6 +117,7 @@
     <string name="importMod">Import a mod</string>
     <string name="importResourcePack">Import a resource pack</string>
     <string name="importShaderPack">Import a shader pack</string>
+    <string name="importWorld">Import a world</string>
     <string name="openModsFolder">Open Mods Folder</string>
     <string name="openResourcePacksFolder">Open Resource Packs Folder</string>
     <string name="openShaderPacksFolder">Open Shader Packs Folder</string>

@@ -21,4 +21,7 @@ class InstanceWorldRepositoryImpl(
 
     override suspend fun removeWorld(instanceId: InstanceId, folderName: String) =
         scannerService.removeWorld(instanceId, folderName)
+
+    override suspend fun importWorld(instanceId: InstanceId, sourcePath: String): Boolean =
+        scannerService.importWorld(instanceId, sourcePath)
 }

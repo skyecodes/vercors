@@ -1,4 +1,4 @@
-package app.vercors.feature.project.data.repository
+package app.vercors.shared.data
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
