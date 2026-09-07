@@ -11,10 +11,10 @@ import app.vercors.feature.config.domain.usecase.ClearContentCacheUseCase
 import app.vercors.feature.config.domain.usecase.GetContentCacheSizeUseCase
 import app.vercors.feature.config.domain.usecase.ObserveConfigurationUseCase
 import app.vercors.feature.config.domain.usecase.UpdateConfigurationUseCase
-import app.vercors.feature.game.domain.model.JavaInstallationError
-import app.vercors.feature.game.domain.usecase.AddJavaInstallationUseCase
-import app.vercors.feature.game.domain.usecase.ObserveJavaInstallationsUseCase
-import app.vercors.feature.game.domain.usecase.ScanJavaInstallationsUseCase
+import app.vercors.feature.java.domain.model.JavaInstallationError
+import app.vercors.feature.java.domain.usecase.AddJavaInstallationUseCase
+import app.vercors.feature.java.domain.usecase.ObserveJavaInstallationsUseCase
+import app.vercors.feature.java.domain.usecase.ScanJavaInstallationsUseCase
 import app.vercors.feature.project.domain.model.PlatformError
 import app.vercors.feature.project.domain.model.ProjectPlatform
 import app.vercors.feature.project.domain.usecase.GetPlatformListUseCase

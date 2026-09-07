@@ -27,6 +27,8 @@ dependencies {
     commonMainImplementation(projects.feature.game.domain)
     commonMainImplementation(projects.feature.game.data)
     commonMainImplementation(projects.feature.game.ui)
+    commonMainImplementation(projects.feature.java.domain)
+    commonMainImplementation(projects.feature.java.data)
     commonMainImplementation(projects.feature.home.domain)
     commonMainImplementation(projects.feature.home.data)
     commonMainImplementation(projects.feature.home.ui)

@@ -11,13 +11,13 @@ import app.vercors.feature.game.domain.model.GameAssetIndex
 import app.vercors.feature.game.domain.model.GameVersionDetails
 import app.vercors.feature.game.domain.repository.GameRepository
 import app.vercors.feature.game.domain.service.ModLoaderInstallerService
-import app.vercors.feature.game.domain.usecase.ResolveJavaInstallationUseCase
 import app.vercors.feature.instance.domain.model.Instance
 import app.vercors.feature.instance.domain.model.InstanceId
 import app.vercors.feature.instance.domain.model.InstanceLogEvent
 import app.vercors.feature.instance.domain.model.InstanceStatus
 import app.vercors.feature.instance.domain.repository.InstanceRepository
 import app.vercors.feature.instance.domain.usecase.UpdateInstanceUseCase
+import app.vercors.feature.java.domain.usecase.ResolveJavaInstallationUseCase
 import app.vercors.feature.launcher.domain.model.InstanceLaunchError
 import app.vercors.feature.launcher.domain.model.InstanceLaunchEvent
 import app.vercors.feature.launcher.domain.model.InstanceLaunchFeature

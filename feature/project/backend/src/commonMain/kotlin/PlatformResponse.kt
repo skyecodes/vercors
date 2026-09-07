@@ -24,7 +24,7 @@ fun <T> PlatformResponse<T>.bindResponse(): T = when (this) {
     is PlatformResponse.Error -> raise(error)
 }
 
-internal class PlatformResponseConverterFactory(
+class PlatformResponseConverterFactory(
     private val exceptionHandler: suspend (Throwable) -> PlatformErrorData = defaultExceptionHandler
 ) : Converter.Factory {
     override fun suspendResponseConverter(
@@ -41,5 +41,5 @@ internal class PlatformResponseConverterFactory(
         else null
 }
 
-internal val defaultExceptionHandler: suspend (Throwable) -> PlatformErrorData =
+val defaultExceptionHandler: suspend (Throwable) -> PlatformErrorData =
     { PlatformErrorData(it::class.simpleName ?: "unknown", it.message) }

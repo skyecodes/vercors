@@ -7,6 +7,7 @@ dependencies {
     commonMainImplementation(projects.feature.launcher.domain)
     commonMainImplementation(projects.feature.game.domain)
     commonMainImplementation(projects.feature.game.ui)
+    commonMainImplementation(projects.feature.java.domain)
     commonMainImplementation(projects.feature.project.domain)
     commonMainImplementation(projects.feature.project.ui.screen)
     commonMainImplementation(projects.feature.account.ui)

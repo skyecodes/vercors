@@ -9,7 +9,10 @@ import app.vercors.core.ui.state.produceAndCollectAsProgressiveState
 import app.vercors.feature.config.domain.usecase.ObserveConfigurationUseCase
 import app.vercors.feature.game.domain.model.LoaderVersion
 import app.vercors.feature.game.domain.model.ModLoaderType
-import app.vercors.feature.game.domain.usecase.*
+import app.vercors.feature.game.domain.usecase.GetRequiredJavaMajorVersionUseCase
+import app.vercors.feature.game.domain.usecase.ObserveAvailableLoadersUseCase
+import app.vercors.feature.game.domain.usecase.ObserveGameVersionListUseCase
+import app.vercors.feature.game.domain.usecase.ObserveLoaderVersionsUseCase
 import app.vercors.feature.game.ui.GameVersionView
 import app.vercors.feature.instance.domain.model.Instance
 import app.vercors.feature.instance.domain.model.InstanceError
@@ -20,6 +23,8 @@ import app.vercors.feature.instance.domain.usecase.UpdateInstanceUseCase
 import app.vercors.feature.instance.ui.observeAvailableLoadersView
 import app.vercors.feature.instance.ui.observeGameVersionListView
 import app.vercors.feature.instance.ui.observeLoaderVersionsView
+import app.vercors.feature.java.domain.usecase.ObserveJavaInstallationsUseCase
+import app.vercors.feature.java.domain.usecase.ResolveJavaInstallationUseCase
 import app.vercors.shared.domain.model.JavaInstallation
 import app.vercors.shared.domain.model.JvmMemoryOptions
 import app.vercors.shared.domain.model.NativeLibraryOptions

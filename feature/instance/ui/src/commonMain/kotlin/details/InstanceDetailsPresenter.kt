@@ -8,9 +8,6 @@ import app.vercors.feature.account.domain.usecase.LoginUseCase
 import app.vercors.feature.account.ui.list.LoginDialog
 import app.vercors.feature.account.ui.list.LoginStateView
 import app.vercors.feature.account.ui.list.startLoginFlow
-import app.vercors.feature.game.domain.model.JavaRuntimeInstallStatus
-import app.vercors.feature.game.domain.usecase.InstallJavaRuntimeUseCase
-import app.vercors.feature.game.domain.usecase.ObserveJavaRuntimeInstallProgressUseCase
 import app.vercors.feature.instance.domain.model.InstanceError
 import app.vercors.feature.instance.domain.model.InstanceStatus
 import app.vercors.feature.instance.domain.usecase.*
@@ -20,6 +17,9 @@ import app.vercors.feature.instance.ui.copy.CopyInstanceResult
 import app.vercors.feature.instance.ui.copy.CopyInstanceTarget
 import app.vercors.feature.instance.ui.install.*
 import app.vercors.feature.instance.ui.list.InstanceListScreen
+import app.vercors.feature.java.domain.model.JavaRuntimeInstallStatus
+import app.vercors.feature.java.domain.usecase.InstallJavaRuntimeUseCase
+import app.vercors.feature.java.domain.usecase.ObserveJavaRuntimeInstallProgressUseCase
 import app.vercors.feature.launcher.domain.model.InstanceLaunchError
 import app.vercors.feature.launcher.domain.model.QuickPlayTarget
 import app.vercors.feature.launcher.domain.usecase.CancelInstanceUseCase

@@ -6,6 +6,8 @@ dependencies {
     commonMainImplementation(projects.feature.account.backend)
     commonMainImplementation(projects.feature.game.backend)
     commonMainImplementation(projects.feature.project.backend)
+    commonMainImplementation(projects.feature.project.backend.curseforge)
+    commonMainImplementation(projects.feature.project.backend.modrinth)
     commonMainImplementation(projects.shared.backend)
 
     commonMainImplementation(libs.ktor.server.cio)
