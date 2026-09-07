@@ -1,6 +1,5 @@
 package app.vercors.feature.java.data.repository
 
-import app.vercors.core.filesystem.exists
 import app.vercors.core.filesystem.isDirectory
 import app.vercors.core.filesystem.list
 import app.vercors.core.system.SystemService
@@ -9,7 +8,6 @@ import kotlinx.cinterop.refTo
 import kotlinx.cinterop.toKString
 import kotlinx.io.files.Path
 import platform.posix.fgets
-import platform.posix.getenv
 import platform.posix.pclose
 import platform.posix.popen
 
@@ -33,23 +31,7 @@ internal actual suspend fun platformScanJavaInstallationsMacOs(systemService: Sy
     }.distinct()
 
 @OptIn(ExperimentalForeignApi::class)
-private fun getEnvVar(name: String): String? = getenv(name)?.toKString()
-
-private suspend fun MutableList<CandidateJavaPath>.addIfExecutable(path: Path) {
-    if (path.exists()) add(CandidateJavaPath(path.toString()))
-}
-
-private fun pathExistsBlocking(path: Path): Boolean = platform.posix.access(path.toString(), platform.posix.F_OK) == 0
-
-private fun scanPathEnvironment(vararg executableNames: String): List<CandidateJavaPath> {
-    val path = getEnvVar("PATH") ?: return emptyList()
-    return path.split(":").flatMap { dir ->
-        executableNames.map { Path(dir, it) }.filter { pathExistsBlocking(it) }.map { CandidateJavaPath(it.toString()) }
-    }
-}
-
-@OptIn(ExperimentalForeignApi::class)
-private fun scanJavaHomeVerbose(): List<CandidateJavaPath> {
+internal fun scanJavaHomeVerbose(): List<CandidateJavaPath> {
     val process = popen("/usr/libexec/java_home -V 2>&1", "r") ?: return emptyList()
     val output = StringBuilder()
     val buffer = ByteArray(4096)

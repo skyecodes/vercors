@@ -12,8 +12,8 @@ val libs = the<LibrariesForLibs>()
 
 dependencies {
     commonMainImplementation(project(":shared:ui"))
-    commonMainImplementation(project.parent!!.childProjects.getValue("domain"))
-    commonMainApi(project.childProjects.getValue("screen"))
+    commonMainImplementation(project(project.parent!!.childProjects.getValue("domain").path))
+    commonMainApi(project(project.childProjects.getValue("screen").path))
     commonMainImplementation(libs.composables.icons.lucide)
     commonMainImplementation(libs.coil.compose)
 }

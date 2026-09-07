@@ -6,5 +6,5 @@ plugins {
 
 dependencies {
     commonMainImplementation(project(":shared:command"))
-    commonMainImplementation(project.parent!!.childProjects.getValue("domain"))
+    commonMainImplementation(project(project.parent!!.childProjects.getValue("domain").path))
 }

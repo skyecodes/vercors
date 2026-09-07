@@ -22,12 +22,6 @@ actual class SystemServiceImpl : SystemService {
 
     actual override val osArch: OsArch = OsArch.X64
 
-    actual override val canCopyToClipboard: Boolean = false
-
-    actual override val canOpenUrlInBrowser: Boolean = false
-
-    actual override val canOpenFileManager: Boolean = false
-
     @OptIn(ExperimentalForeignApi::class)
     actual override val totalPhysicalMemoryBytes: Long? by lazy {
         try {
@@ -41,11 +35,7 @@ actual class SystemServiceImpl : SystemService {
         }
     }
 
-    actual override fun copyToClipboard(text: String): Boolean = false
-
     @OptIn(ExperimentalForeignApi::class)
     actual override fun downloadsDir(): String? = getenv("HOME")?.toKString()?.let { "$it/Downloads" }
-
-    actual override fun openInFileManager(path: String): Boolean = false
 
 }

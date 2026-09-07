@@ -10,7 +10,7 @@ val libs = the<LibrariesForLibs>()
 
 dependencies {
     commonMainImplementation(project(":shared:backend"))
-    commonMainImplementation(project.parent!!.childProjects.getValue("api"))
+    commonMainImplementation(project(project.parent!!.childProjects.getValue("api").path))
     commonMainImplementation(libs.spine.server)
     commonMainImplementation(libs.spine.server.arrow)
 }

@@ -152,6 +152,26 @@ fun AppIconTextButtonContent(
 }
 
 @Composable
+fun AppIconTextButtonContent(
+    text: String?,
+    painter: Painter?,
+    iconSize: Dp = 16.dp
+) {
+    painter?.let {
+        AppIcon(
+            painter = it,
+            contentDescription = text,
+            modifier = Modifier.size(iconSize)
+        )
+    }
+    text?.let {
+        AppText(
+            text = it
+        )
+    }
+}
+
+@Composable
 fun AppIconTextButton(
     onClick: () -> Unit,
     text: String? = null,
@@ -189,17 +209,10 @@ fun AppIconTextButton(
         verticalAlignment = verticalAlignment,
         textStyle = textStyle
     ) {
-        painter?.let {
-            AppIcon(
-                painter = it,
-                contentDescription = text,
-                modifier = Modifier.size(iconSize)
-            )
-        }
-        text?.let {
-            AppText(
-                text = it
-            )
-        }
+        AppIconTextButtonContent(
+            text = text,
+            painter = painter,
+            iconSize = iconSize
+        )
     }
 }

@@ -1,6 +1,5 @@
 package app.vercors.feature.java.data.repository
 
-import app.vercors.core.filesystem.exists
 import app.vercors.core.filesystem.isDirectory
 import app.vercors.core.filesystem.list
 import app.vercors.core.system.SystemService
@@ -9,7 +8,6 @@ import kotlinx.cinterop.refTo
 import kotlinx.cinterop.toKString
 import kotlinx.io.files.Path
 import platform.posix.fgets
-import platform.posix.getenv
 import platform.posix.pclose
 import platform.posix.popen
 
@@ -37,23 +35,6 @@ internal actual suspend fun platformScanJavaInstallationsLinux(systemService: Sy
         addAll(scanPathEnvironment("java"))
         addAll(scanUpdateAlternatives())
     }.distinct()
-
-@OptIn(ExperimentalForeignApi::class)
-internal fun getEnvVar(name: String): String? = getenv(name)?.toKString()
-
-private suspend fun MutableList<CandidateJavaPath>.addIfExecutable(path: Path) {
-    if (path.exists()) add(CandidateJavaPath(path.toString()))
-}
-
-internal fun scanPathEnvironment(vararg executableNames: String): List<CandidateJavaPath> {
-    val path = getEnvVar("PATH") ?: return emptyList()
-    return path.split(":").flatMap { dir ->
-        executableNames.map { Path(dir, it) }.filter { pathExistsBlocking(it) }.map { CandidateJavaPath(it.toString()) }
-    }
-}
-
-@OptIn(ExperimentalForeignApi::class)
-private fun pathExistsBlocking(path: Path): Boolean = platform.posix.access(path.toString(), platform.posix.F_OK) == 0
 
 @OptIn(ExperimentalForeignApi::class)
 internal fun scanUpdateAlternatives(): List<CandidateJavaPath> {

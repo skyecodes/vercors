@@ -10,5 +10,5 @@ kotlin {
 
 dependencies {
     commonMainApi(project(":shared:ui:screen"))
-    commonMainApi(project.parent!!.parent!!.childProjects.getValue("domain"))
+    commonMainApi(project(project.parent!!.parent!!.childProjects.getValue("domain").path))
 }

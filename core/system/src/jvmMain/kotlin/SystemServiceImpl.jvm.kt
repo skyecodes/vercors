@@ -35,15 +35,15 @@ actual class SystemServiceImpl(
     actual override val osArch: OsArch =
         if (System.getProperty("os.arch").endsWith("64")) OsArch.X64 else OsArch.X86
 
-    actual override val canCopyToClipboard: Boolean by lazy {
+    override val canCopyToClipboard: Boolean by lazy {
         runCatching { Toolkit.getDefaultToolkit().systemClipboard != null }.getOrElse { false }
     }
 
-    actual override val canOpenUrlInBrowser: Boolean by lazy {
+    override val canOpenUrlInBrowser: Boolean by lazy {
         Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)
     }
 
-    actual override val canOpenFileManager: Boolean by lazy {
+    override val canOpenFileManager: Boolean by lazy {
         Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.OPEN)
     }
 
@@ -67,7 +67,7 @@ actual class SystemServiceImpl(
         get() = cachedTotalPhysicalMemoryBytes
             ?: queryTotalPhysicalMemoryBytes().also { cachedTotalPhysicalMemoryBytes = it }
 
-    actual override fun copyToClipboard(text: String) = canCopyToClipboard && catch({
+    override fun copyToClipboard(text: String) = canCopyToClipboard && catch({
         Toolkit.getDefaultToolkit().systemClipboard.setContents(StringSelection(text), null)
         true
     }) {
@@ -78,7 +78,7 @@ actual class SystemServiceImpl(
     actual override fun downloadsDir(): String? =
         System.getProperty("user.home")?.let { "$it/Downloads" }
 
-    actual override fun openInFileManager(path: String): Boolean = canOpenFileManager && catch({
+    override fun openInFileManager(path: String): Boolean = canOpenFileManager && catch({
         Desktop.getDesktop().open(File(path))
         true
     }) {

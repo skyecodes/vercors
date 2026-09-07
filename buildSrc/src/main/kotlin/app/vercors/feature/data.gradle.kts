@@ -12,7 +12,7 @@ val libs = the<LibrariesForLibs>()
 
 dependencies {
     commonMainImplementation(project(":shared:data"))
-    commonMainImplementation(project.parent!!.childProjects.getValue("domain"))
+    commonMainImplementation(project(project.parent!!.childProjects.getValue("domain").path))
     commonMainImplementation(libs.spine.client)
     commonMainImplementation(libs.spine.client.arrow)
 }
