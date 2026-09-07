@@ -47,7 +47,6 @@ interface ProjectRepository {
     context(_: Raise<ProjectDetailsError>)
     suspend fun getProjectFile(projectId: ProjectId, fileId: String): ProjectFile
 
-    /** Resolves many files by ID in one request, potentially across different projects on [platformId]. */
     context(_: Raise<ProjectDetailsError>)
     suspend fun getProjectFilesByIds(platformId: PlatformId, fileIds: List<String>): List<ProjectFile>
 
@@ -64,17 +63,17 @@ interface ProjectRepository {
         onProgress: (Progress) -> Unit = {}
     ): ModpackManifest
 
+    context(_: Raise<ModpackResolutionError>)
+    suspend fun parseLocalModpack(sourcePath: String, platformId: String): ModpackManifest
+
     context(_: Raise<ModpackInstallError>)
     suspend fun installModpackFiles(
         manifest: ModpackManifest,
         instanceId: String,
-        onProgress: (Progress) -> Unit
+        localSourcePath: String? = null,
+        onProgress: (Progress) -> Unit = {}
     ): List<InstalledModpackFile>
 
-    /**
-     * Suspends until [fileName] appears in the OS Downloads folder (or immediately if it's already there), then
-     * moves it into the instance's directory for [type]. Cancelling the calling coroutine cancels the wait.
-     */
     context(_: Raise<ManualDownloadError>)
     suspend fun awaitManualDownload(
         fileName: String,
@@ -85,8 +84,6 @@ interface ProjectRepository {
         md5: String?
     )
 
-    /** Downloads [candidate] (a World project file, a zip of a save folder) and extracts it as a new world under
-     *  the instance's `saves/` directory, deduplicating its folder name against any existing world. */
     context(_: Raise<ProjectFileDownloadError>)
     suspend fun installWorldFile(
         candidate: ProjectFileDownloadCandidate,
@@ -94,11 +91,6 @@ interface ProjectRepository {
         onProgress: (Progress) -> Unit = {}
     )
 
-    /**
-     * Suspends until [fileName] appears in the OS Downloads folder (or immediately if it's already there), then
-     * extracts it as a new world under the instance's `saves/` directory. World counterpart of
-     * [awaitManualDownload].
-     */
     context(_: Raise<ManualDownloadError>)
     suspend fun awaitManualWorldDownload(
         fileName: String,

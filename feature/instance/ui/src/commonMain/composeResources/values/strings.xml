@@ -16,6 +16,12 @@
     <string name="anyVersion">Any version</string>
     <string name="modpackInstanceInfo">To install modpacks, search for modpacks in the Content section and click "Install".</string>
     <string name="openModpacksScreen">Search for modpacks</string>
+    <string name="importInstanceInfo">Import an instance exported from PrismLauncher (.zip) or the Modrinth App (.mrpack).</string>
+    <string name="chooseFile">Choose file</string>
+    <string name="errorImportUnsupportedFormat">This file isn't a recognized PrismLauncher or Modrinth instance export</string>
+    <string name="errorImportParseFailed">Failed to read the exported instance file</string>
+    <string name="errorImportExtractionFailed">Failed to extract the imported instance's files</string>
+    <string name="extractingFiles">Extracting files...</string>
 
     <string name="idle">Idle</string>
     <string name="validatingToken">Validating token...</string>

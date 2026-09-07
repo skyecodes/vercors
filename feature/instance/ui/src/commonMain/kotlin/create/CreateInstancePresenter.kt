@@ -7,22 +7,30 @@ import app.vercors.feature.game.domain.usecase.ObserveAvailableLoadersUseCase
 import app.vercors.feature.game.domain.usecase.ObserveGameVersionListUseCase
 import app.vercors.feature.game.domain.usecase.ObserveLoaderVersionsUseCase
 import app.vercors.feature.game.ui.GameVersionView
-import app.vercors.feature.instance.domain.model.Instance
-import app.vercors.feature.instance.domain.model.InstanceModLoader
-import app.vercors.feature.instance.domain.usecase.CreateInstanceUseCase
-import app.vercors.feature.instance.ui.message
-import app.vercors.feature.instance.ui.observeAvailableLoadersView
-import app.vercors.feature.instance.ui.observeGameVersionListView
-import app.vercors.feature.instance.ui.observeLoaderVersionsView
+import app.vercors.feature.instance.domain.model.*
+import app.vercors.feature.instance.domain.model.localimport.LocalImportError
+import app.vercors.feature.instance.domain.model.localimport.LocalImportNotPrismFormat
+import app.vercors.feature.instance.domain.usecase.*
+import app.vercors.feature.instance.ui.*
+import app.vercors.feature.instance.ui.install.toFractionOrNull
+import app.vercors.feature.project.domain.model.modpack.ModpackInstallError
+import app.vercors.feature.project.domain.model.modpack.ModpackResolutionError
+import app.vercors.feature.project.domain.usecase.InstallModpackFilesUseCase
+import app.vercors.feature.project.domain.usecase.ParseLocalModpackUseCase
 import app.vercors.shared.ui.Presenter
 import app.vercors.shared.ui.SnackbarService
 import app.vercors.shared.ui.Store
 import app.vercors.shared.ui.error
 import arrow.core.raise.recover
 import com.slack.circuit.overlay.OverlayNavigator
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import opensavvy.state.progressive.valueOrNull
+import org.jetbrains.compose.resources.stringResource
+
+private val logger = KotlinLogging.logger {}
 
 /**
  * Not `@CircuitInject`-wired since [CreateInstanceDialog] isn't a navigated [Screen][app.vercors.shared.ui.Screen] —
@@ -36,7 +44,15 @@ class CreateInstancePresenter(
     private val observeAvailableLoaders: ObserveAvailableLoadersUseCase,
     private val observeLoaderVersions: ObserveLoaderVersionsUseCase,
     private val createInstance: CreateInstanceUseCase,
-    private val snackbarService: SnackbarService
+    private val snackbarService: SnackbarService,
+    private val parsePrismInstance: ParsePrismInstanceUseCase,
+    private val importPrismInstanceFiles: ImportPrismInstanceFilesUseCase,
+    private val parseLocalModpack: ParseLocalModpackUseCase,
+    private val installModpackFiles: InstallModpackFilesUseCase,
+    private val setInstanceIcon: SetInstanceIconUseCase,
+    private val updateInstanceStatus: UpdateInstanceStatusUseCase,
+    private val updateInstanceJob: UpdateInstanceJobUseCase,
+    private val deleteInstance: DeleteInstanceUseCase,
 ) : Presenter<CreateInstanceState, CreateInstanceEvent> {
     @Composable
     override fun present(): Store<CreateInstanceState, CreateInstanceEvent> {
@@ -52,6 +68,10 @@ class CreateInstancePresenter(
             selectedGameVersion?.id,
             selectedLoader
         )
+        val (importParsing, setImportParsing) = remember { mutableStateOf(false) }
+        val (importPreview, setImportPreview) = remember { mutableStateOf<LocalImportPreview?>(null) }
+        val (importInstanceName, setImportInstanceName) = remember { mutableStateOf("") }
+        val (importing, setImporting) = remember { mutableStateOf(false) }
 
         LaunchedEffect(loaderVersionList) {
             if (selectedLoaderVersion == null) {
@@ -72,6 +92,10 @@ class CreateInstancePresenter(
             selectedLoaderVersion = selectedLoaderVersion,
             loaderVersionList = loaderVersionList,
             selectedInstanceType = selectedInstanceType,
+            importParsing = importParsing,
+            importPreview = importPreview,
+            importInstanceName = importInstanceName,
+            importing = importing,
         ) + { event ->
             handleEvent(
                 event = event,
@@ -84,6 +108,12 @@ class CreateInstancePresenter(
                 setSelectedLoader = setSelectedLoader,
                 selectedLoaderVersion = selectedLoaderVersion,
                 setSelectedLoaderVersion = setSelectedLoaderVersion,
+                setImportParsing = setImportParsing,
+                setImportPreview = setImportPreview,
+                importInstanceName = importInstanceName,
+                setImportInstanceName = setImportInstanceName,
+                importPreview = importPreview,
+                setImporting = setImporting,
             )
         }
     }
@@ -99,6 +129,12 @@ class CreateInstancePresenter(
         setSelectedLoader: (ModLoaderType?) -> Unit,
         selectedLoaderVersion: LoaderVersion?,
         setSelectedLoaderVersion: (LoaderVersion?) -> Unit,
+        setImportParsing: (Boolean) -> Unit,
+        setImportPreview: (LocalImportPreview?) -> Unit,
+        importInstanceName: String,
+        setImportInstanceName: (String) -> Unit,
+        importPreview: LocalImportPreview?,
+        setImporting: (Boolean) -> Unit,
     ) {
         when (event) {
             is CreateInstanceEvent.OnInstanceTypeChange -> setSelectedInstanceType(event.type)
@@ -118,7 +154,17 @@ class CreateInstancePresenter(
             CreateInstanceEvent.OnCancelClick -> navigator.finish(CreateInstanceResult.Cancelled)
             CreateInstanceEvent.OnCreateInstanceClick ->
                 createInstance(instanceName, selectedGameVersion, selectedLoader, selectedLoaderVersion)
+
             CreateInstanceEvent.OnOpenModpacksScreen -> navigator.finish(CreateInstanceResult.SearchModpacks)
+            is CreateInstanceEvent.OnImportFileSelected ->
+                handleImportFileSelected(event.sourcePath, setImportPreview, setImportInstanceName, setImportParsing)
+
+            is CreateInstanceEvent.OnImportInstanceNameChange -> setImportInstanceName(event.name)
+            CreateInstanceEvent.OnConfirmImportClick -> handleConfirmImport(
+                importPreview,
+                importInstanceName,
+                setImporting
+            )
         }
     }
 
@@ -140,4 +186,139 @@ class CreateInstancePresenter(
             if (error == null) navigator.finish(CreateInstanceResult.Created(createdInstance.id))
         }
     }
+
+    /** Auto-detects the local file's format: tries the PrismLauncher-export parser first, falling back to a
+     *  Modrinth `.mrpack` parse only on [LocalImportNotPrismFormat] specifically — mirrors PrismLauncher's own
+     *  detection order (`instance.cfg` checked before `modrinth.index.json`). */
+    private fun handleImportFileSelected(
+        sourcePath: String,
+        setImportPreview: (LocalImportPreview?) -> Unit,
+        setImportInstanceName: (String) -> Unit,
+        setImportParsing: (Boolean) -> Unit,
+    ) {
+        setImportPreview(null)
+        setImportParsing(true)
+        globalScope.launch {
+            val preview = recover({
+                val info = parsePrismInstance(sourcePath)
+                LocalImportPreview.Prism(
+                    info.name,
+                    info.gameVersion,
+                    info.loaderType,
+                    info.loaderVersion,
+                    sourcePath,
+                    info
+                )
+            }) { error: LocalImportError ->
+                if (error == LocalImportNotPrismFormat) tryParseAsMrpack(sourcePath) else null
+            }
+            setImportPreview(preview)
+            setImportInstanceName(preview?.name.orEmpty())
+            setImportParsing(false)
+        }
+    }
+
+    private suspend fun tryParseAsMrpack(sourcePath: String): LocalImportPreview.Mrpack? =
+        recover({
+            val manifest = parseLocalModpack(sourcePath, platformId = "modrinth")
+            LocalImportPreview.Mrpack(
+                manifest.name,
+                manifest.gameVersion,
+                manifest.loaderType,
+                manifest.loaderVersion,
+                sourcePath,
+                manifest
+            )
+        }) { _: ModpackResolutionError ->
+            snackbarService.error { stringResource(InstanceRes.string.errorImportUnsupportedFormat) }
+            null
+        }
+
+    /**
+     * Mirrors the online modpack-install flow's shape: creates the instance immediately, fires the "created"
+     * result so the caller can navigate away, then keeps copying/downloading files on [globalScope] so it
+     * survives the dialog being dismissed. Unlike an online modpack install, a local import sets no
+     * `Instance.modpackInfo`/`installStage` — there's no backend to resume an interrupted import from, so it's
+     * never flagged as [InstanceStatus.Installing.Interrupted] on restart. Rolls back (deletes the instance) only
+     * if the job is genuinely cancelled, not on an ordinary install failure (which instead leaves the instance in
+     * place with [InstanceStatus.Failed.InstallFailed], since the user may already be looking at it).
+     */
+    private fun handleConfirmImport(
+        preview: LocalImportPreview?,
+        instanceName: String,
+        setImporting: (Boolean) -> Unit
+    ) {
+        if (preview == null || instanceName.length < 3) return
+        setImporting(true)
+        val instance = Instance(
+            name = instanceName,
+            gameVersion = preview.gameVersion,
+            modLoader = preview.loaderType?.let { InstanceModLoader(type = it, version = preview.loaderVersion!!) },
+        )
+        var createdInstanceId: InstanceId? = null
+        lateinit var job: Job
+        job = globalScope.launch {
+            val created = recover({ createInstance(instance) }) { error: InstanceValidationError ->
+                snackbarService.error { error.message }
+                null
+            }
+            if (created == null) {
+                setImporting(false)
+                return@launch
+            }
+            createdInstanceId = created.id
+            updateInstanceJob(created.id, job)
+            setImporting(false)
+            navigator.finish(CreateInstanceResult.Created(created.id))
+
+            val ok = when (preview) {
+                is LocalImportPreview.Prism -> runPrismImport(preview, created.id)
+                is LocalImportPreview.Mrpack -> runMrpackImport(preview, created.id)
+            }
+            updateInstanceStatus(created.id, if (ok) InstanceStatus.Idle else InstanceStatus.Failed.InstallFailed)
+        }
+        job.invokeOnCompletion { error ->
+            createdInstanceId?.let { updateInstanceJob(it, null) }
+            if (error != null) createdInstanceId?.let { id ->
+                globalScope.launch { recover({ deleteInstance(id) }) { _: InstanceError -> } }
+            }
+        }
+    }
+
+    private suspend fun runPrismImport(preview: LocalImportPreview.Prism, instanceId: InstanceId): Boolean {
+        var iconPath: String? = null
+        val ok = recover({
+            iconPath = importPrismInstanceFiles(preview.sourcePath, instanceId, preview.info) { progress ->
+                updateInstanceStatus(instanceId, InstanceStatus.Installing.ExtractingFiles(progress))
+            }
+            true
+        }) { error: LocalImportError ->
+            logger.error { "Prism import failed for $instanceId: $error" }
+            false
+        }
+        if (ok) iconPath?.let { path ->
+            recover({ setInstanceIcon(instanceId, path) }) { error: InstanceError ->
+                logger.warn { "Failed to set imported instance icon for $instanceId: $error" }
+            }
+        }
+        return ok
+    }
+
+    // Local mrpack files always carry a real `downloadUrl` (parsed straight from modrinth.index.json's own
+    // `downloads` list), so `ModpackManifestFile.manualDownloadUrl` is always null for this path — nothing to
+    // await manually, unlike an online CurseForge install. This would silently break if CurseForge local import
+    // were ever added later (CurseForge files can have `manualDownloadUrl` set).
+    private suspend fun runMrpackImport(preview: LocalImportPreview.Mrpack, instanceId: InstanceId): Boolean =
+        recover({
+            installModpackFiles(preview.manifest, instanceId, localSourcePath = preview.sourcePath) { progress ->
+                updateInstanceStatus(
+                    instanceId,
+                    InstanceStatus.Installing.DownloadingFiles(progress.toFractionOrNull())
+                )
+            }
+            true
+        }) { error: ModpackInstallError ->
+            logger.error { "Local modpack import failed for $instanceId: $error" }
+            false
+        }
 }

@@ -139,7 +139,9 @@ fun AppIconTextButtonContent(
         AppIcon(
             imageVector = it,
             contentDescription = text,
-            modifier = Modifier.size(iconSize)
+            modifier = Modifier.let { modifier ->
+                if (text == null) modifier.padding(vertical = 1.dp) else modifier
+            }.size(iconSize)
         )
     }
     text?.let {

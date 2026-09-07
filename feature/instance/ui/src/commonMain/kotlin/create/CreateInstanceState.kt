@@ -18,9 +18,14 @@ data class CreateInstanceState(
     val loaderList: ProgressiveOutcome<LoaderError, List<ModLoaderType>>,
     val selectedLoaderVersion: LoaderVersion?,
     val loaderVersionList: ProgressiveOutcome<LoaderError, List<LoaderVersion>>,
+    val importParsing: Boolean,
+    val importPreview: LocalImportPreview?,
+    val importInstanceName: String,
+    val importing: Boolean,
 ) {
     val canCreateInstance: Boolean = instanceName.length >= 3 && selectedGameVersion != null &&
             (selectedLoader == null || selectedLoaderVersion != null)
+    val canConfirmImport: Boolean = importPreview != null && importInstanceName.length >= 3 && !importing
 }
 
 @Immutable

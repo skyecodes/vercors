@@ -97,7 +97,7 @@ fun AppTextField(
                 modifier = Modifier
                     .clip(shape)
                     .background(backgroundColor)
-                    .padding(horizontal = 8.dp, vertical = 7.5.dp)
+                    .padding(8.dp)
                     .fillMaxWidth(),
                 placeholder = placeholder?.let {
                     { ProvideContentColor(LocalContentColor.current.copy(alpha = 0.66f), it) }

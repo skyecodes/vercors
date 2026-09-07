@@ -28,7 +28,9 @@ import app.vercors.feature.instance.ui.*
 import app.vercors.feature.launcher.domain.model.QuickPlayTarget
 import app.vercors.feature.project.domain.model.ProjectType
 import app.vercors.shared.ui.EventSink
+import app.vercors.shared.ui.SharedRes
 import app.vercors.shared.ui.Store
+import app.vercors.shared.ui.sortBy
 import coil3.compose.rememberAsyncImagePainter
 import com.composables.icons.lucide.*
 import com.composeunstyled.ProvideContentColor
@@ -38,6 +40,7 @@ import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
 import io.github.vinceglb.filekit.path
 import okio.Path.Companion.toPath
 import org.jetbrains.compose.resources.stringResource
+import kotlin.time.Instant
 
 @Composable
 context(eventSink: EventSink<InstanceDetailsEvent>)
@@ -66,16 +69,15 @@ private fun InstalledWorldList(
     onQuickJoinClick: (String) -> Unit,
 ) {
     var searchQuery by remember { mutableStateOf("") }
+    var sortBy by remember { mutableStateOf(WorldSortBy.LastModified) }
     val listState = rememberLazyListState()
     val importPickerLauncher = rememberFilePickerLauncher(type = FileKitType.File("zip")) { file ->
         file?.let { eventSink(InstalledWorldsEvent.OnImportClick(it.path)) }
     }
 
-    LaunchedEffect(searchQuery) { listState.scrollToItem(0) }
+    LaunchedEffect(searchQuery, sortBy) { listState.scrollToItem(0) }
 
-    val filteredWorlds = worlds
-        ?.filter { searchQuery.isBlank() || it.displayName.contains(searchQuery, ignoreCase = true) }
-        ?.sortedByDescending { it.lastModified }
+    val filteredWorlds = worlds?.filteredAndSorted(searchQuery, sortBy)
 
     Column(modifier = Modifier.fillMaxSize().appCard()) {
         Row(
@@ -88,9 +90,21 @@ private fun InstalledWorldList(
                 onValueChange = { searchQuery = it },
                 modifier = Modifier.weight(1f)
             )
+            AppSelectField(
+                value = sortBy,
+                items = WorldSortBy.entries,
+                onValueChange = { sortBy = it },
+                itemRenderer = { value, isButton ->
+                    AppSelectItem(
+                        text = if (isButton) "${stringResource(SharedRes.string.sortBy)}: ${value.displayName}"
+                        else value.displayName
+                    )
+                },
+                modifier = Modifier.width(200.dp)
+            )
             AppMenuButton {
                 AppMenuItem(
-                    onClick = onAddClick,
+                    onClick = { onAddClick() },
                     text = stringResource(InstanceRes.string.addWorld),
                     imageVector = Lucide.Plus
                 )
@@ -132,7 +146,7 @@ private fun InstalledWorldList(
 }
 
 @Composable
-context(eventSink: EventSink<InstalledWorldsEvent>)
+context(_: EventSink<InstalledWorldsEvent>)
 private fun InstalledWorldRow(world: InstalledWorldView, canQuickJoin: Boolean, onQuickJoinClick: (String) -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
@@ -190,5 +204,29 @@ private fun InstalledWorldRow(world: InstalledWorldView, canQuickJoin: Boolean, 
             backgroundColor = Theme[colors][success],
             contentColor = Theme[colors][onSuccess]
         )
+    }
+}
+
+private enum class WorldSortBy {
+    Name,
+    LastModified
+}
+
+private val WorldSortBy.displayName: String
+    @Composable get() = stringResource(
+        when (this) {
+            WorldSortBy.Name -> InstanceRes.string.sortByName
+            WorldSortBy.LastModified -> InstanceRes.string.sortByLastModified
+        }
+    )
+
+private fun List<InstalledWorldView>.filteredAndSorted(
+    searchQuery: String,
+    sortBy: WorldSortBy,
+): List<InstalledWorldView> {
+    val filtered = filter { searchQuery.isBlank() || it.displayName.contains(searchQuery, ignoreCase = true) }
+    return when (sortBy) {
+        WorldSortBy.Name -> filtered.sortedBy { it.displayName.lowercase() }
+        WorldSortBy.LastModified -> filtered.sortedByDescending { it.lastModified ?: Instant.DISTANT_PAST }
     }
 }

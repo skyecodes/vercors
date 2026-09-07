@@ -16,6 +16,8 @@ class InstallModpackFilesUseCase(
     suspend operator fun invoke(
         manifest: ModpackManifest,
         instanceId: String,
+        localSourcePath: String? = null,
         onProgress: (Progress) -> Unit = {}
-    ): List<InstalledModpackFile> = projectRepository.installModpackFiles(manifest, instanceId, onProgress)
+    ): List<InstalledModpackFile> =
+        projectRepository.installModpackFiles(manifest, instanceId, localSourcePath, onProgress)
 }

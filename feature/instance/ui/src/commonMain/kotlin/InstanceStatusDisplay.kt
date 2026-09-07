@@ -25,6 +25,7 @@ val InstanceStatus.text: String
         is InstanceStatus.Installing.DownloadingFiles -> stringResource(InstanceRes.string.downloadingFiles)
         is InstanceStatus.Installing.AwaitingManualDownloads -> stringResource(InstanceRes.string.awaitingManualDownloads)
         is InstanceStatus.Installing.Interrupted -> stringResource(InstanceRes.string.installationInterrupted)
+        is InstanceStatus.Installing.ExtractingFiles -> stringResource(InstanceRes.string.extractingFiles)
         is InstanceStatus.Running -> stringResource(InstanceRes.string.running)
         is InstanceStatus.Stopping -> stringResource(InstanceRes.string.stopping)
         is InstanceStatus.Failed -> stringResource(InstanceRes.string.failed)
@@ -36,6 +37,7 @@ val InstanceStatus.progress: Float?
         is InstanceStatus.Launching.DownloadingFiles -> progress
         is InstanceStatus.Installing.ResolvingFiles -> progress
         is InstanceStatus.Installing.DownloadingFiles -> progress
+        is InstanceStatus.Installing.ExtractingFiles -> progress
         else -> null
     }
 

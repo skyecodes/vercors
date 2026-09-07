@@ -7,7 +7,9 @@ import app.vercors.feature.game.domain.usecase.ObserveAvailableLoadersUseCase
 import app.vercors.feature.game.domain.usecase.ObserveGameVersionListUseCase
 import app.vercors.feature.game.domain.usecase.ObserveLoaderVersionsUseCase
 import app.vercors.feature.instance.domain.model.InstanceId
-import app.vercors.feature.instance.domain.usecase.CreateInstanceUseCase
+import app.vercors.feature.instance.domain.usecase.*
+import app.vercors.feature.project.domain.usecase.InstallModpackFilesUseCase
+import app.vercors.feature.project.domain.usecase.ParseLocalModpackUseCase
 import app.vercors.shared.ui.SnackbarService
 import app.vercors.shared.ui.overlay.DialogOverlay
 import com.slack.circuit.overlay.OverlayNavigator
@@ -21,7 +23,6 @@ sealed interface CreateInstanceResult {
     data object SearchModpacks : CreateInstanceResult
 }
 
-/** Shown as a dialog overlay rather than a full navigated screen — see [ConfirmDeleteDialog][app.vercors.feature.instance.ui.delete.ConfirmDeleteDialog] for the same pattern. */
 @Inject
 class CreateInstanceDialog(
     private val globalScope: CoroutineScope,
@@ -29,7 +30,15 @@ class CreateInstanceDialog(
     private val observeAvailableLoaders: ObserveAvailableLoadersUseCase,
     private val observeLoaderVersions: ObserveLoaderVersionsUseCase,
     private val createInstance: CreateInstanceUseCase,
-    private val snackbarService: SnackbarService
+    private val snackbarService: SnackbarService,
+    private val parsePrismInstance: ParsePrismInstanceUseCase,
+    private val importPrismInstanceFiles: ImportPrismInstanceFilesUseCase,
+    private val parseLocalModpack: ParseLocalModpackUseCase,
+    private val installModpackFiles: InstallModpackFilesUseCase,
+    private val setInstanceIcon: SetInstanceIconUseCase,
+    private val updateInstanceStatus: UpdateInstanceStatusUseCase,
+    private val updateInstanceJob: UpdateInstanceJobUseCase,
+    private val deleteInstance: DeleteInstanceUseCase,
 ) : DialogOverlay<CreateInstanceResult>() {
     @Composable
     override fun AnimatedVisibilityScope.AnimatedContent(
@@ -44,7 +53,15 @@ class CreateInstanceDialog(
                 observeAvailableLoaders = observeAvailableLoaders,
                 observeLoaderVersions = observeLoaderVersions,
                 createInstance = createInstance,
-                snackbarService = snackbarService
+                snackbarService = snackbarService,
+                parsePrismInstance = parsePrismInstance,
+                importPrismInstanceFiles = importPrismInstanceFiles,
+                parseLocalModpack = parseLocalModpack,
+                installModpackFiles = installModpackFiles,
+                setInstanceIcon = setInstanceIcon,
+                updateInstanceStatus = updateInstanceStatus,
+                updateInstanceJob = updateInstanceJob,
+                deleteInstance = deleteInstance,
             )
         }
         CreateInstance(store = presenter.present())

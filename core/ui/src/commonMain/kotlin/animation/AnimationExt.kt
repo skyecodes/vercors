@@ -6,6 +6,7 @@ import androidx.compose.animation.SharedTransitionScope.PlaceholderSize.Companio
 import androidx.compose.animation.SharedTransitionScope.ResizeMode.Companion.scaleToBounds
 import androidx.compose.animation.core.*
 import androidx.compose.animation.core.Spring.StiffnessMediumLow
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.lazy.LazyItemScope
@@ -112,7 +113,7 @@ fun AppAnimatedVisibility(
     content: @Composable() () -> Unit,
 ) {
     if (shouldAnimate()) AnimatedVisibility(visible, modifier, enter, exit, label) { content() }
-    else if (visible) content()
+    else if (visible) Box(modifier) { content() }
 }
 
 @Composable
@@ -125,7 +126,7 @@ fun RowScope.AppAnimatedVisibility(
     content: @Composable () -> Unit,
 ) {
     if (shouldAnimate()) AnimatedVisibility(visible, modifier, enter, exit, label) { content() }
-    else if (visible) content()
+    else if (visible) Box(modifier) { content() }
 }
 
 @Composable
@@ -138,7 +139,7 @@ fun ColumnScope.AppAnimatedVisibility(
     content: @Composable () -> Unit,
 ) {
     if (shouldAnimate()) AnimatedVisibility(visible, modifier, enter, exit, label) { content() }
-    else if (visible) content()
+    else if (visible) Box(modifier) { content() }
 }
 
 @Composable

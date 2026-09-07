@@ -14,4 +14,7 @@ sealed interface CreateInstanceEvent : Event {
     data object OnCreateInstanceClick : CreateInstanceEvent
     data object OnCancelClick : CreateInstanceEvent
     data object OnOpenModpacksScreen : CreateInstanceEvent
+    data class OnImportFileSelected(val sourcePath: String) : CreateInstanceEvent
+    data class OnImportInstanceNameChange(val name: String) : CreateInstanceEvent
+    data object OnConfirmImportClick : CreateInstanceEvent
 }

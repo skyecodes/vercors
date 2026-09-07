@@ -19,6 +19,11 @@ sealed interface InstanceStatus {
         data class DownloadingFiles(val progress: Float?) : Installing
         data object AwaitingManualDownloads : Installing
         data class Interrupted(val stage: InstanceInstallStage) : Installing
+
+        /** Copying a PrismLauncher-imported instance's `.minecraft` folder contents into place. Purely transient (never
+         *  persisted via [InstanceInstallStage]) — a local import that's interrupted mid-copy has no resumable
+         *  state, unlike an online modpack install. */
+        data class ExtractingFiles(val progress: Float?) : Installing
     }
 
     sealed interface Failed : InstanceStatus {

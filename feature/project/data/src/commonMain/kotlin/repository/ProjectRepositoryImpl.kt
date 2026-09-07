@@ -57,7 +57,7 @@ import opensavvy.spine.client.request
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.uuid.Uuid
 
-/** Polling interval used to detect when a manually-downloaded file has stopped growing — see [awaitDownloadStable]. */
+/** Polling interval used to detect when a manually downloaded file has stopped growing. */
 private val STABLE_POLL_INTERVAL = 500.milliseconds
 
 /** Number of consecutive unchanged size polls required before treating a manual download as finished. */
@@ -332,10 +332,20 @@ class ProjectRepositoryImpl(
         return parser.resolveFiles(zipPath, manifest, onProgress)
     }
 
+    context(_: Raise<ModpackResolutionError>)
+    override suspend fun parseLocalModpack(sourcePath: String, platformId: String): ModpackManifest {
+        val zipPath = Path(sourcePath)
+        val parser = ensureNotNull(modpackParsers[platformId]) { ModpackUnsupportedPlatform }
+        val projectId = ProjectId(id = "local", platform = platformId)
+        val manifest = parser.parse(zipPath, projectId, fileId = "local")
+        return parser.resolveFiles(zipPath, manifest)
+    }
+
     context(_: Raise<ModpackInstallError>)
     override suspend fun installModpackFiles(
         manifest: ModpackManifest,
         instanceId: String,
+        localSourcePath: String?,
         onProgress: (Progress) -> Unit
     ): List<InstalledModpackFile> {
         val gameDir = appPaths.gameDir(instanceId)
@@ -374,7 +384,8 @@ class ProjectRepositoryImpl(
             raise(ModpackInstallDownloadFailed)
         }
 
-        val zipPath = modpackZipPath(manifest.platformId, manifest.projectId, manifest.fileId)
+        val zipPath =
+            localSourcePath?.let(::Path) ?: modpackZipPath(manifest.platformId, manifest.projectId, manifest.fileId)
         try {
             extractOverrides(zipPath, gameDir, manifest.overridesDirs)
         } catch (e: CancellationException) {
@@ -382,7 +393,8 @@ class ProjectRepositoryImpl(
         } catch (_: Exception) {
             raise(ModpackOverridesExtractionFailed)
         } finally {
-            if (zipPath.exists()) zipPath.deleteRecursively()
+            // Never delete a caller-owned local file (localSourcePath != null) — only vercors' own downloaded tmp copy.
+            if (localSourcePath == null && zipPath.exists()) zipPath.deleteRecursively()
         }
 
         return autoFiles

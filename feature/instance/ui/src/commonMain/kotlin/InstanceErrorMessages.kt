@@ -5,6 +5,10 @@ import app.vercors.feature.instance.domain.model.InstanceError
 import app.vercors.feature.instance.domain.model.InstanceLoadingError
 import app.vercors.feature.instance.domain.model.InstanceNotFound
 import app.vercors.feature.instance.domain.model.InstanceValidationError
+import app.vercors.feature.instance.domain.model.localimport.LocalImportError
+import app.vercors.feature.instance.domain.model.localimport.LocalImportExtractionFailed
+import app.vercors.feature.instance.domain.model.localimport.LocalImportNotPrismFormat
+import app.vercors.feature.instance.domain.model.localimport.LocalImportParseFailed
 import app.vercors.feature.launcher.domain.model.InstanceLaunchError
 import app.vercors.feature.project.domain.model.ManualDownloadError
 import app.vercors.feature.project.domain.model.ManualDownloadFailed
@@ -46,4 +50,11 @@ val ManualDownloadError.message: String
     @Composable get() = when (this) {
         ManualDownloadFailed -> stringResource(InstanceRes.string.errorManualDownloadFailed)
         ManualDownloadIntegrityMismatch -> stringResource(InstanceRes.string.errorManualDownloadIntegrityMismatch)
+    }
+
+val LocalImportError.message: String
+    @Composable get() = when (this) {
+        LocalImportNotPrismFormat -> stringResource(InstanceRes.string.errorImportUnsupportedFormat)
+        LocalImportParseFailed -> stringResource(InstanceRes.string.errorImportParseFailed)
+        LocalImportExtractionFailed -> stringResource(InstanceRes.string.errorImportExtractionFailed)
     }

@@ -141,10 +141,10 @@ private fun AppMainContent(
             themeColors = theme.colors,
             accentColor = accentColor
         )) {
-            ContentWithOverlays {
-                Box(
-                    modifier = modifier.fillMaxSize()
-                ) {
+            Box(
+                modifier = modifier.fillMaxSize()
+            ) {
+                ContentWithOverlays(modifier = Modifier.fillMaxSize()) {
                     Column(
                         modifier = Modifier.fillMaxSize().background(Theme[colors][backgroundAlt])
                     ) {
@@ -165,12 +165,12 @@ private fun AppMainContent(
                             AppContent(navStack, navigator)
                         }
                     }
-                    AppSnackbarHost(
-                        message = state.snackbarMessage,
-                        onDismiss = { eventSink(AppEvent.DismissSnackbar) },
-                    )
                     AppQuitConfirmationDialog()
                 }
+                AppSnackbarHost(
+                    message = state.snackbarMessage,
+                    onDismiss = { eventSink(AppEvent.DismissSnackbar) },
+                )
             }
         }
     }
