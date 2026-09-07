@@ -237,7 +237,9 @@ private fun InstanceDetails(
             selectedTab = state.selectedTab,
             onSelectedTabChange = { eventSink(InstanceDetailsEvent.SelectTab(it)) },
             tabs = InstanceDetailsTab.entries.filter {
-                it != InstanceDetailsTab.Logs || state.logsContent.state.logs != null
+                it != InstanceDetailsTab.Logs ||
+                        state.logsContent.state.logs != null ||
+                        state.selectedTab == InstanceDetailsTab.Logs
             },
             orientation = Orientation.Vertical,
             tabTitle = { tab -> InstanceDetailsTabTitle(tab, state) }
@@ -283,7 +285,7 @@ private fun InstanceDetailsTabContent(tab: InstanceDetailsTab, instance: Instanc
         InstanceDetailsTab.ShaderPacks -> InstanceShaderPacksTab(state.shaderPacksContent)
         InstanceDetailsTab.Worlds -> InstanceWorldsTab(instance, state.worldsContent)
         InstanceDetailsTab.Servers -> InstanceServersTab(instance, state.serversContent)
-        InstanceDetailsTab.Logs -> state.logsContent.state.logs?.let { InstanceLogsTab(state.logsContent) }
+        InstanceDetailsTab.Logs -> InstanceLogsTab(state.logsContent)
     }
 }
 

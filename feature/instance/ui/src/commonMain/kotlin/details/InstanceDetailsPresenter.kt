@@ -46,6 +46,7 @@ import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedFactory
 import dev.zacsweers.metro.AssistedInject
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import opensavvy.state.progressive.ProgressiveOutcome
 import opensavvy.state.progressive.map
@@ -58,6 +59,7 @@ class InstanceDetailsPresenter(
     @Assisted private val navigator: Navigator,
     private val globalScope: CoroutineScope,
     private val observeInstance: ObserveInstanceUseCase,
+    private val observeInstanceLogs: ObserveInstanceLogsUseCase,
     private val installedContentPresenterFactory: InstalledContentPresenter.Factory,
     private val installedWorldsPresenterFactory: InstalledWorldsPresenter.Factory,
     private val instanceServersPresenterFactory: InstanceServersPresenter.Factory,
@@ -389,8 +391,13 @@ class InstanceDetailsPresenter(
         quickPlayTarget: QuickPlayTarget? = null,
     ) = globalScope.launch {
         setPendingQuickPlayTarget(quickPlayTarget)
-        setSelectedTab(InstanceDetailsTab.Logs)
+        val switchToLogsJob = launch {
+            val logsFlow = observeInstanceLogs(screen.instanceId)
+            logsFlow.first { it != null }
+            setSelectedTab(InstanceDetailsTab.Logs)
+        }
         either { launchInstance(screen.instanceId, quickPlayTarget) }.onLeft { error ->
+            switchToLogsJob.cancel()
             when (error) {
                 is InstanceLaunchError.NoCompatibleJava -> setPromptInstallJava(error.majorVersion)
                 InstanceLaunchError.LoginRequired -> startLogin(loginState, setPromptLogin, setLoginJob)
