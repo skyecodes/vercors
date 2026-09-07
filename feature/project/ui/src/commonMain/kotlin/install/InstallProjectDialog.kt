@@ -4,10 +4,11 @@ import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import app.vercors.feature.game.domain.model.ModLoaderType
+import app.vercors.feature.game.domain.usecase.ObserveAvailableLoadersUseCase
+import app.vercors.feature.game.domain.usecase.ObserveGameVersionListUseCase
+import app.vercors.feature.game.domain.usecase.ObserveLoaderVersionsUseCase
 import app.vercors.feature.instance.domain.model.InstanceId
-import app.vercors.feature.instance.domain.usecase.ObserveInstalledContentUseCase
-import app.vercors.feature.instance.domain.usecase.ObserveInstanceListUseCase
-import app.vercors.feature.instance.domain.usecase.RecordInstalledContentOriginUseCase
+import app.vercors.feature.instance.domain.usecase.*
 import app.vercors.feature.project.domain.model.ProjectId
 import app.vercors.feature.project.domain.model.ProjectType
 import app.vercors.feature.project.domain.usecase.*
@@ -36,8 +37,13 @@ class InstallProjectDialog(
     private val globalScope: CoroutineScope,
     private val observeInstanceList: ObserveInstanceListUseCase,
     private val observeInstalledContent: ObserveInstalledContentUseCase,
+    private val observeGameVersionList: ObserveGameVersionListUseCase,
+    private val observeAvailableLoaders: ObserveAvailableLoadersUseCase,
+    private val observeLoaderVersions: ObserveLoaderVersionsUseCase,
     private val getProject: GetProjectUseCase,
     private val getProjectFiles: GetProjectFilesUseCase,
+    private val createInstance: CreateInstanceUseCase,
+    private val setInstanceIconFromUrl: SetInstanceIconFromUrlUseCase,
     private val downloadProjectFiles: DownloadProjectFilesUseCase,
     private val awaitManualDownload: AwaitManualDownloadUseCase,
     private val installWorldFile: InstallWorldFileUseCase,
@@ -61,8 +67,13 @@ class InstallProjectDialog(
                 globalScope = globalScope,
                 observeInstanceList = observeInstanceList,
                 observeInstalledContent = observeInstalledContent,
+                observeGameVersionList = observeGameVersionList,
+                observeAvailableLoaders = observeAvailableLoaders,
+                observeLoaderVersions = observeLoaderVersions,
                 getProject = getProject,
                 getProjectFiles = getProjectFiles,
+                createInstance = createInstance,
+                setInstanceIconFromUrl = setInstanceIconFromUrl,
                 downloadProjectFiles = downloadProjectFiles,
                 awaitManualDownload = awaitManualDownload,
                 installWorldFile = installWorldFile,

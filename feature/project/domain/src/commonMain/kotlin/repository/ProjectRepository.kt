@@ -40,7 +40,6 @@ interface ProjectRepository {
     suspend fun downloadProjectFiles(
         candidates: List<ProjectFileDownloadCandidate>,
         instanceId: String,
-        type: ProjectType,
         onProgress: (Progress) -> Unit = {}
     )
 

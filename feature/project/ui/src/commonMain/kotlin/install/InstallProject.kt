@@ -10,11 +10,16 @@ import app.vercors.core.ui.component.*
 import app.vercors.core.ui.layout.AppDialog
 import app.vercors.core.ui.modifier.clickableText
 import app.vercors.core.ui.theme.*
+import app.vercors.feature.game.ui.GameVersionSelector
+import app.vercors.feature.game.ui.LoaderSelector
+import app.vercors.feature.game.ui.LoaderVersionSelector
 import app.vercors.feature.instance.domain.model.ManualDownloadItem
 import app.vercors.feature.project.ui.*
+import app.vercors.feature.project.ui.list.displayName
 import app.vercors.shared.ui.*
 import com.composables.icons.lucide.*
 import com.composeunstyled.theme.Theme
+import opensavvy.state.progressive.valueOrNull
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
@@ -42,6 +47,7 @@ fun InstallProject(
                 )
 
                 InstanceSelector(state)
+                NewInstanceForm(state)
                 FileSelector(state)
                 DependenciesSection(state)
                 ManualDownloadsSection(state)
@@ -57,24 +63,67 @@ fun InstallProject(
 @Composable
 context(eventSink: EventSink<InstallProjectEvent>)
 private fun InstanceSelector(state: InstallProjectState) {
+    val createNewInstanceLabel = stringResource(
+        ProjectRes.string.createNewInstanceWithProject,
+        state.projectType.displayName.lowercase()
+    )
+
     AppSelectField(
         label = stringResource(ProjectRes.string.instance),
-        value = state.selectedInstance,
-        items = state.instanceList,
-        onValueChange = { eventSink(InstallProjectEvent.OnInstanceSelected(it?.id)) },
-        itemRenderer = { value, _ -> AppSelectItem(text = value?.name ?: "") },
+        value = state.selectedInstanceItem,
+        items = state.instanceSelectorItems,
+        onValueChange = { eventSink(InstallProjectEvent.OnInstanceSelectorItemSelected(it)) },
+        itemRenderer = { value, _ ->
+            when (value) {
+                is InstanceSelectorItem.Existing -> AppSelectItem(text = value.instance.name)
+                InstanceSelectorItem.CreateNew -> AppSelectItem(text = createNewInstanceLabel, icon = Lucide.Plus)
+                null -> AppSelectItem(text = "")
+            }
+        },
+        modifier = Modifier.width(400.dp),
+    )
+}
+
+@Composable
+context(eventSink: EventSink<InstallProjectEvent>)
+private fun NewInstanceForm(state: InstallProjectState) {
+    if (!state.creatingNewInstance) return
+
+    AppTextField(
+        label = stringResource(ProjectRes.string.instanceName),
+        initialValue = state.newInstanceName,
+        onValueChange = { eventSink(InstallProjectEvent.OnNewInstanceNameChange(it)) },
         modifier = Modifier.width(300.dp),
     )
 
-    if (state.instanceList.isEmpty()) {
-        AppText(text = stringResource(ProjectRes.string.noCompatibleInstances))
+    GameVersionSelector(
+        selectedVersion = state.selectedNewGameVersion,
+        versionList = state.newInstanceGameVersionList,
+        onVersionChange = { eventSink(InstallProjectEvent.OnNewGameVersionChange(it)) },
+    )
+
+    LoaderSelector(
+        selectedLoader = state.selectedNewLoader,
+        availableLoaders = state.newInstanceLoaderList,
+        onLoaderChange = { eventSink(InstallProjectEvent.OnNewLoaderChange(it)) },
+        includeVanillaOption = !state.projectType.requiresLoader,
+    )
+
+    if (state.selectedNewLoader != null) {
+        LoaderVersionSelector(
+            selectedVersion = state.selectedNewLoaderVersion,
+            versionList = state.newInstanceLoaderVersionList.valueOrNull ?: emptyList(),
+            onVersionChange = { eventSink(InstallProjectEvent.OnNewLoaderVersionChange(it)) },
+        )
     }
 }
 
 @Composable
 context(eventSink: EventSink<InstallProjectEvent>)
 private fun FileSelector(state: InstallProjectState) {
-    if (state.selectedInstance == null) return
+    val targetResolved = state.selectedInstance != null ||
+            (state.creatingNewInstance && state.selectedNewGameVersion != null)
+    if (!targetResolved) return
 
     AppSelectField(
         label = stringResource(ProjectRes.string.`file`),

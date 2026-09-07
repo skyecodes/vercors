@@ -17,7 +17,8 @@ internal fun Instance.toInstallableInstanceViewOrNull(
             name = name,
             gameVersion = gameVersion,
             loaderType = loader.type,
-            loaderVersion = loader.version
+            loaderVersion = loader.version,
+            updatedAt = updatedAt
         )
     }
     return InstallableInstanceView(
@@ -25,7 +26,8 @@ internal fun Instance.toInstallableInstanceViewOrNull(
         name = name,
         gameVersion = gameVersion,
         loaderType = modLoader?.type,
-        loaderVersion = modLoader?.version
+        loaderVersion = modLoader?.version,
+        updatedAt = updatedAt
     )
 }
 
@@ -40,5 +42,6 @@ internal fun ProjectFile.toView(): ProjectFileView = ProjectFileView(
     md5 = md5,
     publishedAt = publishedAt,
     dependencies = dependencies,
-    manualDownloadUrl = manualDownloadUrl
+    manualDownloadUrl = manualDownloadUrl,
+    loaders = loaders
 )

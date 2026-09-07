@@ -4,18 +4,21 @@ import androidx.compose.runtime.*
 import app.vercors.core.domain.filterIsRight
 import app.vercors.core.ui.state.mutableProgressiveStateOf
 import app.vercors.core.ui.state.produceAndCollectAsProgressiveState
+import app.vercors.feature.game.domain.model.LoaderError
+import app.vercors.feature.game.domain.model.LoaderVersion
 import app.vercors.feature.game.domain.model.ModLoaderType
-import app.vercors.feature.instance.domain.model.InstanceId
-import app.vercors.feature.instance.domain.model.ManualDownloadItem
-import app.vercors.feature.instance.domain.model.ModProvider
-import app.vercors.feature.instance.domain.usecase.ContentKind
-import app.vercors.feature.instance.domain.usecase.ObserveInstalledContentUseCase
-import app.vercors.feature.instance.domain.usecase.ObserveInstanceListUseCase
-import app.vercors.feature.instance.domain.usecase.RecordInstalledContentOriginUseCase
+import app.vercors.feature.game.domain.usecase.ObserveAvailableLoadersUseCase
+import app.vercors.feature.game.domain.usecase.ObserveGameVersionListUseCase
+import app.vercors.feature.game.domain.usecase.ObserveLoaderVersionsUseCase
+import app.vercors.feature.game.ui.GameVersionView
+import app.vercors.feature.instance.domain.model.*
+import app.vercors.feature.instance.domain.usecase.*
 import app.vercors.feature.instance.ui.install.ManualDownloadCandidate
 import app.vercors.feature.instance.ui.install.runManualDownloads
 import app.vercors.feature.instance.ui.install.toFractionOrNull
-import app.vercors.feature.instance.ui.message
+import app.vercors.feature.instance.ui.observeAvailableLoadersView
+import app.vercors.feature.instance.ui.observeGameVersionListView
+import app.vercors.feature.instance.ui.observeLoaderVersionsView
 import app.vercors.feature.project.domain.model.*
 import app.vercors.feature.project.domain.usecase.*
 import app.vercors.feature.project.ui.message
@@ -26,6 +29,7 @@ import app.vercors.shared.ui.Store
 import app.vercors.shared.ui.error
 import arrow.core.raise.recover
 import com.slack.circuit.overlay.OverlayNavigator
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
@@ -34,6 +38,9 @@ import opensavvy.state.arrow.progressive
 import opensavvy.state.progressive.ProgressiveOutcome
 import opensavvy.state.progressive.map
 import opensavvy.state.progressive.valueOrNull
+import app.vercors.feature.instance.ui.message as instanceMessage
+
+private val logger = KotlinLogging.logger {}
 
 class InstallProjectPresenter(
     private val navigator: OverlayNavigator<InstallProjectResult>,
@@ -44,8 +51,13 @@ class InstallProjectPresenter(
     private val globalScope: CoroutineScope,
     private val observeInstanceList: ObserveInstanceListUseCase,
     private val observeInstalledContent: ObserveInstalledContentUseCase,
+    private val observeGameVersionList: ObserveGameVersionListUseCase,
+    private val observeAvailableLoaders: ObserveAvailableLoadersUseCase,
+    private val observeLoaderVersions: ObserveLoaderVersionsUseCase,
     private val getProject: GetProjectUseCase,
     private val getProjectFiles: GetProjectFilesUseCase,
+    private val createInstance: CreateInstanceUseCase,
+    private val setInstanceIconFromUrl: SetInstanceIconFromUrlUseCase,
     private val downloadProjectFiles: DownloadProjectFilesUseCase,
     private val awaitManualDownload: AwaitManualDownloadUseCase,
     private val installWorldFile: InstallWorldFileUseCase,
@@ -57,29 +69,204 @@ class InstallProjectPresenter(
     @Composable
     override fun present(): Store<InstallProjectState, InstallProjectEvent> {
         val instances by observeInstanceListView()
-        val (selectedInstanceId, setSelectedInstanceId) = remember { mutableStateOf(preferredInstanceId) }
-        val (selectedFileId, setSelectedFileId) = remember { mutableStateOf<String?>(null) }
-        var dependencies by remember { mutableStateOf<List<DependencyFileView>>(emptyList()) }
-        val (selectedDependencyIds, setSelectedDependencyIds) = remember { mutableStateOf<Set<ProjectId>>(emptySet()) }
-        var resolvingDependencies by remember { mutableStateOf(false) }
+        val instanceSelection = rememberInstanceSelectionState(instances)
+        val newInstanceForm = rememberNewInstanceFormState()
+
+        val selectedInstance = instances.valueOrNull?.find { it.id == instanceSelection.selectedInstanceId }
+        val effectiveGameVersion = if (instanceSelection.creatingNewInstance) {
+            newInstanceForm.selectedGameVersion?.id
+        } else {
+            selectedInstance?.gameVersion
+        }
+        val effectiveLoader = if (instanceSelection.creatingNewInstance) {
+            newInstanceForm.selectedLoader
+        } else {
+            selectedInstance?.loaderType
+        }
+        val fileSelection =
+            rememberFileSelectionState(effectiveGameVersion, effectiveLoader, instanceSelection.selectedInstanceId)
+
         val (installing, setInstalling) = remember { mutableStateOf(false) }
         val (installProgress, setInstallProgress) = remember { mutableFloatStateOf(0f) }
         val (installJob, setInstallJob) = remember { mutableStateOf<Job?>(null) }
         val (manualDownloadItems, setManualDownloadItems) =
             remember { mutableStateOf<List<ManualDownloadItem>>(emptyList()) }
         val (completedInstanceId, setCompletedInstanceId) = remember { mutableStateOf<InstanceId?>(null) }
+
+        return InstallProjectState(
+            projectType = projectType,
+            instances = instances,
+            selectedInstanceId = instanceSelection.selectedInstanceId,
+            creatingNewInstance = instanceSelection.creatingNewInstance,
+            newInstanceName = newInstanceForm.newInstanceName,
+            project = newInstanceForm.project,
+            newInstanceGameVersionList = newInstanceForm.gameVersionList,
+            selectedNewGameVersion = newInstanceForm.selectedGameVersion,
+            newInstanceLoaderList = newInstanceForm.loaderList,
+            selectedNewLoader = newInstanceForm.selectedLoader,
+            newInstanceLoaderVersionList = newInstanceForm.loaderVersionList,
+            selectedNewLoaderVersion = newInstanceForm.selectedLoaderVersion,
+            files = fileSelection.files.value,
+            selectedFileId = fileSelection.selectedFileId,
+            dependencies = fileSelection.dependencies,
+            selectedDependencyIds = fileSelection.selectedDependencyIds,
+            resolvingDependencies = fileSelection.resolvingDependencies,
+            installing = installing,
+            installProgress = installProgress,
+            manualDownloadItems = manualDownloadItems,
+            completedInstanceId = completedInstanceId
+        ) + { event ->
+            handleEvent(
+                event = event,
+                instanceSelection = instanceSelection,
+                newInstanceForm = newInstanceForm,
+                fileSelection = fileSelection,
+                installJob = installJob,
+                setInstallJob = setInstallJob,
+                setInstalling = setInstalling,
+                setInstallProgress = setInstallProgress,
+                setManualDownloadItems = setManualDownloadItems,
+                completedInstanceId = completedInstanceId,
+                setCompletedInstanceId = setCompletedInstanceId,
+            )
+        }
+    }
+
+    /** Which instance the file will be installed onto: an existing one (defaulted once the list loads — preferred
+     *  instance if given and compatible, else the most-recently-updated one, else the new-instance form) or a
+     *  brand-new one, per [InstanceSelectionState.creatingNewInstance]. */
+    @Composable
+    private fun rememberInstanceSelectionState(
+        instances: ProgressiveOutcome<Nothing, List<InstallableInstanceView>>
+    ): InstanceSelectionState {
+        val (selectedInstanceId, setSelectedInstanceId) = remember { mutableStateOf(preferredInstanceId) }
+        val (creatingNewInstance, setCreatingNewInstance) = remember { mutableStateOf(false) }
+        var hasAppliedDefaultSelection by remember { mutableStateOf(false) }
+
+        LaunchedEffect(instances.valueOrNull) {
+            if (hasAppliedDefaultSelection) return@LaunchedEffect
+            val list = instances.valueOrNull ?: return@LaunchedEffect
+            hasAppliedDefaultSelection = true
+            val preferred = preferredInstanceId?.let { id -> list.find { it.id == id } }
+            val default = preferred ?: list.firstOrNull()
+            if (default != null) setSelectedInstanceId(default.id) else setCreatingNewInstance(true)
+        }
+
+        return InstanceSelectionState(
+            selectedInstanceId = selectedInstanceId,
+            setSelectedInstanceId = setSelectedInstanceId,
+            creatingNewInstance = creatingNewInstance,
+            setCreatingNewInstance = setCreatingNewInstance,
+        )
+    }
+
+    /** The "create a new instance" sub-form's own state: name, Minecraft version, and (optional) mod loader,
+     *  each constrained to what the project actually supports/has files for. */
+    @Composable
+    private fun rememberNewInstanceFormState(): NewInstanceFormState {
+        val project = remember { mutableProgressiveStateOf<ProjectDetailsError, Project>() }
+        val (newInstanceName, setNewInstanceName) = remember { mutableStateOf("") }
+        var hasEditedNewInstanceName by remember { mutableStateOf(false) }
+        val (selectedGameVersion, setSelectedGameVersion) = remember { mutableStateOf<GameVersionView?>(null) }
+        val (selectedLoader, setSelectedLoader) = remember { mutableStateOf<ModLoaderType?>(null) }
+        val (selectedLoaderVersion, setSelectedLoaderVersion) = remember { mutableStateOf<LoaderVersion?>(null) }
+
+        val gameVersionList by observeGameVersionListView(observeGameVersionList)
+        val availableLoaders by observeAvailableLoadersView(observeAvailableLoaders, selectedGameVersion?.id)
+        val loaderVersionList by observeLoaderVersionsView(
+            observeLoaderVersions, selectedGameVersion?.id, selectedLoader
+        )
+        val filteredGameVersionList = remember(gameVersionList, project.value) {
+            val supportedVersions = project.value.valueOrNull?.gameVersions
+            val allVersions = gameVersionList.valueOrNull.orEmpty()
+            if (supportedVersions == null) allVersions else allVersions.filter { it.id in supportedVersions }
+        }
+        // Only fetched/used when the project requires a loader — answers "which loaders does this project
+        // actually have a file for at this exact game version", as opposed to `compatibleLoaders`, which is a
+        // project-wide aggregate across every version ever published (can spuriously include a loader with no
+        // file for the specific version picked here).
+        val versionFiles = remember { mutableProgressiveStateOf<ProjectDetailsError, List<ProjectFileView>>() }
+        val loaderList = remember(availableLoaders, versionFiles.value) {
+            if (!projectType.requiresLoader) {
+                availableLoaders.valueOrNull.orEmpty()
+            } else {
+                versionFiles.value.valueOrNull
+                    ?.flatMap { it.loaders }
+                    ?.distinct()
+                    ?.filter { it in compatibleLoaders }
+                    ?: emptyList()
+            }
+        }
+
+        LaunchedEffect(projectId) {
+            project.value = loadProject()
+        }
+
+        LaunchedEffect(selectedGameVersion?.id) {
+            val gameVersion = selectedGameVersion?.id
+            if (!projectType.requiresLoader || gameVersion == null) {
+                versionFiles.value = ProgressiveOutcome.Incomplete()
+                return@LaunchedEffect
+            }
+            versionFiles.value = ProgressiveOutcome.Incomplete()
+            versionFiles.value = loadVersionFiles(gameVersion)
+        }
+
+        LaunchedEffect(project.value) {
+            if (!hasEditedNewInstanceName) {
+                project.value.valueOrNull?.name?.let { setNewInstanceName(it) }
+            }
+        }
+
+        LaunchedEffect(loaderVersionList) {
+            if (selectedLoaderVersion == null) {
+                setSelectedLoaderVersion(
+                    loaderVersionList.valueOrNull?.let { versions ->
+                        versions.firstOrNull { it.stable } ?: versions.firstOrNull()
+                    }
+                )
+            }
+        }
+
+        return NewInstanceFormState(
+            project = project.value,
+            newInstanceName = newInstanceName,
+            setNewInstanceName = setNewInstanceName,
+            setHasEditedNewInstanceName = { hasEditedNewInstanceName = it },
+            gameVersionList = filteredGameVersionList,
+            selectedGameVersion = selectedGameVersion,
+            setSelectedGameVersion = setSelectedGameVersion,
+            loaderList = loaderList,
+            selectedLoader = selectedLoader,
+            setSelectedLoader = setSelectedLoader,
+            loaderVersionList = loaderVersionList,
+            selectedLoaderVersion = selectedLoaderVersion,
+            setSelectedLoaderVersion = setSelectedLoaderVersion,
+        )
+    }
+
+    /** The file to install (and its resolved dependencies) for the current `(gameVersion, loader)` target —
+     *  shared by the existing-instance and new-instance-form paths, see [loadFiles]. */
+    @Composable
+    private fun rememberFileSelectionState(
+        gameVersion: String?,
+        loader: ModLoaderType?,
+        instanceId: InstanceId?,
+    ): FileSelectionState {
+        val (selectedFileId, setSelectedFileId) = remember { mutableStateOf<String?>(null) }
+        var dependencies by remember { mutableStateOf<List<DependencyFileView>>(emptyList()) }
+        val (selectedDependencyIds, setSelectedDependencyIds) = remember { mutableStateOf<Set<ProjectId>>(emptySet()) }
+        var resolvingDependencies by remember { mutableStateOf(false) }
         val files = remember { mutableProgressiveStateOf<ProjectDetailsError, List<ProjectFileView>>() }
-
-        val selectedInstance = instances.valueOrNull?.find { it.id == selectedInstanceId }
+        val installedProviders by observeInstalledProvidersView(instanceId)
         val selectedFile = files.value.valueOrNull?.find { it.id == selectedFileId }
-        val installedProviders by observeInstalledProvidersView(selectedInstanceId)
 
-        LaunchedEffect(selectedInstance?.id) {
-            setSelectedFileId(loadFiles(selectedInstance, files))
+        LaunchedEffect(gameVersion, loader) {
+            setSelectedFileId(loadFiles(gameVersion, loader, files))
         }
 
         LaunchedEffect(selectedFileId, installedProviders) {
-            when (val resolution = resolveDependencies(selectedFile, selectedInstance, installedProviders)) {
+            when (val resolution = resolveDependencies(selectedFile, gameVersion, loader, installedProviders)) {
                 DependencyResolution.NotApplicable -> {
                     dependencies = emptyList()
                     setSelectedDependencyIds(emptySet())
@@ -96,50 +283,22 @@ class InstallProjectPresenter(
             }
         }
 
-        return InstallProjectState(
-            instances = instances,
-            selectedInstanceId = selectedInstanceId,
-            files = files.value,
+        return FileSelectionState(
+            files = files,
             selectedFileId = selectedFileId,
+            setSelectedFileId = setSelectedFileId,
             dependencies = dependencies,
             selectedDependencyIds = selectedDependencyIds,
+            setSelectedDependencyIds = setSelectedDependencyIds,
             resolvingDependencies = resolvingDependencies,
-            installing = installing,
-            installProgress = installProgress,
-            manualDownloadItems = manualDownloadItems,
-            completedInstanceId = completedInstanceId
-        ) + { event ->
-            handleEvent(
-                event = event,
-                files = files,
-                selectedInstanceId = selectedInstanceId,
-                setSelectedInstanceId = setSelectedInstanceId,
-                selectedFileId = selectedFileId,
-                setSelectedFileId = setSelectedFileId,
-                dependencies = dependencies,
-                selectedDependencyIds = selectedDependencyIds,
-                setSelectedDependencyIds = setSelectedDependencyIds,
-                installJob = installJob,
-                setInstallJob = setInstallJob,
-                setInstalling = setInstalling,
-                setInstallProgress = setInstallProgress,
-                setManualDownloadItems = setManualDownloadItems,
-                completedInstanceId = completedInstanceId,
-                setCompletedInstanceId = setCompletedInstanceId,
-            )
-        }
+        )
     }
 
     private fun handleEvent(
         event: InstallProjectEvent,
-        files: MutableState<ProgressiveOutcome<ProjectDetailsError, List<ProjectFileView>>>,
-        selectedInstanceId: InstanceId?,
-        setSelectedInstanceId: (InstanceId?) -> Unit,
-        selectedFileId: String?,
-        setSelectedFileId: (String?) -> Unit,
-        dependencies: List<DependencyFileView>,
-        selectedDependencyIds: Set<ProjectId>,
-        setSelectedDependencyIds: (Set<ProjectId>) -> Unit,
+        instanceSelection: InstanceSelectionState,
+        newInstanceForm: NewInstanceFormState,
+        fileSelection: FileSelectionState,
         installJob: Job?,
         setInstallJob: (Job?) -> Unit,
         setInstalling: (Boolean) -> Unit,
@@ -149,11 +308,45 @@ class InstallProjectPresenter(
         setCompletedInstanceId: (InstanceId?) -> Unit,
     ) {
         when (event) {
-            is InstallProjectEvent.OnInstanceSelected -> setSelectedInstanceId(event.instanceId)
-            is InstallProjectEvent.OnFileSelected -> setSelectedFileId(event.fileId)
-            is InstallProjectEvent.OnDependencyToggled -> setSelectedDependencyIds(
-                if (event.checked) selectedDependencyIds + event.projectId
-                else selectedDependencyIds - event.projectId
+            is InstallProjectEvent.OnInstanceSelectorItemSelected -> when (val item = event.item) {
+                is InstanceSelectorItem.Existing -> {
+                    instanceSelection.setSelectedInstanceId(item.instance.id)
+                    instanceSelection.setCreatingNewInstance(false)
+                }
+
+                InstanceSelectorItem.CreateNew -> {
+                    instanceSelection.setSelectedInstanceId(null)
+                    instanceSelection.setCreatingNewInstance(true)
+                }
+
+                null -> {
+                    instanceSelection.setSelectedInstanceId(null)
+                    instanceSelection.setCreatingNewInstance(false)
+                }
+            }
+
+            is InstallProjectEvent.OnNewInstanceNameChange -> {
+                newInstanceForm.setHasEditedNewInstanceName(true)
+                newInstanceForm.setNewInstanceName(event.name)
+            }
+
+            is InstallProjectEvent.OnNewGameVersionChange -> {
+                newInstanceForm.setSelectedGameVersion(event.version)
+                newInstanceForm.setSelectedLoader(null)
+                newInstanceForm.setSelectedLoaderVersion(null)
+            }
+
+            is InstallProjectEvent.OnNewLoaderChange -> {
+                newInstanceForm.setSelectedLoader(event.loader)
+                newInstanceForm.setSelectedLoaderVersion(null)
+            }
+
+            is InstallProjectEvent.OnNewLoaderVersionChange -> newInstanceForm.setSelectedLoaderVersion(event.version)
+
+            is InstallProjectEvent.OnFileSelected -> fileSelection.setSelectedFileId(event.fileId)
+            is InstallProjectEvent.OnDependencyToggled -> fileSelection.setSelectedDependencyIds(
+                if (event.checked) fileSelection.selectedDependencyIds + event.projectId
+                else fileSelection.selectedDependencyIds - event.projectId
             )
 
             is InstallProjectEvent.OnCopyUrlClick -> copyToClipboard(event.url)
@@ -164,8 +357,14 @@ class InstallProjectPresenter(
             }
 
             InstallProjectEvent.OnConfirmClick -> handleConfirmClick(
-                files, selectedInstanceId, selectedFileId, dependencies, selectedDependencyIds,
-                setInstalling, setInstallProgress, setInstallJob, setManualDownloadItems, setCompletedInstanceId
+                instanceSelection = instanceSelection,
+                newInstanceForm = newInstanceForm,
+                fileSelection = fileSelection,
+                setInstalling = setInstalling,
+                setInstallProgress = setInstallProgress,
+                setInstallJob = setInstallJob,
+                setManualDownloadItems = setManualDownloadItems,
+                setCompletedInstanceId = setCompletedInstanceId,
             )
 
             InstallProjectEvent.OnCloseClick ->
@@ -177,21 +376,37 @@ class InstallProjectPresenter(
     }
 
     private fun handleConfirmClick(
-        files: MutableState<ProgressiveOutcome<ProjectDetailsError, List<ProjectFileView>>>,
-        selectedInstanceId: InstanceId?,
-        selectedFileId: String?,
-        dependencies: List<DependencyFileView>,
-        selectedDependencyIds: Set<ProjectId>,
+        instanceSelection: InstanceSelectionState,
+        newInstanceForm: NewInstanceFormState,
+        fileSelection: FileSelectionState,
         setInstalling: (Boolean) -> Unit,
         setInstallProgress: (Float) -> Unit,
         setInstallJob: (Job?) -> Unit,
         setManualDownloadItems: (List<ManualDownloadItem>) -> Unit,
         setCompletedInstanceId: (InstanceId?) -> Unit,
     ) {
-        val instanceId = selectedInstanceId
-        val file = files.value.valueOrNull?.find { it.id == selectedFileId }
-        if (instanceId != null && file != null) {
-            val selectedDependencies = dependencies.filter { it.projectId in selectedDependencyIds }
+        val file = fileSelection.files.value.valueOrNull?.find { it.id == fileSelection.selectedFileId } ?: return
+        val selectedDependencies =
+            fileSelection.dependencies.filter { it.projectId in fileSelection.selectedDependencyIds }
+
+        if (instanceSelection.creatingNewInstance) {
+            val selectedGameVersion = newInstanceForm.selectedGameVersion ?: return
+            setInstalling(true)
+            setInstallProgress(0f)
+            setInstallJob(
+                confirmCreateAndInstall(
+                    newInstanceForm.newInstanceName, selectedGameVersion, newInstanceForm.selectedLoader,
+                    newInstanceForm.selectedLoaderVersion, file, selectedDependencies,
+                    onManualDownloadItemsChanged = { setManualDownloadItems(it) },
+                    onProgressChanged = { setInstallProgress(it) },
+                ) { instanceId, success ->
+                    setInstalling(false)
+                    setManualDownloadItems(emptyList())
+                    if (success && instanceId != null) setCompletedInstanceId(instanceId)
+                }
+            )
+        } else {
+            val instanceId = instanceSelection.selectedInstanceId ?: return
             setInstalling(true)
             setInstallProgress(0f)
             setInstallJob(
@@ -208,37 +423,55 @@ class InstallProjectPresenter(
         }
     }
 
-    /** Fetches the compatible files for [instance] and picks a default selection; used for the primary file. */
+    @OptIn(ExperimentalProgressiveRaiseApi::class)
+    private suspend fun loadProject(): ProgressiveOutcome<ProjectDetailsError, Project> =
+        progressive { getProject(projectId) }
+
+    /** Unfiltered-by-loader file list for one game version — see [loadFiles]'s doc for why loader filtering
+     *  never happens upstream. Used only to compute [NewInstanceFormState.loaderList]. */
+    @OptIn(ExperimentalProgressiveRaiseApi::class)
+    private suspend fun loadVersionFiles(gameVersion: String): ProgressiveOutcome<ProjectDetailsError, List<ProjectFileView>> =
+        progressive { getProjectFiles(projectId, gameVersion, loader = null).map { it.toView() } }
+
+    /** Fetches the compatible files for the target `(gameVersion, loader)` and picks a default selection — used
+     *  both for an existing selected instance and for the new-instance sub-form's in-progress selections, since
+     *  the backend only needs plain values, not a real instance, to resolve compatible files.
+     *  Always fetches with `loader = null` — both CurseForge and Modrinth apply a non-null `loader` as a strict
+     *  upstream exact-match filter against each file's own provider-side loader tag, which can return zero files
+     *  for a loader a mod genuinely supports but never explicitly tagged for this specific game version (e.g. a
+     *  Fabric-tagged file that also works on Quilt via its Fabric-compat layer). Filtering locally against
+     *  [ProjectFileView.loaders] instead is strictly more permissive and avoids that false-negative.
+     */
     @OptIn(ExperimentalProgressiveRaiseApi::class)
     private suspend fun loadFiles(
-        instance: InstallableInstanceView?,
+        gameVersion: String?,
+        loader: ModLoaderType?,
         files: MutableState<ProgressiveOutcome<ProjectDetailsError, List<ProjectFileView>>>
     ): String? {
         files.value = ProgressiveOutcome.Incomplete()
-        if (instance == null) return null
+        if (gameVersion == null) return null
         val outcome = progressive {
-            getProjectFiles(
-                projectId,
-                instance.gameVersion,
-                if (projectType.requiresLoader) instance.loaderType else null
-            ).map { it.toView() }
+            val list = getProjectFiles(projectId, gameVersion, loader = null).map { it.toView() }
+            if (projectType.requiresLoader && loader != null) list.filter { loader in it.loaders } else list
         }
         files.value = outcome
         return outcome.valueOrNull?.let(::pickRecommendedFile)?.id
     }
 
     /**
-     * Resolves [file]'s required dependencies against what's already installed in [instance], skipping any that
-     * are already present. Deliberately stays [DependencyResolution.Pending] while [installedProviders] is still
-     * loading rather than resolving against a possibly-empty set — otherwise an already-installed dependency can
-     * briefly look missing and get re-downloaded if the user confirms before the scan catches up.
+     * Resolves [file]'s required dependencies against what's already installed at `(gameVersion, loader)`,
+     * skipping any that are already present. Deliberately stays [DependencyResolution.Pending] while
+     * [installedProviders] is still loading rather than resolving against a possibly-empty set — otherwise an
+     * already-installed dependency can briefly look missing and get re-downloaded if the user confirms before the
+     * scan catches up.
      */
     private suspend fun resolveDependencies(
         file: ProjectFileView?,
-        instance: InstallableInstanceView?,
+        gameVersion: String?,
+        loader: ModLoaderType?,
         installedProviders: ProgressiveOutcome<Nothing, List<ModProvider>>
     ): DependencyResolution {
-        if (file == null || instance == null || file.dependencies.isEmpty()) return DependencyResolution.NotApplicable
+        if (file == null || gameVersion == null || file.dependencies.isEmpty()) return DependencyResolution.NotApplicable
         if (installedProviders is ProgressiveOutcome.Incomplete) return DependencyResolution.Pending
 
         val installedKeys = installedProviders.valueOrNull.orEmpty().map { it.platformId to it.projectId }.toSet()
@@ -250,8 +483,8 @@ class InstallProjectPresenter(
                 async {
                     resolveDependency(
                         dependencyId,
-                        instance.gameVersion,
-                        if (projectType.requiresLoader) instance.loaderType else null
+                        gameVersion,
+                        if (projectType.requiresLoader) loader else null
                     )
                 }
             }.awaitAll().filterNotNull()
@@ -265,15 +498,17 @@ class InstallProjectPresenter(
         loader: ModLoaderType?
     ): DependencyFileView? = recover({
         val project = getProject(dependencyId)
-        val fileList = getProjectFiles(dependencyId, gameVersion, loader).map { it.toView() }
-        pickRecommendedFile(fileList)?.let { DependencyFileView(dependencyId, project.name, it) }
+        val fileList = getProjectFiles(dependencyId, gameVersion, loader = null).map { it.toView() }
+            .let { list -> if (loader != null) list.filter { loader in it.loaders } else list }
+        pickRecommendedFile(fileList)?.let { DependencyFileView(dependencyId, project.name, project.type, it) }
     }) { null }
 
     /**
-     * Installs [file] (and each of [selectedDependencies]), auto files first (as one batch download, so their
-     * progress can be merged into a single fraction), then manual ones. [onProgressChanged] reports the overall
-     * fraction (0..1) across every candidate — auto candidates count as done once the batch download finishes,
-     * manual candidates count as done one by one as [runManualDownloads] reports each item downloaded.
+     * Installs [file] (and each of [selectedDependencies]) onto an existing [instanceId], auto files first (as one
+     * batch download, so their progress can be merged into a single fraction), then manual ones. [onProgressChanged]
+     * reports the overall fraction (0..1) across every candidate — auto candidates count as done once the batch
+     * download finishes, manual candidates count as done one by one as [runManualDownloads] reports each item
+     * downloaded.
      */
     private fun confirmInstall(
         instanceId: InstanceId,
@@ -283,129 +518,203 @@ class InstallProjectPresenter(
         onProgressChanged: (Float) -> Unit,
         onFinished: (success: Boolean) -> Unit
     ): Job {
-        if (projectType == ProjectType.World) {
-            return confirmInstallWorld(instanceId, file, onManualDownloadItemsChanged, onProgressChanged, onFinished)
-        }
-        val candidates = buildList {
-            add(InstallCandidate(projectId, file))
-            selectedDependencies.forEach { add(InstallCandidate(it.projectId, it.file)) }
-        }
-        val (autoCandidates, manualCandidates) = candidates.partition { it.file.manualDownloadUrl == null }
-        val totalCount = candidates.size
-
         val job = globalScope.launch {
-            val autoOk = recover({
-                if (autoCandidates.isNotEmpty()) {
-                    downloadProjectFiles(
-                        autoCandidates.map {
-                            ProjectFileDownloadCandidate(
-                                it.projectId, it.file.id, it.file.fileName, it.file.size, it.file.sha1, it.file.md5
-                            )
-                        },
-                        instanceId, projectType
-                    ) { progress ->
-                        onProgressChanged((progress.toFractionOrNull() ?: 0f) * autoCandidates.size / totalCount)
-                    }
-                    // Reached only for Mod/ResourcePack/ShaderPack (World/Modpack/DataPack never get here — see
-                    // the early World branch above and `isInstallable`), so a ContentKind always exists.
-                    val kind = requireNotNull(projectType.toContentKindOrNull())
-                    autoCandidates.forEach { candidate ->
-                        recordInstalledContentOrigin(
-                            kind,
-                            instanceId,
-                            candidate.file.fileName,
-                            candidate.projectId.platform,
-                            candidate.projectId.id,
-                            candidate.file.id
-                        )
-                    }
-                }
-                onProgressChanged(autoCandidates.size.toFloat() / totalCount)
-                true
-            }) { error: ProjectFileDownloadError ->
-                snackbarService.error { error.message }
-                false
+            val ok = if (projectType == ProjectType.World) {
+                installWorldFileFor(instanceId, file, onManualDownloadItemsChanged, onProgressChanged)
+            } else {
+                installFiles(instanceId, file, selectedDependencies, onManualDownloadItemsChanged, onProgressChanged)
             }
-
-            val manualOk = autoOk && runManualDownloads(
-                manualCandidates.map { candidate ->
-                    ManualDownloadCandidate(
-                        fileName = candidate.file.fileName,
-                        downloadUrl = requireNotNull(candidate.file.manualDownloadUrl),
-                        instanceId = instanceId,
-                        projectType = projectType,
-                        size = candidate.file.size,
-                        sha1 = candidate.file.sha1,
-                        md5 = candidate.file.md5,
-                        platformId = candidate.projectId.platform,
-                        providerProjectId = candidate.projectId.id,
-                        providerFileId = candidate.file.id,
-                    )
-                },
-                awaitManualDownload, recordInstalledContentOrigin, snackbarService
-            ) { items ->
-                onManualDownloadItemsChanged(items)
-                onProgressChanged((autoCandidates.size + items.count { it.downloaded }).toFloat() / totalCount)
-            }
-
-            onFinished(autoOk && manualOk)
+            onFinished(ok)
         }
         job.invokeOnCompletion { error -> if (error != null) onFinished(false) }
         return job
     }
 
     /**
+     * Creates a brand-new instance from the new-instance sub-form's selections, then installs [file] (and
+     * [selectedDependencies]) into it. Uses the [Instance] object returned by [createInstance] directly rather
+     * than re-reading it back out of the reactive instance cache, which lags behind the write. If instance
+     * creation itself fails, [onFinished] is called with a `null` id and `false`. If creation succeeds but the
+     * install afterward fails, the instance is deliberately left in place (no rollback) — the user can retry from
+     * the normal existing-instance selection, same as an existing-instance install failure already behaves.
+     */
+    private fun confirmCreateAndInstall(
+        newInstanceName: String,
+        selectedNewGameVersion: GameVersionView,
+        selectedNewLoader: ModLoaderType?,
+        selectedNewLoaderVersion: LoaderVersion?,
+        file: ProjectFileView,
+        selectedDependencies: List<DependencyFileView>,
+        onManualDownloadItemsChanged: (List<ManualDownloadItem>) -> Unit,
+        onProgressChanged: (Float) -> Unit,
+        onFinished: (instanceId: InstanceId?, success: Boolean) -> Unit
+    ): Job {
+        val job = globalScope.launch {
+            val instance = tryCreateInstance(
+                Instance(
+                    name = newInstanceName,
+                    gameVersion = selectedNewGameVersion.id,
+                    modLoader = selectedNewLoader?.let {
+                        InstanceModLoader(type = it, version = selectedNewLoaderVersion!!.version)
+                    }
+                )
+            )
+            if (instance == null) {
+                onFinished(null, false)
+                return@launch
+            }
+
+            // Child of `job`, not `globalScope`, so a best-effort icon fetch never outlives a cancelled install.
+            launch { fetchAndApplyProjectIcon(instance) }
+
+            val ok = if (projectType == ProjectType.World) {
+                installWorldFileFor(instance.id, file, onManualDownloadItemsChanged, onProgressChanged)
+            } else {
+                installFiles(instance.id, file, selectedDependencies, onManualDownloadItemsChanged, onProgressChanged)
+            }
+            onFinished(instance.id, ok)
+        }
+        job.invokeOnCompletion { error -> if (error != null) onFinished(null, false) }
+        return job
+    }
+
+    private suspend fun tryCreateInstance(instance: Instance): Instance? =
+        recover({ createInstance(instance) }) { error: InstanceValidationError ->
+            snackbarService.error { error.message }
+            null
+        }
+
+    /** Best-effort only: a missing/broken project logo must never fail or delay the install. */
+    private suspend fun fetchAndApplyProjectIcon(instance: Instance) {
+        recover({
+            val logoUrl = getProject(projectId).logoUrl
+            if (logoUrl != null && !setInstanceIconFromUrl(instance, logoUrl)) {
+                logger.warn { "Failed to set instance icon for ${instance.id} from $logoUrl" }
+            }
+        }) { error: ProjectDetailsError ->
+            logger.warn { "Failed to fetch project details for instance icon (${instance.id}): $error" }
+        }
+    }
+
+    private suspend fun installFiles(
+        instanceId: InstanceId,
+        file: ProjectFileView,
+        selectedDependencies: List<DependencyFileView>,
+        onManualDownloadItemsChanged: (List<ManualDownloadItem>) -> Unit,
+        onProgressChanged: (Float) -> Unit,
+    ): Boolean {
+        val candidates = buildList {
+            add(InstallCandidate(projectId, projectType, file))
+            selectedDependencies.forEach { add(InstallCandidate(it.projectId, it.type, it.file)) }
+        }
+        val (autoCandidates, manualCandidates) = candidates.partition { it.file.manualDownloadUrl == null }
+        val totalCount = candidates.size
+
+        val autoOk = recover({
+            if (autoCandidates.isNotEmpty()) {
+                downloadProjectFiles(
+                    autoCandidates.map {
+                        ProjectFileDownloadCandidate(
+                            it.projectId, it.file.id, it.file.fileName, it.type, it.file.size, it.file.sha1, it.file.md5
+                        )
+                    },
+                    instanceId
+                ) { progress ->
+                    onProgressChanged((progress.toFractionOrNull() ?: 0f) * autoCandidates.size / totalCount)
+                }
+                autoCandidates.forEach { candidate ->
+                    // Every installable type (Mod/ResourcePack/ShaderPack — World never reaches installFiles, and
+                    // Modpack/DataPack are never installable via this presenter) has a ContentKind, whether it's
+                    // the primary project's own type or a dependency's own (possibly different) type.
+                    val kind = requireNotNull(candidate.type.toContentKindOrNull())
+                    recordInstalledContentOrigin(
+                        kind,
+                        instanceId,
+                        candidate.file.fileName,
+                        candidate.projectId.platform,
+                        candidate.projectId.id,
+                        candidate.file.id
+                    )
+                }
+            }
+            onProgressChanged(autoCandidates.size.toFloat() / totalCount)
+            true
+        }) { error: ProjectFileDownloadError ->
+            snackbarService.error { error.message }
+            false
+        }
+
+        return autoOk && runManualDownloads(
+            manualCandidates.map { candidate ->
+                ManualDownloadCandidate(
+                    fileName = candidate.file.fileName,
+                    downloadUrl = requireNotNull(candidate.file.manualDownloadUrl),
+                    instanceId = instanceId,
+                    projectType = candidate.type,
+                    size = candidate.file.size,
+                    sha1 = candidate.file.sha1,
+                    md5 = candidate.file.md5,
+                    platformId = candidate.projectId.platform,
+                    providerProjectId = candidate.projectId.id,
+                    providerFileId = candidate.file.id,
+                )
+            },
+            awaitManualDownload, recordInstalledContentOrigin, snackbarService
+        ) { items ->
+            onManualDownloadItemsChanged(items)
+            onProgressChanged((autoCandidates.size + items.count { it.downloaded }).toFloat() / totalCount)
+        }
+    }
+
+    /**
      * World installs are a single file with no dependencies and no content-kind/provider tracking (there's no
      * "already installed" concept to dedupe against, unlike mods) — handled as its own, simpler path rather than
-     * folded into [confirmInstall]'s multi-candidate/dependency-batching logic above. The downloaded archive is
+     * folded into [installFiles]'s multi-candidate/dependency-batching logic above. The downloaded archive is
      * extracted as a new world directory rather than moved into a flat folder — see
      * [app.vercors.feature.project.domain.repository.ProjectRepository.installWorldFile].
      */
-    private fun confirmInstallWorld(
+    private suspend fun installWorldFileFor(
         instanceId: InstanceId,
         file: ProjectFileView,
         onManualDownloadItemsChanged: (List<ManualDownloadItem>) -> Unit,
         onProgressChanged: (Float) -> Unit,
-        onFinished: (success: Boolean) -> Unit
-    ): Job {
-        val job = globalScope.launch {
-            val manualDownloadUrl = file.manualDownloadUrl
-            val ok = if (manualDownloadUrl == null) {
-                recover({
-                    val candidate =
-                        ProjectFileDownloadCandidate(projectId, file.id, file.fileName, file.size, file.sha1, file.md5)
-                    installWorldFile(candidate, instanceId) { progress ->
-                        onProgressChanged(progress.toFractionOrNull() ?: 0f)
-                    }
-                    true
-                }) { error: ProjectFileDownloadError ->
-                    snackbarService.error { error.message }
-                    false
+    ): Boolean {
+        val manualDownloadUrl = file.manualDownloadUrl
+        val ok = if (manualDownloadUrl == null) {
+            recover({
+                val candidate =
+                    ProjectFileDownloadCandidate(
+                        projectId, file.id, file.fileName, projectType, file.size, file.sha1, file.md5
+                    )
+                installWorldFile(candidate, instanceId) { progress ->
+                    onProgressChanged(progress.toFractionOrNull() ?: 0f)
                 }
-            } else {
-                onManualDownloadItemsChanged(
-                    listOf(
-                        ManualDownloadItem(
-                            file.fileName,
-                            manualDownloadUrl,
-                            downloaded = false
-                        )
+                true
+            }) { error: ProjectFileDownloadError ->
+                snackbarService.error { error.message }
+                false
+            }
+        } else {
+            onManualDownloadItemsChanged(
+                listOf(
+                    ManualDownloadItem(
+                        file.fileName,
+                        manualDownloadUrl,
+                        downloaded = false
                     )
                 )
-                recover({
-                    awaitManualWorldDownload(file.fileName, instanceId, file.size, file.sha1, file.md5)
-                    true
-                }) { error: ManualDownloadError ->
-                    snackbarService.error { error.message }
-                    false
-                }
+            )
+            recover({
+                awaitManualWorldDownload(file.fileName, instanceId, file.size, file.sha1, file.md5)
+                true
+            }) { error: ManualDownloadError ->
+                snackbarService.error { error.instanceMessage }
+                false
             }
-            onManualDownloadItemsChanged(emptyList())
-            onProgressChanged(1f)
-            onFinished(ok)
         }
-        job.invokeOnCompletion { error -> if (error != null) onFinished(false) }
-        return job
+        onManualDownloadItemsChanged(emptyList())
+        onProgressChanged(1f)
+        return ok
     }
 
     @Composable
@@ -415,6 +724,7 @@ class InstallProjectPresenter(
                 res.map { list ->
                     list.filterIsRight()
                         .mapNotNull { it.instance.toInstallableInstanceViewOrNull(projectType, compatibleLoaders) }
+                        .sortedByDescending { it.updatedAt }
                 }
             }
         }
@@ -435,7 +745,43 @@ class InstallProjectPresenter(
         }
 }
 
-private data class InstallCandidate(val projectId: ProjectId, val file: ProjectFileView)
+/** Which instance the install targets — see [InstallProjectPresenter.rememberInstanceSelectionState]. */
+private data class InstanceSelectionState(
+    val selectedInstanceId: InstanceId?,
+    val setSelectedInstanceId: (InstanceId?) -> Unit,
+    val creatingNewInstance: Boolean,
+    val setCreatingNewInstance: (Boolean) -> Unit,
+)
+
+/** The "create a new instance" sub-form's state — see [InstallProjectPresenter.rememberNewInstanceFormState]. */
+private data class NewInstanceFormState(
+    val project: ProgressiveOutcome<ProjectDetailsError, Project>,
+    val newInstanceName: String,
+    val setNewInstanceName: (String) -> Unit,
+    val setHasEditedNewInstanceName: (Boolean) -> Unit,
+    val gameVersionList: List<GameVersionView>,
+    val selectedGameVersion: GameVersionView?,
+    val setSelectedGameVersion: (GameVersionView?) -> Unit,
+    val loaderList: List<ModLoaderType>,
+    val selectedLoader: ModLoaderType?,
+    val setSelectedLoader: (ModLoaderType?) -> Unit,
+    val loaderVersionList: ProgressiveOutcome<LoaderError, List<LoaderVersion>>,
+    val selectedLoaderVersion: LoaderVersion?,
+    val setSelectedLoaderVersion: (LoaderVersion?) -> Unit,
+)
+
+/** The file to install and its resolved dependencies — see [InstallProjectPresenter.rememberFileSelectionState]. */
+private data class FileSelectionState(
+    val files: MutableState<ProgressiveOutcome<ProjectDetailsError, List<ProjectFileView>>>,
+    val selectedFileId: String?,
+    val setSelectedFileId: (String?) -> Unit,
+    val dependencies: List<DependencyFileView>,
+    val selectedDependencyIds: Set<ProjectId>,
+    val setSelectedDependencyIds: (Set<ProjectId>) -> Unit,
+    val resolvingDependencies: Boolean,
+)
+
+private data class InstallCandidate(val projectId: ProjectId, val type: ProjectType, val file: ProjectFileView)
 
 private sealed interface DependencyResolution {
     data object NotApplicable : DependencyResolution

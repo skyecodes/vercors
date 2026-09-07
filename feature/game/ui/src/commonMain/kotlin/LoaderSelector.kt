@@ -16,9 +16,12 @@ fun LoaderSelector(
     availableLoaders: List<ModLoaderType>,
     onLoaderChange: (ModLoaderType?) -> Unit,
     backgroundColor: Color = Theme[colors][surface2],
-    label: String = stringResource(GameRes.string.loader)
+    label: String = stringResource(GameRes.string.loader),
+    includeVanillaOption: Boolean = true,
 ) {
-    val items = remember(availableLoaders) { listOf(null) + availableLoaders }
+    val items = remember(availableLoaders, includeVanillaOption) {
+        if (includeVanillaOption) listOf(null) + availableLoaders else availableLoaders
+    }
 
     AppLabeledSelectField(
         label = label,

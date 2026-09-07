@@ -161,7 +161,7 @@
     <string name="instanceName">Instance name</string>
     <string name="file">File</string>
     <string name="requiredDependencies">Required dependencies</string>
-    <string name="noCompatibleInstances">No compatible instances found</string>
+    <string name="createNewInstanceWithProject">Create a new instance with this %1$s</string>
     <string name="modInstalled">Mod installed</string>
     <string name="projectInstalled">Installation complete</string>
     <string name="close">Close</string>

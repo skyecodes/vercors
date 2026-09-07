@@ -205,13 +205,10 @@ class ProjectRepositoryImpl(
     override suspend fun downloadProjectFiles(
         candidates: List<ProjectFileDownloadCandidate>,
         instanceId: String,
-        type: ProjectType,
         onProgress: (Progress) -> Unit
     ) {
-        val targetDir = type.targetDir(instanceId)
-        val cacheKind = type.toContentCacheKind()
         val downloads = candidates.map { candidate ->
-            val finalPath = Path(targetDir, candidate.fileName)
+            val finalPath = Path(candidate.type.targetDir(instanceId), candidate.fileName)
             val tempPath = Path(appPaths.downloadsTmp, "${Uuid.random()}-${candidate.fileName}")
             val request = projectFileDownloadRequest(
                 platformId = candidate.projectId.platform,
@@ -221,7 +218,7 @@ class ProjectRepositoryImpl(
                 size = candidate.size,
                 sha1 = candidate.sha1,
                 md5 = candidate.md5,
-                cacheKind = cacheKind
+                cacheKind = candidate.type.toContentCacheKind()
             )
             Triple(request, tempPath, finalPath)
         }
