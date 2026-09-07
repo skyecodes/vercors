@@ -2,12 +2,14 @@ package app.vercors.feature.instance.ui.details
 
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
+import app.vercors.core.ui.state.collectProgressiveAsState
 import app.vercors.core.ui.state.produceAndCollectAsProgressiveState
 import app.vercors.core.ui.state.update
 import app.vercors.feature.account.domain.usecase.LoginUseCase
 import app.vercors.feature.account.ui.list.LoginDialog
 import app.vercors.feature.account.ui.list.LoginStateView
 import app.vercors.feature.account.ui.list.startLoginFlow
+import app.vercors.feature.config.domain.usecase.ObserveConfigurationUseCase
 import app.vercors.feature.instance.domain.model.InstanceError
 import app.vercors.feature.instance.domain.model.InstanceStatus
 import app.vercors.feature.instance.domain.usecase.*
@@ -59,6 +61,7 @@ class InstanceDetailsPresenter(
     @Assisted private val navigator: Navigator,
     private val globalScope: CoroutineScope,
     private val observeInstance: ObserveInstanceUseCase,
+    private val observeConfiguration: ObserveConfigurationUseCase,
     private val observeInstanceLogs: ObserveInstanceLogsUseCase,
     private val installedContentPresenterFactory: InstalledContentPresenter.Factory,
     private val installedWorldsPresenterFactory: InstalledWorldsPresenter.Factory,
@@ -96,6 +99,8 @@ class InstanceDetailsPresenter(
     @Composable
     override fun present(): Store<InstanceDetailsState, InstanceDetailsEvent> {
         val instance by observeInstanceView()
+        val configuration by observeConfiguration().collectProgressiveAsState()
+        val horizontalTabs = configuration.valueOrNull?.horizontalTabs == true
         val (promptInstallJava, setPromptInstallJava) = remember { mutableStateOf<Int?>(null) }
 
         val optionsContent = remember(screen.instanceId) {
@@ -166,6 +171,7 @@ class InstanceDetailsPresenter(
             promptCopyInstance = promptCopyInstance,
             copyInstanceDialog = copyInstanceDialog,
             selectedTab = selectedTab,
+            horizontalTabs = horizontalTabs,
             optionsContent = optionsContent,
             modsContent = modsContent,
             resourcePacksContent = resourcePacksContent,

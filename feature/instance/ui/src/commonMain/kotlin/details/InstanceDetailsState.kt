@@ -20,6 +20,7 @@ data class InstanceDetailsState(
     val instance: ProgressiveOutcome<InstanceError, InstanceView>,
     val promptInstallJava: Int?,
     val selectedTab: InstanceDetailsTab,
+    val horizontalTabs: Boolean,
     val promptDeleteConfirmation: Boolean,
     val promptCopyInstance: Boolean,
     val copyInstanceDialog: CopyInstanceDialog,

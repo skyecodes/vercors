@@ -95,6 +95,7 @@
     <string name="changes">Unsaved changes</string>
 
     <string name="options">Options</string>
+    <string name="advanced">Advanced</string>
     <string name="worlds">Worlds</string>
     <string name="servers">Servers</string>
     <string name="logs">Logs</string>

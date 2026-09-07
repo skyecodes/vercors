@@ -11,11 +11,13 @@ import app.vercors.shared.domain.model.NativeLibraryOptions
 
 @Immutable
 data class ConfigurationState(
+    val selectedTab: ConfigurationTab,
     val selectedTheme: ThemeView?,
     val themeList: List<ThemeView>,
     val selectedAccent: ThemeNamedColorView?,
     val animations: Boolean?,
     val uiScalePercent: Int?,
+    val horizontalTabs: Boolean?,
     val metaApiUrl: String?,
     val networkTimeoutSeconds: Int?,
     val parallelDownloads: Int?,

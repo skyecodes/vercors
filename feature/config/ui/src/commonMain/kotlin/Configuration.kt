@@ -4,13 +4,13 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -27,6 +27,8 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import app.vercors.core.ui.animation.appAnimateItem
 import app.vercors.core.ui.component.*
+import app.vercors.core.ui.layout.AppSidebarTabItem
+import app.vercors.core.ui.layout.AppTabGroup
 import app.vercors.core.ui.modifier.appCard
 import app.vercors.core.ui.modifier.clickableText
 import app.vercors.core.ui.theme.*
@@ -74,56 +76,36 @@ fun Configuration(
             }
         }
 
-        Column(
-            modifier = modifier.padding(horizontal = 8.dp)
-                .fillMaxWidth()
-                .scrollable(state = rememberScrollState(), orientation = Orientation.Horizontal),
-        ) {
-            LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-                contentPadding = PaddingValues(vertical = 8.dp)
-            ) {
-                item("general") {
-                    GeneralConfigurationCategory(
-                        state = state
-                    )
-                }
-                item("ui") {
-                    UIConfigurationCategory(
-                        state = state
-                    )
-                }
-                item("java") {
-                    JavaConfigurationCategory(
-                        state = state
-                    )
-                }
-                if (state.showNativeLibraryOptions) {
-                    item("nativeLibraries") {
-                        NativeLibraryConfigurationCategory(
-                            state = state
-                        )
-                    }
-                }
-                item("storage") {
-                    StorageConfigurationCategory(
-                        state = state
-                    )
-                }
-            }
-        }
+        AppTabGroup(
+            selectedTab = state.selectedTab,
+            onSelectedTabChange = { eventSink(ConfigurationEvent.SelectTab(it)) },
+            tabs = ConfigurationTab.entries.filter { it != ConfigurationTab.NativeLibraries || state.showNativeLibraryOptions },
+            modifier = modifier.fillMaxSize(),
+            orientation = if (state.horizontalTabs == true) Orientation.Horizontal else Orientation.Vertical,
+            tabTitle = { tab -> AppSidebarTabItem(title = tab.title, icon = tab.icon) }
+        ) { tab -> ConfigurationTabContent(tab, state) }
     }
 }
 
 @Composable
 context(eventSink: EventSink<ConfigurationEvent>)
-private fun GeneralConfigurationCategory(
+private fun ConfigurationTabContent(tab: ConfigurationTab, state: ConfigurationState) {
+    when (tab) {
+        ConfigurationTab.General -> GeneralConfigurationTab(state)
+        ConfigurationTab.Advanced -> AdvancedConfigurationTab(state)
+        ConfigurationTab.UI -> UIConfigurationTab(state)
+        ConfigurationTab.Java -> JavaConfigurationTab(state)
+        ConfigurationTab.NativeLibraries -> NativeLibraryConfigurationTab(state)
+        ConfigurationTab.Storage -> StorageConfigurationTab(state)
+    }
+}
+
+@Composable
+context(eventSink: EventSink<ConfigurationEvent>)
+private fun GeneralConfigurationTab(
     state: ConfigurationState
 ) {
-    ConfigurationCategory(
-        icon = Lucide.Settings,
-        titleRes = ConfigRes.string.general,
-    ) {
+    ConfigurationTabScaffold(state.horizontalTabs) {
         if (state.platformList.isNotEmpty()) {
             ConfigurationRow(
                 title = ConfigRes.string.preferredPlatform,
@@ -166,6 +148,15 @@ private fun GeneralConfigurationCategory(
             }
             HomeCategoriesReorderList(homeCategories = state.homeCategories)
         }
+    }
+}
+
+@Composable
+context(eventSink: EventSink<ConfigurationEvent>)
+private fun AdvancedConfigurationTab(
+    state: ConfigurationState
+) {
+    ConfigurationTabScaffold(state.horizontalTabs) {
         ConfigurationRow(
             title = ConfigRes.string.metaApiUrl,
             description = ConfigRes.string.metaApiUrlDesc,
@@ -397,13 +388,10 @@ private fun LazyItemScope.UncheckedHomeCategoryRow(
 
 @Composable
 context(eventSink: EventSink<ConfigurationEvent>)
-private fun UIConfigurationCategory(
+private fun UIConfigurationTab(
     state: ConfigurationState
 ) {
-    ConfigurationCategory(
-        icon = Lucide.Eye,
-        titleRes = ConfigRes.string.ui,
-    ) {
+    ConfigurationTabScaffold(state.horizontalTabs) {
         if (state.selectedTheme != null) {
             ConfigurationRow(
                 title = ConfigRes.string.theme,
@@ -462,20 +450,26 @@ private fun UIConfigurationCategory(
                 )
             }
         }
+        if (state.horizontalTabs != null) {
+            ConfigurationRow(
+                title = ConfigRes.string.horizontalTabs,
+                description = ConfigRes.string.horizontalTabsDesc,
+            ) {
+                AppCheckbox(
+                    checked = state.horizontalTabs,
+                    onCheckedChange = { eventSink(ConfigurationEvent.ToggleHorizontalTabs) }
+                )
+            }
+        }
     }
 }
 
 @Composable
 context(eventSink: EventSink<ConfigurationEvent>)
-private fun JavaConfigurationCategory(
+private fun JavaConfigurationTab(
     state: ConfigurationState
 ) {
-    ConfigurationCategory(
-        icon = Lucide.Coffee,
-        titleRes = ConfigRes.string.java,
-    ) {
-
-
+    ConfigurationTabScaffold(state.horizontalTabs) {
         val pickerLauncher = rememberDirectoryPickerLauncher { directory ->
             directory?.let { eventSink(ConfigurationEvent.AddJavaInstallation(it.path)) }
         }
@@ -553,13 +547,10 @@ private fun JavaConfigurationCategory(
 
 @Composable
 context(eventSink: EventSink<ConfigurationEvent>)
-private fun NativeLibraryConfigurationCategory(
+private fun NativeLibraryConfigurationTab(
     state: ConfigurationState
 ) {
-    ConfigurationCategory(
-        icon = Lucide.Package,
-        titleRes = ConfigRes.string.nativeLibraries,
-    ) {
+    ConfigurationTabScaffold(state.horizontalTabs) {
         ConfigurationRow(title = ConfigRes.string.useSystemGlfw, description = ConfigRes.string.useSystemGlfwDesc) {
             LibraryOverrideRow(
                 checked = state.nativeLibraryOptions.useSystemGlfw == true,
@@ -583,13 +574,10 @@ private fun NativeLibraryConfigurationCategory(
 
 @Composable
 context(eventSink: EventSink<ConfigurationEvent>)
-private fun StorageConfigurationCategory(
+private fun StorageConfigurationTab(
     state: ConfigurationState
 ) {
-    ConfigurationCategory(
-        icon = Lucide.HardDrive,
-        titleRes = ConfigRes.string.storage,
-    ) {
+    ConfigurationTabScaffold(state.horizontalTabs) {
         ConfigurationRow(
             title = ConfigRes.string.contentCache,
             description = ConfigRes.string.contentCacheDesc,
@@ -764,36 +752,44 @@ private fun AppRadioGroupScope.JavaInstallationRow(installation: JavaInstallatio
 }
 
 @Composable
-private fun ConfigurationCategory(
-    titleRes: StringResource,
-    icon: ImageVector,
+private fun ConfigurationTabScaffold(
+    horizontalTabs: Boolean?,
     content: @Composable () -> Unit
 ) {
     Column(
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState()),
     ) {
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            AppIcon(
-                imageVector = icon,
-                contentDescription = null
-            )
-            AppText(
-                text = stringResource(titleRes),
-                style = Theme[textStyles][title]
-            )
-        }
-
         Column(
-            modifier = Modifier.appCard().padding(8.dp).fillMaxWidth(),
+            modifier = Modifier.let { if (horizontalTabs == false) it.padding(vertical = 8.dp) else it }.appCard()
+                .padding(8.dp).fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             content()
         }
     }
 }
+
+private val ConfigurationTab.icon: ImageVector
+    @Stable get() = when (this) {
+        ConfigurationTab.General -> Lucide.Settings
+        ConfigurationTab.UI -> Lucide.Eye
+        ConfigurationTab.Java -> Lucide.Coffee
+        ConfigurationTab.NativeLibraries -> Lucide.Package
+        ConfigurationTab.Storage -> Lucide.HardDrive
+        ConfigurationTab.Advanced -> Lucide.Wrench
+    }
+
+private val ConfigurationTab.title: String
+    @Composable get() = when (this) {
+        ConfigurationTab.General -> stringResource(ConfigRes.string.general)
+        ConfigurationTab.UI -> stringResource(ConfigRes.string.ui)
+        ConfigurationTab.Java -> stringResource(ConfigRes.string.java)
+        ConfigurationTab.NativeLibraries -> stringResource(ConfigRes.string.nativeLibraries)
+        ConfigurationTab.Storage -> stringResource(ConfigRes.string.storage)
+        ConfigurationTab.Advanced -> stringResource(ConfigRes.string.advanced)
+    }
 
 @Composable
 private fun ConfigurationRow(

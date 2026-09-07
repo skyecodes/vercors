@@ -44,7 +44,11 @@ import kotlin.time.Instant
 
 @Composable
 context(eventSink: EventSink<InstanceDetailsEvent>)
-fun InstanceWorldsTab(instance: InstanceView, content: Store<InstalledWorldsState, InstalledWorldsEvent>) {
+fun InstanceWorldsTab(
+    instance: InstanceView,
+    content: Store<InstalledWorldsState, InstalledWorldsEvent>,
+    horizontalTabs: Boolean
+) {
     val canQuickJoin = instance.status is InstanceStatus.Idle || instance.status is InstanceStatus.Failed
     with(content.eventSink) {
         InstalledWorldList(
@@ -54,7 +58,8 @@ fun InstanceWorldsTab(instance: InstanceView, content: Store<InstalledWorldsStat
             onOpenFolder = { eventSink(InstanceDetailsEvent.OnOpenInstanceFolderClick(InstanceFolder.Saves)) },
             onQuickJoinClick = { folderName ->
                 eventSink(InstanceDetailsEvent.QuickJoin(QuickPlayTarget.Singleplayer(folderName)))
-            }
+            },
+            horizontalTabs = horizontalTabs
         )
     }
 }
@@ -67,6 +72,7 @@ private fun InstalledWorldList(
     onAddClick: () -> Unit,
     onOpenFolder: () -> Unit,
     onQuickJoinClick: (String) -> Unit,
+    horizontalTabs: Boolean,
 ) {
     var searchQuery by remember { mutableStateOf("") }
     var sortBy by remember { mutableStateOf(WorldSortBy.LastModified) }
@@ -79,7 +85,11 @@ private fun InstalledWorldList(
 
     val filteredWorlds = worlds?.filteredAndSorted(searchQuery, sortBy)
 
-    Column(modifier = Modifier.fillMaxSize().appCard()) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .let { if (!horizontalTabs) it.padding(vertical = 8.dp) else it }
+            .appCard()) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(8.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),

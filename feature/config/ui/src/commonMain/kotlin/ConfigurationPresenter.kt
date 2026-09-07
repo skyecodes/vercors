@@ -1,6 +1,7 @@
 package app.vercors.feature.config.ui
 
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.graphics.Color
 import app.vercors.core.system.OsType
 import app.vercors.core.system.SystemService
@@ -66,6 +67,7 @@ class ConfigurationPresenter(
     @Composable
     override fun present(): Store<ConfigurationState, ConfigurationEvent> {
         val presenterScope = rememberCoroutineScope()
+        val (selectedTab, setSelectedTab) = rememberSaveable { mutableStateOf(ConfigurationTab.General) }
         val themeList by observeThemeViewList()
         val configuration by observeConfiguration().collectProgressiveAsState()
         val javaInstallations by observeJavaInstallations().collectProgressiveAsState()
@@ -94,11 +96,13 @@ class ConfigurationPresenter(
         val nativeLibraryOptions = cfg?.nativeLibraryOptions ?: NativeLibraryOptions()
 
         return ConfigurationState(
+            selectedTab = selectedTab,
             selectedTheme = selectedTheme,
             themeList = themeList,
             selectedAccent = selectedAccent,
             animations = cfg?.animations,
             uiScalePercent = cfg?.uiScalePercent,
+            horizontalTabs = cfg?.horizontalTabs,
             metaApiUrl = cfg?.metaApiUrl,
             networkTimeoutSeconds = cfg?.networkTimeout?.inWholeSeconds?.toInt(),
             parallelDownloads = cfg?.parallelDownloads,
@@ -124,6 +128,7 @@ class ConfigurationPresenter(
                 event = event,
                 presenterScope = presenterScope,
                 themeList = themeList,
+                setSelectedTab = setSelectedTab,
                 setJavaAddError = setJavaAddError,
                 javaScanInProgress = javaScanInProgress,
                 setJavaScanInProgress = setJavaScanInProgress,
@@ -137,6 +142,7 @@ class ConfigurationPresenter(
         event: ConfigurationEvent,
         presenterScope: CoroutineScope,
         themeList: List<ThemeView>,
+        setSelectedTab: (ConfigurationTab) -> Unit,
         setJavaAddError: (String?) -> Unit,
         javaScanInProgress: Boolean,
         setJavaScanInProgress: (Boolean) -> Unit,
@@ -144,6 +150,8 @@ class ConfigurationPresenter(
         setContentCacheSizeBytes: (Long?) -> Unit,
     ) {
         when (event) {
+            is ConfigurationEvent.SelectTab -> setSelectedTab(event.tab)
+
             is ConfigurationEvent.SelectTheme -> presenterScope.launch {
                 selectTheme(themeList.first { t -> t.id == event.themeId })
             }
@@ -154,6 +162,10 @@ class ConfigurationPresenter(
 
             ConfigurationEvent.ToggleAnimations -> presenterScope.launch {
                 updateConfiguration { copy(animations = !animations) }
+            }
+
+            ConfigurationEvent.ToggleHorizontalTabs -> presenterScope.launch {
+                updateConfiguration { copy(horizontalTabs = !horizontalTabs) }
             }
 
             is ConfigurationEvent.SetUiScalePercent -> presenterScope.launch {

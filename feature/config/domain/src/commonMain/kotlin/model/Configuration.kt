@@ -23,7 +23,8 @@ data class Configuration(
     val nativeLibraryOptions: NativeLibraryOptions,
     val wrapLogLines: Boolean,
     val uiScalePercent: Int,
-    val networkTimeout: Duration
+    val networkTimeout: Duration,
+    val horizontalTabs: Boolean
 ) {
     companion object {
         const val DEFAULT_THEME_ID = "catppuccin_mocha"
@@ -47,7 +48,8 @@ data class Configuration(
             nativeLibraryOptions = NativeLibraryOptions(),
             wrapLogLines = true,
             uiScalePercent = DEFAULT_UI_SCALE_PERCENT,
-            networkTimeout = 10.seconds
+            networkTimeout = 10.seconds,
+            horizontalTabs = false
         )
     }
 }

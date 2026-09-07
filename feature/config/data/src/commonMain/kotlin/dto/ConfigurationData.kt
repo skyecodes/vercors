@@ -29,7 +29,8 @@ data class ConfigurationData(
     val nativeLibraryOptions: NativeLibraryOptionsData = NativeLibraryOptionsData(),
     val wrapLogLines: Boolean = true,
     val uiScalePercent: Int = 100,
-    val networkTimeout: Long = 10_000
+    val networkTimeout: Long = 10_000,
+    val horizontalTabs: Boolean = false
 )
 
 internal fun ConfigurationData.toDomain(): Configuration = Configuration(
@@ -49,7 +50,8 @@ internal fun ConfigurationData.toDomain(): Configuration = Configuration(
     nativeLibraryOptions = nativeLibraryOptions.toDomain(),
     wrapLogLines = wrapLogLines,
     uiScalePercent = uiScalePercent,
-    networkTimeout = networkTimeout.milliseconds
+    networkTimeout = networkTimeout.milliseconds,
+    horizontalTabs = horizontalTabs
 )
 
 internal fun Configuration.toData(): ConfigurationData = ConfigurationData(
@@ -69,7 +71,8 @@ internal fun Configuration.toData(): ConfigurationData = ConfigurationData(
     nativeLibraryOptions = nativeLibraryOptions.toData(),
     wrapLogLines = wrapLogLines,
     uiScalePercent = uiScalePercent,
-    networkTimeout = networkTimeout.inWholeMilliseconds
+    networkTimeout = networkTimeout.inWholeMilliseconds,
+    horizontalTabs = horizontalTabs
 )
 
 @Serializable

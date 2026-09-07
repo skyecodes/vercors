@@ -80,12 +80,31 @@ data class InstanceOptionsState(
             it.javaInstallationId?.let(JavaOverrideEdit::Specific) ?: JavaOverrideEdit.UseDefault
         editedInstance.javaOverride != null && editedInstance.javaOverride != current
     } ?: false
-    val isJvmMemoryOptionsEdited = persistedInstance?.let {
-        editedInstance.jvmMemoryOptionsEdit != null && editedInstance.jvmMemoryOptionsEdit != it.jvmMemoryOptions
-    } ?: false
-    val isNativeLibraryOptionsEdited = persistedInstance?.let {
-        editedInstance.nativeLibraryOptionsEdit != null && editedInstance.nativeLibraryOptionsEdit != it.nativeLibraryOptions
-    } ?: false
+    private val effectiveEditedJvmMemoryOptions =
+        editedInstance.jvmMemoryOptionsEdit?.withFallback(globalJvmMemoryOptions)
+    private val effectivePersistedJvmMemoryOptions =
+        persistedInstance?.jvmMemoryOptions?.withFallback(globalJvmMemoryOptions)
+    val isMaxMemoryEdited = effectiveEditedJvmMemoryOptions != null && effectivePersistedJvmMemoryOptions != null &&
+            (effectiveEditedJvmMemoryOptions.maxMemoryEnabled != effectivePersistedJvmMemoryOptions.maxMemoryEnabled ||
+                    effectiveEditedJvmMemoryOptions.maxMemoryMb != effectivePersistedJvmMemoryOptions.maxMemoryMb)
+    val isMinMemoryEdited = effectiveEditedJvmMemoryOptions != null && effectivePersistedJvmMemoryOptions != null &&
+            (effectiveEditedJvmMemoryOptions.minMemoryEnabled != effectivePersistedJvmMemoryOptions.minMemoryEnabled ||
+                    effectiveEditedJvmMemoryOptions.minMemoryMb != effectivePersistedJvmMemoryOptions.minMemoryMb)
+    val isExtraJvmArgsEdited = effectiveEditedJvmMemoryOptions != null && effectivePersistedJvmMemoryOptions != null &&
+            effectiveEditedJvmMemoryOptions.extraArgs != effectivePersistedJvmMemoryOptions.extraArgs
+    val isJvmMemoryOptionsEdited = isMaxMemoryEdited || isMinMemoryEdited || isExtraJvmArgsEdited
+    private val effectiveEditedNativeLibraryOptions =
+        editedInstance.nativeLibraryOptionsEdit?.withFallback(globalNativeLibraryOptions)
+    private val effectivePersistedNativeLibraryOptions =
+        persistedInstance?.nativeLibraryOptions?.withFallback(globalNativeLibraryOptions)
+    val isGlfwEdited = effectiveEditedNativeLibraryOptions != null && effectivePersistedNativeLibraryOptions != null &&
+            (effectiveEditedNativeLibraryOptions.useSystemGlfw != effectivePersistedNativeLibraryOptions.useSystemGlfw ||
+                    effectiveEditedNativeLibraryOptions.glfwPath != effectivePersistedNativeLibraryOptions.glfwPath)
+    val isOpenAlEdited =
+        effectiveEditedNativeLibraryOptions != null && effectivePersistedNativeLibraryOptions != null &&
+                (effectiveEditedNativeLibraryOptions.useSystemOpenAl != effectivePersistedNativeLibraryOptions.useSystemOpenAl ||
+                        effectiveEditedNativeLibraryOptions.openAlPath != effectivePersistedNativeLibraryOptions.openAlPath)
+    val isNativeLibraryOptionsEdited = isGlfwEdited || isOpenAlEdited
     val isInstanceEdited: Boolean =
         isNameEdited || isGameVersionEdited || isModLoaderEdited || isJavaOverrideEdited ||
                 isJvmMemoryOptionsEdited || isNativeLibraryOptionsEdited

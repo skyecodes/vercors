@@ -40,14 +40,19 @@ import org.jetbrains.compose.resources.stringResource
 
 @Composable
 context(eventSink: EventSink<InstanceDetailsEvent>)
-fun InstanceServersTab(instance: InstanceView, content: Store<InstanceServersState, InstanceServersEvent>) {
+fun InstanceServersTab(
+    instance: InstanceView,
+    content: Store<InstanceServersState, InstanceServersEvent>,
+    horizontalTabs: Boolean
+) {
     val canQuickJoin = instance.status is InstanceStatus.Idle || instance.status is InstanceStatus.Failed
     InstalledServerList(
         servers = content.state.servers,
         canQuickJoin = canQuickJoin,
         onQuickJoinClick = { address ->
             eventSink(InstanceDetailsEvent.QuickJoin(QuickPlayTarget.Multiplayer(address)))
-        }
+        },
+        horizontalTabs = horizontalTabs
     )
 }
 
@@ -56,10 +61,15 @@ private fun InstalledServerList(
     servers: List<InstalledServerView>?,
     canQuickJoin: Boolean,
     onQuickJoinClick: (String) -> Unit,
+    horizontalTabs: Boolean,
 ) {
     val listState = rememberLazyListState()
 
-    Column(modifier = Modifier.fillMaxSize().appCard()) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .let { if (!horizontalTabs) it.padding(vertical = 8.dp) else it }
+            .appCard()) {
         when {
             servers == null -> AppLoading()
             servers.isEmpty() -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {

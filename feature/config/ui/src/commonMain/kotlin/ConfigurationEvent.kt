@@ -5,6 +5,8 @@ import app.vercors.feature.config.domain.model.StartupScreen
 import app.vercors.shared.ui.Event
 
 sealed interface ConfigurationEvent : Event {
+    data class SelectTab(val tab: ConfigurationTab) : ConfigurationEvent
+
     @JvmInline
     value class SelectTheme(val themeId: String) : ConfigurationEvent
 
@@ -12,6 +14,7 @@ sealed interface ConfigurationEvent : Event {
     value class SelectAccent(val accentId: String) : ConfigurationEvent
 
     data object ToggleAnimations : ConfigurationEvent
+    data object ToggleHorizontalTabs : ConfigurationEvent
 
     data class SetUiScalePercent(val value: Int) : ConfigurationEvent
 

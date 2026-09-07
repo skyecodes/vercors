@@ -1,5 +1,6 @@
 <resources>
     <string name="general">General</string>
+    <string name="advanced">Advanced</string>
     <string name="preferredPlatform">Preferred platform</string>
     <string name="preferredPlatformDesc">The mod platform selected by default when browsing or searching for content.</string>
     <string name="metaApiUrl">Meta API URL</string>
@@ -27,6 +28,8 @@
     <string name="animationsDesc">Whether animations are enabled in the application.</string>
     <string name="uiScale">UI scale</string>
     <string name="uiScaleDesc">Zoom level of the application's interface.</string>
+    <string name="horizontalTabs">Horizontal tabs</string>
+    <string name="horizontalTabsDesc">Show tabs in a horizontal bar instead of a vertical sidebar.</string>
 
     <string name="java">Java</string>
     <string name="javaInstallations">Detected installations</string>

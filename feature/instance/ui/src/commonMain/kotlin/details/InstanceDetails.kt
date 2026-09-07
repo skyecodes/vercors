@@ -26,7 +26,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.vercors.core.ui.animation.AppAnimatedVisibility
-import app.vercors.core.ui.animation.appAnimateColorAsState
 import app.vercors.core.ui.animation.appAnimateFloatAsState
 import app.vercors.core.ui.component.*
 import app.vercors.core.ui.layout.*
@@ -224,8 +223,7 @@ private fun InstanceDetails(
     modifier: Modifier = Modifier
 ) {
     Column(
-        modifier = modifier.padding(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        modifier = modifier.padding(top = 8.dp)
     ) {
         InstanceHeader(
             instance = instance,
@@ -237,11 +235,12 @@ private fun InstanceDetails(
             selectedTab = state.selectedTab,
             onSelectedTabChange = { eventSink(InstanceDetailsEvent.SelectTab(it)) },
             tabs = InstanceDetailsTab.entries.filter {
-                it != InstanceDetailsTab.Logs ||
-                        state.logsContent.state.logs != null ||
-                        state.selectedTab == InstanceDetailsTab.Logs
+                (it != InstanceDetailsTab.Advanced || state.optionsContent.state.showNativeLibraryOptions) &&
+                        (it != InstanceDetailsTab.Logs ||
+                                state.logsContent.state.logs != null ||
+                                state.selectedTab == InstanceDetailsTab.Logs)
             },
-            orientation = Orientation.Vertical,
+            orientation = if (state.horizontalTabs) Orientation.Horizontal else Orientation.Vertical,
             tabTitle = { tab -> InstanceDetailsTabTitle(tab, state) }
         ) { tab -> InstanceDetailsTabContent(tab, instance, state) }
     }
@@ -249,43 +248,47 @@ private fun InstanceDetails(
 
 @Composable
 private fun AppTabScope.InstanceDetailsTabTitle(tab: InstanceDetailsTab, state: InstanceDetailsState) {
-    val backgroundColor by appAnimateColorAsState(if (selected) Theme[colors][surface2] else Theme[colors][surface])
-    Row(
-        modifier = Modifier
-            .background(backgroundColor)
-            .fillMaxWidth()
-            .pointerHoverIcon(PointerIcon.Hand, true)
-            .padding(8.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        val badgeCount = when (tab) {
-            InstanceDetailsTab.Mods -> state.modsContent.state.files?.count { it.enabled }
-            InstanceDetailsTab.ResourcePacks -> state.resourcePacksContent.state.files?.count { it.enabled }
-            InstanceDetailsTab.ShaderPacks -> state.shaderPacksContent.state.files?.count { it.enabled }
-            InstanceDetailsTab.Worlds -> state.worldsContent.state.worlds?.size
-            InstanceDetailsTab.Servers -> state.serversContent.state.servers?.size
-            else -> null
-        }
-        val title = if (badgeCount != null) "${tab.title} ($badgeCount)" else tab.title
-        AppIconTextButtonContent(
-            text = title,
-            imageVector = tab.icon
-        )
+    val badgeCount = when (tab) {
+        InstanceDetailsTab.Mods -> state.modsContent.state.files?.count { it.enabled }
+        InstanceDetailsTab.ResourcePacks -> state.resourcePacksContent.state.files?.count { it.enabled }
+        InstanceDetailsTab.ShaderPacks -> state.shaderPacksContent.state.files?.count { it.enabled }
+        InstanceDetailsTab.Worlds -> state.worldsContent.state.worlds?.size
+        InstanceDetailsTab.Servers -> state.serversContent.state.servers?.size
+        else -> null
     }
+    val isEdited = when (tab) {
+        InstanceDetailsTab.Options -> state.optionsContent.state.let {
+            it.isNameEdited || it.isGameVersionEdited || it.isModLoaderEdited
+        }
+
+        InstanceDetailsTab.Java -> state.optionsContent.state.let {
+            it.isJavaOverrideEdited || it.isJvmMemoryOptionsEdited
+        }
+
+        InstanceDetailsTab.Advanced -> state.optionsContent.state.isNativeLibraryOptionsEdited
+        else -> false
+    }
+    val title = buildString {
+        append(tab.title)
+        if (isEdited) append("*")
+        if (badgeCount != null) append(" ($badgeCount)")
+    }
+    AppSidebarTabItem(title = title, icon = tab.icon)
 }
 
 @Composable
 context(eventSink: EventSink<InstanceDetailsEvent>)
 private fun InstanceDetailsTabContent(tab: InstanceDetailsTab, instance: InstanceView, state: InstanceDetailsState) {
     when (tab) {
-        InstanceDetailsTab.Options -> InstanceOptionsTab(instance, state.optionsContent)
-        InstanceDetailsTab.Mods -> InstanceModsTab(state, state.modsContent)
-        InstanceDetailsTab.ResourcePacks -> InstanceResourcePacksTab(state.resourcePacksContent)
-        InstanceDetailsTab.ShaderPacks -> InstanceShaderPacksTab(state.shaderPacksContent)
-        InstanceDetailsTab.Worlds -> InstanceWorldsTab(instance, state.worldsContent)
-        InstanceDetailsTab.Servers -> InstanceServersTab(instance, state.serversContent)
-        InstanceDetailsTab.Logs -> InstanceLogsTab(state.logsContent)
+        InstanceDetailsTab.Options -> InstanceOptionsTab(instance, state.optionsContent, state.horizontalTabs)
+        InstanceDetailsTab.Java -> InstanceJavaTab(instance, state.optionsContent, state.horizontalTabs)
+        InstanceDetailsTab.Advanced -> InstanceAdvancedTab(instance, state.optionsContent, state.horizontalTabs)
+        InstanceDetailsTab.Mods -> InstanceModsTab(state, state.modsContent, state.horizontalTabs)
+        InstanceDetailsTab.ResourcePacks -> InstanceResourcePacksTab(state.resourcePacksContent, state.horizontalTabs)
+        InstanceDetailsTab.ShaderPacks -> InstanceShaderPacksTab(state.shaderPacksContent, state.horizontalTabs)
+        InstanceDetailsTab.Worlds -> InstanceWorldsTab(instance, state.worldsContent, state.horizontalTabs)
+        InstanceDetailsTab.Servers -> InstanceServersTab(instance, state.serversContent, state.horizontalTabs)
+        InstanceDetailsTab.Logs -> InstanceLogsTab(state.logsContent, state.horizontalTabs)
     }
 }
 
@@ -299,7 +302,11 @@ private fun InstanceHeader(
     onSaveInstance: () -> Unit,
 ) = SharedElementTransitionScope {
     Row(
-        modifier = Modifier.appCard().padding(horizontal = 16.dp, vertical = 8.dp).fillMaxWidth()
+        modifier = Modifier
+            .padding(horizontal = 8.dp)
+            .appCard()
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .fillMaxWidth()
             .instanceSharedElement(instance.id, "card"),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -530,27 +537,64 @@ private fun InstanceHeaderMenu(instance: InstanceView) {
 }
 
 @Composable
-private fun InstanceOptionsTab(instance: InstanceView, content: Store<InstanceOptionsState, InstanceOptionsEvent>) {
-    val state = content.state
+private fun InstanceOptionsTab(
+    instance: InstanceView,
+    content: Store<InstanceOptionsState, InstanceOptionsEvent>,
+    horizontalTabs: Boolean
+) {
     with(content.eventSink) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .scrollable(state = rememberScrollState(), orientation = Orientation.Horizontal),
+        InstanceOptionsTabScaffold(horizontalTabs) {
+            InstanceGeneralOptionsSection(instance, content.state)
+        }
+    }
+}
+
+@Composable
+private fun InstanceJavaTab(
+    instance: InstanceView,
+    content: Store<InstanceOptionsState, InstanceOptionsEvent>,
+    horizontalTabs: Boolean
+) {
+    with(content.eventSink) {
+        InstanceOptionsTabScaffold(horizontalTabs) {
+            InstanceJavaOptionsSection(instance, content.state)
+        }
+    }
+}
+
+@Composable
+private fun InstanceAdvancedTab(
+    instance: InstanceView,
+    content: Store<InstanceOptionsState, InstanceOptionsEvent>,
+    horizontalTabs: Boolean
+) {
+    with(content.eventSink) {
+        InstanceOptionsTabScaffold(horizontalTabs) {
+            InstanceNativeLibraryOptionsSection(instance, content.state)
+        }
+    }
+}
+
+@Composable
+private fun InstanceOptionsTabScaffold(
+    horizontalTabs: Boolean,
+    content: @Composable () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .let { if (!horizontalTabs) it.padding(top = 8.dp) else it }
+            .fillMaxSize()
+            .scrollable(state = rememberScrollState(), orientation = Orientation.Horizontal),
+    ) {
+        LazyColumn(
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-            ) {
-                item {
-                    InstanceGeneralOptionsSection(instance, state)
-                }
-                item {
-                    InstanceJavaOptionsSection(instance, state)
-                }
-                if (state.showNativeLibraryOptions) {
-                    item {
-                        InstanceNativeLibraryOptionsSection(instance, state)
-                    }
+            item {
+                Column(
+                    modifier = Modifier.appCard().padding(8.dp).fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    content()
                 }
             }
         }
@@ -560,57 +604,52 @@ private fun InstanceOptionsTab(instance: InstanceView, content: Store<InstanceOp
 @Composable
 context(eventSink: EventSink<InstanceOptionsEvent>)
 private fun InstanceGeneralOptionsSection(instance: InstanceView, state: InstanceOptionsState) {
-    InstanceTabSection(
-        titleRes = InstanceRes.string.general,
-        icon = Lucide.Info
-    ) {
-        AppTextField(
-            label = stringResource(InstanceRes.string.instanceName) + if (state.isNameEdited) "*" else "",
-            initialValue = state.editedInstance.name ?: instance.name,
-            onValueChange = { eventSink(InstanceOptionsEvent.UpdateInstance { state -> state.copy(name = it) }) },
-            modifier = Modifier.widthIn(min = 300.dp)
+    AppTextField(
+        label = stringResource(InstanceRes.string.instanceName) + if (state.isNameEdited) "*" else "",
+        initialValue = state.editedInstance.name ?: instance.name,
+        onValueChange = { eventSink(InstanceOptionsEvent.UpdateInstance { state -> state.copy(name = it) }) },
+        modifier = Modifier.widthIn(min = 300.dp)
+    )
+
+    var advancedOptionsUnlocked by remember(instance.id) { mutableStateOf(false) }
+
+    if (instance.modpackInfo != null) {
+        AdvancedOptionsUnlockRow(
+            checked = advancedOptionsUnlocked,
+            onCheckedChange = { advancedOptionsUnlocked = it }
         )
+    }
 
-        var advancedOptionsUnlocked by remember(instance.id) { mutableStateOf(false) }
-
-        if (instance.modpackInfo != null) {
-            AdvancedOptionsUnlockRow(
-                checked = advancedOptionsUnlocked,
-                onCheckedChange = { advancedOptionsUnlocked = it }
-            )
-        }
-
-        AppAnimatedVisibility(
-            visible = instance.modpackInfo == null || advancedOptionsUnlocked
+    AppAnimatedVisibility(
+        visible = instance.modpackInfo == null || advancedOptionsUnlocked
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                val gameVersion =
-                    remember(state.gameVersionList, state.editedInstance.gameVersion, instance.gameVersion) {
-                        state.gameVersionList.find {
-                            it.id == (state.editedInstance.gameVersion ?: instance.gameVersion)
-                        }
+            val gameVersion =
+                remember(state.gameVersionList, state.editedInstance.gameVersion, instance.gameVersion) {
+                    state.gameVersionList.find {
+                        it.id == (state.editedInstance.gameVersion ?: instance.gameVersion)
                     }
+                }
 
-                GameVersionSelector(
-                    selectedVersion = gameVersion,
-                    versionList = state.gameVersionList,
-                    onVersionChange = {
-                        it?.let {
-                            eventSink(InstanceOptionsEvent.UpdateInstance { state ->
-                                state.copy(
-                                    gameVersion = it.id
-                                )
-                            })
-                        }
-                    },
-                    label = stringResource(GameRes.string.gameVersion) + if (state.isGameVersionEdited) "*" else ""
-                )
+            GameVersionSelector(
+                selectedVersion = gameVersion,
+                versionList = state.gameVersionList,
+                onVersionChange = {
+                    it?.let {
+                        eventSink(InstanceOptionsEvent.UpdateInstance { state ->
+                            state.copy(
+                                gameVersion = it.id
+                            )
+                        })
+                    }
+                },
+                label = stringResource(GameRes.string.gameVersion) + if (state.isGameVersionEdited) "*" else ""
+            )
 
-                InstanceGeneralOptionsLoader(state, instance)
-            }
+            InstanceGeneralOptionsLoader(state, instance)
         }
     }
 }
@@ -673,116 +712,115 @@ private fun InstanceGeneralOptionsLoader(
 @Composable
 context(eventSink: EventSink<InstanceOptionsEvent>)
 private fun InstanceJavaOptionsSection(instance: InstanceView, state: InstanceOptionsState) {
-    InstanceTabSection(
-        titleRes = InstanceRes.string.java,
-        icon = Lucide.Coffee
+    val selectedId = when (val edit = state.editedInstance.javaOverride) {
+        is JavaOverrideEdit.Specific -> edit.installationId
+        JavaOverrideEdit.UseDefault -> null
+        null -> instance.javaInstallationId
+    }
+    val selected = state.availableJavaInstallations.find { it.id == selectedId }
+    val inheritLabel = state.inheritedJavaInstallation?.path
+        ?.let { stringResource(InstanceRes.string.useDefaultJavaResolved, it) }
+        ?: stringResource(InstanceRes.string.useDefaultJava)
+    val recommendedSuffix = state.requiredJavaMajorVersion
+        ?.let { " " + stringResource(InstanceRes.string.recommendedJavaVersion, it) }
+        .orEmpty()
+
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.Bottom
     ) {
-        val selectedId = when (val edit = state.editedInstance.javaOverride) {
-            is JavaOverrideEdit.Specific -> edit.installationId
-            JavaOverrideEdit.UseDefault -> null
-            null -> instance.javaInstallationId
-        }
-        val selected = state.availableJavaInstallations.find { it.id == selectedId }
-        val inheritLabel = state.inheritedJavaInstallation?.path
-            ?.let { stringResource(InstanceRes.string.useDefaultJavaResolved, it) }
-            ?: stringResource(InstanceRes.string.useDefaultJava)
-        val recommendedSuffix = state.requiredJavaMajorVersion
-            ?.let { " " + stringResource(InstanceRes.string.recommendedJavaVersion, it) }
-            .orEmpty()
-
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.Bottom
-        ) {
-            AppSelectField(
-                value = selected,
-                items = listOf(null) + state.availableJavaInstallations,
-                onValueChange = { eventSink(InstanceOptionsEvent.OnJavaOverrideChange(it?.id)) },
-                label = stringResource(InstanceRes.string.javaOverride) +
-                        (if (state.isJavaOverrideEdited) "*" else "") + recommendedSuffix,
-                itemRenderer = { value, _ ->
-                    AppSelectItem(value?.path ?: inheritLabel)
-                },
-                modifier = Modifier.weight(1f),
-            )
-            ResetButton(selectedId != null) {
-                eventSink(InstanceOptionsEvent.OnJavaOverrideChange(null))
-            }
-        }
-
-        val currentOptions = state.editedInstance.jvmMemoryOptionsEdit ?: instance.jvmMemoryOptions
-        val effectiveOptions = currentOptions.withFallback(state.globalJvmMemoryOptions)
-        val defaultMax = defaultMaxMemoryMb(state.totalMemoryMb)
-
-        fun updateOptions(update: (JvmMemoryOptions) -> JvmMemoryOptions) {
-            eventSink(InstanceOptionsEvent.UpdateInstance { s ->
-                s.copy(jvmMemoryOptionsEdit = update(currentOptions))
-            })
-        }
-
-        InstanceMemorySliderRow(
-            title = InstanceRes.string.maxMemory,
-            description = InstanceRes.string.maxMemoryDesc,
-            checked = effectiveOptions.maxMemoryEnabled == true,
-            value = effectiveOptions.maxMemoryMb ?: defaultMax,
-            valueRange = 512..state.totalMemoryMb,
-            stepSize = 128,
-            isOverridden = currentOptions.maxMemoryEnabled != null || currentOptions.maxMemoryMb != null,
-            onReset = { updateOptions { it.copy(maxMemoryEnabled = null, maxMemoryMb = null) } },
-            onCheckedChange = { checked ->
-                updateOptions { opts ->
-                    opts.copy(
-                        maxMemoryEnabled = checked,
-                        maxMemoryMb = if (checked) opts.maxMemoryMb ?: effectiveOptions.maxMemoryMb
-                        ?: defaultMax else opts.maxMemoryMb,
-                    )
-                }
+        AppSelectField(
+            value = selected,
+            items = listOf(null) + state.availableJavaInstallations,
+            onValueChange = { eventSink(InstanceOptionsEvent.OnJavaOverrideChange(it?.id)) },
+            label = stringResource(InstanceRes.string.javaOverride) +
+                    (if (state.isJavaOverrideEdited) "*" else "") + recommendedSuffix,
+            itemRenderer = { value, _ ->
+                AppSelectItem(value?.path ?: inheritLabel)
             },
-            onValueChange = { newValue ->
-                updateOptions { opts ->
-                    val clampedMin = opts.minMemoryMb?.let { min -> minOf(min, newValue) }
-                    opts.copy(maxMemoryEnabled = true, maxMemoryMb = newValue, minMemoryMb = clampedMin)
-                }
-            },
+            modifier = Modifier.weight(1f),
         )
-        InstanceMemorySliderRow(
-            title = InstanceRes.string.minMemory,
-            description = InstanceRes.string.minMemoryDesc,
-            checked = effectiveOptions.minMemoryEnabled == true,
-            value = effectiveOptions.minMemoryMb ?: defaultMinMemoryMb(),
-            valueRange = 256..(effectiveOptions.maxMemoryMb ?: defaultMax),
-            stepSize = 32,
-            isOverridden = currentOptions.minMemoryEnabled != null || currentOptions.minMemoryMb != null,
-            onReset = { updateOptions { it.copy(minMemoryEnabled = null, minMemoryMb = null) } },
-            onCheckedChange = { checked ->
-                updateOptions { opts ->
-                    opts.copy(
-                        minMemoryEnabled = checked,
-                        minMemoryMb = if (checked) opts.minMemoryMb ?: effectiveOptions.minMemoryMb
-                        ?: defaultMinMemoryMb() else opts.minMemoryMb,
-                    )
-                }
-            },
-            onValueChange = { newValue -> updateOptions { it.copy(minMemoryEnabled = true, minMemoryMb = newValue) } },
-        )
-        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            AppText(text = stringResource(InstanceRes.string.extraJvmArgs), fontWeight = FontWeight.SemiBold)
-            AppText(text = stringResource(InstanceRes.string.extraJvmArgsDesc), style = Theme[textStyles][label])
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                AppTextField(
-                    initialValue = effectiveOptions.extraArgs.orEmpty(),
-                    onValueChange = { newValue -> updateOptions { it.copy(extraArgs = newValue) } },
-                    debounceMillis = 500,
-                    backgroundColor = Theme[colors][surface2],
-                    modifier = Modifier.weight(1f)
+        ResetButton(selectedId != null) {
+            eventSink(InstanceOptionsEvent.OnJavaOverrideChange(null))
+        }
+    }
+
+    val currentOptions = state.editedInstance.jvmMemoryOptionsEdit ?: instance.jvmMemoryOptions
+    val effectiveOptions = currentOptions.withFallback(state.globalJvmMemoryOptions)
+    val defaultMax = defaultMaxMemoryMb(state.totalMemoryMb)
+
+    fun updateOptions(update: (JvmMemoryOptions) -> JvmMemoryOptions) {
+        eventSink(InstanceOptionsEvent.UpdateInstance { s ->
+            s.copy(jvmMemoryOptionsEdit = update(currentOptions))
+        })
+    }
+
+    InstanceMemorySliderRow(
+        title = InstanceRes.string.maxMemory,
+        description = InstanceRes.string.maxMemoryDesc,
+        edited = state.isMaxMemoryEdited,
+        checked = effectiveOptions.maxMemoryEnabled == true,
+        value = effectiveOptions.maxMemoryMb ?: defaultMax,
+        valueRange = 512..state.totalMemoryMb,
+        stepSize = 128,
+        isOverridden = currentOptions.maxMemoryEnabled != null || currentOptions.maxMemoryMb != null,
+        onReset = { updateOptions { it.copy(maxMemoryEnabled = null, maxMemoryMb = null) } },
+        onCheckedChange = { checked ->
+            updateOptions { opts ->
+                opts.copy(
+                    maxMemoryEnabled = checked,
+                    maxMemoryMb = if (checked) opts.maxMemoryMb ?: effectiveOptions.maxMemoryMb
+                    ?: defaultMax else opts.maxMemoryMb,
                 )
-                ResetButton(currentOptions.extraArgs != null) {
-                    updateOptions { it.copy(extraArgs = null) }
-                }
+            }
+        },
+        onValueChange = { newValue ->
+            updateOptions { opts ->
+                val clampedMin = opts.minMemoryMb?.let { min -> minOf(min, newValue) }
+                opts.copy(maxMemoryEnabled = true, maxMemoryMb = newValue, minMemoryMb = clampedMin)
+            }
+        },
+    )
+    InstanceMemorySliderRow(
+        title = InstanceRes.string.minMemory,
+        description = InstanceRes.string.minMemoryDesc,
+        edited = state.isMinMemoryEdited,
+        checked = effectiveOptions.minMemoryEnabled == true,
+        value = effectiveOptions.minMemoryMb ?: defaultMinMemoryMb(),
+        valueRange = 256..(effectiveOptions.maxMemoryMb ?: defaultMax),
+        stepSize = 32,
+        isOverridden = currentOptions.minMemoryEnabled != null || currentOptions.minMemoryMb != null,
+        onReset = { updateOptions { it.copy(minMemoryEnabled = null, minMemoryMb = null) } },
+        onCheckedChange = { checked ->
+            updateOptions { opts ->
+                opts.copy(
+                    minMemoryEnabled = checked,
+                    minMemoryMb = if (checked) opts.minMemoryMb ?: effectiveOptions.minMemoryMb
+                    ?: defaultMinMemoryMb() else opts.minMemoryMb,
+                )
+            }
+        },
+        onValueChange = { newValue -> updateOptions { it.copy(minMemoryEnabled = true, minMemoryMb = newValue) } },
+    )
+    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        AppText(
+            text = stringResource(InstanceRes.string.extraJvmArgs) + if (state.isExtraJvmArgsEdited) "*" else "",
+            fontWeight = FontWeight.SemiBold
+        )
+        AppText(text = stringResource(InstanceRes.string.extraJvmArgsDesc), style = Theme[textStyles][label])
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            AppTextField(
+                initialValue = effectiveOptions.extraArgs.orEmpty(),
+                onValueChange = { newValue -> updateOptions { it.copy(extraArgs = newValue) } },
+                backgroundColor = Theme[colors][surface2],
+                modifier = Modifier.weight(1f)
+            )
+            ResetButton(currentOptions.extraArgs != null) {
+                updateOptions { it.copy(extraArgs = null) }
             }
         }
     }
@@ -801,42 +839,39 @@ private fun ResetButton(enabled: Boolean, onClick: () -> Unit) {
 @Composable
 context(eventSink: EventSink<InstanceOptionsEvent>)
 private fun InstanceNativeLibraryOptionsSection(instance: InstanceView, state: InstanceOptionsState) {
-    InstanceTabSection(
-        titleRes = InstanceRes.string.nativeLibraries,
-        icon = Lucide.Package
-    ) {
-        val currentOptions = state.editedInstance.nativeLibraryOptionsEdit ?: instance.nativeLibraryOptions
-        val effectiveOptions = currentOptions.withFallback(state.globalNativeLibraryOptions)
+    val currentOptions = state.editedInstance.nativeLibraryOptionsEdit ?: instance.nativeLibraryOptions
+    val effectiveOptions = currentOptions.withFallback(state.globalNativeLibraryOptions)
 
-        fun updateOptions(update: (NativeLibraryOptions) -> NativeLibraryOptions) {
-            eventSink(InstanceOptionsEvent.UpdateInstance { s ->
-                s.copy(nativeLibraryOptionsEdit = update(currentOptions))
-            })
-        }
-
-        InstanceLibraryOverrideRow(
-            title = InstanceRes.string.useSystemGlfw,
-            description = InstanceRes.string.useSystemGlfwDesc,
-            checked = effectiveOptions.useSystemGlfw == true,
-            path = effectiveOptions.glfwPath.orEmpty(),
-            detectedPath = state.detectedGlfwPath,
-            isOverridden = currentOptions.useSystemGlfw != null || currentOptions.glfwPath != null,
-            onReset = { updateOptions { it.copy(useSystemGlfw = null, glfwPath = null) } },
-            onCheckedChange = { checked -> updateOptions { it.copy(useSystemGlfw = checked) } },
-            onPathChange = { newValue -> updateOptions { it.copy(glfwPath = newValue) } },
-        )
-        InstanceLibraryOverrideRow(
-            title = InstanceRes.string.useSystemOpenAl,
-            description = InstanceRes.string.useSystemOpenAlDesc,
-            checked = effectiveOptions.useSystemOpenAl == true,
-            path = effectiveOptions.openAlPath.orEmpty(),
-            detectedPath = state.detectedOpenAlPath,
-            isOverridden = currentOptions.useSystemOpenAl != null || currentOptions.openAlPath != null,
-            onReset = { updateOptions { it.copy(useSystemOpenAl = null, openAlPath = null) } },
-            onCheckedChange = { checked -> updateOptions { it.copy(useSystemOpenAl = checked) } },
-            onPathChange = { newValue -> updateOptions { it.copy(openAlPath = newValue) } },
-        )
+    fun updateOptions(update: (NativeLibraryOptions) -> NativeLibraryOptions) {
+        eventSink(InstanceOptionsEvent.UpdateInstance { s ->
+            s.copy(nativeLibraryOptionsEdit = update(currentOptions))
+        })
     }
+
+    InstanceLibraryOverrideRow(
+        title = InstanceRes.string.useSystemGlfw,
+        description = InstanceRes.string.useSystemGlfwDesc,
+        edited = state.isGlfwEdited,
+        checked = effectiveOptions.useSystemGlfw == true,
+        path = effectiveOptions.glfwPath.orEmpty(),
+        detectedPath = state.detectedGlfwPath,
+        isOverridden = currentOptions.useSystemGlfw != null || currentOptions.glfwPath != null,
+        onReset = { updateOptions { it.copy(useSystemGlfw = null, glfwPath = null) } },
+        onCheckedChange = { checked -> updateOptions { it.copy(useSystemGlfw = checked) } },
+        onPathChange = { newValue -> updateOptions { it.copy(glfwPath = newValue) } },
+    )
+    InstanceLibraryOverrideRow(
+        title = InstanceRes.string.useSystemOpenAl,
+        description = InstanceRes.string.useSystemOpenAlDesc,
+        edited = state.isOpenAlEdited,
+        checked = effectiveOptions.useSystemOpenAl == true,
+        path = effectiveOptions.openAlPath.orEmpty(),
+        detectedPath = state.detectedOpenAlPath,
+        isOverridden = currentOptions.useSystemOpenAl != null || currentOptions.openAlPath != null,
+        onReset = { updateOptions { it.copy(useSystemOpenAl = null, openAlPath = null) } },
+        onCheckedChange = { checked -> updateOptions { it.copy(useSystemOpenAl = checked) } },
+        onPathChange = { newValue -> updateOptions { it.copy(openAlPath = newValue) } },
+    )
 }
 
 @Composable
@@ -847,6 +882,7 @@ private fun InstanceLibraryOverrideRow(
     path: String,
     detectedPath: String?,
     isOverridden: Boolean,
+    edited: Boolean = false,
     onReset: () -> Unit,
     onCheckedChange: (Boolean) -> Unit,
     onPathChange: (String) -> Unit,
@@ -856,7 +892,7 @@ private fun InstanceLibraryOverrideRow(
     }
     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
         AppText(
-            text = stringResource(title),
+            text = stringResource(title) + if (edited) "*" else "",
             fontWeight = FontWeight.SemiBold
         )
         AppText(
@@ -904,13 +940,14 @@ private fun InstanceMemorySliderRow(
     valueRange: IntRange,
     stepSize: Int,
     isOverridden: Boolean,
+    edited: Boolean = false,
     onReset: () -> Unit,
     onCheckedChange: (Boolean) -> Unit,
     onValueChange: (Int) -> Unit,
 ) {
     val displayValue = value.coerceIn(valueRange)
     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-        AppText(text = stringResource(title), fontWeight = FontWeight.SemiBold)
+        AppText(text = stringResource(title) + if (edited) "*" else "", fontWeight = FontWeight.SemiBold)
         AppText(text = stringResource(description), style = Theme[textStyles][label])
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -944,25 +981,6 @@ private fun InstanceMemorySliderRow(
 private fun defaultMaxMemoryMb(totalMemoryMb: Int): Int = (((totalMemoryMb / 4).coerceIn(1024, 4096)) / 128) * 128
 private fun defaultMinMemoryMb(): Int = 512
 
-@Composable
-private fun InstanceTabSection(
-    titleRes: StringResource,
-    icon: ImageVector,
-    content: @Composable ColumnScope.() -> Unit
-) {
-    AppSection(
-        text = stringResource(titleRes),
-        icon = icon,
-    ) {
-        Column(
-            modifier = Modifier.appCard().padding(8.dp).fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            content()
-        }
-    }
-}
-
 private enum class ContentSortBy {
     Name,
     LastModified
@@ -990,6 +1008,7 @@ private fun InstalledContentFileList(
     onAddClick: () -> Unit,
     onOpenProject: (platformId: String, projectId: String) -> Unit,
     onOpenFolder: (InstanceFolder) -> Unit,
+    horizontalTabs: Boolean,
 ) {
     var searchQuery by remember { mutableStateOf("") }
     var showOnlyEnabled by remember { mutableStateOf(false) }
@@ -1000,7 +1019,8 @@ private fun InstalledContentFileList(
         listState.scrollToItem(0)
     }
 
-    Column(modifier = Modifier.fillMaxSize().appCard()) {
+    Column(modifier = Modifier.fillMaxSize().let { if (!horizontalTabs) it.padding(vertical = 8.dp) else it }
+        .appCard()) {
         InstalledContentFileListHeader(
             searchQuery = searchQuery,
             onSearchQueryChange = { searchQuery = it },
@@ -1264,7 +1284,11 @@ private fun InstalledContentFileRow(
 
 @Composable
 context(eventSink: EventSink<InstanceDetailsEvent>)
-private fun InstanceModsTab(state: InstanceDetailsState, content: Store<InstalledContentState, InstalledContentEvent>) {
+private fun InstanceModsTab(
+    state: InstanceDetailsState,
+    content: Store<InstalledContentState, InstalledContentEvent>,
+    horizontalTabs: Boolean
+) {
     with(content.eventSink) {
         InstalledContentFileList(
             files = content.state.files,
@@ -1279,7 +1303,8 @@ private fun InstanceModsTab(state: InstanceDetailsState, content: Store<Installe
             onOpenProject = { platformId, projectId ->
                 eventSink(InstanceDetailsEvent.OnOpenProjectClick(platformId, projectId))
             },
-            onOpenFolder = { folder -> eventSink(InstanceDetailsEvent.OnOpenInstanceFolderClick(folder)) }
+            onOpenFolder = { folder -> eventSink(InstanceDetailsEvent.OnOpenInstanceFolderClick(folder)) },
+            horizontalTabs = horizontalTabs
         )
     }
 }
@@ -1287,7 +1312,8 @@ private fun InstanceModsTab(state: InstanceDetailsState, content: Store<Installe
 @Composable
 context(eventSink: EventSink<InstanceDetailsEvent>)
 private fun InstanceResourcePacksTab(
-    content: Store<InstalledContentState, InstalledContentEvent>
+    content: Store<InstalledContentState, InstalledContentEvent>,
+    horizontalTabs: Boolean
 ) {
     with(content.eventSink) {
         InstalledContentFileList(
@@ -1303,7 +1329,8 @@ private fun InstanceResourcePacksTab(
             onOpenProject = { platformId, projectId ->
                 eventSink(InstanceDetailsEvent.OnOpenProjectClick(platformId, projectId))
             },
-            onOpenFolder = { folder -> eventSink(InstanceDetailsEvent.OnOpenInstanceFolderClick(folder)) }
+            onOpenFolder = { folder -> eventSink(InstanceDetailsEvent.OnOpenInstanceFolderClick(folder)) },
+            horizontalTabs = horizontalTabs,
         )
     }
 }
@@ -1311,7 +1338,8 @@ private fun InstanceResourcePacksTab(
 @Composable
 context(eventSink: EventSink<InstanceDetailsEvent>)
 private fun InstanceShaderPacksTab(
-    content: Store<InstalledContentState, InstalledContentEvent>
+    content: Store<InstalledContentState, InstalledContentEvent>,
+    horizontalTabs: Boolean
 ) {
     with(content.eventSink) {
         InstalledContentFileList(
@@ -1327,13 +1355,14 @@ private fun InstanceShaderPacksTab(
             onOpenProject = { platformId, projectId ->
                 eventSink(InstanceDetailsEvent.OnOpenProjectClick(platformId, projectId))
             },
-            onOpenFolder = { folder -> eventSink(InstanceDetailsEvent.OnOpenInstanceFolderClick(folder)) }
+            onOpenFolder = { folder -> eventSink(InstanceDetailsEvent.OnOpenInstanceFolderClick(folder)) },
+            horizontalTabs = horizontalTabs,
         )
     }
 }
 
 @Composable
-private fun InstanceLogsTab(content: Store<InstanceLogsState, InstanceLogsEvent>) {
+private fun InstanceLogsTab(content: Store<InstanceLogsState, InstanceLogsEvent>, horizontalTabs: Boolean) {
     val (state, eventSink) = content
     val logs = state.filteredLogs ?: emptyList()
     val listState = rememberLazyListState()
@@ -1349,7 +1378,12 @@ private fun InstanceLogsTab(content: Store<InstanceLogsState, InstanceLogsEvent>
         if (stickToBottom && logs.isNotEmpty()) listState.scrollToItem(logs.lastIndex)
     }
 
-    Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .let { if (!horizontalTabs) it.padding(vertical = 8.dp) else it },
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
         with(eventSink) {
             InstanceLogsFilterBar(state)
         }
@@ -1476,6 +1510,8 @@ private val InstanceDetailsTab.icon: ImageVector
     @Stable get() = when (this) {
         InstanceDetailsTab.Logs -> Lucide.Logs
         InstanceDetailsTab.Options -> Lucide.Settings2
+        InstanceDetailsTab.Java -> Lucide.Coffee
+        InstanceDetailsTab.Advanced -> Lucide.Wrench
         InstanceDetailsTab.Mods -> Lucide.Box
         InstanceDetailsTab.ResourcePacks -> Lucide.Paintbrush
         InstanceDetailsTab.ShaderPacks -> Lucide.Glasses
@@ -1487,6 +1523,8 @@ private val InstanceDetailsTab.title: String
     @Composable get() = when (this) {
         InstanceDetailsTab.Logs -> stringResource(InstanceRes.string.logs)
         InstanceDetailsTab.Options -> stringResource(InstanceRes.string.options)
+        InstanceDetailsTab.Java -> stringResource(InstanceRes.string.java)
+        InstanceDetailsTab.Advanced -> stringResource(InstanceRes.string.advanced)
         InstanceDetailsTab.Mods -> stringResource(SharedRes.string.mods)
         InstanceDetailsTab.ResourcePacks -> stringResource(SharedRes.string.resourcePacks)
         InstanceDetailsTab.ShaderPacks -> stringResource(SharedRes.string.shaderPacks)
