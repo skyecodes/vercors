@@ -65,10 +65,10 @@ internal class FileListStoreImpl<T>(
 
     @OptIn(ExperimentalAtomicApi::class)
     private suspend fun loadAll() {
-        startWatcher()
         loadMutex.withLock {
             _flow.emit(_flow.value.copy(loading(0.0)))
             if (!directoryPath.exists()) directoryPath.createDirectories()
+            startWatcher()
             val current = AtomicInt(0)
             val files = directoryPath.list().filter { it.name.endsWith(".json") }
             if (files.isEmpty()) {
