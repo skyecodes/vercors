@@ -47,6 +47,13 @@ class InstanceWorldScannerService(
             .map { outcome -> outcome.map { it.values.toList() } }
     }
 
+    /**
+     * Forces an immediate full rescan, for a caller that just wrote a batch of world files outside
+     * [importWorld] (e.g. a Prism Launcher import extracting a whole `.minecraft` folder at once) — never rely
+     * on the watcher alone to eventually catch up.
+     */
+    suspend fun refresh(instanceId: InstanceId) = reconcile(instanceId, stateFor(instanceId))
+
     private fun stateFor(instanceId: InstanceId): MutableProgressiveStateFlow<Nothing, Map<String, InstalledWorld>> =
         states.getOrPut(instanceId) { MutableProgressiveStateFlow() }
 

@@ -2,6 +2,7 @@ package app.vercors.feature.instance.ui.create
 
 import androidx.compose.runtime.Immutable
 import app.vercors.feature.game.domain.model.ModLoaderType
+import app.vercors.feature.instance.domain.model.InstanceModpackInfo
 import app.vercors.feature.instance.domain.model.localimport.PrismInstanceInfo
 import app.vercors.feature.project.domain.model.modpack.ModpackManifest
 
@@ -12,6 +13,7 @@ sealed interface LocalImportPreview {
     val loaderType: ModLoaderType?
     val loaderVersion: String?
     val sourcePath: String
+    val modpackInfo: InstanceModpackInfo?
 
     data class Prism(
         override val name: String,
@@ -20,7 +22,9 @@ sealed interface LocalImportPreview {
         override val loaderVersion: String?,
         override val sourcePath: String,
         val info: PrismInstanceInfo,
-    ) : LocalImportPreview
+    ) : LocalImportPreview {
+        override val modpackInfo: InstanceModpackInfo? get() = info.modpackInfo
+    }
 
     data class Mrpack(
         override val name: String,
@@ -29,5 +33,9 @@ sealed interface LocalImportPreview {
         override val loaderVersion: String?,
         override val sourcePath: String,
         val manifest: ModpackManifest,
-    ) : LocalImportPreview
+    ) : LocalImportPreview {
+        // A local .mrpack's modrinth.index.json carries no real project/version ID for the pack
+        // itself (only individual mod files get IDs, heuristically recovered from CDN URLs).
+        override val modpackInfo: InstanceModpackInfo? get() = null
+    }
 }

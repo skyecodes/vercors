@@ -53,6 +53,8 @@ class CreateInstancePresenter(
     private val updateInstanceStatus: UpdateInstanceStatusUseCase,
     private val updateInstanceJob: UpdateInstanceJobUseCase,
     private val deleteInstance: DeleteInstanceUseCase,
+    private val refreshInstalledContent: RefreshInstalledContentUseCase,
+    private val refreshInstalledWorlds: RefreshInstalledWorldsUseCase,
 ) : Presenter<CreateInstanceState, CreateInstanceEvent> {
     @Composable
     override fun present(): Store<CreateInstanceState, CreateInstanceEvent> {
@@ -237,9 +239,10 @@ class CreateInstancePresenter(
     /**
      * Mirrors the online modpack-install flow's shape: creates the instance immediately, fires the "created"
      * result so the caller can navigate away, then keeps copying/downloading files on [globalScope] so it
-     * survives the dialog being dismissed. Unlike an online modpack install, a local import sets no
-     * `Instance.modpackInfo`/`installStage` — there's no backend to resume an interrupted import from, so it's
-     * never flagged as [InstanceStatus.Installing.Interrupted] on restart. Rolls back (deletes the instance) only
+     * survives the dialog being dismissed. `Instance.modpackInfo` is populated only when the source records
+     * genuine managed-pack provenance (e.g. a Prism export's `ManagedPack*` fields) — a local import never sets
+     * `installStage` though, since there's no backend to resume an interrupted import from, so it's never
+     * flagged as [InstanceStatus.Installing.Interrupted] on restart. Rolls back (deletes the instance) only
      * if the job is genuinely cancelled, not on an ordinary install failure (which instead leaves the instance in
      * place with [InstanceStatus.Failed.InstallFailed], since the user may already be looking at it).
      */
@@ -254,6 +257,7 @@ class CreateInstancePresenter(
             name = instanceName,
             gameVersion = preview.gameVersion,
             modLoader = preview.loaderType?.let { InstanceModLoader(type = it, version = preview.loaderVersion!!) },
+            modpackInfo = preview.modpackInfo,
         )
         var createdInstanceId: InstanceId? = null
         lateinit var job: Job
@@ -296,9 +300,18 @@ class CreateInstancePresenter(
             logger.error { "Prism import failed for $instanceId: $error" }
             false
         }
-        if (ok) iconPath?.let { path ->
-            recover({ setInstanceIcon(instanceId, path) }) { error: InstanceError ->
-                logger.warn { "Failed to set imported instance icon for $instanceId: $error" }
+        if (ok) {
+            // The extraction writes hundreds of files directly to disk outside the content scanners' normal
+            // single-file APIs — same rationale as those, never rely on the live file watcher alone to pick up a
+            // bulk write like this.
+            refreshInstalledContent(ContentKind.Mod, instanceId)
+            refreshInstalledContent(ContentKind.ResourcePack, instanceId)
+            refreshInstalledContent(ContentKind.ShaderPack, instanceId)
+            refreshInstalledWorlds(instanceId)
+            iconPath?.let { path ->
+                recover({ setInstanceIcon(instanceId, path) }) { error: InstanceError ->
+                    logger.warn { "Failed to set imported instance icon for $instanceId: $error" }
+                }
             }
         }
         return ok

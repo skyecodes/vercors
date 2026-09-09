@@ -23,4 +23,7 @@ interface InstanceResourcePackRepository {
 
     /** Copies [sourcePath] (an arbitrary local file, never deleted) into the instance's resource packs directory. */
     suspend fun importResourcePack(instanceId: InstanceId, sourcePath: String): Boolean
+
+    /** Forces an immediate rescan, for a caller that just wrote a batch of files outside the APIs above. */
+    suspend fun refreshInstalledResourcePacks(instanceId: InstanceId)
 }

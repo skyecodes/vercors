@@ -2,6 +2,7 @@ package app.vercors.feature.instance.data.servers
 
 import app.vercors.core.domain.MutableProgressiveStateFlow
 import app.vercors.core.filesystem.FileWatcherService
+import app.vercors.core.filesystem.createDirectories
 import app.vercors.core.filesystem.exists
 import app.vercors.feature.instance.domain.model.InstalledServer
 import app.vercors.feature.instance.domain.model.InstanceId
@@ -63,6 +64,11 @@ class InstanceServerScannerService(
         instanceId: InstanceId,
         state: MutableProgressiveStateFlow<Nothing, List<InstalledServer>>
     ) {
+        // Ensured to exist before activate() starts watching it below — kfswatch's JVM watcher silently never
+        // retries a watch attempted against a nonexistent directory, permanently losing live updates for the
+        // rest of the app session.
+        val gameDir = appPaths.gameDir(instanceId)
+        if (!gameDir.exists()) gameDir.createDirectories()
         val file = appPaths.serversDatFile(instanceId)
         val servers = if (file.exists()) parseServersDat(file) else emptyList()
         state.update { servers.successfulWithProgress() }

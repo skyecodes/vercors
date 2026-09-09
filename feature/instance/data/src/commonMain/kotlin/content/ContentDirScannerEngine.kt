@@ -74,6 +74,14 @@ internal class ContentDirScannerEngine(
             .map { outcome -> outcome.map { it.values.toList() } }
     }
 
+    /**
+     * Forces an immediate full rescan, for callers that just wrote a batch of files outside the normal
+     * single-file [importFile]/[setEnabled]/[removeFile]/[recordOrigin] APIs (e.g. a Prism Launcher import
+     * extracting a whole `.minecraft` folder at once) — same rationale as those: never rely on the watcher alone
+     * to eventually catch up.
+     */
+    suspend fun refresh(instanceId: InstanceId) = reconcile(instanceId, stateFor(instanceId))
+
     private fun stateFor(instanceId: InstanceId): MutableProgressiveStateFlow<Nothing, Map<String, ContentEntry>> =
         states.getOrPut(instanceId) { MutableProgressiveStateFlow() }
 

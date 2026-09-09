@@ -24,4 +24,6 @@ class InstanceWorldRepositoryImpl(
 
     override suspend fun importWorld(instanceId: InstanceId, sourcePath: String): Boolean =
         scannerService.importWorld(instanceId, sourcePath)
+
+    override suspend fun refreshInstalledWorlds(instanceId: InstanceId) = scannerService.refresh(instanceId)
 }

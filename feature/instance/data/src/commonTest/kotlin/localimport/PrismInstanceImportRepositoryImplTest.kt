@@ -3,6 +3,7 @@ package app.vercors.feature.instance.data.localimport
 import app.vercors.core.filesystem.deleteRecursively
 import app.vercors.core.filesystem.exists
 import app.vercors.feature.game.domain.model.ModLoaderType
+import app.vercors.feature.instance.domain.model.InstanceModpackInfo
 import app.vercors.feature.instance.domain.model.localimport.LocalImportNotPrismFormat
 import app.vercors.feature.instance.domain.model.localimport.LocalImportParseFailed
 import app.vercors.shared.data.AppPaths
@@ -110,5 +111,106 @@ class PrismInstanceImportRepositoryImplTest {
         assertTrue(Path(gameDir, "mods", "foo.jar").exists())
         assertTrue(!Path(gameDir, "patches").exists())
         assertTrue(!Path(gameDir, "libraries").exists())
+    }
+
+    @Test
+    fun importGameFilesExtractsUndottedMinecraftFolder() = runTest {
+        // Some Prism exports (e.g. CurseForge-managed packs) name the game folder "minecraft" with no leading dot.
+        val path = Path("build/diag-prism-undotted.zip")
+        Zip.open(path, mode = Zip.Mode.Write).use { zip ->
+            zip.writeText("instance.cfg", "name=Undotted Instance\n")
+            zip.writeText("mmc-pack.json", forgeMmcPack)
+            zip.writeText("minecraft/mods/foo.jar", "fake-jar-bytes")
+            zip.writeText("patches/net.minecraftforge.json", "{}")
+        }
+        val info = (either { repository.parse(path.toString()) } as Either.Right).value
+        val instanceId = "undotted-instance-test"
+        val gameDir = appPaths.gameDir(instanceId)
+        if (gameDir.exists()) gameDir.deleteRecursively()
+
+        val iconPath = (either { repository.importGameFiles(path.toString(), instanceId, info) } as Either.Right).value
+        assertNull(iconPath)
+
+        assertTrue(Path(gameDir, "mods", "foo.jar").exists())
+        assertTrue(!Path(gameDir, "patches").exists())
+    }
+
+    @Test
+    fun parsesCurseForgeManagedPackInfo() = runTest {
+        val path = Path("build/diag-prism-managed-curseforge.zip")
+        Zip.open(path, mode = Zip.Mode.Write).use { zip ->
+            zip.writeText(
+                "instance.cfg",
+                """
+                name=All the Mods 10 - ATM10
+                ManagedPack=true
+                ManagedPackID=925200
+                ManagedPackName=All the Mods 10
+                ManagedPackType=flame
+                ManagedPackVersionID=7121777
+                ManagedPackVersionName=4.14
+                """.trimIndent()
+            )
+            zip.writeText("mmc-pack.json", forgeMmcPack)
+        }
+        val info = (either { repository.parse(path.toString()) } as Either.Right).value
+        assertEquals(InstanceModpackInfo("curseforge", "925200", "7121777"), info.modpackInfo)
+    }
+
+    @Test
+    fun parsesModrinthManagedPackInfo() = runTest {
+        val path = Path("build/diag-prism-managed-modrinth.zip")
+        Zip.open(path, mode = Zip.Mode.Write).use { zip ->
+            zip.writeText(
+                "instance.cfg",
+                """
+                name=Fabulously Optimized
+                ManagedPack=true
+                ManagedPackID=1KVo5zza
+                ManagedPackType=modrinth
+                ManagedPackVersionID=abcd1234
+                """.trimIndent()
+            )
+            zip.writeText("mmc-pack.json", forgeMmcPack)
+        }
+        val info = (either { repository.parse(path.toString()) } as Either.Right).value
+        assertEquals(InstanceModpackInfo("modrinth", "1KVo5zza", "abcd1234"), info.modpackInfo)
+    }
+
+    @Test
+    fun modpackInfoIsNullWhenManagedPackIsFalse() = runTest {
+        val path = Path("build/diag-prism-not-managed.zip")
+        Zip.open(path, mode = Zip.Mode.Write).use { zip ->
+            zip.writeText(
+                "instance.cfg",
+                """
+                name=Custom Instance
+                ManagedPack=false
+                """.trimIndent()
+            )
+            zip.writeText("mmc-pack.json", forgeMmcPack)
+        }
+        val info = (either { repository.parse(path.toString()) } as Either.Right).value
+        assertNull(info.modpackInfo)
+    }
+
+    @Test
+    fun modpackInfoIsNullForUnrecognizedManagedPackType() = runTest {
+        val path = Path("build/diag-prism-unknown-provider.zip")
+        Zip.open(path, mode = Zip.Mode.Write).use { zip ->
+            zip.writeText(
+                "instance.cfg",
+                """
+                name=ATLauncher Import
+                ManagedPack=true
+                ManagedPackID=123
+                ManagedPackType=atlauncher
+                ManagedPackVersionID=456
+                """.trimIndent()
+            )
+            zip.writeText("mmc-pack.json", forgeMmcPack)
+        }
+        val info = (either { repository.parse(path.toString()) } as Either.Right).value
+        assertNull(info.modpackInfo)
     }
 }

@@ -35,4 +35,6 @@ class InstanceModRepositoryImpl(
 
     override suspend fun importMod(instanceId: InstanceId, sourcePath: String): Boolean =
         scannerService.importFile(instanceId, sourcePath)
+
+    override suspend fun refreshInstalledMods(instanceId: InstanceId) = scannerService.refresh(instanceId)
 }

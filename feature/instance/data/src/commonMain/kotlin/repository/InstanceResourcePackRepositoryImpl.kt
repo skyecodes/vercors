@@ -35,4 +35,6 @@ class InstanceResourcePackRepositoryImpl(
 
     override suspend fun importResourcePack(instanceId: InstanceId, sourcePath: String): Boolean =
         scannerService.importFile(instanceId, sourcePath)
+
+    override suspend fun refreshInstalledResourcePacks(instanceId: InstanceId) = scannerService.refresh(instanceId)
 }

@@ -35,4 +35,6 @@ class InstanceShaderPackRepositoryImpl(
 
     override suspend fun importShaderPack(instanceId: InstanceId, sourcePath: String): Boolean =
         scannerService.importFile(instanceId, sourcePath)
+
+    override suspend fun refreshInstalledShaderPacks(instanceId: InstanceId) = scannerService.refresh(instanceId)
 }

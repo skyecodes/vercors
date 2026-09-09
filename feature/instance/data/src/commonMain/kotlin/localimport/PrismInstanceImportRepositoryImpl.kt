@@ -1,6 +1,7 @@
 package app.vercors.feature.instance.data.localimport
 
 import app.vercors.feature.game.domain.model.ModLoaderType
+import app.vercors.feature.instance.domain.model.InstanceModpackInfo
 import app.vercors.feature.instance.domain.model.localimport.*
 import app.vercors.feature.instance.domain.repository.PrismInstanceImportRepository
 import app.vercors.shared.data.AppPaths
@@ -22,6 +23,7 @@ import kotlin.uuid.Uuid
 
 private val TOP_LEVEL_INSTANCE_CFG_REGEX = Regex("""^([^/]+)/instance\.cfg$""")
 private val ICON_EXTENSIONS = listOf("png", "jpg", "jpeg", "svg", "ico")
+private val GAME_DIR_CANDIDATES = listOf(".minecraft/", "minecraft/")
 
 @Serializable
 private data class MmcPack(val components: List<MmcPackComponent> = emptyList())
@@ -57,7 +59,8 @@ class PrismInstanceImportRepositoryImpl(
                     uid.toModLoaderTypeOrNull()?.let { type -> component.version?.let { version -> type to version } }
                 } ?: (null to null)
                 val iconEntryPath = cfg["iconKey"]?.let { findIconEntryPath(zip, rootPrefix, it) }
-                PrismInstanceInfo(name, gameVersion, loaderType, loaderVersion, rootPrefix, iconEntryPath)
+                val modpackInfo = detectManagedPackInfo(cfg)
+                PrismInstanceInfo(name, gameVersion, loaderType, loaderVersion, rootPrefix, iconEntryPath, modpackInfo)
             }
         } catch (e: CancellationException) {
             throw e
@@ -75,9 +78,9 @@ class PrismInstanceImportRepositoryImpl(
     ): String? {
         val zipPath = Path(sourcePath)
         val gameDir = appPaths.gameDir(instanceId)
-        val prefix = "${info.rootPrefix}.minecraft/"
         return try {
             Zip.open(zipPath).use { zip ->
+                val prefix = detectGameDirPrefix(zip, info.rootPrefix)
                 var total = 0
                 zip.forEachEntry { entry ->
                     if (!entry.isDirectory && entry.path.toString().startsWith(prefix)) total++
@@ -100,6 +103,20 @@ class PrismInstanceImportRepositoryImpl(
         } catch (_: Exception) {
             raise(LocalImportExtractionFailed)
         }
+    }
+
+    private fun detectGameDirPrefix(zip: Zip, rootPrefix: String): String {
+        val fullPrefixes = GAME_DIR_CANDIDATES.map { "$rootPrefix$it" }
+        val matched = BooleanArray(fullPrefixes.size)
+        zip.forEachEntry { entry ->
+            if (!entry.isDirectory) {
+                val path = entry.path.toString()
+                for (i in fullPrefixes.indices) {
+                    if (!matched[i] && path.startsWith(fullPrefixes[i])) matched[i] = true
+                }
+            }
+        }
+        return fullPrefixes[matched.indexOfFirst { it }.takeIf { it >= 0 } ?: 0]
     }
 
     private fun detectRootPrefix(zip: Zip): String? {
@@ -144,6 +161,20 @@ private fun String.toModLoaderTypeOrNull(): ModLoaderType? = when (this) {
     "net.fabricmc.fabric-loader" -> ModLoaderType.Fabric
     "org.quiltmc.quilt-loader" -> ModLoaderType.Quilt
     else -> null
+}
+
+private fun String.toManagedPackPlatformIdOrNull(): String? = when (this) {
+    "flame" -> "curseforge"
+    "modrinth" -> "modrinth"
+    else -> null
+}
+
+private fun detectManagedPackInfo(cfg: Map<String, String>): InstanceModpackInfo? {
+    if (!cfg["ManagedPack"].equals("true", ignoreCase = true)) return null
+    val platformId = cfg["ManagedPackType"]?.toManagedPackPlatformIdOrNull() ?: return null
+    val projectId = cfg["ManagedPackID"]?.takeIf { it.isNotBlank() } ?: return null
+    val fileId = cfg["ManagedPackVersionID"]?.takeIf { it.isNotBlank() } ?: return null
+    return InstanceModpackInfo(platformId, projectId, fileId)
 }
 
 private fun String.pathSegments(): Array<String> = split('/').filter { it.isNotBlank() }.toTypedArray()

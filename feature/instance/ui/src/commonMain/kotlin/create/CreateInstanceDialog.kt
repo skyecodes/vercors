@@ -39,6 +39,8 @@ class CreateInstanceDialog(
     private val updateInstanceStatus: UpdateInstanceStatusUseCase,
     private val updateInstanceJob: UpdateInstanceJobUseCase,
     private val deleteInstance: DeleteInstanceUseCase,
+    private val refreshInstalledContent: RefreshInstalledContentUseCase,
+    private val refreshInstalledWorlds: RefreshInstalledWorldsUseCase,
 ) : DialogOverlay<CreateInstanceResult>() {
     @Composable
     override fun AnimatedVisibilityScope.AnimatedContent(
@@ -62,6 +64,8 @@ class CreateInstanceDialog(
                 updateInstanceStatus = updateInstanceStatus,
                 updateInstanceJob = updateInstanceJob,
                 deleteInstance = deleteInstance,
+                refreshInstalledContent = refreshInstalledContent,
+                refreshInstalledWorlds = refreshInstalledWorlds,
             )
         }
         CreateInstance(store = presenter.present())

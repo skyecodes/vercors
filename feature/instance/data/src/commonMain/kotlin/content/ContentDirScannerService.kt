@@ -34,4 +34,6 @@ abstract class ContentDirScannerService internal constructor(private val engine:
 
     suspend fun importFile(instanceId: InstanceId, sourcePath: String): Boolean =
         engine.importFile(instanceId, Path(sourcePath))
+
+    suspend fun refresh(instanceId: InstanceId) = engine.refresh(instanceId)
 }

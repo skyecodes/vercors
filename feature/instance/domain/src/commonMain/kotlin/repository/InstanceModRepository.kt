@@ -23,4 +23,7 @@ interface InstanceModRepository {
 
     /** Copies [sourcePath] (an arbitrary local file, never deleted) into the instance's mods directory. */
     suspend fun importMod(instanceId: InstanceId, sourcePath: String): Boolean
+
+    /** Forces an immediate rescan, for a caller that just wrote a batch of files outside the APIs above. */
+    suspend fun refreshInstalledMods(instanceId: InstanceId)
 }
