@@ -4,7 +4,7 @@ when:
 
 steps:
   build:
-    image: eclipse-temurin:25-jdk@sha256:e787e08ef76f4c16866108cd7f9fcd96a68eef3ac6cc76866897d4d02d5a2262
+    image: eclipse-temurin:25-jdk@sha256:010ab2b79329b951bf052dbf515843ab345ae4e4f0ef72287d85c9fa54da275f
     volumes:
       - vercors_gradle_cache:/root/.gradle
       - vercors_konan_cache:/root/.konan
