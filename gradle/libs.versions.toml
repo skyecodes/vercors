@@ -36,7 +36,7 @@ ripple = "1.1.0"
 coil = "3.6.2"
 markdown-renderer = "0.45.0"
 webview = "2.0.3"
-nucleusframework = "2.5.15"
+nucleusframework = "2.5.16"
 composenativetray = "2.1.6"
 filekit = "0.16.0"
 # CLI
