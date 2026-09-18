@@ -8,7 +8,7 @@ pedestal = "3.2.2"
 datetime = "0.8.0"
 cryptography = "0.6.0"
 human-readable = "1.13.1"
-buildconfig = "6.1.0"
+buildconfig = "6.1.1"
 # Data
 serialization = "1.11.0"
 io = "0.9.1"
