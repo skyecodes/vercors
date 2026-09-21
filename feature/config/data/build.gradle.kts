@@ -4,4 +4,5 @@ plugins {
 
 dependencies {
     commonMainApi(projects.feature.config.domain)
+    jvmTestImplementation(libs.cryptography.provider.optimal)
 }

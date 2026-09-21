@@ -48,4 +48,6 @@ sealed interface ConfigurationEvent : Event {
     data class OnConfirmClearContentCache(val result: Boolean) : ConfigurationEvent
 
     data object OpenDataDirectory : ConfigurationEvent
+    data object PromptChangeDataDirectory : ConfigurationEvent
+    data object DismissChangeDataDirectoryPrompt : ConfigurationEvent
 }

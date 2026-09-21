@@ -4,6 +4,7 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color
 import app.vercors.feature.config.domain.model.HomeCategoryConfig
 import app.vercors.feature.config.domain.model.StartupScreen
+import app.vercors.feature.config.ui.datadirectory.ChangeDataDirectoryDialog
 import app.vercors.feature.project.domain.model.ProjectPlatform
 import app.vercors.shared.domain.model.JavaInstallation
 import app.vercors.shared.domain.model.JvmMemoryOptions
@@ -39,6 +40,9 @@ data class ConfigurationState(
     val contentCacheSizeBytes: Long?,
     val promptClearContentCache: Boolean,
     val dataDirectory: String,
+    val canChangeDataDirectory: Boolean,
+    val promptChangeDataDirectory: Boolean,
+    val changeDataDirectoryDialog: ChangeDataDirectoryDialog,
 )
 
 @Immutable

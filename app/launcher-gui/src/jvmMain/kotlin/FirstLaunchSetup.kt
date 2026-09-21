@@ -11,6 +11,7 @@ import androidx.compose.ui.window.rememberWindowState
 import app.vercors.core.domain.ThemeColor
 import app.vercors.core.domain.ThemeColors
 import app.vercors.core.filesystem.ensureRootReachable
+import app.vercors.core.filesystem.withAppFolderName
 import app.vercors.core.ui.component.AppIconTextButton
 import app.vercors.core.ui.component.AppText
 import app.vercors.core.ui.component.AppTextField
@@ -19,6 +20,7 @@ import com.composables.icons.lucide.*
 import com.composeunstyled.theme.Theme
 import dev.nucleusframework.application.DecoratedWindow
 import dev.nucleusframework.application.NucleusApplicationScope
+import dev.nucleusframework.core.runtime.NucleusApp
 import io.github.vinceglb.filekit.dialogs.compose.rememberDirectoryPickerLauncher
 import io.github.vinceglb.filekit.path
 import kotlinx.io.files.Path
@@ -43,14 +45,6 @@ private val SetupThemeColors = ThemeColors(
 )
 private const val SetupAccentColor = 0xFFCBA6F7L // mauve
 
-private const val VercorsFolderName = "vercors"
-
-/** Appends "vercors" to [path] unless it's already the last segment, so a folder picked or typed one level too
- *  high (e.g. the drive root, or a games folder shared with other apps) doesn't dump the launcher's files
- *  straight into it. */
-private fun withVercorsFolder(path: Path): Path =
-    if (path.name == VercorsFolderName) path else Path(path, VercorsFolderName)
-
 /**
  * Shown once, on first launch, before the DI graph exists — building the graph is what first writes to disk
  * (config.json, logs/), so the app root has to be chosen before that.
@@ -67,13 +61,13 @@ fun NucleusApplicationScope.FirstLaunchSetupWindow(
 
         val directoryPicker = rememberDirectoryPickerLauncher { directory ->
             val picked = directory?.path?.let(::Path) ?: return@rememberDirectoryPickerLauncher
-            pathText = withVercorsFolder(picked).toString()
+            pathText = withAppFolderName(NucleusApp.appId, picked).toString()
             errorMessage = null
         }
 
         fun confirm() {
             val typed = pathText.trim().trimEnd('/', '\\').ifEmpty { defaultRoot.toString() }
-            val chosen = withVercorsFolder(Path(typed))
+            val chosen = withAppFolderName(NucleusApp.appId, Path(typed))
             if (ensureRootReachable(chosen)) {
                 onConfirm(chosen)
             } else {

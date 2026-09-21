@@ -7,6 +7,7 @@ dependencies {
     commonMainApi(projects.feature.java.domain)
     commonMainImplementation(projects.feature.theme.domain)
     commonMainImplementation(projects.feature.project.domain)
+    commonMainImplementation(projects.feature.instance.domain)
     commonMainImplementation(projects.shared.data)
     commonMainImplementation(libs.filekit.dialogs.compose)
 }

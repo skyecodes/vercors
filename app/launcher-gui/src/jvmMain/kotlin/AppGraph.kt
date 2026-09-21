@@ -8,17 +8,23 @@ import app.vercors.feature.instance.domain.usecase.CreateInstanceUseCase
 import app.vercors.feature.instance.domain.usecase.DeleteInstanceUseCase
 import app.vercors.feature.instance.domain.usecase.ObserveInstanceListUseCase
 import app.vercors.shared.data.AppPaths
+import app.vercors.shared.ui.AppRestartService
 import app.vercors.shared.ui.SnackbarService
 import com.slack.circuit.foundation.Circuit
 import com.slack.circuit.foundation.animation.AnimatedNavDecorator
 import com.slack.circuit.runtime.navigation.NavArgument
 import com.slack.circuit.runtime.presenter.Presenter
 import com.slack.circuit.runtime.ui.Ui
+import dev.nucleusframework.core.runtime.AppRestarter
+import dev.nucleusframework.core.runtime.ExecutableRuntime
 import dev.nucleusframework.core.runtime.NucleusApp
 import dev.zacsweers.metro.*
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.io.files.Path
+
+private val logger = KotlinLogging.logger {}
 
 @DependencyGraph(AppScope::class)
 internal interface AppGraph {
@@ -53,6 +59,15 @@ internal interface AppGraph {
     @SingleIn(AppScope::class)
     @Named(AppConstants.APP_VENDOR_KEY)
     fun provideAppVendor(): String = NucleusApp.vendor ?: "unknown"
+
+    @Provides
+    @SingleIn(AppScope::class)
+    fun provideAppRestartService(): AppRestartService = AppRestartService {
+        if (ExecutableRuntime.isDev()) {
+            logger.warn { "Restarting under a dev run (no packaged launcher to relaunch) — the app will exit but not come back automatically; relaunch it manually." }
+        }
+        AppRestarter.restartApplication()
+    }
 
     @Provides
     @SingleIn(AppScope::class)

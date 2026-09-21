@@ -61,8 +61,16 @@
 
     <string name="storage">Storage</string>
     <string name="dataDirectory">Data directory</string>
-    <string name="dataDirectoryDesc">Where instances, downloaded content, Java runtimes and settings are stored. Chosen on first launch.</string>
+    <string name="dataDirectoryDesc">Where instances, downloaded content, Java runtimes and settings are stored.</string>
     <string name="errorOpenDataDirectoryFailed">Failed to open folder</string>
+    <string name="changeDataDirectory">Change…</string>
+    <string name="changeDataDirectoryTitle">Change data directory</string>
+    <string name="changeDataDirectoryDescription">Moves everything to the new location and restarts the launcher. This can take a while for a large data directory.</string>
+    <string name="changeDataDirectorySelectFolder">Select Folder</string>
+    <string name="changeDataDirectoryReset">Reset</string>
+    <string name="changeDataDirectoryConfirm">Move and Restart</string>
+    <string name="changeDataDirectoryUnreachable">Couldn\'t create or write to that location. Choose a different one.</string>
+    <string name="changeDataDirectoryCopyFailed">Failed to move the data directory. Nothing was changed.</string>
     <string name="contentCache">Content cache</string>
     <string name="contentCacheDesc">Downloaded mods, resource packs and shader packs are cached here and shared between instances that use the same file.</string>
     <string name="clearCache">Clear cache</string>

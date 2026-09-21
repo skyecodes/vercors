@@ -77,6 +77,13 @@ fun Configuration(
             }
         }
 
+        if (state.promptChangeDataDirectory) {
+            OverlayEffect {
+                show(state.changeDataDirectoryDialog)
+                eventSink(ConfigurationEvent.DismissChangeDataDirectoryPrompt)
+            }
+        }
+
         AppTabGroup(
             selectedTab = state.selectedTab,
             onSelectedTabChange = { eventSink(ConfigurationEvent.SelectTab(it)) },
@@ -599,6 +606,12 @@ private fun StorageConfigurationTab(
                     onClick = { eventSink(ConfigurationEvent.OpenDataDirectory) },
                     text = stringResource(SharedRes.string.open),
                     imageVector = Lucide.FolderOpen,
+                )
+                AppIconTextButton(
+                    onClick = { eventSink(ConfigurationEvent.PromptChangeDataDirectory) },
+                    text = stringResource(ConfigRes.string.changeDataDirectory),
+                    imageVector = Lucide.FolderInput,
+                    enabled = state.canChangeDataDirectory,
                 )
             }
         }

@@ -78,15 +78,16 @@ suspend fun Path.deleteRecursively(
 
 suspend fun Path.copyRecursively(
     target: Path,
-    context: CoroutineContext = Dispatchers.IO
+    context: CoroutineContext = Dispatchers.IO,
+    onFileCopied: (bytes: Long) -> Unit = {}
 ) {
     if (isDirectory(context)) {
         target.createDirectories(context)
         for (child in list(context)) {
-            child.copyRecursively(Path(target, child.name), context)
+            child.copyRecursively(Path(target, child.name), context, onFileCopied)
         }
     } else {
-        copyTo(target, context)
+        onFileCopied(copyTo(target, context))
     }
 }
 

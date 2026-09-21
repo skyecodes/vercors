@@ -3,15 +3,16 @@ package app.vercors.feature.config.ui
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.graphics.Color
+import app.vercors.core.domain.AppConstants
 import app.vercors.core.system.OsType
 import app.vercors.core.system.SystemService
 import app.vercors.core.ui.state.collectProgressiveAsState
 import app.vercors.core.ui.state.produceProgressiveState
 import app.vercors.feature.config.domain.model.HomeCategoryConfig
-import app.vercors.feature.config.domain.usecase.ClearContentCacheUseCase
-import app.vercors.feature.config.domain.usecase.GetContentCacheSizeUseCase
-import app.vercors.feature.config.domain.usecase.ObserveConfigurationUseCase
-import app.vercors.feature.config.domain.usecase.UpdateConfigurationUseCase
+import app.vercors.feature.config.domain.usecase.*
+import app.vercors.feature.config.ui.datadirectory.ChangeDataDirectoryDialog
+import app.vercors.feature.instance.domain.model.InstanceStatus
+import app.vercors.feature.instance.domain.usecase.ObserveInstanceListUseCase
 import app.vercors.feature.java.domain.model.JavaInstallationError
 import app.vercors.feature.java.domain.usecase.AddJavaInstallationUseCase
 import app.vercors.feature.java.domain.usecase.ObserveJavaInstallationsUseCase
@@ -34,6 +35,7 @@ import com.slack.circuit.codegen.annotations.CircuitInject
 import com.slack.circuit.retained.collectAsRetainedState
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Inject
+import dev.zacsweers.metro.Named
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -62,6 +64,11 @@ class ConfigurationPresenter(
     private val getContentCacheSize: GetContentCacheSizeUseCase,
     private val clearContentCache: ClearContentCacheUseCase,
     private val appPaths: AppPaths,
+    private val observeInstanceList: ObserveInstanceListUseCase,
+    private val moveDataDirectory: MoveDataDirectoryUseCase,
+    private val appRestartService: AppRestartService,
+    private val globalScope: CoroutineScope,
+    @Named(AppConstants.APP_ID_KEY) private val appId: String,
 ) : Presenter<ConfigurationState, ConfigurationEvent> {
     @Composable
     override fun present(): Store<ConfigurationState, ConfigurationEvent> {
@@ -89,6 +96,18 @@ class ConfigurationPresenter(
         LaunchedEffect(Unit) { contentCacheSizeBytes = getContentCacheSize() }
         val (promptClearContentCache, setPromptClearContentCache) = remember { mutableStateOf(false) }
         val dataDirectory = remember { appPaths.root.toString() }
+        val instances by observeInstanceList().collectProgressiveAsState()
+        val hasRunningInstance = instances.valueOrNull?.any { it.getOrNull()?.status is InstanceStatus.Running } == true
+        val (promptChangeDataDirectory, setPromptChangeDataDirectory) = remember { mutableStateOf(false) }
+        val changeDataDirectoryDialog = remember(dataDirectory) {
+            ChangeDataDirectoryDialog(
+                currentPath = dataDirectory,
+                appId = appId,
+                globalScope = globalScope,
+                moveDataDirectory = moveDataDirectory,
+                appRestartService = appRestartService,
+            )
+        }
         val cfg = configuration.valueOrNull
         val selectedTheme = themeList.find { it.id == cfg?.selectedThemeId }
         val selectedAccent = selectedTheme?.accents?.find { it.id == cfg?.selectedAccent }
@@ -124,6 +143,9 @@ class ConfigurationPresenter(
             contentCacheSizeBytes = contentCacheSizeBytes,
             promptClearContentCache = promptClearContentCache,
             dataDirectory = dataDirectory,
+            canChangeDataDirectory = !hasRunningInstance,
+            promptChangeDataDirectory = promptChangeDataDirectory,
+            changeDataDirectoryDialog = changeDataDirectoryDialog,
         ) + { event ->
             handleEvent(
                 event = event,
@@ -136,6 +158,7 @@ class ConfigurationPresenter(
                 setPromptClearContentCache = setPromptClearContentCache,
                 setContentCacheSizeBytes = { contentCacheSizeBytes = it },
                 dataDirectory = dataDirectory,
+                setPromptChangeDataDirectory = setPromptChangeDataDirectory,
             )
         }
     }
@@ -151,6 +174,7 @@ class ConfigurationPresenter(
         setPromptClearContentCache: (Boolean) -> Unit,
         setContentCacheSizeBytes: (Long?) -> Unit,
         dataDirectory: String,
+        setPromptChangeDataDirectory: (Boolean) -> Unit,
     ) {
         when (event) {
             is ConfigurationEvent.SelectTab -> setSelectedTab(event.tab)
@@ -260,6 +284,9 @@ class ConfigurationPresenter(
             )
 
             ConfigurationEvent.OpenDataDirectory -> handleOpenDataDirectory(dataDirectory, presenterScope)
+
+            ConfigurationEvent.PromptChangeDataDirectory -> setPromptChangeDataDirectory(true)
+            ConfigurationEvent.DismissChangeDataDirectoryPrompt -> setPromptChangeDataDirectory(false)
         }
     }
 
