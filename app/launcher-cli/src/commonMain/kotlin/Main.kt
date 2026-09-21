@@ -1,6 +1,10 @@
 package app.vercors.launcher.cli
 
 import app.vercors.core.domain.AppConstants
+import app.vercors.core.filesystem.defaultAppRoot
+import app.vercors.core.filesystem.ensureRootReachable
+import app.vercors.core.filesystem.readAppRoot
+import app.vercors.core.filesystem.writeAppRoot
 import app.vercors.shared.command.AbstractCommand
 import app.vercors.shared.data.AppPaths
 import com.github.ajalt.clikt.command.SuspendingCliktCommand
@@ -12,8 +16,9 @@ import kotlinx.io.files.Path
 
 fun main(args: Array<String>) {
     configureLoggingPre()
+    val root = resolveAppRoot()
     val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-    val appGraph = createGraphFactory<AppGraph.Factory>().create(scope)
+    val appGraph = createGraphFactory<AppGraph.Factory>().create(scope, root)
     configureLoggingPost(appGraph.appPaths.logs)
     runBlocking {
         MainCommand().subcommands(appGraph.commands).main(args)
@@ -37,6 +42,18 @@ class MainCommand : SuspendingCliktCommand("vercors") {
     )
 
     override suspend fun run() = Unit
+}
+
+/**
+ * The CLI has no interactive picker, so first launch silently confirms the default location — writing the
+ * marker file so a later GUI first launch (or a later CLI run) doesn't re-prompt/re-decide.
+ */
+private fun resolveAppRoot(): Path {
+    val defaultRoot = defaultAppRoot(BuildConfig.APP_ID)
+    val configuredRoot = readAppRoot(defaultRoot) ?: defaultRoot.also { writeAppRoot(defaultRoot, it) }
+    if (ensureRootReachable(configuredRoot)) return configuredRoot
+    println("Warning: configured data directory '$configuredRoot' is unreachable; using '$defaultRoot' for this run.")
+    return defaultRoot
 }
 
 @DependencyGraph(AppScope::class)
@@ -66,7 +83,7 @@ internal interface AppGraph {
 
     @DependencyGraph.Factory
     fun interface Factory {
-        fun create(@Provides coroutineScope: CoroutineScope): AppGraph
+        fun create(@Provides coroutineScope: CoroutineScope, @Provides root: Path): AppGraph
     }
 }
 

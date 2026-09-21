@@ -21,6 +21,7 @@ import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -578,6 +579,29 @@ private fun StorageConfigurationTab(
     state: ConfigurationState
 ) {
     ConfigurationTabScaffold(state.horizontalTabs) {
+        ConfigurationRow(
+            title = ConfigRes.string.dataDirectory,
+            description = ConfigRes.string.dataDirectoryDesc,
+        ) {
+            Row(
+                modifier = Modifier.weight(1f),
+                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                AppText(
+                    text = state.dataDirectory,
+                    style = Theme[textStyles][label],
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false)
+                )
+                AppIconTextButton(
+                    onClick = { eventSink(ConfigurationEvent.OpenDataDirectory) },
+                    text = stringResource(SharedRes.string.open),
+                    imageVector = Lucide.FolderOpen,
+                )
+            }
+        }
         ConfigurationRow(
             title = ConfigRes.string.contentCache,
             description = ConfigRes.string.contentCacheDesc,

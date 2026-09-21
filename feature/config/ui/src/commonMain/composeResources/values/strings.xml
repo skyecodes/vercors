@@ -60,6 +60,9 @@
     <string name="browse">Browse</string>
 
     <string name="storage">Storage</string>
+    <string name="dataDirectory">Data directory</string>
+    <string name="dataDirectoryDesc">Where instances, downloaded content, Java runtimes and settings are stored. Chosen on first launch.</string>
+    <string name="errorOpenDataDirectoryFailed">Failed to open folder</string>
     <string name="contentCache">Content cache</string>
     <string name="contentCacheDesc">Downloaded mods, resource packs and shader packs are cached here and shared between instances that use the same file.</string>
     <string name="clearCache">Clear cache</string>

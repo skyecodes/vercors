@@ -44,6 +44,7 @@ dependencies {
     commonMainImplementation(projects.feature.theme.domain)
     commonMainImplementation(projects.feature.theme.data)
     commonMainImplementation(compose.desktop.currentOs)
+    commonMainImplementation(libs.filekit.dialogs.compose)
     commonMainImplementation(libs.nucleus.application)
     commonMainImplementation(libs.nucleus.decorated.window.tao)
     commonMainImplementation(libs.nucleus.notification.common)

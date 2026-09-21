@@ -18,6 +18,7 @@ import dev.nucleusframework.core.runtime.NucleusApp
 import dev.zacsweers.metro.*
 import io.ktor.client.*
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.io.files.Path
 
 @DependencyGraph(AppScope::class)
 internal interface AppGraph {
@@ -72,7 +73,7 @@ internal interface AppGraph {
 
     @DependencyGraph.Factory
     fun interface Factory {
-        fun create(@Provides coroutineScope: CoroutineScope): AppGraph
+        fun create(@Provides coroutineScope: CoroutineScope, @Provides root: Path): AppGraph
     }
 }
 

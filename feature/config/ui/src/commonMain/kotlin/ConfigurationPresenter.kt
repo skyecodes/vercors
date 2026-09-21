@@ -22,15 +22,13 @@ import app.vercors.feature.project.domain.usecase.GetPlatformListUseCase
 import app.vercors.feature.theme.domain.model.ThemeDefinition
 import app.vercors.feature.theme.domain.model.ThemeNamedColor
 import app.vercors.feature.theme.domain.usecase.ObserveThemesUseCase
+import app.vercors.shared.data.AppPaths
 import app.vercors.shared.domain.model.JvmMemoryOptions
 import app.vercors.shared.domain.model.NativeLibraryOptions
 import app.vercors.shared.domain.model.NativeLibraryType
 import app.vercors.shared.domain.usecase.DetectNativeLibraryPathUseCase
 import app.vercors.shared.domain.usecase.GetTotalPhysicalMemoryUseCase
-import app.vercors.shared.ui.Presenter
-import app.vercors.shared.ui.SnackbarService
-import app.vercors.shared.ui.Store
-import app.vercors.shared.ui.success
+import app.vercors.shared.ui.*
 import arrow.core.raise.context.either
 import com.slack.circuit.codegen.annotations.CircuitInject
 import com.slack.circuit.retained.collectAsRetainedState
@@ -63,6 +61,7 @@ class ConfigurationPresenter(
     private val systemService: SystemService,
     private val getContentCacheSize: GetContentCacheSizeUseCase,
     private val clearContentCache: ClearContentCacheUseCase,
+    private val appPaths: AppPaths,
 ) : Presenter<ConfigurationState, ConfigurationEvent> {
     @Composable
     override fun present(): Store<ConfigurationState, ConfigurationEvent> {
@@ -89,6 +88,7 @@ class ConfigurationPresenter(
         var contentCacheSizeBytes by remember { mutableStateOf<Long?>(null) }
         LaunchedEffect(Unit) { contentCacheSizeBytes = getContentCacheSize() }
         val (promptClearContentCache, setPromptClearContentCache) = remember { mutableStateOf(false) }
+        val dataDirectory = remember { appPaths.root.toString() }
         val cfg = configuration.valueOrNull
         val selectedTheme = themeList.find { it.id == cfg?.selectedThemeId }
         val selectedAccent = selectedTheme?.accents?.find { it.id == cfg?.selectedAccent }
@@ -123,6 +123,7 @@ class ConfigurationPresenter(
             detectedOpenAlPath = detectedOpenAlPath,
             contentCacheSizeBytes = contentCacheSizeBytes,
             promptClearContentCache = promptClearContentCache,
+            dataDirectory = dataDirectory,
         ) + { event ->
             handleEvent(
                 event = event,
@@ -134,6 +135,7 @@ class ConfigurationPresenter(
                 setJavaScanInProgress = setJavaScanInProgress,
                 setPromptClearContentCache = setPromptClearContentCache,
                 setContentCacheSizeBytes = { contentCacheSizeBytes = it },
+                dataDirectory = dataDirectory,
             )
         }
     }
@@ -148,6 +150,7 @@ class ConfigurationPresenter(
         setJavaScanInProgress: (Boolean) -> Unit,
         setPromptClearContentCache: (Boolean) -> Unit,
         setContentCacheSizeBytes: (Long?) -> Unit,
+        dataDirectory: String,
     ) {
         when (event) {
             is ConfigurationEvent.SelectTab -> setSelectedTab(event.tab)
@@ -255,6 +258,16 @@ class ConfigurationPresenter(
                 setPromptClearContentCache = setPromptClearContentCache,
                 setContentCacheSizeBytes = setContentCacheSizeBytes,
             )
+
+            ConfigurationEvent.OpenDataDirectory -> handleOpenDataDirectory(dataDirectory, presenterScope)
+        }
+    }
+
+    private fun handleOpenDataDirectory(dataDirectory: String, presenterScope: CoroutineScope) {
+        presenterScope.launch {
+            if (!systemService.openInFileManager(dataDirectory)) {
+                snackbarService.error { stringResource(ConfigRes.string.errorOpenDataDirectoryFailed) }
+            }
         }
     }
 

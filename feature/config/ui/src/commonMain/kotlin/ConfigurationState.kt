@@ -38,6 +38,7 @@ data class ConfigurationState(
     val detectedOpenAlPath: String?,
     val contentCacheSizeBytes: Long?,
     val promptClearContentCache: Boolean,
+    val dataDirectory: String,
 )
 
 @Immutable

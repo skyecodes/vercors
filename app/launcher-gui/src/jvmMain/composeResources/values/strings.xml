@@ -5,4 +5,14 @@
 
     <string name="unexpectedError">An error has occurred, check the logs for more details</string>
     <string name="quitRunningInstancesConfirmation">Quitting will stop any running instances. Are you sure you want to quit?</string>
+
+    <string name="setupWindowTitle">Vercors Setup</string>
+    <string name="setupTitle">Where should Vercors store its data?</string>
+    <string name="setupDescription">Instances, downloaded content, and settings live here. Use the default location or pick a different drive or folder; for example, to keep everything on a secondary disk. This can only be set now, not changed later from within the app.</string>
+    <string name="setupSelectFolder">Select Folder</string>
+    <string name="setupReset">Reset</string>
+    <string name="setupCancelAndQuit">Cancel and Quit</string>
+    <string name="setupConfirmAndStart">Confirm and Start</string>
+    <string name="setupLocationUnreachable">Couldn't create or write to that location. Choose a different one.</string>
+    <string name="setupRootUnreachableWarning">Configured data directory is unreachable; using the default location for this session.</string>
 </resources>

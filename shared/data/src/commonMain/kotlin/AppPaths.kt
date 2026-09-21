@@ -14,7 +14,7 @@ import kotlinx.io.files.Path
  */
 @SingleIn(AppScope::class)
 @Inject
-class AppPaths(root: Path) {
+class AppPaths(val root: Path) {
     val accountsFile = Path(root, "accounts.json")
     val configFile = Path(root, "config.json")
     val privateKeyFile = Path(root, "key.priv")
