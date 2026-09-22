@@ -22,7 +22,7 @@ val InstanceStatus.text: String
         is InstanceStatus.Launching.ValidatingFiles -> stringResource(InstanceRes.string.validatingFiles)
         is InstanceStatus.Launching.DownloadingFiles -> stringResource(InstanceRes.string.downloadingGameFiles)
         is InstanceStatus.Installing.ResolvingFiles -> stringResource(InstanceRes.string.resolvingFiles)
-        is InstanceStatus.Installing.DownloadingFiles -> stringResource(InstanceRes.string.downloadingFiles)
+        is InstanceStatus.Installing.DownloadingFiles -> stringResource(InstanceRes.string.downloadingModpackFiles)
         is InstanceStatus.Installing.AwaitingManualDownloads -> stringResource(InstanceRes.string.awaitingManualDownloads)
         is InstanceStatus.Installing.Interrupted -> stringResource(InstanceRes.string.installationInterrupted)
         is InstanceStatus.Installing.ExtractingFiles -> stringResource(InstanceRes.string.extractingFiles)

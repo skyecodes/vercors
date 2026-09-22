@@ -133,8 +133,19 @@ private fun InstalledWorldList(
 
         when {
             worlds == null -> AppLoading()
-            worlds.isEmpty() -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            worlds.isEmpty() -> Column(
+                modifier = Modifier.fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically)
+            ) {
                 AppText(stringResource(InstanceRes.string.noWorldsInstalled))
+                AppIconTextButton(
+                    onClick = onAddClick,
+                    text = stringResource(InstanceRes.string.addWorld),
+                    imageVector = Lucide.Plus,
+                    backgroundColor = Theme[colors][primary],
+                    contentColor = Theme[colors][onPrimary],
+                )
             }
 
             filteredWorlds.isNullOrEmpty() -> AppText(stringResource(InstanceRes.string.noMatchingFiles))

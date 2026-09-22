@@ -28,9 +28,9 @@
     <string name="refreshingToken">Refreshing token...</string>
     <string name="loadingMetadata">Loading metadata...</string>
     <string name="installingLoader">Installing %1$s...</string>
-    <string name="validatingFiles">Validating game files...</string>
-    <string name="downloadingFiles">Downloading files...</string>
-    <string name="downloadingGameFiles">Downloading game files...</string>
+    <string name="validatingFiles">Validating game assets and libraries...</string>
+    <string name="downloadingModpackFiles">Downloading modpack files...</string>
+    <string name="downloadingGameFiles">Downloading game assets and libraries...</string>
     <string name="running">Running</string>
     <string name="stopping">Stopping</string>
     <string name="failed">Failed</string>
@@ -61,7 +61,7 @@
     <string name="errorNoCompatibleJava">No compatible Java %1$d installation found</string>
     <string name="errorLoginRequired">No account selected, please log in</string>
     <string name="promptInstallJavaTitle">Java %1$d required</string>
-    <string name="promptInstallJavaMessage">This instance requires Java %1$d, but no compatible installation was found. Install one automatically?</string>
+    <string name="promptInstallJavaMessage">This instance requires Java %1$d, but no compatible installation was found. You can either cancel and install one manually or let the app install one automatically.\nIf you choose to install one manually, the Java installation files will be provided by Mojang.</string>
     <string name="installJava">Install Java</string>
     <string name="javaOverride">Java installation</string>
     <string name="recommendedJavaVersion">(Recommended: Java %1$d)</string>
@@ -138,4 +138,8 @@
     <string name="removeIcon">Remove Custom Icon</string>
     <string name="restoreIcon">Restore icon</string>
     <string name="errorRestoreIconFailed">Failed to restore the icon from the provider</string>
+    <string name="searchInstalledMods">Search installed mods...</string>
+    <string name="searchInstalledResourcePacks">Search installed resource packs...</string>
+    <string name="searchInstalledShaderPacks">Search installed shader packs...</string>
+    <string name="searchInstalledWorlds">Search installed worlds...</string>
 </resources>

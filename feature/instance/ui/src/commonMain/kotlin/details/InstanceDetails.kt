@@ -999,6 +999,7 @@ context(eventSink: EventSink<InstalledContentEvent>)
 private fun InstalledContentFileList(
     files: List<InstalledContentFileView>?,
     emptyMessage: StringResource,
+    searchPlaceholder: StringResource,
     addLabel: StringResource,
     addEnabled: Boolean,
     importLabel: StringResource,
@@ -1023,6 +1024,7 @@ private fun InstalledContentFileList(
         .appCard()) {
         InstalledContentFileListHeader(
             searchQuery = searchQuery,
+            searchPlaceholder = searchPlaceholder,
             onSearchQueryChange = { searchQuery = it },
             showOnlyEnabled = showOnlyEnabled,
             onShowOnlyEnabledChange = { showOnlyEnabled = it },
@@ -1044,7 +1046,9 @@ private fun InstalledContentFileList(
             filteredFiles = filteredFiles,
             emptyMessage = emptyMessage,
             listState = listState,
-            onOpenProject = onOpenProject
+            onOpenProject = onOpenProject,
+            addLabel = addLabel,
+            onAddClick = onAddClick
         )
     }
 }
@@ -1053,6 +1057,7 @@ private fun InstalledContentFileList(
 context(eventSink: EventSink<InstalledContentEvent>)
 private fun InstalledContentFileListHeader(
     searchQuery: String,
+    searchPlaceholder: StringResource,
     onSearchQueryChange: (String) -> Unit,
     showOnlyEnabled: Boolean,
     onShowOnlyEnabledChange: (Boolean) -> Unit,
@@ -1075,6 +1080,7 @@ private fun InstalledContentFileListHeader(
         AppSearchField(
             initialValue = searchQuery,
             onValueChange = onSearchQueryChange,
+            placeholder = stringResource(searchPlaceholder),
             modifier = Modifier.weight(1f)
         )
         AppCheckbox(
@@ -1171,15 +1177,25 @@ private fun InstalledContentFileListBody(
     filteredFiles: List<InstalledContentFileView>?,
     emptyMessage: StringResource,
     listState: LazyListState,
-    onOpenProject: (platformId: String, projectId: String) -> Unit
+    onOpenProject: (platformId: String, projectId: String) -> Unit,
+    addLabel: StringResource,
+    onAddClick: () -> Unit
 ) {
     when {
         files == null -> AppLoading()
-        files.isEmpty() -> Box(
+        files.isEmpty() -> Column(
             modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically)
         ) {
             AppText(stringResource(emptyMessage))
+            AppIconTextButton(
+                onClick = onAddClick,
+                text = stringResource(addLabel),
+                imageVector = Lucide.Plus,
+                backgroundColor = Theme[colors][primary],
+                contentColor = Theme[colors][onPrimary],
+            )
         }
 
         filteredFiles.isNullOrEmpty() -> AppText(stringResource(InstanceRes.string.noMatchingFiles))
@@ -1293,6 +1309,7 @@ private fun InstanceModsTab(
         InstalledContentFileList(
             files = content.state.files,
             emptyMessage = InstanceRes.string.noModsInstalled,
+            searchPlaceholder = InstanceRes.string.searchInstalledMods,
             addLabel = InstanceRes.string.addMod,
             addEnabled = state.instance.valueOrNull?.loaderType != null,
             importLabel = InstanceRes.string.importMod,
@@ -1319,6 +1336,7 @@ private fun InstanceResourcePacksTab(
         InstalledContentFileList(
             files = content.state.files,
             emptyMessage = InstanceRes.string.noResourcePacksInstalled,
+            searchPlaceholder = InstanceRes.string.searchInstalledResourcePacks,
             addLabel = InstanceRes.string.addResourcePack,
             addEnabled = true,
             importLabel = InstanceRes.string.importResourcePack,
@@ -1345,6 +1363,7 @@ private fun InstanceShaderPacksTab(
         InstalledContentFileList(
             files = content.state.files,
             emptyMessage = InstanceRes.string.noShaderPacksInstalled,
+            searchPlaceholder = InstanceRes.string.searchInstalledShaderPacks,
             addLabel = InstanceRes.string.addShaderPack,
             addEnabled = true,
             importLabel = InstanceRes.string.importShaderPack,

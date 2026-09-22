@@ -15,14 +15,15 @@ import org.jetbrains.compose.resources.stringResource
 fun AppSearchField(
     initialValue: String,
     onValueChange: (String) -> Unit,
+    placeholder: String = stringResource(CoreRes.string.search),
     modifier: Modifier = Modifier,
     debounceMillis: Long = 0L,
     backgroundColor: Color = Theme[colors][surface2],
 ) {
     AppTextField(
         initialValue = initialValue,
-        placeholder = { AppText(stringResource(CoreRes.string.search)) },
         onValueChange = onValueChange,
+        placeholder = { AppText(placeholder) },
         debounceMillis = debounceMillis,
         imeAction = ImeAction.Search,
         backgroundColor = backgroundColor,
