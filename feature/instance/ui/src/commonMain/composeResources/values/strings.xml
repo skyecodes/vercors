@@ -142,4 +142,7 @@
     <string name="searchInstalledResourcePacks">Search installed resource packs...</string>
     <string name="searchInstalledShaderPacks">Search installed shader packs...</string>
     <string name="searchInstalledWorlds">Search installed worlds...</string>
+    <string name="playedFor">Played for %1$s</string>
+    <string name="lastPlayed">Last played %1$s</string>
+    <string name="neverPlayed">Never played</string>
 </resources>

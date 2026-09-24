@@ -13,6 +13,7 @@ import app.vercors.shared.domain.model.NativeLibraryOptions
 import app.vercors.shared.ui.Store
 import nl.jacobras.humanreadable.HumanReadable
 import opensavvy.state.progressive.ProgressiveOutcome
+import kotlin.time.Duration
 import kotlin.time.Instant
 
 @Immutable
@@ -55,8 +56,9 @@ data class InstanceView(
     val javaInstallationId: String?,
     val jvmMemoryOptions: JvmMemoryOptions,
     val nativeLibraryOptions: NativeLibraryOptions,
-    /** Bumped whenever the icon changes — used to bust the image cache when [iconFilePath] is reused unchanged. */
     val updatedAt: Instant,
+    val playTime: Duration,
+    val lastPlayedAt: Instant? = null
 )
 
 @Immutable
@@ -86,7 +88,9 @@ fun InstanceAndStatus.toView(): InstanceView = InstanceView(
     javaInstallationId = instance.javaInstallationId,
     jvmMemoryOptions = instance.jvmMemoryOptions,
     nativeLibraryOptions = instance.nativeLibraryOptions,
-    updatedAt = instance.updatedAt
+    updatedAt = instance.updatedAt,
+    playTime = instance.playTime,
+    lastPlayedAt = instance.lastPlayedAt
 )
 
 val Instance.displayType: String get() = if (modpackInfo != null) "Modpack" else "Custom"

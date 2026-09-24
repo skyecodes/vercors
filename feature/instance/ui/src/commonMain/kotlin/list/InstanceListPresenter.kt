@@ -191,7 +191,9 @@ class InstanceListPresenter(
     private fun observeInstanceListView(): State<ProgressiveOutcome<Nothing, List<BriefInstanceView>>> =
         produceAndCollectAsProgressiveState {
             observeInstanceList().map { res ->
-                res.map { list -> list.filterIsRight().map { it.toBriefView() } }
+                res.map { list ->
+                    list.filterIsRight().sortedByDescending { it.instance.lastPlayedAt }.map { it.toBriefView() }
+                }
             }
         }
 

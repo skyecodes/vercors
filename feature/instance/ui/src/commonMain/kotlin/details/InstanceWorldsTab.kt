@@ -95,6 +95,13 @@ private fun InstalledWorldList(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            AppIconTextButton(
+                onClick = onAddClick,
+                text = stringResource(InstanceRes.string.addWorld),
+                imageVector = Lucide.Plus,
+                backgroundColor = Theme[colors][primary],
+                contentColor = Theme[colors][onPrimary],
+            )
             AppSearchField(
                 initialValue = searchQuery,
                 onValueChange = { searchQuery = it },
@@ -133,19 +140,11 @@ private fun InstalledWorldList(
 
         when {
             worlds == null -> AppLoading()
-            worlds.isEmpty() -> Column(
+            worlds.isEmpty() -> Box(
                 modifier = Modifier.fillMaxSize(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically)
+                contentAlignment = Alignment.Center
             ) {
                 AppText(stringResource(InstanceRes.string.noWorldsInstalled))
-                AppIconTextButton(
-                    onClick = onAddClick,
-                    text = stringResource(InstanceRes.string.addWorld),
-                    imageVector = Lucide.Plus,
-                    backgroundColor = Theme[colors][primary],
-                    contentColor = Theme[colors][onPrimary],
-                )
             }
 
             filteredWorlds.isNullOrEmpty() -> AppText(stringResource(InstanceRes.string.noMatchingFiles))

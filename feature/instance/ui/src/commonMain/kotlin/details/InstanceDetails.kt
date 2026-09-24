@@ -59,6 +59,7 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.format
 import kotlinx.datetime.format.char
 import kotlinx.datetime.toLocalDateTime
+import nl.jacobras.humanreadable.HumanReadable
 import okio.Path.Companion.toPath
 import opensavvy.state.progressive.onFailure
 import opensavvy.state.progressive.onIncomplete
@@ -343,7 +344,7 @@ context(_: SharedElementTransitionScope)
 private fun RowScope.InstanceHeaderInfo(instance: InstanceView) {
     Column(
         modifier = Modifier.weight(1f),
-        verticalArrangement = Arrangement.spacedBy(4.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         AppText(
             text = instance.name,
@@ -351,25 +352,86 @@ private fun RowScope.InstanceHeaderInfo(instance: InstanceView) {
             singleLine = true,
             modifier = Modifier.instanceSharedElement(instance.id, "title")
         )
+
         Row(
-            horizontalArrangement = Arrangement.spacedBy(3.dp)
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            AppText(
-                text = "${instance.type} -",
-                fontSize = 12.sp,
-                modifier = Modifier.instanceSharedElement(instance.id, "type")
-            )
-            AppText(
-                text = instance.loader,
-                fontSize = 12.sp,
-                modifier = Modifier.instanceSharedElement(instance.id, "loader")
-            )
-            AppText(
-                text = instance.gameVersion,
-                fontSize = 12.sp,
-                modifier = Modifier.instanceSharedElement(instance.id, "version")
-            )
+            InstanceHeaderInfoSection {
+                AppIcon(
+                    imageVector = when (instance.type) {
+                        "Modpack" -> Lucide.PackageOpen
+                        else -> Lucide.Settings
+                    },
+                    contentDescription = null,
+                    modifier = Modifier.size(14.dp)
+                )
+                AppText(
+                    text = instance.type,
+                    fontSize = 12.sp,
+                    modifier = Modifier.instanceSharedElement(instance.id, "type")
+                )
+            }
+
+            InstanceHeaderInfoSection {
+                instance.loaderType?.icon?.let {
+                    AppIcon(
+                        imageVector = it,
+                        contentDescription = null,
+                        modifier = Modifier.size(14.dp)
+                    )
+                }
+                AppText(
+                    text = instance.loader,
+                    fontSize = 12.sp,
+                    modifier = Modifier.instanceSharedElement(instance.id, "loader")
+                )
+                AppText(
+                    text = instance.gameVersion,
+                    fontSize = 12.sp,
+                    modifier = Modifier.instanceSharedElement(instance.id, "version")
+                )
+            }
+
+            InstanceHeaderInfoSection {
+                AppIcon(
+                    imageVector = Lucide.Clock,
+                    contentDescription = null,
+                    modifier = Modifier.size(14.dp)
+                )
+                AppText(
+                    text = stringResource(InstanceRes.string.playedFor, HumanReadable.duration(instance.playTime)),
+                    fontSize = 12.sp
+                )
+            }
+
+            InstanceHeaderInfoSection {
+                AppIcon(
+                    imageVector = Lucide.History,
+                    contentDescription = null,
+                    modifier = Modifier.size(14.dp)
+                )
+                AppText(
+                    text = instance.lastPlayedAt?.let {
+                        stringResource(
+                            InstanceRes.string.lastPlayed,
+                            HumanReadable.timeAgo(it)
+                        )
+                    } ?: stringResource(InstanceRes.string.neverPlayed),
+                    fontSize = 12.sp
+                )
+            }
         }
+    }
+}
+
+@Composable
+private fun InstanceHeaderInfoSection(content: @Composable RowScope.() -> Unit) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        content()
     }
 }
 
@@ -578,7 +640,7 @@ private fun InstanceAdvancedTab(
 @Composable
 private fun InstanceOptionsTabScaffold(
     horizontalTabs: Boolean,
-    content: @Composable () -> Unit
+    content: @Composable ColumnScope.() -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -603,7 +665,7 @@ private fun InstanceOptionsTabScaffold(
 
 @Composable
 context(eventSink: EventSink<InstanceOptionsEvent>)
-private fun InstanceGeneralOptionsSection(instance: InstanceView, state: InstanceOptionsState) {
+private fun ColumnScope.InstanceGeneralOptionsSection(instance: InstanceView, state: InstanceOptionsState) {
     AppTextField(
         label = stringResource(InstanceRes.string.instanceName) + if (state.isNameEdited) "*" else "",
         initialValue = state.editedInstance.name ?: instance.name,
@@ -621,7 +683,7 @@ private fun InstanceGeneralOptionsSection(instance: InstanceView, state: Instanc
     }
 
     AppAnimatedVisibility(
-        visible = instance.modpackInfo == null || advancedOptionsUnlocked
+        visible = instance.modpackInfo == null || advancedOptionsUnlocked,
     ) {
         Column(
             modifier = Modifier.fillMaxWidth(),
@@ -1037,7 +1099,7 @@ private fun InstalledContentFileList(
             openFolderLabel = openFolderLabel,
             contentFolder = contentFolder,
             onAddClick = onAddClick,
-            onOpenFolder = onOpenFolder
+            onOpenFolder = onOpenFolder,
         )
 
         val filteredFiles = files?.filteredAndSorted(searchQuery, showOnlyEnabled, sortBy)
@@ -1046,9 +1108,7 @@ private fun InstalledContentFileList(
             filteredFiles = filteredFiles,
             emptyMessage = emptyMessage,
             listState = listState,
-            onOpenProject = onOpenProject,
-            addLabel = addLabel,
-            onAddClick = onAddClick
+            onOpenProject = onOpenProject
         )
     }
 }
@@ -1077,6 +1137,15 @@ private fun InstalledContentFileListHeader(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        if (addEnabled) {
+            AppIconTextButton(
+                onClick = onAddClick,
+                text = stringResource(addLabel),
+                imageVector = Lucide.Plus,
+                backgroundColor = Theme[colors][primary],
+                contentColor = Theme[colors][onPrimary],
+            )
+        }
         AppSearchField(
             initialValue = searchQuery,
             onValueChange = onSearchQueryChange,
@@ -1177,25 +1246,15 @@ private fun InstalledContentFileListBody(
     filteredFiles: List<InstalledContentFileView>?,
     emptyMessage: StringResource,
     listState: LazyListState,
-    onOpenProject: (platformId: String, projectId: String) -> Unit,
-    addLabel: StringResource,
-    onAddClick: () -> Unit
+    onOpenProject: (platformId: String, projectId: String) -> Unit
 ) {
     when {
         files == null -> AppLoading()
-        files.isEmpty() -> Column(
+        files.isEmpty() -> Box(
             modifier = Modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically)
+            contentAlignment = Alignment.Center
         ) {
             AppText(stringResource(emptyMessage))
-            AppIconTextButton(
-                onClick = onAddClick,
-                text = stringResource(addLabel),
-                imageVector = Lucide.Plus,
-                backgroundColor = Theme[colors][primary],
-                contentColor = Theme[colors][onPrimary],
-            )
         }
 
         filteredFiles.isNullOrEmpty() -> AppText(stringResource(InstanceRes.string.noMatchingFiles))

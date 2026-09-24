@@ -19,6 +19,7 @@ import coil3.network.ktor3.KtorNetworkFetcherFactory
 import coil3.util.Logger
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.MountainSnow
+import com.hashsequence.coilresvg.ResvgDecoder
 import com.slack.circuit.foundation.CircuitCompositionLocals
 import com.slack.circuit.foundation.CircuitContent
 import dev.nucleusframework.application.DecoratedWindow
@@ -122,7 +123,8 @@ private fun NucleusApplicationScope.MainApp(appGraph: AppGraph, rootUnreachable:
         ImageLoader.Builder(it)
             .logger(Slf4jCoilLogger())
             .components {
-                KtorNetworkFetcherFactory(appGraph.httpClient)
+                add(KtorNetworkFetcherFactory(appGraph.httpClient))
+                add(ResvgDecoder.Factory())
             }
             .diskCache(
                 DiskCache.Builder()

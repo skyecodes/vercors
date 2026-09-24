@@ -49,7 +49,11 @@ class ObserveHomeSectionListUseCase(
             .transform { (platformId, categories) -> loadFeaturedProjectList(platformId, categories) }
             .distinctUntilChanged()
         val instanceFlow = observeInstanceList()
-            .map { res -> res.map { list -> list.filterIsRight().sortedBy { it.instance.lastPlayedAt }.take(10) } }
+            .map { res ->
+                res.map { list ->
+                    list.filterIsRight().sortedByDescending { it.instance.lastPlayedAt }.take(10)
+                }
+            }
             .distinctUntilChanged()
 
         return combine(configFlow, projectListFlow, instanceFlow) { (_, categories), projectList, instances ->

@@ -56,6 +56,7 @@ dependencies {
     commonMainImplementation(libs.coil.compose)
     commonMainImplementation(libs.coil.network.ktor3)
     //commonMainImplementation(libs.coil.gif)
+    commonMainImplementation(libs.coil.resvg)
     commonMainImplementation(libs.cryptography.provider.optimal)
     commonMainImplementation(libs.logback)
     commonMainImplementation(libs.kotlinx.io.core)
