@@ -90,7 +90,7 @@ fun <T> AppRadioGroupScope.AppRadioButton(
     AppRadioButton(
         value = value,
         modifier = modifier
-            .pointerHoverIcon(if (enabled) PointerIcon.Hand else PointerIcon.Default)
+            .then(if (enabled) Modifier.pointerHoverIcon(PointerIcon.Hand) else Modifier)
             .clip(RoundedCornerShape(4.dp)),
         enabled = enabled,
         indication = LocalIndication.current,

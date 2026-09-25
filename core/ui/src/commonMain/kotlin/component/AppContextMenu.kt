@@ -84,7 +84,7 @@ private fun AppContextMenuItemRow(item: ContextMenuItem, onClick: () -> Unit) {
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable(enabled = item.enabled, onClick = onClick)
-                .pointerHoverIcon(PointerIcon.Hand, true)
+                .then(if (item.enabled) Modifier.pointerHoverIcon(PointerIcon.Hand, true) else Modifier)
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically,

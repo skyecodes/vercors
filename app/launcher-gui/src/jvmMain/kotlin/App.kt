@@ -6,8 +6,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.*
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
@@ -147,6 +149,11 @@ private fun AppMainContent(
                 ContentWithOverlays(modifier = Modifier.fillMaxSize()) {
                     Column(
                         modifier = Modifier.fillMaxSize().background(Theme[colors][backgroundAlt])
+                            .pointerInput(navigator) {
+                                awaitPointerEventScope {
+                                    manageNavigationButtons(navigator)
+                                }
+                            }
                     ) {
                         AppTopBar(
                             canGoBack = navStack.currentRecord != navStack.rootRecord,
@@ -173,6 +180,20 @@ private fun AppMainContent(
                 )
             }
         }
+    }
+}
+
+@OptIn(ExperimentalComposeUiApi::class)
+private suspend fun AwaitPointerEventScope.manageNavigationButtons(navigator: Navigator) {
+    while (true) {
+        val event = awaitPointerEvent(PointerEventPass.Initial)
+        if (event.type != PointerEventType.Press) continue
+        when (event.button) {
+            PointerButton.Back -> navigator.backward()
+            PointerButton.Forward -> navigator.forward()
+            else -> continue
+        }
+        event.changes.forEach { it.consume() }
     }
 }
 

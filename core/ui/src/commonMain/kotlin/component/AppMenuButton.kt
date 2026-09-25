@@ -75,7 +75,7 @@ fun AppMenuItem(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .pointerHoverIcon(PointerIcon.Hand, true)
+                    .then(if (enabled) Modifier.pointerHoverIcon(PointerIcon.Hand, true) else Modifier)
                     .padding(horizontal = 16.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
