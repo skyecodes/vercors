@@ -38,7 +38,7 @@ coil-resvg = "1.1.2"
 markdown-renderer = "0.45.0"
 webview = "2.0.3"
 nucleusframework = "2.6.0-dev-202609281230"
-composenativetray = "2.1.6"
+composenativetray = "2.1.7"
 filekit = "0.16.0"
 # CLI
 clikt = "5.1.0"
