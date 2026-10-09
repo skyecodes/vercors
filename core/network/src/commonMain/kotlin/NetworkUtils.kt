@@ -2,7 +2,6 @@ package app.vercors.core.network
 
 import arrow.core.raise.Raise
 import arrow.core.raise.catch
-import arrow.core.raise.context.ensure
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.plugins.*
 import io.ktor.client.statement.*
@@ -46,13 +45,6 @@ private suspend fun convertToRemoteError(response: HttpResponse) =
         in 500..599 -> RemoteError.Http.Server(status, response.bodyAsText())
         else -> RemoteError.Http.Other(status, response.bodyAsText())
     }
-
-
-context(err: Raise<RemoteError>)
-suspend fun <T> makeMetaApiRequest(callProducer: suspend () -> T): T {
-    ensure(MetaApiConnectivity.isReachable.value) { RemoteError.Network }
-    return makeRequest(callProducer)
-}
 
 sealed interface RemoteError {
     data object Network : RemoteError

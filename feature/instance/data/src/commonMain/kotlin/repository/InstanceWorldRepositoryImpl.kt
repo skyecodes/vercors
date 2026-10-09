@@ -1,6 +1,6 @@
 package app.vercors.feature.instance.data.repository
 
-import app.vercors.feature.instance.data.worlds.InstanceWorldScannerService
+import app.vercors.feature.instance.data.worlds.InstanceWorldScanner
 import app.vercors.feature.instance.domain.model.ImportError
 import app.vercors.feature.instance.domain.model.InstalledWorld
 import app.vercors.feature.instance.domain.model.InstanceId
@@ -14,17 +14,17 @@ import opensavvy.state.coroutines.ProgressiveFlow
 @SingleIn(AppScope::class)
 @ContributesBinding(AppScope::class)
 class InstanceWorldRepositoryImpl(
-    private val scannerService: InstanceWorldScannerService
+    private val scanner: InstanceWorldScanner
 ) : InstanceWorldRepository {
     override fun observeInstalledWorlds(instanceId: InstanceId): ProgressiveFlow<Nothing, List<InstalledWorld>> =
-        scannerService.observe(instanceId)
+        scanner.observe(instanceId)
 
     override suspend fun removeWorld(instanceId: InstanceId, folderName: String): Unit =
-        scannerService.removeWorld(instanceId, folderName)
+        scanner.removeWorld(instanceId, folderName)
 
     context(_: Raise<ImportError>)
     override suspend fun importWorld(instanceId: InstanceId, sourcePath: String): Unit =
-        scannerService.importWorld(instanceId, sourcePath)
+        scanner.importWorld(instanceId, sourcePath)
 
-    override suspend fun refreshInstalledWorlds(instanceId: InstanceId): Unit = scannerService.refresh(instanceId)
+    override suspend fun refreshInstalledWorlds(instanceId: InstanceId): Unit = scanner.refresh(instanceId)
 }

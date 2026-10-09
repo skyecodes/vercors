@@ -6,6 +6,7 @@ import app.vercors.feature.instance.domain.model.localimport.PrismInstanceInfo
 import app.vercors.feature.instance.domain.repository.PrismInstanceImportRepository
 import arrow.core.raise.Raise
 import dev.zacsweers.metro.Inject
+import opensavvy.progress.Progress
 
 @Inject
 class ImportPrismInstanceFilesUseCase(
@@ -16,6 +17,6 @@ class ImportPrismInstanceFilesUseCase(
         sourcePath: String,
         instanceId: InstanceId,
         info: PrismInstanceInfo,
-        onProgress: (Float?) -> Unit = {}
+        onProgress: (Progress) -> Unit = {}
     ): String? = prismInstanceImportRepository.importGameFiles(sourcePath, instanceId, info, onProgress)
 }

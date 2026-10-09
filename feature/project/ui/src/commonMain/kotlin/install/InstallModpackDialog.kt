@@ -5,11 +5,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import app.vercors.feature.instance.domain.model.InstanceId
 import app.vercors.feature.instance.domain.usecase.*
-import app.vercors.feature.instance.ui.install.ModpackInstallRunner
 import app.vercors.feature.project.domain.model.ProjectId
 import app.vercors.feature.project.domain.usecase.GetModpackManifestUseCase
 import app.vercors.feature.project.domain.usecase.GetProjectFilesUseCase
 import app.vercors.feature.project.domain.usecase.GetProjectUseCase
+import app.vercors.feature.project.domain.usecase.RunModpackInstallUseCase
 import app.vercors.shared.ui.SnackbarService
 import app.vercors.shared.ui.overlay.DialogOverlay
 import com.slack.circuit.overlay.OverlayNavigator
@@ -37,7 +37,7 @@ class InstallModpackDialog(
     private val deleteInstance: DeleteInstanceUseCase,
     private val updateInstanceStatus: UpdateInstanceStatusUseCase,
     private val updateInstanceJob: UpdateInstanceJobUseCase,
-    private val modpackInstallRunner: ModpackInstallRunner,
+    private val runModpackInstall: RunModpackInstallUseCase,
     private val snackbarService: SnackbarService
 ) : DialogOverlay<InstallModpackResult>() {
     @Composable
@@ -59,7 +59,7 @@ class InstallModpackDialog(
                 deleteInstance = deleteInstance,
                 updateInstanceStatus = updateInstanceStatus,
                 updateInstanceJob = updateInstanceJob,
-                modpackInstallRunner = modpackInstallRunner,
+                runModpackInstall = runModpackInstall,
                 snackbarService = snackbarService
             )
         }

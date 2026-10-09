@@ -11,8 +11,8 @@ import app.vercors.feature.config.domain.repository.ConfigurationRepository
 import app.vercors.feature.game.api.Game
 import app.vercors.feature.java.data.dto.MojangJavaInfo
 import app.vercors.feature.java.data.dto.MojangJavaManifest
-import app.vercors.feature.java.data.service.probeJavaExecutable
-import app.vercors.feature.java.data.service.toJavaMajorVersion
+import app.vercors.feature.java.data.probeJavaExecutable
+import app.vercors.feature.java.data.toJavaMajorVersion
 import app.vercors.feature.java.domain.model.JavaRuntimeError
 import app.vercors.feature.java.domain.model.JavaRuntimeInstallStatus
 import app.vercors.feature.java.domain.repository.JavaRuntimeRepository

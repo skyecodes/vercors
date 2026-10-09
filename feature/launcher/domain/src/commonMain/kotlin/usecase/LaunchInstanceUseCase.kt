@@ -10,7 +10,7 @@ import app.vercors.feature.account.domain.usecase.ValidateTokenUseCase
 import app.vercors.feature.game.domain.model.GameAssetIndex
 import app.vercors.feature.game.domain.model.GameVersionDetails
 import app.vercors.feature.game.domain.repository.GameRepository
-import app.vercors.feature.game.domain.service.ModLoaderInstallerService
+import app.vercors.feature.game.domain.usecase.ResolveModLoaderUseCase
 import app.vercors.feature.instance.domain.model.Instance
 import app.vercors.feature.instance.domain.model.InstanceId
 import app.vercors.feature.instance.domain.model.InstanceLogEvent
@@ -26,6 +26,7 @@ import app.vercors.feature.launcher.domain.service.LauncherService
 import app.vercors.shared.domain.model.JvmMemoryOptions
 import app.vercors.shared.domain.model.NativeLibraryOptions
 import arrow.core.getOrElse
+import arrow.core.raise.DelicateRaiseApi
 import arrow.core.raise.Raise
 import arrow.core.raise.RaiseCancellationException
 import arrow.core.raise.context.either
@@ -53,7 +54,7 @@ class LaunchInstanceUseCase(
     private val validateTokenUseCase: ValidateTokenUseCase,
     private val refreshTokenUseCase: RefreshTokenUseCase,
     private val gameRepository: GameRepository,
-    private val modLoaderInstallerService: ModLoaderInstallerService,
+    private val resolveModLoader: ResolveModLoaderUseCase,
     private val resolveJavaInstallation: ResolveJavaInstallationUseCase,
     private val resolveJvmMemoryOptions: ResolveJvmMemoryOptionsUseCase,
     private val resolveNativeLibraryOptions: ResolveNativeLibraryOptionsUseCase,
@@ -61,6 +62,7 @@ class LaunchInstanceUseCase(
     private val updateInstance: UpdateInstanceUseCase,
     private val coroutineScope: CoroutineScope,
 ) {
+    @OptIn(DelicateRaiseApi::class)
     context(_: Raise<InstanceLaunchError>)
     suspend operator fun invoke(instanceId: InstanceId, quickPlayTarget: QuickPlayTarget? = null) {
         val job = coroutineScope.async { prepareInstance(instanceId) }
@@ -255,7 +257,7 @@ class LaunchInstanceUseCase(
                 instanceId,
                 InstanceStatus.Launching.InstallingLoader(modLoader.type)
             )
-            either { modLoaderInstallerService.resolve(vanillaVersion, modLoader.type, modLoader.version) }
+            either { resolveModLoader(vanillaVersion, modLoader.type, modLoader.version) }
                 .getOrElse {
                     instanceRepository.updateInstanceStatus(instanceId, InstanceStatus.Idle)
                     raise(InstanceLaunchError.ModLoaderInstall(it))

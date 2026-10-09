@@ -5,7 +5,6 @@ import app.vercors.core.domain.toFractionOrNull
 import app.vercors.core.ui.state.mutableProgressiveStateOf
 import app.vercors.feature.instance.domain.model.*
 import app.vercors.feature.instance.domain.usecase.*
-import app.vercors.feature.instance.ui.install.ModpackInstallRunner
 import app.vercors.feature.instance.ui.install.notifyModpackInstallResult
 import app.vercors.feature.project.domain.model.ProjectDetailsError
 import app.vercors.feature.project.domain.model.ProjectId
@@ -14,6 +13,7 @@ import app.vercors.feature.project.domain.model.modpack.ModpackResolutionError
 import app.vercors.feature.project.domain.usecase.GetModpackManifestUseCase
 import app.vercors.feature.project.domain.usecase.GetProjectFilesUseCase
 import app.vercors.feature.project.domain.usecase.GetProjectUseCase
+import app.vercors.feature.project.domain.usecase.RunModpackInstallUseCase
 import app.vercors.feature.project.ui.message
 import app.vercors.shared.ui.Presenter
 import app.vercors.shared.ui.SnackbarService
@@ -29,6 +29,7 @@ import opensavvy.state.ExperimentalProgressiveRaiseApi
 import opensavvy.state.arrow.progressive
 import opensavvy.state.progressive.ProgressiveOutcome
 import opensavvy.state.progressive.valueOrNull
+import app.vercors.feature.instance.ui.message as manualDownloadMessage
 
 private val logger = KotlinLogging.logger {}
 
@@ -45,7 +46,7 @@ class InstallModpackPresenter(
     private val deleteInstance: DeleteInstanceUseCase,
     private val updateInstanceStatus: UpdateInstanceStatusUseCase,
     private val updateInstanceJob: UpdateInstanceJobUseCase,
-    private val modpackInstallRunner: ModpackInstallRunner,
+    private val runModpackInstall: RunModpackInstallUseCase,
     private val snackbarService: SnackbarService
 ) : Presenter<InstallModpackState, InstallModpackEvent> {
     @OptIn(ExperimentalProgressiveRaiseApi::class)
@@ -169,10 +170,11 @@ class InstallModpackPresenter(
             // Child of `job`, not `globalScope`, so it's cancelled automatically if the install is rolled back.
             launch { fetchAndApplyProjectIcon(instance) }
 
-            val ok = modpackInstallRunner.run(
+            val ok = runModpackInstall(
                 instanceId = instance.id,
                 modpackInfo = InstanceModpackInfo(manifest.platformId, manifest.projectId, manifest.fileId),
                 initialManifest = manifest,
+                onManualDownloadError = { error -> snackbarService.error { error.manualDownloadMessage } },
             )
             updateInstanceStatus(instance.id, if (ok) InstanceStatus.Idle else InstanceStatus.Failed.InstallFailed)
             notifyModpackInstallResult(instanceName, ok)

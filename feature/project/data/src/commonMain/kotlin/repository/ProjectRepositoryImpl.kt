@@ -2,8 +2,8 @@ package app.vercors.feature.project.data.repository
 
 import app.vercors.core.domain.Page
 import app.vercors.core.filesystem.*
+import app.vercors.core.network.MetaApiConnectivity
 import app.vercors.core.network.RemoteError
-import app.vercors.core.network.makeMetaApiRequest
 import app.vercors.core.system.SystemService
 import app.vercors.feature.game.domain.model.ModLoaderType
 import app.vercors.feature.project.api.PlatformFiles
@@ -64,6 +64,7 @@ private const val STABLE_POLL_THRESHOLD = 3
 @ContributesBinding(AppScope::class)
 class ProjectRepositoryImpl(
     private val httpClient: HttpClient,
+    private val metaApiConnectivity: MetaApiConnectivity,
     private val json: Json,
     private val appPaths: AppPaths,
     private val fileValidationService: FileValidationService,
@@ -74,7 +75,7 @@ class ProjectRepositoryImpl(
     context(_: Raise<PlatformError>)
     override suspend fun getPlatformList(): List<ProjectPlatform> =
         withError(RemoteError::toPlatformError) {
-            makeMetaApiRequest {
+            metaApiConnectivity.request {
                 httpClient.request(
                     endpoint = ApiV1 / Platforms / Platforms.list,
                     configure = { expectSuccess = false }
@@ -90,7 +91,7 @@ class ProjectRepositoryImpl(
         platformId: PlatformId
     ): FeaturedProjectList =
         withError<PlatformError, RemoteError, _>(RemoteError::toPlatformError) {
-            makeMetaApiRequest {
+            metaApiConnectivity.request {
                 httpClient.request(
                     endpoint = ApiV1 / Platforms / Platforms.PlatformId(platformId) / Platforms.PlatformId.featuredProjects,
                     configure = { expectSuccess = false }
@@ -118,7 +119,7 @@ class ProjectRepositoryImpl(
         pageSize: Int?,
         offset: Int?
     ): Page<BriefProject> = withError(RemoteError::toPlatformError) {
-        makeMetaApiRequest {
+        metaApiConnectivity.request {
             httpClient.request(
                 endpoint = ApiV1 / Platforms / Platforms.PlatformId(platformId) / Projects / Projects.search,
                 parameters = {
@@ -148,7 +149,7 @@ class ProjectRepositoryImpl(
     override suspend fun getProject(
         projectId: ProjectId
     ): Project = withError(RemoteError::toPlatformError) {
-        makeMetaApiRequest {
+        metaApiConnectivity.request {
             httpClient.request(
                 endpoint = ApiV1 / Platforms / Platforms.PlatformId(projectId.platform) / Projects / Projects.ProjectId(
                     projectId.id
@@ -173,7 +174,7 @@ class ProjectRepositoryImpl(
         gameVersion: String?,
         loader: ModLoaderType?
     ): List<ProjectFile> = withError(RemoteError::toPlatformError) {
-        makeMetaApiRequest {
+        metaApiConnectivity.request {
             httpClient.request(
                 endpoint = ApiV1 / Platforms / Platforms.PlatformId(projectId.platform) / Projects / Projects.ProjectId(
                     projectId.id
@@ -258,7 +259,7 @@ class ProjectRepositoryImpl(
     context(_: Raise<ProjectDetailsError>)
     override suspend fun getProjectFile(projectId: ProjectId, fileId: String): ProjectFile =
         withError(RemoteError::toPlatformError) {
-            makeMetaApiRequest {
+            metaApiConnectivity.request {
                 httpClient.request(
                     endpoint = ApiV1 / Platforms / Platforms.PlatformId(projectId.platform) / Projects / Projects.ProjectId(
                         projectId.id
@@ -280,7 +281,7 @@ class ProjectRepositoryImpl(
     context(_: Raise<ProjectDetailsError>)
     override suspend fun getProjectFilesByIds(platformId: PlatformId, fileIds: List<String>): List<ProjectFile> =
         withError(RemoteError::toPlatformError) {
-            makeMetaApiRequest {
+            metaApiConnectivity.request {
                 httpClient.request(
                     endpoint = ApiV1 / Platforms / Platforms.PlatformId(platformId) / PlatformFiles / PlatformFiles.list,
                     parameters = { this.fileIds = fileIds },

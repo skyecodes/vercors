@@ -1,9 +1,9 @@
 package app.vercors.feature.instance.data.repository
 
-import app.vercors.feature.instance.data.content.ContentDirScannerService
-import app.vercors.feature.instance.data.content.InstanceResourcePackScannerService
-import app.vercors.feature.instance.data.content.InstanceShaderPackScannerService
-import app.vercors.feature.instance.data.mods.InstanceModScannerService
+import app.vercors.feature.instance.data.content.ContentDirScanner
+import app.vercors.feature.instance.data.content.InstanceResourcePackScanner
+import app.vercors.feature.instance.data.content.InstanceShaderPackScanner
+import app.vercors.feature.instance.data.mods.InstanceModScanner
 import app.vercors.feature.instance.domain.model.ContentKind
 import app.vercors.feature.instance.domain.model.ImportError
 import app.vercors.feature.instance.domain.model.InstalledContentFile
@@ -18,9 +18,9 @@ import opensavvy.state.coroutines.ProgressiveFlow
 @SingleIn(AppScope::class)
 @ContributesBinding(AppScope::class)
 class InstanceContentRepositoryImpl(
-    private val modScannerService: InstanceModScannerService,
-    private val resourcePackScannerService: InstanceResourcePackScannerService,
-    private val shaderPackScannerService: InstanceShaderPackScannerService
+    private val modScanner: InstanceModScanner,
+    private val resourcePackScanner: InstanceResourcePackScanner,
+    private val shaderPackScanner: InstanceShaderPackScanner
 ) : InstanceContentRepository {
     override fun observeInstalledContent(
         kind: ContentKind,
@@ -52,9 +52,9 @@ class InstanceContentRepositoryImpl(
 
     override suspend fun refresh(kind: ContentKind, instanceId: InstanceId): Unit = scannerFor(kind).refresh(instanceId)
 
-    private fun scannerFor(kind: ContentKind): ContentDirScannerService = when (kind) {
-        ContentKind.Mod -> modScannerService
-        ContentKind.ResourcePack -> resourcePackScannerService
-        ContentKind.ShaderPack -> shaderPackScannerService
+    private fun scannerFor(kind: ContentKind): ContentDirScanner = when (kind) {
+        ContentKind.Mod -> modScanner
+        ContentKind.ResourcePack -> resourcePackScanner
+        ContentKind.ShaderPack -> shaderPackScanner
     }
 }

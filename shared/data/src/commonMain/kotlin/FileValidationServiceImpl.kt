@@ -2,8 +2,8 @@ package app.vercors.shared.data
 
 import app.vercors.core.cryptography.CryptographyService
 import app.vercors.core.filesystem.*
+import app.vercors.core.network.MetaApiConnectivity
 import app.vercors.core.network.RemoteError
-import app.vercors.core.network.makeMetaApiRequest
 import app.vercors.core.network.makeRequest
 import arrow.core.NonEmptyList
 import arrow.core.raise.ExperimentalRaiseAccumulateApi
@@ -42,6 +42,7 @@ class FileValidationServiceImpl(
     private val cryptographyService: CryptographyService,
     private val json: Json,
     private val httpClient: HttpClient,
+    private val metaApiConnectivity: MetaApiConnectivity,
     private val appPaths: AppPaths,
 ) : FileValidationService {
     @OptIn(ExperimentalRaiseAccumulateApi::class, ExperimentalAtomicApi::class)
@@ -135,7 +136,7 @@ class FileValidationServiceImpl(
         val tempPath = Path("$path.tmp")
         try {
             if (this is FileValidationRequest.Channel) {
-                makeMetaApiRequest {
+                metaApiConnectivity.request {
                     source.request(httpClient).use {
                         tempPath.writeFromSource(it)
                     }

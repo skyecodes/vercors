@@ -14,10 +14,5 @@ dependencies {
     commonMainImplementation(libs.ktor.serialization.kotlinx.json)
     jvmMainImplementation(libs.ktor.client.cio)
     jvmMainImplementation(libs.nucleus.native.http.ktor)
-}
-
-kotlin {
-    sourceSets.nativeMain.dependencies {
-        implementation(libs.ktor.client.curl)
-    }
+    nativeMainImplementation(libs.ktor.client.curl)
 }

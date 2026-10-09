@@ -8,7 +8,7 @@ import app.vercors.core.system.SystemService
 import app.vercors.feature.config.domain.model.Configuration
 import app.vercors.feature.config.domain.model.ConfigurationError
 import app.vercors.feature.config.domain.repository.ConfigurationRepository
-import app.vercors.feature.java.data.service.probeJavaExecutable
+import app.vercors.feature.java.data.probeJavaExecutable
 import app.vercors.feature.java.domain.model.JavaInstallationError
 import app.vercors.feature.java.domain.model.JavaProbeResult
 import app.vercors.feature.java.domain.repository.JavaRepository

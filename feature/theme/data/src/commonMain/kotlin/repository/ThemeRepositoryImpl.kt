@@ -2,10 +2,10 @@ package app.vercors.feature.theme.data.repository
 
 import app.vercors.core.domain.ProgressiveStateFlow
 import app.vercors.core.domain.progressiveStateIn
+import app.vercors.feature.theme.data.ThemeError
 import app.vercors.feature.theme.data.datasource.BuiltinThemeDataSource
 import app.vercors.feature.theme.data.datasource.CustomThemeDataSource
-import app.vercors.feature.theme.data.mapper.ThemeError
-import app.vercors.feature.theme.data.mapper.toDomain
+import app.vercors.feature.theme.data.toDomain
 import app.vercors.feature.theme.domain.model.ThemeCatalog
 import app.vercors.feature.theme.domain.model.ThemeDefinition
 import app.vercors.feature.theme.domain.model.ThemeSource

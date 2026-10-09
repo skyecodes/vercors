@@ -23,7 +23,8 @@ import app.vercors.feature.instance.ui.details.logs.InstanceLogsPresenter
 import app.vercors.feature.instance.ui.details.options.InstanceOptionsPresenter
 import app.vercors.feature.instance.ui.details.servers.InstanceServersPresenter
 import app.vercors.feature.instance.ui.details.worlds.InstalledWorldsPresenter
-import app.vercors.feature.instance.ui.install.*
+import app.vercors.feature.instance.ui.install.FinishInstallationDialog
+import app.vercors.feature.instance.ui.install.notifyModpackInstallResult
 import app.vercors.feature.instance.ui.list.InstanceListScreen
 import app.vercors.feature.java.domain.model.JavaRuntimeInstallStatus
 import app.vercors.feature.java.domain.usecase.InstallJavaRuntimeUseCase
@@ -36,8 +37,11 @@ import app.vercors.feature.launcher.domain.usecase.LaunchInstanceUseCase
 import app.vercors.feature.launcher.domain.usecase.StopInstanceUseCase
 import app.vercors.feature.project.domain.model.ProjectDetailsError
 import app.vercors.feature.project.domain.model.from
-import app.vercors.feature.project.domain.usecase.AwaitManualDownloadUseCase
+import app.vercors.feature.project.domain.model.toManualDownloadCandidate
 import app.vercors.feature.project.domain.usecase.GetProjectUseCase
+import app.vercors.feature.project.domain.usecase.RunManualDownloadsUseCase
+import app.vercors.feature.project.domain.usecase.RunModpackInstallUseCase
+import app.vercors.feature.project.domain.usecase.TrackPendingManualDownloadsUseCase
 import app.vercors.feature.project.ui.details.ProjectDetailsScreen
 import app.vercors.feature.project.ui.list.ProjectListScreen
 import app.vercors.shared.domain.usecase.CopyToClipboardUseCase
@@ -82,17 +86,15 @@ class InstanceDetailsPresenter(
     private val killInstance: KillInstanceUseCase,
     private val deleteInstance: DeleteInstanceUseCase,
     private val snackbarService: SnackbarService,
-    private val updateInstance: UpdateInstanceUseCase,
     private val installJavaRuntime: InstallJavaRuntimeUseCase,
     private val observeJavaRuntimeInstallProgress: ObserveJavaRuntimeInstallProgressUseCase,
     private val observeManualDownloadItems: ObserveManualDownloadItemsUseCase,
-    private val updateManualDownloadItems: UpdateManualDownloadItemsUseCase,
-    private val awaitManualDownload: AwaitManualDownloadUseCase,
-    private val recordInstalledContentOrigin: RecordInstalledContentOriginUseCase,
     private val updateInstanceJob: UpdateInstanceJobUseCase,
     private val updateInstanceStatus: UpdateInstanceStatusUseCase,
     private val hasActiveInstanceJob: HasActiveInstanceJobUseCase,
-    private val modpackInstallRunner: ModpackInstallRunner,
+    private val runModpackInstall: RunModpackInstallUseCase,
+    private val runManualDownloads: RunManualDownloadsUseCase,
+    private val trackPendingManualDownloads: TrackPendingManualDownloadsUseCase,
     private val login: LoginUseCase,
     private val copyToClipboard: CopyToClipboardUseCase,
     private val setInstanceIcon: SetInstanceIconUseCase,
@@ -362,7 +364,12 @@ class InstanceDetailsPresenter(
 
         val instanceId = screen.instanceId
         val job = globalScope.launch {
-            val ok = modpackInstallRunner.run(instanceId, modpackInfo, initialManifest = null)
+            val ok = runModpackInstall(
+                instanceId = instanceId,
+                modpackInfo = modpackInfo,
+                initialManifest = null,
+                onManualDownloadError = { error -> snackbarService.error { error.message } },
+            )
             updateInstanceStatus(instanceId, if (ok) InstanceStatus.Idle else InstanceStatus.Failed.InstallFailed)
             notifyModpackInstallResult(instance.name, ok)
         }
@@ -379,11 +386,9 @@ class InstanceDetailsPresenter(
         val candidates = instance.pendingManualDownloads.map { it.toManualDownloadCandidate(instanceId) }
         val job = globalScope.launch {
             val ok = runManualDownloads(
-                candidates, awaitManualDownload, recordInstalledContentOrigin, snackbarService
-            ) { items ->
-                updateManualDownloadItems(instanceId, items)
-                persistPendingManualDownloads(instanceId, candidates, items, updateInstance)
-            }
+                candidates = candidates,
+                onError = { error -> snackbarService.error { error.message } },
+            ) { items -> trackPendingManualDownloads(instanceId, candidates, items) }
             updateInstanceStatus(instanceId, if (ok) InstanceStatus.Idle else InstanceStatus.Failed.InstallFailed)
         }
         updateInstanceJob(instanceId, job)

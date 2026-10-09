@@ -3,6 +3,5 @@ plugins {
 }
 
 dependencies {
-    commonMainImplementation(libs.ktorfit.lib)
     commonMainImplementation(libs.kotlinx.serialization.json)
 }

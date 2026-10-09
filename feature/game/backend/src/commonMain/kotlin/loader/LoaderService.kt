@@ -15,12 +15,12 @@ import kotlinx.coroutines.coroutineScope
 @SingleIn(AppScope::class)
 @Inject
 class LoaderService(
-    private val fetchers: Map<String, LoaderFetcher>
+    private val loaderServices: Map<String, LoaderServiceBase>
 ) {
     context(_: Raise<LoaderErrorData>)
     suspend fun getAvailableLoaders(gameVersion: String): List<LoaderTypeData> = coroutineScope {
-        fetchers.entries.map { (id, fetcher) ->
-            async { id to fetcher.getVersions(gameVersion) }
+        loaderServices.entries.map { (id, service) ->
+            async { id to service.getVersions(gameVersion) }
         }.awaitAll()
             .filter { (_, versions) -> versions.isNotEmpty() }
             .map { (id, _) -> id.toLoaderTypeData() }
@@ -28,16 +28,17 @@ class LoaderService(
 
     context(_: Raise<LoaderErrorData>)
     suspend fun getLoaderVersions(gameVersion: String, loaderType: LoaderTypeData): List<LoaderVersionData> =
-        fetcherFor(loaderType).getVersions(gameVersion)
+        serviceFor(loaderType).getVersions(gameVersion)
             .sortedWith(compareBy(versionComparator) { it.version })
             .asReversed()
 
     context(_: Raise<LoaderErrorData>)
     suspend fun getInstallUrl(gameVersion: String, loaderType: LoaderTypeData, loaderVersion: String): String =
-        fetcherFor(loaderType).getInstallUrl(gameVersion, loaderVersion)
+        serviceFor(loaderType).getInstallUrl(gameVersion, loaderVersion)
 
     context(_: Raise<LoaderErrorData>)
-    private fun fetcherFor(loaderType: LoaderTypeData): LoaderFetcher = ensureNotNull(fetchers[loaderType.key]) {
-        LoaderErrorData("UnknownLoader", "Unknown loader type: $loaderType")
-    }
+    private fun serviceFor(loaderType: LoaderTypeData): LoaderServiceBase =
+        ensureNotNull(loaderServices[loaderType.key]) {
+            LoaderErrorData("UnknownLoader", "Unknown loader type: $loaderType")
+        }
 }

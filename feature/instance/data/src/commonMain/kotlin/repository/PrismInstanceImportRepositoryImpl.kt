@@ -19,6 +19,8 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
 import kotlinx.serialization.json.Json
+import opensavvy.progress.Progress
+import opensavvy.progress.loading
 import kotlin.uuid.Uuid
 
 private val TOP_LEVEL_INSTANCE_CFG_REGEX = Regex("""^([^/]+)/instance\.cfg$""")
@@ -67,7 +69,7 @@ class PrismInstanceImportRepositoryImpl(
         sourcePath: String,
         instanceId: String,
         info: PrismInstanceInfo,
-        onProgress: (Float?) -> Unit
+        onProgress: (Progress) -> Unit
     ): String? {
         val zipPath = Path(sourcePath)
         val gameDir = appPaths.gameDir(instanceId)
@@ -87,7 +89,7 @@ class PrismInstanceImportRepositoryImpl(
                     target.parent?.let { SystemFileSystem.createDirectories(it) }
                     entry.readToPath(target)
                     done++
-                    onProgress(if (total > 0) done.toFloat() / total else null)
+                    onProgress(if (total > 0) loading(done.toDouble() / total) else loading())
                 }
                 info.iconEntryPath?.let { iconEntryPath -> extractIconOrNull(zip, iconEntryPath) }
             }

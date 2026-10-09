@@ -4,6 +4,7 @@ plugins {
 }
 
 dependencies {
+    commonMainImplementation(projects.feature.account.api)
     commonMainImplementation(projects.core.system)
     commonMainImplementation(projects.core.filesystem)
     commonMainImplementation(libs.ktor.server.cio)

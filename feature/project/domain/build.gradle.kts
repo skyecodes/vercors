@@ -4,4 +4,5 @@ plugins {
 
 dependencies {
     commonMainApi(projects.feature.game.domain)
+    commonMainApi(projects.feature.instance.domain)
 }

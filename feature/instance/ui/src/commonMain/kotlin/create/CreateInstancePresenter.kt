@@ -276,7 +276,7 @@ class CreateInstancePresenter(
         var iconPath: String? = null
         val ok = recover({
             iconPath = importPrismInstanceFiles(preview.sourcePath, instanceId, preview.info) { progress ->
-                updateInstanceStatus(instanceId, InstanceStatus.Installing.ExtractingFiles(progress))
+                updateInstanceStatus(instanceId, InstanceStatus.Installing.ExtractingFiles(progress.toFractionOrNull()))
             }
             true
         }) { error: LocalImportError ->

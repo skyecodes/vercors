@@ -3,7 +3,7 @@ package app.vercors.launcher.gui
 import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.staticCompositionLocalOf
 import app.vercors.core.domain.AppConstants
-import app.vercors.core.network.MetaApiConnectivityPoller
+import app.vercors.core.network.MetaApiConnectivity
 import app.vercors.feature.instance.domain.usecase.CreateInstanceUseCase
 import app.vercors.feature.instance.domain.usecase.DeleteInstanceUseCase
 import app.vercors.feature.instance.domain.usecase.ObserveInstanceListUseCase
@@ -31,7 +31,7 @@ internal interface AppGraph {
     val appPaths: AppPaths
     val circuit: Circuit
     val snackbarService: SnackbarService
-    val metaApiConnectivityPoller: MetaApiConnectivityPoller
+    val metaApiConnectivity: MetaApiConnectivity
     val httpClient: HttpClient
     val observeInstanceList: ObserveInstanceListUseCase
     val createInstance: CreateInstanceUseCase

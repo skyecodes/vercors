@@ -1,8 +1,8 @@
 package app.vercors.feature.game.data.repository
 
 import app.vercors.core.filesystem.*
+import app.vercors.core.network.MetaApiConnectivity
 import app.vercors.core.network.RemoteError
-import app.vercors.core.network.makeMetaApiRequest
 import app.vercors.feature.game.api.Game
 import app.vercors.feature.game.api.Loaders
 import app.vercors.feature.game.api.dto.LoaderTypeData
@@ -49,6 +49,7 @@ private val logger = KotlinLogging.logger {}
 @ContributesBinding(AppScope::class)
 class LoaderRepositoryImpl(
     private val httpClient: HttpClient,
+    private val metaApiConnectivity: MetaApiConnectivity,
     private val json: Json,
     private val appPaths: AppPaths,
 ) : LoaderRepository {
@@ -62,7 +63,7 @@ class LoaderRepositoryImpl(
 
             either {
                 withError(RemoteError::toLoaderError) {
-                    makeMetaApiRequest {
+                    metaApiConnectivity.request {
                         httpClient.request(
                             endpoint = ApiV1 / Game / Game.GameVersionId(gameVersion) / Loaders / Loaders.list,
                             configure = { expectSuccess = false }
@@ -95,7 +96,7 @@ class LoaderRepositoryImpl(
 
         either {
             withError(RemoteError::toLoaderError) {
-                makeMetaApiRequest {
+                metaApiConnectivity.request {
                     httpClient.request(
                         endpoint = ApiV1 / Game / Game.GameVersionId(gameVersion) / Loaders /
                                 Loaders.LoaderId(loader.wireId()) / Loaders.LoaderId.versions,

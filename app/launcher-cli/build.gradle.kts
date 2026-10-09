@@ -30,16 +30,13 @@ dependencies {
     commonMainImplementation(libs.kotlinx.coroutines.core)
     commonMainImplementation(libs.cryptography.provider.optimal)
     jvmMainImplementation(libs.logback)
+    nativeMainImplementation(libs.kotlin.logging)
 }
 
 kotlin {
     sourceSets {
         commonMain.configure {
             kotlin.srcDir("build/generated/ksp/metadata/commonMain/kotlin")
-        }
-
-        nativeMain.dependencies {
-            implementation(libs.kotlin.logging)
         }
     }
 

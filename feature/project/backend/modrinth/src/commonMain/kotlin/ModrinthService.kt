@@ -3,7 +3,7 @@ package app.vercors.feature.project.backend.modrinth
 import app.vercors.feature.project.api.dto.*
 import app.vercors.feature.project.backend.PlatformInfo
 import app.vercors.feature.project.backend.PlatformServiceBase
-import app.vercors.feature.project.backend.bindResponse
+import app.vercors.shared.backend.bindResponse
 import arrow.core.raise.context.Raise
 import arrow.core.raise.context.ensureNotNull
 import dev.zacsweers.metro.AppScope

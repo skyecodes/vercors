@@ -7,6 +7,10 @@ import app.vercors.feature.game.domain.model.GameAssetIndex
 import app.vercors.feature.game.domain.model.GameVersionDetails
 import app.vercors.feature.instance.domain.model.Instance
 import app.vercors.feature.instance.domain.model.InstanceLogEvent
+import app.vercors.feature.launcher.data.launch.InstanceDependencyList
+import app.vercors.feature.launcher.data.launch.LaunchCommandBuilder
+import app.vercors.feature.launcher.data.launch.LaunchDependencyResolver
+import app.vercors.feature.launcher.data.launch.NativesExtractor
 import app.vercors.feature.launcher.domain.model.InstanceLaunchEvent
 import app.vercors.feature.launcher.domain.model.InstanceLaunchFeature
 import app.vercors.feature.launcher.domain.model.QuickPlayTarget

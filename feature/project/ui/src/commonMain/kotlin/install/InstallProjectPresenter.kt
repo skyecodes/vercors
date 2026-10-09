@@ -14,9 +14,6 @@ import app.vercors.feature.game.domain.usecase.ObserveLoaderVersionsUseCase
 import app.vercors.feature.game.ui.GameVersionView
 import app.vercors.feature.instance.domain.model.*
 import app.vercors.feature.instance.domain.usecase.*
-import app.vercors.feature.instance.ui.install.ManualDownloadCandidate
-import app.vercors.feature.instance.ui.install.runManualDownloads
-import app.vercors.feature.instance.ui.install.toContentKindOrNull
 import app.vercors.feature.instance.ui.observeAvailableLoadersView
 import app.vercors.feature.instance.ui.observeGameVersionListView
 import app.vercors.feature.instance.ui.observeLoaderVersionsView
@@ -40,6 +37,7 @@ import opensavvy.state.progressive.ProgressiveOutcome
 import opensavvy.state.progressive.map
 import opensavvy.state.progressive.valueOrNull
 import app.vercors.feature.instance.ui.message as instanceMessage
+import app.vercors.feature.instance.ui.message as manualDownloadMessage
 
 private val logger = KotlinLogging.logger {}
 
@@ -60,7 +58,7 @@ class InstallProjectPresenter(
     private val createInstance: CreateInstanceUseCase,
     private val setInstanceIconFromUrl: SetInstanceIconFromUrlUseCase,
     private val downloadProjectFiles: DownloadProjectFilesUseCase,
-    private val awaitManualDownload: AwaitManualDownloadUseCase,
+    private val runManualDownloads: RunManualDownloadsUseCase,
     private val installWorldFile: InstallWorldFileUseCase,
     private val awaitManualWorldDownload: AwaitManualWorldDownloadUseCase,
     private val recordInstalledContentOrigin: RecordInstalledContentOriginUseCase,
@@ -617,7 +615,7 @@ class InstallProjectPresenter(
                     providerFileId = candidate.file.id,
                 )
             },
-            awaitManualDownload, recordInstalledContentOrigin, snackbarService
+            onError = { error -> snackbarService.error { error.manualDownloadMessage } },
         ) { items ->
             onManualDownloadItemsChanged(items)
             onProgressChanged((autoCandidates.size + items.count { it.downloaded }).toFloat() / totalCount)

@@ -1,6 +1,7 @@
 package app.vercors.feature.project.backend.curseforge
 
-import app.vercors.feature.project.backend.PlatformResponseConverterFactory
+import app.vercors.feature.project.backend.defaultExceptionHandler
+import app.vercors.shared.backend.ApiResponseConverterFactory
 import app.vercors.shared.backend.platformEnv
 import de.jensklingenberg.ktorfit.Ktorfit
 import dev.zacsweers.metro.*
@@ -24,7 +25,7 @@ object CurseForgeBackendProviders {
                 header("x-api-key", curseForgeApiKey)
             }
         })
-        .converterFactories(PlatformResponseConverterFactory())
+        .converterFactories(ApiResponseConverterFactory(defaultExceptionHandler))
         .baseUrl("https://api.curseforge.com/")
         .build()
         .platformCreateCurseForgeApi()

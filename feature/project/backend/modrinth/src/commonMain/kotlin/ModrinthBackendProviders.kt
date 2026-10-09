@@ -1,8 +1,8 @@
 package app.vercors.feature.project.backend.modrinth
 
 import app.vercors.feature.project.api.dto.PlatformErrorData
-import app.vercors.feature.project.backend.PlatformResponseConverterFactory
 import app.vercors.feature.project.backend.defaultExceptionHandler
+import app.vercors.shared.backend.ApiResponseConverterFactory
 import de.jensklingenberg.ktorfit.Ktorfit
 import dev.zacsweers.metro.*
 import io.ktor.client.*
@@ -19,7 +19,7 @@ object ModrinthBackendProviders {
         httpClient: HttpClient
     ): ModrinthApi = Ktorfit.Builder()
         .httpClient(httpClient)
-        .converterFactories(PlatformResponseConverterFactory {
+        .converterFactories(ApiResponseConverterFactory {
             when (it) {
                 is ResponseException -> it.response.body<ModrinthError>().toPlatform()
                 else -> defaultExceptionHandler(it)

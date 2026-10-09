@@ -6,5 +6,7 @@ import de.jensklingenberg.ktorfit.http.Path
 
 interface MetaLoaderApi {
     @GET("versions/loader/{gameVersion}")
-    suspend fun getLoaderVersions(@Path("gameVersion") gameVersion: String): List<MetaLoaderVersionEntry>
+    suspend fun getLoaderVersions(
+        @Path("gameVersion") gameVersion: String
+    ): LoaderResponse<List<MetaLoaderVersionEntry>>
 }

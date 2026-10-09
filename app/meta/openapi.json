@@ -1295,12 +1295,12 @@
             "type": "string",
             "const": "app.vercors.feature.project.api.dto.PlatformNotFoundData"
           },
-          "platformId": {
+          "notFoundPlatformId": {
             "type": "string"
           }
         },
         "required": [
-          "platformId"
+          "notFoundPlatformId"
         ]
       },
       "ProjectNotFoundData": {
@@ -1310,16 +1310,16 @@
             "type": "string",
             "const": "app.vercors.feature.project.api.dto.ProjectNotFoundData"
           },
-          "projectId": {
+          "platformId": {
             "type": "string"
           },
-          "platformId": {
+          "notFoundProjectId": {
             "type": "string"
           }
         },
         "required": [
-          "projectId",
-          "platformId"
+          "platformId",
+          "notFoundProjectId"
         ]
       },
       "PlatformOrProjectNotFoundData": {
@@ -1343,12 +1343,12 @@
       "UnsupportedProjectTypeData": {
         "type": "object",
         "properties": {
-          "projectType": {
+          "unsupportedProjectType": {
             "$ref": "#/components/schemas/ProjectTypeData"
           }
         },
         "required": [
-          "projectType"
+          "unsupportedProjectType"
         ]
       },
       "LoaderErrorData": {
