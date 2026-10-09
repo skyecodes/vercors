@@ -29,12 +29,14 @@ interface InstanceRepository {
     suspend fun setInstanceIcon(instanceId: InstanceId, sourcePath: String)
 
     // Takes the full instance: the reactive instances map may lag behind a fresh write
-    suspend fun setInstanceIconFromUrl(instance: Instance, url: String): Boolean
+    context(_: Raise<InstanceIconError>)
+    suspend fun setInstanceIconFromUrl(instance: Instance, url: String)
 
     context(_: Raise<InstanceError>)
     suspend fun removeInstanceIcon(instanceId: InstanceId)
 
-    suspend fun openInstanceFolder(instanceId: InstanceId, folder: InstanceFolder): Boolean
+    context(_: Raise<InstanceFolderError>)
+    suspend fun openInstanceFolder(instanceId: InstanceId, folder: InstanceFolder)
 
     fun updateInstanceStatus(id: InstanceId, status: InstanceStatus)
 

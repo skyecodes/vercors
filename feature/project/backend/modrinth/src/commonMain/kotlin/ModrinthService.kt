@@ -3,6 +3,7 @@ package app.vercors.feature.project.backend.modrinth
 import app.vercors.feature.project.api.dto.*
 import app.vercors.feature.project.backend.PlatformInfo
 import app.vercors.feature.project.backend.PlatformServiceBase
+import app.vercors.shared.api.dto.InvalidParameterData
 import app.vercors.shared.backend.bindResponse
 import arrow.core.raise.context.Raise
 import arrow.core.raise.context.ensureNotNull
@@ -53,7 +54,7 @@ class ModrinthService(
                 .filterKeys { it == "categories" })
         }
 
-    context(_: Raise<UnsupportedProjectTypeData>, _: Raise<PlatformErrorData>)
+    context(_: Raise<InvalidParameterData>, _: Raise<PlatformErrorData>)
     override suspend fun search(
         projectType: ProjectTypeData?,
         loaders: List<ProjectLoaderData>?,

@@ -1,6 +1,7 @@
 package app.vercors.feature.project.backend
 
 import app.vercors.feature.project.api.dto.*
+import app.vercors.shared.api.dto.InvalidParameterData
 import arrow.core.raise.Raise
 
 interface PlatformServiceBase {
@@ -17,7 +18,7 @@ interface PlatformServiceBase {
     context(_: Raise<PlatformErrorData>)
     suspend fun getCategories(): Map<ProjectTypeData, Map<String, List<ProjectCategoryData>>>
 
-    context(_: Raise<UnsupportedProjectTypeData>, _: Raise<PlatformErrorData>)
+    context(_: Raise<InvalidParameterData>, _: Raise<PlatformErrorData>)
     suspend fun search(
         projectType: ProjectTypeData?,
         loaders: List<ProjectLoaderData>?,

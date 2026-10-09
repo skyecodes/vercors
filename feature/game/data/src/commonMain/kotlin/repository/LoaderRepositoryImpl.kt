@@ -14,6 +14,7 @@ import app.vercors.feature.game.domain.model.LoaderVersion
 import app.vercors.feature.game.domain.model.ModLoaderType
 import app.vercors.feature.game.domain.repository.LoaderRepository
 import app.vercors.shared.api.ApiV1
+import app.vercors.shared.api.dto.InvalidParameterData
 import app.vercors.shared.data.AppPaths
 import arrow.core.raise.context.either
 import arrow.core.raise.context.raise
@@ -105,6 +106,7 @@ class LoaderRepositoryImpl(
                 }
             }.handle(
                 handle1 = { raise(LoaderError(it.error, it.description)) },
+                handle2 = { raise(it.toLoaderError()) },
                 transform = { it }
             )
         }.fold(
@@ -154,3 +156,6 @@ private fun RemoteError.toLoaderError(): LoaderError = when (this) {
     RemoteError.Serialization -> LoaderError("serialization", "Received an unexpected response from the server")
     is RemoteError.Http -> LoaderError("http_$status", body)
 }
+
+private fun InvalidParameterData.toLoaderError(): LoaderError =
+    LoaderError("InvalidParameter", "Invalid value '$value' for parameter $name")

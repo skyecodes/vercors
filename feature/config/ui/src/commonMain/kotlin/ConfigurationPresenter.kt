@@ -26,10 +26,10 @@ import app.vercors.feature.theme.domain.model.ThemeDefinition
 import app.vercors.feature.theme.domain.model.ThemeNamedColor
 import app.vercors.feature.theme.domain.usecase.ObserveThemesUseCase
 import app.vercors.shared.data.AppPaths
+import app.vercors.shared.domain.model.DetectedNativeLibraries
 import app.vercors.shared.domain.model.JvmMemoryOptions
 import app.vercors.shared.domain.model.NativeLibraryOptions
-import app.vercors.shared.domain.model.NativeLibraryType
-import app.vercors.shared.domain.usecase.DetectNativeLibraryPathUseCase
+import app.vercors.shared.domain.usecase.DetectNativeLibrariesUseCase
 import app.vercors.shared.domain.usecase.GetTotalPhysicalMemoryMbUseCase
 import app.vercors.shared.ui.*
 import arrow.core.raise.context.either
@@ -60,7 +60,7 @@ class ConfigurationPresenter(
     private val addJavaInstallation: AddJavaInstallationUseCase,
     private val snackbarService: SnackbarService,
     private val getTotalPhysicalMemoryMb: GetTotalPhysicalMemoryMbUseCase,
-    private val detectNativeLibraryPath: DetectNativeLibraryPathUseCase,
+    private val detectNativeLibraries: DetectNativeLibrariesUseCase,
     private val systemService: SystemService,
     private val getContentCacheSize: GetContentCacheSizeUseCase,
     private val clearContentCache: ClearContentCacheUseCase,
@@ -80,13 +80,8 @@ class ConfigurationPresenter(
         val (javaScanInProgress, setJavaScanInProgress) = remember { mutableStateOf(false) }
         val totalMemoryMb = remember { getTotalPhysicalMemoryMb() }
         val showNativeLibraryOptions = systemService.osType == OsType.Linux
-        val (detectedGlfwPath, setDetectedGlfwPath) = remember { mutableStateOf<String?>(null) }
-        val (detectedOpenAlPath, setDetectedOpenAlPath) = remember { mutableStateOf<String?>(null) }
-        LaunchedEffect(showNativeLibraryOptions) {
-            if (showNativeLibraryOptions) {
-                setDetectedGlfwPath(detectNativeLibraryPath(NativeLibraryType.Glfw))
-                setDetectedOpenAlPath(detectNativeLibraryPath(NativeLibraryType.OpenAl))
-            }
+        val detectedNativeLibraries by produceState<DetectedNativeLibraries?>(null, showNativeLibraryOptions) {
+            if (showNativeLibraryOptions) value = detectNativeLibraries()
         }
         val (contentCacheSizeBytes, setContentCacheSizeBytes) = remember { mutableStateOf<Long?>(null) }
         LaunchedEffect(Unit) { setContentCacheSizeBytes(getContentCacheSize()) }
@@ -127,8 +122,8 @@ class ConfigurationPresenter(
             totalMemoryMb = totalMemoryMb,
             nativeLibraryOptions = nativeLibraryOptions,
             showNativeLibraryOptions = showNativeLibraryOptions,
-            detectedGlfwPath = detectedGlfwPath,
-            detectedOpenAlPath = detectedOpenAlPath,
+            detectedGlfwPath = detectedNativeLibraries?.glfwPath,
+            detectedOpenAlPath = detectedNativeLibraries?.openAlPath,
             contentCacheSizeBytes = contentCacheSizeBytes,
             promptClearContentCache = promptClearContentCache,
             dataDirectory = dataDirectory,

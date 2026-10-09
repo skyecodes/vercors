@@ -3,6 +3,7 @@ package app.vercors.feature.project.api
 import app.vercors.feature.project.api.dto.PlatformErrorData
 import app.vercors.feature.project.api.dto.PlatformOrProjectNotFoundData
 import app.vercors.feature.project.api.dto.ProjectFileData
+import app.vercors.shared.api.dto.InvalidParameterData
 import io.ktor.http.*
 import io.ktor.utils.io.*
 import opensavvy.spine.api.*
@@ -13,6 +14,7 @@ object ProjectFiles : StaticResource<Projects.ProjectId>("files", Projects.Proje
         .parameters(::ProjectFilesParameters)
         .failure<PlatformOrProjectNotFoundData>(HttpStatusCode.NotFound)
         .failure<PlatformErrorData>(HttpStatusCode.InternalServerError)
+        .failure<InvalidParameterData>(HttpStatusCode.BadRequest)
         .response<List<ProjectFileData>>()
 
     class ProjectFilesParameters(data: ParameterStorage) : Parameters(data) {

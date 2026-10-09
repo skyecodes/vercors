@@ -19,6 +19,7 @@ import arrow.core.raise.Raise
 import arrow.core.raise.context.bind
 import arrow.core.raise.context.ensure
 import arrow.core.raise.context.ensureNotNull
+import arrow.core.raise.context.raise
 import arrow.core.raise.recover
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
@@ -151,24 +152,22 @@ class InstanceRepositoryImpl(
         )
     }
 
-    override suspend fun setInstanceIconFromUrl(instance: Instance, url: String): Boolean {
+    context(_: Raise<InstanceIconError>)
+    override suspend fun setInstanceIconFromUrl(instance: Instance, url: String) {
         val instanceId = instance.id
         val extension = url.substringBefore('?').substringAfterLast('.', DEFAULT_ICON_EXTENSION)
         val targetPath = appPaths.instanceIconFile(instanceId, extension)
-        val downloaded = recover({
+        recover({
             fileValidationService.submit(listOf(FileValidationRequest.Url(url, targetPath))) {}
-            true
         }) { failures: NonEmptyList<FileValidationFailure> ->
             logger.warn { "Failed to download icon from $url for instance $instanceId: $failures" }
-            false
+            raise(InstanceIconError.DownloadFailed)
         }
-        if (!downloaded) return false
         deletePreviousIconIfDifferent(instance.iconFilePath, targetPath)
         dataSource.write(
             instanceId,
             instance.copy(iconFilePath = targetPath.toString(), updatedAt = Clock.System.now()).toData()
         )
-        return true
     }
 
     context(_: Raise<InstanceError>)
@@ -178,7 +177,8 @@ class InstanceRepositoryImpl(
         dataSource.write(instanceId, instance.copy(iconFilePath = null, updatedAt = Clock.System.now()).toData())
     }
 
-    override suspend fun openInstanceFolder(instanceId: InstanceId, folder: InstanceFolder): Boolean {
+    context(_: Raise<InstanceFolderError>)
+    override suspend fun openInstanceFolder(instanceId: InstanceId, folder: InstanceFolder) {
         val dir = when (folder) {
             InstanceFolder.Root -> appPaths.gameDir(instanceId)
             InstanceFolder.Mods -> appPaths.modsDir(instanceId)
@@ -188,7 +188,7 @@ class InstanceRepositoryImpl(
             InstanceFolder.Saves -> appPaths.savesDir(instanceId)
         }
         if (!dir.exists()) dir.createDirectories()
-        return systemService.openInFileManager(dir.toString())
+        ensure(systemService.openInFileManager(dir.toString())) { InstanceFolderError.OpenFailed }
     }
 
     // Skip when the new icon overwrote the same file in place

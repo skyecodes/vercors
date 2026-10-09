@@ -3,10 +3,11 @@ package app.vercors.feature.project.backend.modrinth
 import app.vercors.feature.project.api.dto.*
 import app.vercors.feature.project.backend.iconMap
 import app.vercors.feature.project.backend.modrinth.dto.*
+import app.vercors.shared.api.dto.InvalidParameterData
 import arrow.core.raise.Raise
 import arrow.core.raise.context.raise
 
-context(_: Raise<UnsupportedProjectTypeData>)
+context(_: Raise<InvalidParameterData>)
 internal fun buildFacets(
     projectType: ProjectTypeData? = null,
     loaders: List<ProjectLoaderData>? = null,
@@ -28,14 +29,19 @@ internal fun buildFacets(
     return if (parts.isEmpty()) null else parts.joinToString(",", "[", "]")
 }
 
-context(_: Raise<UnsupportedProjectTypeData>)
+context(_: Raise<InvalidParameterData>)
 private fun ProjectTypeData.toModrinthString(): String = when (this) {
     ProjectTypeData.Mod -> "mod"
     ProjectTypeData.Modpack -> "modpack"
     ProjectTypeData.ResourcePack -> "resourcepack"
     ProjectTypeData.ShaderPack -> "shader"
     ProjectTypeData.DataPack -> "datapack"
-    ProjectTypeData.World -> raise(UnsupportedProjectTypeData(this))
+    ProjectTypeData.World -> raise(
+        InvalidParameterData(
+            "type",
+            ProjectTypeData.serializer().descriptor.getElementName(ordinal)
+        )
+    )
 }
 
 internal fun ProjectLoaderData.toModrinthString(): String = when (this) {

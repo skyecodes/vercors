@@ -1,6 +1,7 @@
 package app.vercors.feature.project.api
 
 import app.vercors.feature.project.api.dto.*
+import app.vercors.shared.api.dto.InvalidParameterData
 import io.ktor.http.*
 import opensavvy.spine.api.*
 import opensavvy.spine.api.Parameters
@@ -8,9 +9,9 @@ import opensavvy.spine.api.Parameters
 object Projects : StaticResource<Platforms.PlatformId>("projects", Platforms.PlatformId) {
     val search by get()
         .parameters(::ProjectSearchParameters)
-        .failure<UnsupportedProjectTypeData>(HttpStatusCode.BadRequest)
         .failure<PlatformNotFoundData>(HttpStatusCode.NotFound)
         .failure<PlatformErrorData>(HttpStatusCode.InternalServerError)
+        .failure<InvalidParameterData>(HttpStatusCode.BadRequest)
         .response<ProjectSearchResponseData>()
 
     class ProjectSearchParameters(data: ParameterStorage) : Parameters(data) {

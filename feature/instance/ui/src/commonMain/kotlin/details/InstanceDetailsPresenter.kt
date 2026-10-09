@@ -12,6 +12,7 @@ import app.vercors.feature.account.ui.list.startLoginFlow
 import app.vercors.feature.config.domain.usecase.ObserveConfigurationUseCase
 import app.vercors.feature.instance.domain.model.ContentKind
 import app.vercors.feature.instance.domain.model.InstanceError
+import app.vercors.feature.instance.domain.model.InstanceIconError
 import app.vercors.feature.instance.domain.model.InstanceStatus
 import app.vercors.feature.instance.domain.usecase.*
 import app.vercors.feature.instance.ui.*
@@ -337,8 +338,12 @@ class InstanceDetailsPresenter(
                 if (modpackInfo != null) {
                     recover({
                         val logoUrl = getProject(modpackInfo.projectId from modpackInfo.platformId).logoUrl
-                        if (logoUrl == null || !setInstanceIconFromUrl(instance, logoUrl)) {
+                        if (logoUrl == null) {
                             snackbarService.error { stringResource(InstanceRes.string.errorRestoreIconFailed) }
+                        } else {
+                            recover({ setInstanceIconFromUrl(instance, logoUrl) }) { _: InstanceIconError ->
+                                snackbarService.error { stringResource(InstanceRes.string.errorRestoreIconFailed) }
+                            }
                         }
                     }) { _: ProjectDetailsError ->
                         snackbarService.error { stringResource(InstanceRes.string.errorRestoreIconFailed) }
@@ -352,8 +357,8 @@ class InstanceDetailsPresenter(
 
     private fun handleOpenInstanceFolderClick(event: InstanceDetailsEvent.OnOpenInstanceFolderClick) {
         globalScope.launch {
-            val opened = openInstanceFolder(screen.instanceId, event.folder)
-            if (!opened) snackbarService.error { stringResource(InstanceRes.string.errorOpenFolderFailed) }
+            either { openInstanceFolder(screen.instanceId, event.folder) }
+                .onLeft { snackbarService.error { stringResource(InstanceRes.string.errorOpenFolderFailed) } }
         }
     }
 

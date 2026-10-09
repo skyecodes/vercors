@@ -1,5 +1,6 @@
 plugins {
     id("app.vercors.shared")
+    kotlin("plugin.serialization")
 }
 
 dependencies {

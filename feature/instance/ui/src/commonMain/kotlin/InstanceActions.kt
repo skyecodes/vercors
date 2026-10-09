@@ -58,8 +58,8 @@ class InstanceActions(
 
     fun openFolder(instanceId: InstanceId) {
         globalScope.launch {
-            val opened = openInstanceFolder(instanceId, InstanceFolder.Root)
-            if (!opened) snackbarService.error { stringResource(InstanceRes.string.errorOpenFolderFailed) }
+            either { openInstanceFolder(instanceId, InstanceFolder.Root) }
+                .onLeft { snackbarService.error { stringResource(InstanceRes.string.errorOpenFolderFailed) } }
         }
     }
 

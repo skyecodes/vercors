@@ -141,7 +141,7 @@ class ProjectRepositoryImpl(
     }.handle(
         handle1 = { raise(it.toDomain()) },
         handle2 = { raise(it.toDomain()) },
-        handle3 = { raise(it.toDomain()) },
+        handle3 = { raise(if (it.name == "type") UnsupportedProjectType(type) else it.toDomain()) },
         transform = { data -> Page(items = data.results.map { it.toDomain() }, total = data.total) }
     )
 
@@ -194,6 +194,7 @@ class ProjectRepositoryImpl(
             }
         },
         handle2 = { raise(it.toDomain()) },
+        handle3 = { raise(it.toDomain()) },
         transform = { list -> list.map { it.toDomain(projectId.platform) } }
     )
 

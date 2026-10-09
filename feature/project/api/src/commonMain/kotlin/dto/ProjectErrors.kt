@@ -12,9 +12,6 @@ data class ProjectNotFoundData(val platformId: String, val notFoundProjectId: St
 data class PlatformNotFoundData(val notFoundPlatformId: String) : PlatformOrProjectNotFoundData
 
 @Serializable
-data class UnsupportedProjectTypeData(val unsupportedProjectType: ProjectTypeData)
-
-@Serializable
 data class PlatformErrorData(
     val error: String,
     val description: String? = null

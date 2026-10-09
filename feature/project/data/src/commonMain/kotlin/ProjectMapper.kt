@@ -4,6 +4,7 @@ import app.vercors.core.network.RemoteError
 import app.vercors.feature.game.domain.model.ModLoaderType
 import app.vercors.feature.project.api.dto.*
 import app.vercors.feature.project.domain.model.*
+import app.vercors.shared.api.dto.InvalidParameterData
 
 internal fun ProjectTypeData.toDomain(): ProjectType = when (this) {
     ProjectTypeData.Mod -> ProjectType.Mod
@@ -92,9 +93,6 @@ internal fun IconData.toDomain(): ProjectCategory.Icon = when (this) {
     is IconSvgData -> ProjectCategory.Icon.Data(svgString)
 }
 
-internal fun UnsupportedProjectTypeData.toDomain(): UnsupportedProjectType =
-    UnsupportedProjectType(unsupportedProjectType.toDomain())
-
 internal fun PlatformErrorData.toDomain(): PlatformError = PlatformError(error, description)
 
 internal fun RemoteError.toPlatformError(): PlatformError = when (this) {
@@ -129,3 +127,6 @@ internal fun ProjectReleaseChannelData.toDomain(): ProjectReleaseChannel = when 
     ProjectReleaseChannelData.Beta -> ProjectReleaseChannel.Beta
     ProjectReleaseChannelData.Alpha -> ProjectReleaseChannel.Alpha
 }
+
+internal fun InvalidParameterData.toDomain(): PlatformError =
+    PlatformError("InvalidParameter", "Invalid value '$value' for parameter $name")

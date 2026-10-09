@@ -547,8 +547,10 @@ class InstallProjectPresenter(
     private suspend fun fetchAndApplyProjectIcon(instance: Instance) {
         recover({
             val logoUrl = getProject(projectId).logoUrl
-            if (logoUrl != null && !setInstanceIconFromUrl(instance, logoUrl)) {
-                logger.warn { "Failed to set instance icon for ${instance.id} from $logoUrl" }
+            if (logoUrl != null) {
+                recover({ setInstanceIconFromUrl(instance, logoUrl) }) { _: InstanceIconError ->
+                    logger.warn { "Failed to set instance icon for ${instance.id} from $logoUrl" }
+                }
             }
         }) { error: ProjectDetailsError ->
             logger.warn { "Failed to fetch project details for instance icon (${instance.id}): $error" }

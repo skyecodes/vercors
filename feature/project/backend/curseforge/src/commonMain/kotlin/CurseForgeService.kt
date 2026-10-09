@@ -7,6 +7,7 @@ import app.vercors.feature.project.backend.curseforge.dto.CurseForgeFile
 import app.vercors.feature.project.backend.curseforge.dto.CurseForgeGetFilesRequest
 import app.vercors.feature.project.backend.curseforge.dto.CurseForgeGetModsRequest
 import app.vercors.feature.project.backend.curseforge.dto.CurseForgeProject
+import app.vercors.shared.api.dto.InvalidParameterData
 import app.vercors.shared.backend.bindResponse
 import arrow.core.raise.Raise
 import arrow.core.raise.recover
@@ -55,7 +56,7 @@ class CurseForgeService(
             }
         }
 
-    context(_: Raise<UnsupportedProjectTypeData>, _: Raise<PlatformErrorData>)
+    context(_: Raise<InvalidParameterData>, _: Raise<PlatformErrorData>)
     override suspend fun search(
         projectType: ProjectTypeData?,
         loaders: List<ProjectLoaderData>?,

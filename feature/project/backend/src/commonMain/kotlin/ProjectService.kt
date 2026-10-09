@@ -1,6 +1,7 @@
 package app.vercors.feature.project.backend
 
 import app.vercors.feature.project.api.dto.*
+import app.vercors.shared.api.dto.InvalidParameterData
 import arrow.core.Either.Companion.catch
 import arrow.core.raise.Raise
 import arrow.core.raise.context.bind
@@ -38,11 +39,11 @@ class ProjectService(
             async {
                 projectType to recover({
                     search(platformId = platformId, projectType = projectType).results
-                }) { e: UnsupportedProjectTypeData ->
+                }) { e: InvalidParameterData ->
                     raise(
                         PlatformErrorData(
-                            "UnsupportedProjectTypeData",
-                            "Unsupported project type ${e.unsupportedProjectType} yet it is present in the platform categories"
+                            "UnsupportedProjectType",
+                            "Unsupported project type ${e.value} yet it is present in the platform categories"
                         )
                     )
                 }
@@ -50,7 +51,7 @@ class ProjectService(
         }.awaitAll().toMap()
     }
 
-    context(_: Raise<UnsupportedProjectTypeData>, _: Raise<PlatformNotFoundData>, _: Raise<PlatformErrorData>)
+    context(_: Raise<InvalidParameterData>, _: Raise<PlatformNotFoundData>, _: Raise<PlatformErrorData>)
     suspend fun search(
         platformId: String,
         projectType: ProjectTypeData? = null,

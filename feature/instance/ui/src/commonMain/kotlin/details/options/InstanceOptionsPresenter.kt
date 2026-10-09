@@ -24,11 +24,11 @@ import app.vercors.feature.instance.ui.observeGameVersionListView
 import app.vercors.feature.instance.ui.observeLoaderVersionsView
 import app.vercors.feature.java.domain.usecase.ObserveJavaInstallationsUseCase
 import app.vercors.feature.java.domain.usecase.ResolveJavaInstallationUseCase
+import app.vercors.shared.domain.model.DetectedNativeLibraries
 import app.vercors.shared.domain.model.JavaInstallation
 import app.vercors.shared.domain.model.JvmMemoryOptions
 import app.vercors.shared.domain.model.NativeLibraryOptions
-import app.vercors.shared.domain.model.NativeLibraryType
-import app.vercors.shared.domain.usecase.DetectNativeLibraryPathUseCase
+import app.vercors.shared.domain.usecase.DetectNativeLibrariesUseCase
 import app.vercors.shared.domain.usecase.GetTotalPhysicalMemoryMbUseCase
 import app.vercors.shared.ui.Presenter
 import app.vercors.shared.ui.SnackbarService
@@ -56,7 +56,7 @@ class InstanceOptionsPresenter(
     private val observeLoaderVersions: ObserveLoaderVersionsUseCase,
     private val observeJavaInstallations: ObserveJavaInstallationsUseCase,
     private val getTotalPhysicalMemoryMb: GetTotalPhysicalMemoryMbUseCase,
-    private val detectNativeLibraryPath: DetectNativeLibraryPathUseCase,
+    private val detectNativeLibraries: DetectNativeLibrariesUseCase,
     private val systemService: SystemService,
     private val observeConfiguration: ObserveConfigurationUseCase,
     private val resolveJavaInstallation: ResolveJavaInstallationUseCase,
@@ -72,13 +72,8 @@ class InstanceOptionsPresenter(
         val (editedInstance, setEditedInstance) = rememberSaveable { mutableStateOf(InstanceEditState()) }
         val totalMemoryMb = remember { getTotalPhysicalMemoryMb() }
         val showNativeLibraryOptions = systemService.osType == OsType.Linux
-        val (detectedGlfwPath, setDetectedGlfwPath) = remember { mutableStateOf<String?>(null) }
-        val (detectedOpenAlPath, setDetectedOpenAlPath) = remember { mutableStateOf<String?>(null) }
-        LaunchedEffect(showNativeLibraryOptions) {
-            if (showNativeLibraryOptions) {
-                setDetectedGlfwPath(detectNativeLibraryPath(NativeLibraryType.Glfw))
-                setDetectedOpenAlPath(detectNativeLibraryPath(NativeLibraryType.OpenAl))
-            }
+        val detectedNativeLibraries by produceState<DetectedNativeLibraries?>(null, showNativeLibraryOptions) {
+            if (showNativeLibraryOptions) value = detectNativeLibraries()
         }
 
         val currentInstance = instance.valueOrNull
@@ -127,8 +122,8 @@ class InstanceOptionsPresenter(
             availableJavaInstallations = javaInstallations.valueOrNull ?: emptyList(),
             totalMemoryMb = totalMemoryMb,
             showNativeLibraryOptions = showNativeLibraryOptions,
-            detectedGlfwPath = detectedGlfwPath,
-            detectedOpenAlPath = detectedOpenAlPath,
+            detectedGlfwPath = detectedNativeLibraries?.glfwPath,
+            detectedOpenAlPath = detectedNativeLibraries?.openAlPath,
             globalJvmMemoryOptions = configuration.valueOrNull?.jvmMemoryOptions ?: JvmMemoryOptions(),
             globalNativeLibraryOptions = configuration.valueOrNull?.nativeLibraryOptions ?: NativeLibraryOptions(),
             inheritedJavaInstallation = inheritedJavaInstallation,

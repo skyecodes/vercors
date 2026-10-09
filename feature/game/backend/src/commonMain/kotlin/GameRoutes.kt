@@ -2,9 +2,9 @@ package app.vercors.feature.game.backend
 
 import app.vercors.feature.game.api.Game
 import app.vercors.feature.game.api.Loaders
-import app.vercors.feature.game.api.dto.LoaderErrorData
 import app.vercors.feature.game.api.dto.LoaderTypeData
 import app.vercors.feature.game.backend.loader.LoaderService
+import app.vercors.shared.api.dto.InvalidParameterData
 import app.vercors.shared.backend.cache
 import app.vercors.shared.backend.decodeEnumParameter
 import arrow.core.raise.Raise
@@ -43,8 +43,8 @@ fun Route.gameRoutes(loaderService: LoaderService, json: Json) {
     routeWithRaise(Loaders.LoaderId.installUrl) {
         val gameVersion = idOf(Game.GameVersionId)
         val loaderType = decodeLoaderId(json, idOf(Loaders.LoaderId))
-        val loaderVersion = ensureNotNull(parameters.loaderVersion) {
-            LoaderErrorData("MissingParameter", "Missing required parameter: loaderVersion")
+        val loaderVersion = ensureNotNull<InvalidParameterData, String>(parameters.loaderVersion) {
+            InvalidParameterData("loaderVersion", "")
         }
         val url = loaderService.getInstallUrl(gameVersion, loaderType, loaderVersion)
         call.response.cache(1.hours)
@@ -52,6 +52,6 @@ fun Route.gameRoutes(loaderService: LoaderService, json: Json) {
     }
 }
 
-context(_: Raise<LoaderErrorData>)
+context(_: Raise<InvalidParameterData>)
 private fun decodeLoaderId(json: Json, loaderId: String): LoaderTypeData =
-    json.decodeEnumParameter(loaderId) { LoaderErrorData("InvalidLoader", "Unknown loader id: $it") }
+    json.decodeEnumParameter(loaderId) { InvalidParameterData("loaderId", it) }

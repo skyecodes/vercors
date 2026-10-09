@@ -279,11 +279,11 @@
             }
           },
           "400": {
-            "description": "The `type` parameter is not a project type supported by this platform",
+            "description": "A parameter value is unknown, unsupported by this platform, or missing (`name` is the parameter, `value` what was sent)",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UnsupportedProjectTypeData"
+                  "$ref": "#/components/schemas/InvalidParameterData"
                 }
               }
             }
@@ -403,6 +403,16 @@
                   "items": {
                     "$ref": "#/components/schemas/ProjectFileData"
                   }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "A parameter value is unknown, unsupported by this platform, or missing (`name` is the parameter, `value` what was sent)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvalidParameterData"
                 }
               }
             }
@@ -536,6 +546,70 @@
         }
       }
     },
+    "/v1/platforms/{platformId}/files": {
+      "get": {
+        "tags": [
+          "Project files"
+        ],
+        "summary": "Look up many files by id in one request",
+        "description": "Resolves files by id across any number of projects on the platform, e.g. every file of a modpack manifest in one call. Ids the platform doesn't know are left out of the response rather than failing the request.",
+        "operationId": "listPlatformFiles",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/PlatformId"
+          },
+          {
+            "name": "fileIds",
+            "in": "query",
+            "required": true,
+            "description": "Ids of the files to look up",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The files that were found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ProjectFileData"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No platform with this id exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlatformNotFoundData"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlatformErrorData"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/game/versions": {
       "get": {
         "tags": [
@@ -650,6 +724,16 @@
               }
             }
           },
+          "400": {
+            "description": "A parameter value is unknown, unsupported by this platform, or missing (`name` is the parameter, `value` what was sent)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvalidParameterData"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Unexpected error, or `loaderId` is not a known loader",
             "content": {
@@ -696,6 +780,16 @@
                 "schema": {
                   "type": "string",
                   "format": "uri"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "A parameter value is unknown, unsupported by this platform, or missing (`name` is the parameter, `value` what was sent)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvalidParameterData"
                 }
               }
             }
@@ -1340,17 +1434,6 @@
           }
         }
       },
-      "UnsupportedProjectTypeData": {
-        "type": "object",
-        "properties": {
-          "unsupportedProjectType": {
-            "$ref": "#/components/schemas/ProjectTypeData"
-          }
-        },
-        "required": [
-          "unsupportedProjectType"
-        ]
-      },
       "LoaderErrorData": {
         "type": "object",
         "properties": {
@@ -1382,6 +1465,21 @@
         "required": [
           "version",
           "stable"
+        ]
+      },
+      "InvalidParameterData": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "value"
         ]
       }
     }
