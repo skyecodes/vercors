@@ -11,7 +11,8 @@ import kotlinx.serialization.json.Json
 import kotlin.time.Duration
 
 @ContributesTo(AppScope::class)
-interface NetworkProviders {
+@BindingContainer
+object NetworkProviders {
     @SingleIn(AppScope::class)
     @Provides
     fun provideHttpClient(
@@ -29,7 +30,10 @@ interface NetworkProviders {
                     ignoreUnknownKeys = true
                 })
             }
-            install(HttpRequestRetry)
+            install(HttpRequestRetry) {
+                retryOnExceptionOrServerErrors(2)
+                exponentialDelay()
+            }
             install(HttpCache)
             install(HttpTimeout) {
                 val networkTimeoutMillis = networkTimeout.inWholeMilliseconds

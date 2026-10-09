@@ -5,7 +5,8 @@ import dev.zacsweers.metro.*
 import io.ktor.client.*
 
 @ContributesTo(AppScope::class)
-interface LoaderBackendProviders {
+@BindingContainer
+object LoaderBackendProviders {
     @SingleIn(AppScope::class)
     @Provides
     @Named(FABRIC_LOADER_ID)

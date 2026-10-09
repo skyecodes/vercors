@@ -4,17 +4,15 @@ import app.vercors.feature.project.api.dto.PlatformErrorData
 import app.vercors.feature.project.backend.PlatformResponseConverterFactory
 import app.vercors.feature.project.backend.defaultExceptionHandler
 import de.jensklingenberg.ktorfit.Ktorfit
-import dev.zacsweers.metro.AppScope
-import dev.zacsweers.metro.ContributesTo
-import dev.zacsweers.metro.Provides
-import dev.zacsweers.metro.SingleIn
+import dev.zacsweers.metro.*
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.plugins.*
 import kotlinx.serialization.Serializable
 
 @ContributesTo(AppScope::class)
-interface ModrinthBackendProviders {
+@BindingContainer
+object ModrinthBackendProviders {
     @SingleIn(AppScope::class)
     @Provides
     fun provideModrinthApi(

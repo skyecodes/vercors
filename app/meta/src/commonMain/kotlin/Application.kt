@@ -7,8 +7,7 @@ import app.vercors.feature.project.backend.ProjectService
 import app.vercors.feature.project.backend.projectRoutes
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.DependencyGraph
-import dev.zacsweers.metro.Provides
-import dev.zacsweers.metro.createGraphFactory
+import dev.zacsweers.metro.createGraph
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
@@ -17,20 +16,14 @@ import io.ktor.server.engine.*
 import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.serialization.json.Json
 
 const val VERSION = "0.1.0"
 
 fun main() {
-    val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-    val appGraph = createGraphFactory<AppGraph.Factory>().create(scope)
+    val appGraph = createGraph<AppGraph>()
     embeddedServer(CIO, port = 8080, host = "0.0.0.0", module = { module(appGraph) })
         .start(wait = true)
-    scope.cancel()
 }
 
 internal fun Application.module(appGraph: AppGraph) {
@@ -53,9 +46,4 @@ internal interface AppGraph {
     val projectService: ProjectService
     val loaderService: LoaderService
     val json: Json
-
-    @DependencyGraph.Factory
-    fun interface Factory {
-        fun create(@Provides coroutineScope: CoroutineScope): AppGraph
-    }
 }

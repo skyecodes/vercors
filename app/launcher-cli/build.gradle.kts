@@ -27,8 +27,6 @@ dependencies {
     commonMainImplementation(projects.feature.launcher.command)
     commonMainImplementation(projects.feature.launcher.domain)
     commonMainImplementation(projects.feature.launcher.data)
-    commonMainImplementation(projects.feature.project.domain)
-    commonMainImplementation(projects.feature.project.data)
     commonMainImplementation(libs.kotlinx.coroutines.core)
     commonMainImplementation(libs.cryptography.provider.optimal)
     jvmMainImplementation(libs.logback)

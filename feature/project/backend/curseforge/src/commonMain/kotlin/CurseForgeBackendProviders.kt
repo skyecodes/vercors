@@ -9,7 +9,8 @@ import io.ktor.client.plugins.*
 import io.ktor.client.request.*
 
 @ContributesTo(AppScope::class)
-interface CurseForgeBackendProviders {
+@BindingContainer
+object CurseForgeBackendProviders {
     @SingleIn(AppScope::class)
     @Provides
     fun provideCurseForgeApi(

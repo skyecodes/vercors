@@ -1,12 +1,10 @@
 package app.vercors.core.system
 
-import dev.zacsweers.metro.AppScope
-import dev.zacsweers.metro.ContributesTo
-import dev.zacsweers.metro.Provides
-import dev.zacsweers.metro.SingleIn
+import dev.zacsweers.metro.*
 
 @ContributesTo(AppScope::class)
-interface SystemProviders {
+@BindingContainer
+object SystemProviders {
     @SingleIn(AppScope::class)
     @Provides
     fun provideOsInfo(systemService: SystemService): OsInfo = systemService.osInfo
