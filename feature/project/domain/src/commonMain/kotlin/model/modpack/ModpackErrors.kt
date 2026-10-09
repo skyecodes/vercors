@@ -1,14 +1,14 @@
 package app.vercors.feature.project.domain.model.modpack
 
-sealed interface ModpackResolutionError
+sealed interface ModpackResolutionError {
+    data object DownloadFailed : ModpackResolutionError
+    data object ParseFailed : ModpackResolutionError
+    data object UnsupportedPlatform : ModpackResolutionError
+    data object FileResolutionFailed : ModpackResolutionError
+}
 
-data object ModpackDownloadFailed : ModpackResolutionError
-data object ModpackParseFailed : ModpackResolutionError
-data object ModpackUnsupportedPlatform : ModpackResolutionError
-data object ModpackFileResolutionFailed : ModpackResolutionError
-
-sealed interface ModpackInstallError
-
-data object ModpackInstallDownloadFailed : ModpackInstallError
-data object ModpackOverridesExtractionFailed : ModpackInstallError
-data object ModpackInvalidFileEntry : ModpackInstallError
+sealed interface ModpackInstallError {
+    data object DownloadFailed : ModpackInstallError
+    data object OverridesExtractionFailed : ModpackInstallError
+    data object InvalidFileEntry : ModpackInstallError
+}

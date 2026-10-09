@@ -8,5 +8,6 @@ import dev.zacsweers.metro.Inject
 class RefreshInstalledWorldsUseCase(
     private val instanceWorldRepository: InstanceWorldRepository
 ) {
-    suspend operator fun invoke(instanceId: InstanceId) = instanceWorldRepository.refreshInstalledWorlds(instanceId)
+    suspend operator fun invoke(instanceId: InstanceId): Unit =
+        instanceWorldRepository.refreshInstalledWorlds(instanceId)
 }

@@ -5,11 +5,9 @@ plugins {
 }
 
 dependencies {
-    commonMainApi(project(":feature:project:backend"))
-    commonMainImplementation(project(":shared:backend"))
-    commonMainImplementation(project(":feature:project:api"))
-    commonMainImplementation(libs.spine.server)
-    commonMainImplementation(libs.spine.server.arrow)
+    commonMainApi(projects.feature.project.backend)
+    commonMainImplementation(projects.shared.backend)
+    commonMainImplementation(projects.feature.project.api)
     commonMainImplementation(libs.ktorfit.lib)
     commonMainImplementation(libs.kotlinx.serialization.json)
 }

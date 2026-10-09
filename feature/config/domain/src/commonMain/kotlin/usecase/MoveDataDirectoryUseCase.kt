@@ -7,8 +7,10 @@ import dev.zacsweers.metro.Inject
 import opensavvy.progress.Progress
 
 @Inject
-class MoveDataDirectoryUseCase(private val repository: DataDirectoryRepository) {
+class MoveDataDirectoryUseCase(
+    private val dataDirectoryRepository: DataDirectoryRepository
+) {
     context(_: Raise<DataDirectoryError>)
     suspend operator fun invoke(newPath: String, onProgress: (Progress) -> Unit = {}) =
-        repository.move(newPath, onProgress)
+        dataDirectoryRepository.move(newPath, onProgress)
 }

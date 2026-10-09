@@ -20,26 +20,7 @@ import opensavvy.state.coroutines.ProgressiveFlow
 import opensavvy.state.progressive.map
 import opensavvy.state.progressive.successfulWithProgress
 
-/**
- * Generic engine behind [app.vercors.feature.instance.data.mods.InstanceModScannerService] and its
- * resourcepack/shaderpack equivalents — scans a per-instance directory and keeps a purely in-memory, reactive
- * view (one [ContentEntry] per file) in sync with what's actually on disk. A disabled file is one with
- * `.disabled` appended to its filename; "enabled" is never persisted anywhere, it's always derived on the spot
- * from whether the current on-disk filename carries that suffix.
- *
- * Two caches back this, only one of which touches disk:
- * - an in-process `Path -> sha1` memo, so re-observing an instance within the same app run doesn't re-hash a file
- *   whose size hasn't changed. Cleared implicitly on restart.
- * - [metadataCache]: the actual parsed metadata (title/description/version/icon/providers), keyed by the file's
- *   sha1 and shared by every instance — a file installed identically in multiple instances is only ever parsed
- *   once, and this survives restarts (only the hash itself gets recomputed after one).
- *
- * Updates flow in two hops: a [FileWatcherService] subscription on the instance directory reacts to file
- * add/change/remove by resolving/removing the corresponding entry in the in-memory state; [activate] re-runs a
- * full [reconcile] on every fresh subscription (not just the first), since the watcher is best-effort — at least
- * on the JVM `WatchService` backend it silently fails to attach if the directory doesn't exist at that exact
- * moment, with no error and no retry.
- */
+// activate() reconciles on every subscription: the JVM watcher silently fails to attach to a missing directory
 internal class ContentDirScannerEngine(
     private val instanceDir: (InstanceId) -> Path,
     private val extension: String,
@@ -59,13 +40,7 @@ internal class ContentDirScannerEngine(
     private val hashMemoLock = Mutex()
     private val hashMemo = mutableMapOf<Path, HashMemo>()
 
-    /**
-     * Guards every read-modify-write against [metadataCache]. Without it, [resolveEntry] (driven by the file
-     * watcher, which fires as soon as a newly-downloaded file appears on disk) and [recordOrigin] (called right
-     * after that same download completes) can race: both read the cache, [resolveEntry] writes back metadata with
-     * no providers, and if that write lands after [recordOrigin]'s provider-populated write, it silently clobbers
-     * the just-recorded provider.
-     */
+    // Guards metadataCache read-modify-writes: resolveEntry and recordOrigin race right after a download
     private val metadataLock = Mutex()
 
     fun observe(instanceId: InstanceId): ProgressiveFlow<Nothing, List<ContentEntry>> {
@@ -74,12 +49,7 @@ internal class ContentDirScannerEngine(
             .map { outcome -> outcome.map { it.values.toList() } }
     }
 
-    /**
-     * Forces an immediate full rescan, for callers that just wrote a batch of files outside the normal
-     * single-file [importFile]/[setEnabled]/[removeFile]/[recordOrigin] APIs (e.g. a Prism Launcher import
-     * extracting a whole `.minecraft` folder at once) — same rationale as those: never rely on the watcher alone
-     * to eventually catch up.
-     */
+    // For bulk writes outside the APIs below: never rely on the watcher alone
     suspend fun refresh(instanceId: InstanceId) = reconcile(instanceId, stateFor(instanceId))
 
     private fun stateFor(instanceId: InstanceId): MutableProgressiveStateFlow<Nothing, Map<String, ContentEntry>> =
@@ -101,7 +71,6 @@ internal class ContentDirScannerEngine(
         }
     }
 
-    /** Full (re)scan: resolves every content file currently on disk into the in-memory state. */
     private suspend fun reconcile(
         instanceId: InstanceId,
         state: MutableProgressiveStateFlow<Nothing, Map<String, ContentEntry>>
@@ -127,8 +96,7 @@ internal class ContentDirScannerEngine(
         if (!isContentFile(event.path.name, extension)) return
         val logicalName = contentLogicalFileName(event.path.name)
         if (event.type == FileEvent.Type.DELETE) {
-            // A DELETE also fires for the "before" half of an enable/disable rename — only really remove the
-            // entry if neither the enabled nor the disabled variant exists on disk anymore.
+            // A DELETE also fires for the old name of an enable/disable rename
             val stillPresent = existingFile(instanceId, logicalName)
             if (stillPresent != null) updateEntry(state, stillPresent)
             else state.update { it.map { map -> map - logicalName } }
@@ -154,7 +122,6 @@ internal class ContentDirScannerEngine(
         state.update { it.map { map -> map + (entry.fileName to entry) } }
     }
 
-    /** Hashes [filePath] (memoized within this app run) and resolves it into a fully-built [ContentEntry]. */
     private suspend fun resolveEntry(filePath: Path): ContentEntry? {
         val size = filePath.metadataOrNull()?.size ?: return null
         val sha1 = hashOf(filePath, size)
@@ -173,7 +140,7 @@ internal class ContentDirScannerEngine(
         )
     }
 
-    /** Memoized by the *logical* path, so toggling the `.disabled` suffix never busts the memo. */
+    // Memoized by logical path so toggling .disabled never busts the memo
     private suspend fun hashOf(filePath: Path, size: Long): String {
         val key = canonicalPath(filePath)
         hashMemoLock.withLock { hashMemo[key] }?.takeIf { it.size == size }?.let { return it.sha1 }
@@ -201,14 +168,7 @@ internal class ContentDirScannerEngine(
         return metadata
     }
 
-    /**
-     * Called right after a file is downloaded via the install flow, to record which platform/project/file it
-     * came from — this is the only source of that information, since it can't be derived from the file's own
-     * bytes. Upserts (by [platformId]) into the global entry's provider list rather than overwriting it wholesale,
-     * since the exact same file may already carry a provider recorded from a different instance or platform. Also
-     * refreshes the in-memory state so the file shows up immediately, without waiting for the watcher or the next
-     * reconcile.
-     */
+    // Upserts by platformId: the same file may already carry a provider from another instance
     suspend fun recordOrigin(
         instanceId: InstanceId,
         fileName: String,
@@ -230,10 +190,6 @@ internal class ContentDirScannerEngine(
         updateEntry(stateFor(instanceId), filePath)
     }
 
-    /**
-     * Enables/disables a file by renaming it (appending/removing the conventional `.disabled` suffix) and
-     * immediately refreshing its entry — not relying on the watcher to eventually catch up.
-     */
     suspend fun setEnabled(instanceId: InstanceId, fileName: String, enabled: Boolean) {
         val dir = instanceDir(instanceId)
         val enabledPath = Path(dir, fileName)
@@ -246,11 +202,6 @@ internal class ContentDirScannerEngine(
         updateEntry(stateFor(instanceId), to)
     }
 
-    /**
-     * Copies [sourcePath] (an arbitrary local file, never deleted) into this content directory, preserving its
-     * filename, and immediately refreshes its entry — not relying on the watcher to eventually catch up. Returns
-     * `false` without copying anything if [sourcePath] doesn't have the expected [extension].
-     */
     suspend fun importFile(instanceId: InstanceId, sourcePath: Path): Boolean {
         if (!isContentFile(sourcePath.name, extension)) return false
         val dir = instanceDir(instanceId)
@@ -261,7 +212,6 @@ internal class ContentDirScannerEngine(
         return true
     }
 
-    /** Permanently deletes a file (whichever of the enabled/disabled variants is present) and drops its entry. */
     suspend fun removeFile(instanceId: InstanceId, fileName: String) {
         val target = existingFile(instanceId, fileName) ?: return
         target.delete()

@@ -54,10 +54,9 @@ internal fun ModrinthProjectResult.convert(): BriefProjectData = BriefProjectDat
     id = projectId,
     platform = MODRINTH_PLATFORM_ID,
     name = title,
-    // Falls back to Mod for a Modrinth type this launcher doesn't otherwise recognize — in practice unreachable,
-    // since project search already filters results down to known types.
+    // Unreachable in practice: project search only returns known types
     type = projectType.convert() ?: ProjectTypeData.Mod,
-    loaders = categories.orEmpty().mapNotNull { it.toProjectLoaderDataOrNull() },
+    loaders = categories.orEmpty().mapNotNull { it.convertToLoader() },
     description = description,
     author = author,
     url = "https://modrinth.com/project/$projectId",
@@ -83,28 +82,18 @@ internal fun ModrinthCategory.convert(): ProjectCategoryData = ProjectCategoryDa
     icon = iconMap[name]?.let { IconNameData(it) } ?: icon.ifBlank { null }?.let { IconSvgData(it) }
 )
 
-internal fun String.toModrinthProjectType(): ProjectTypeData? = when (this) {
-    "mod" -> ProjectTypeData.Mod
-    "modpack" -> ProjectTypeData.Modpack
-    "resourcepack" -> ProjectTypeData.ResourcePack
-    "shader" -> ProjectTypeData.ShaderPack
-    "datapack" -> ProjectTypeData.DataPack
-    else -> null
-}
-
 internal fun ModrinthProject.convert(members: List<ModrinthProjectMember>): ProjectData = ProjectData(
     id = id,
     platform = MODRINTH_PLATFORM_ID,
     name = title,
-    // Falls back to Mod for a Modrinth type this launcher doesn't otherwise recognize (e.g. "plugin") — in
-    // practice unreachable, since project search already filters results down to known types.
+    // Unreachable in practice: project search only returns known types
     type = projectType.convert() ?: ProjectTypeData.Mod,
     description = description,
     body = body,
     url = "https://modrinth.com/project/$id",
     logoUrl = iconUrl,
     gameVersions = gameVersions,
-    loaders = loaders.mapNotNull { it.toProjectLoaderDataOrNull() },
+    loaders = loaders.mapNotNull { it.convertToLoader() },
     categories = (categories + additionalCategories).map {
         ProjectCategoryData(id = it, slug = it, name = null, icon = iconMap[it]?.let(::IconNameData))
     },
@@ -125,7 +114,7 @@ internal fun ModrinthProject.convert(members: List<ModrinthProjectMember>): Proj
     )
 )
 
-private fun String.toProjectLoaderDataOrNull(): ProjectLoaderData? = when (this) {
+private fun String.convertToLoader(): ProjectLoaderData? = when (this) {
     "forge" -> ProjectLoaderData.Forge
     "neoforge" -> ProjectLoaderData.NeoForge
     "fabric" -> ProjectLoaderData.Fabric
@@ -133,7 +122,7 @@ private fun String.toProjectLoaderDataOrNull(): ProjectLoaderData? = when (this)
     else -> null
 }
 
-/** Modrinth versions can carry multiple files (e.g. split/universal jar variants); keep the primary one. */
+// Versions can carry several files: keep the primary one
 internal fun ModrinthVersion.convert(): ProjectFileData? {
     val file = files.firstOrNull { it.primary } ?: files.firstOrNull() ?: return null
     return ProjectFileData(
@@ -141,8 +130,8 @@ internal fun ModrinthVersion.convert(): ProjectFileData? {
         displayName = name,
         fileName = file.filename,
         gameVersions = gameVersions,
-        loaders = loaders.mapNotNull { it.toProjectLoaderDataOrNull() },
-        releaseChannel = versionType.toProjectReleaseChannelData(),
+        loaders = loaders.mapNotNull { it.convertToLoader() },
+        releaseChannel = versionType.convert(),
         size = file.size,
         sha1 = file.hashes["sha1"],
         publishedAt = datePublished,
@@ -151,7 +140,7 @@ internal fun ModrinthVersion.convert(): ProjectFileData? {
     )
 }
 
-private fun ModrinthVersionType.toProjectReleaseChannelData(): ProjectReleaseChannelData = when (value) {
+private fun ModrinthVersionType.convert(): ProjectReleaseChannelData = when (value) {
     ModrinthVersionType.RELEASE -> ProjectReleaseChannelData.Release
     ModrinthVersionType.BETA -> ProjectReleaseChannelData.Beta
     ModrinthVersionType.ALPHA -> ProjectReleaseChannelData.Alpha

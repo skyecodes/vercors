@@ -5,7 +5,7 @@ import app.vercors.shared.domain.model.NativeLibraryType
 import app.vercors.shared.domain.repository.NativeLibraryRepository
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
-import dev.zacsweers.metro.Inject
+import dev.zacsweers.metro.SingleIn
 import kotlinx.io.files.Path
 
 private val LIBRARY_SEARCH_DIRS = listOf(
@@ -24,7 +24,7 @@ private val CANDIDATE_FILE_NAMES = mapOf(
     NativeLibraryType.OpenAl to listOf("libopenal.so", "libopenal.so.1"),
 )
 
-@Inject
+@SingleIn(AppScope::class)
 @ContributesBinding(AppScope::class)
 class NativeLibraryRepositoryImpl : NativeLibraryRepository {
     override suspend fun detectSystemLibraryPath(type: NativeLibraryType): String? {

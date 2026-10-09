@@ -25,7 +25,7 @@ internal fun projectFileDownloadRequest(
     channel = { httpClient ->
         httpClient.request(
             endpoint = ApiV1 / Platforms / Platforms.PlatformId(platformId) / Projects / Projects.ProjectId(projectId) /
-                    ProjectFiles / ProjectFiles.ProjectFileId(fileId) / ProjectFiles.ProjectFileId.download
+                    ProjectFiles / ProjectFiles.FileId(fileId) / ProjectFiles.FileId.download
         ).bodyOrThrow()
     },
     path = path,

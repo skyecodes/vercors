@@ -7,7 +7,6 @@ import app.vercors.feature.account.domain.model.Account
 import app.vercors.feature.account.domain.service.*
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
-import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.*
@@ -33,7 +32,6 @@ private val logger = KotlinLogging.logger {}
 
 @SingleIn(AppScope::class)
 @ContributesBinding(AppScope::class)
-@Inject
 class AuthenticationServiceImpl(
     private val httpClient: HttpClient,
     private val cryptographyService: CryptographyService

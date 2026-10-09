@@ -3,8 +3,8 @@ package app.vercors.feature.project.ui
 import androidx.compose.runtime.Composable
 import app.vercors.feature.instance.domain.model.InstanceValidationError
 import app.vercors.feature.project.domain.model.*
-import app.vercors.feature.project.domain.model.modpack.*
-import app.vercors.feature.project.ui.list.displayName
+import app.vercors.feature.project.domain.model.modpack.ModpackInstallError
+import app.vercors.feature.project.domain.model.modpack.ModpackResolutionError
 import org.jetbrains.compose.resources.stringResource
 
 val ProjectSearchError.message: String
@@ -31,17 +31,17 @@ val ProjectFileDownloadError.message: String
 
 val ModpackResolutionError.message: String
     @Composable get() = when (this) {
-        ModpackDownloadFailed -> stringResource(ProjectRes.string.errorModpackDownloadFailed)
-        ModpackParseFailed -> stringResource(ProjectRes.string.errorModpackParseFailed)
-        ModpackUnsupportedPlatform -> stringResource(ProjectRes.string.errorModpackUnsupportedPlatform)
-        ModpackFileResolutionFailed -> stringResource(ProjectRes.string.errorModpackFileResolutionFailed)
+        ModpackResolutionError.DownloadFailed -> stringResource(ProjectRes.string.errorModpackDownloadFailed)
+        ModpackResolutionError.ParseFailed -> stringResource(ProjectRes.string.errorModpackParseFailed)
+        ModpackResolutionError.UnsupportedPlatform -> stringResource(ProjectRes.string.errorModpackUnsupportedPlatform)
+        ModpackResolutionError.FileResolutionFailed -> stringResource(ProjectRes.string.errorModpackFileResolutionFailed)
     }
 
 val ModpackInstallError.message: String
     @Composable get() = when (this) {
-        ModpackInstallDownloadFailed -> stringResource(ProjectRes.string.errorModpackInstallDownloadFailed)
-        ModpackOverridesExtractionFailed -> stringResource(ProjectRes.string.errorModpackOverridesExtractionFailed)
-        ModpackInvalidFileEntry -> stringResource(ProjectRes.string.errorModpackInvalidFileEntry)
+        ModpackInstallError.DownloadFailed -> stringResource(ProjectRes.string.errorModpackInstallDownloadFailed)
+        ModpackInstallError.OverridesExtractionFailed -> stringResource(ProjectRes.string.errorModpackOverridesExtractionFailed)
+        ModpackInstallError.InvalidFileEntry -> stringResource(ProjectRes.string.errorModpackInvalidFileEntry)
     }
 
 val InstanceValidationError.message: String

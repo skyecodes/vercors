@@ -17,7 +17,6 @@ import arrow.core.raise.Raise
 import arrow.core.raise.context.raise
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
-import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.*
@@ -36,7 +35,6 @@ internal data class CandidateJavaPath(val path: String)
 
 @SingleIn(AppScope::class)
 @ContributesBinding(AppScope::class)
-@Inject
 class JavaRepositoryImpl(
     private val configurationRepository: ConfigurationRepository,
     private val systemService: SystemService,
@@ -64,9 +62,7 @@ class JavaRepositoryImpl(
     private fun currentConfiguration(): Configuration? =
         (configurationRepository.state.value as? ProgressiveOutcome.Success)?.value
 
-    /** Always waits for its turn rather than no-op'ing when a scan is already in progress — callers (in
-     *  particular the CLI's `java-scan` command, a short-lived process) need this call to genuinely complete
-     *  the work before returning, not silently skip because e.g. the automatic first-launch scan is still running. */
+    // Waits instead of skipping when a scan is running: short-lived callers like `vercors java scan` need it done
     override suspend fun rescan() {
         scanMutex.withLock {
             logger.debug { "Scanning for Java installations..." }
@@ -79,8 +75,7 @@ class JavaRepositoryImpl(
                 .map { it.path }
                 .distinct()
 
-            // Resolve symlinks/junctions before deduping — distro packaging (e.g. `/usr/lib/jvm/default`, or
-            // `lib64` symlinked to `lib`) otherwise produces several raw candidate paths for the same real binary.
+            // Resolve symlinks before deduping: distros expose the same binary through several paths
             val candidatePaths = coroutineScope {
                 rawCandidatePaths.map { path -> async { path.resolveRealPathOrSelf() } }.awaitAll()
             }.distinct().filter { it !in existingIds }
@@ -127,14 +122,9 @@ class JavaRepositoryImpl(
             isManuallyAdded = isManuallyAdded,
         )
 
-    /** If [path] is a JDK/JRE home directory, resolves it to the java binary inside; otherwise returns it as-is. */
     private suspend fun resolveJavaBinaryPath(path: String): String {
         val candidates =
             listOf(Path(path, "bin", "java"), Path(path, "bin", "java.exe"), Path(path, "bin", "javaw.exe"))
         return candidates.firstOrNull { it.exists() }?.toString() ?: path
     }
 }
-
-internal expect suspend fun platformScanJavaInstallationsWindows(systemService: SystemService): List<CandidateJavaPath>
-internal expect suspend fun platformScanJavaInstallationsLinux(systemService: SystemService): List<CandidateJavaPath>
-internal expect suspend fun platformScanJavaInstallationsMacOs(systemService: SystemService): List<CandidateJavaPath>

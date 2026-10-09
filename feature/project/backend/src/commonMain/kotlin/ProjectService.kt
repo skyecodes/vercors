@@ -42,7 +42,7 @@ class ProjectService(
                     raise(
                         PlatformErrorData(
                             "UnsupportedProjectTypeData",
-                            "Unsupported project type ${e.projectType} yet it is present in the platform categories"
+                            "Unsupported project type ${e.unsupportedProjectType} yet it is present in the platform categories"
                         )
                     )
                 }
@@ -75,7 +75,7 @@ class ProjectService(
     context(_: Raise<PlatformOrProjectNotFoundData>, _: Raise<PlatformErrorData>)
     suspend fun getProjectDetails(platformId: String, projectId: String) =
         catch { getPlatformService(platformId).getProject(projectId) }
-            .mapLeft { ProjectNotFoundData(projectId, platformId) }
+            .mapLeft { ProjectNotFoundData(platformId, projectId) }
             .bind()
 
     context(_: Raise<PlatformOrProjectNotFoundData>, _: Raise<PlatformErrorData>)
@@ -85,19 +85,19 @@ class ProjectService(
         gameVersion: String?,
         loader: ProjectLoaderData?
     ) = catch { getPlatformService(platformId).getProjectFiles(projectId, gameVersion, loader) }
-        .mapLeft { ProjectNotFoundData(projectId, platformId) }
+        .mapLeft { ProjectNotFoundData(platformId, projectId) }
         .bind()
 
     context(_: Raise<PlatformOrProjectNotFoundData>, _: Raise<PlatformErrorData>)
     suspend fun getFileDownloadUrl(platformId: String, projectId: String, fileId: String) =
         catch { getPlatformService(platformId).getFileDownloadUrl(projectId, fileId) }
-            .mapLeft { ProjectNotFoundData(projectId, platformId) }
+            .mapLeft { ProjectNotFoundData(platformId, projectId) }
             .bind()
 
     context(_: Raise<PlatformOrProjectNotFoundData>, _: Raise<PlatformErrorData>)
     suspend fun getProjectFile(platformId: String, projectId: String, fileId: String) =
         catch { getPlatformService(platformId).getProjectFile(projectId, fileId) }
-            .mapLeft { ProjectNotFoundData(projectId, platformId) }
+            .mapLeft { ProjectNotFoundData(platformId, projectId) }
             .bind()
 
     context(_: Raise<PlatformNotFoundData>, _: Raise<PlatformErrorData>)

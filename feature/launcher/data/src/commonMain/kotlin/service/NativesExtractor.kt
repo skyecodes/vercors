@@ -14,7 +14,7 @@ private val logger = KotlinLogging.logger {}
 
 @Inject
 class NativesExtractor {
-    suspend fun extract(natives: List<DependencyFile.Native>) = coroutineScope {
+    suspend fun extract(natives: List<DependencyFile.Native>): Unit = coroutineScope {
         if (natives.isEmpty()) return@coroutineScope
         logger.info { "Extracting natives..." }
         val extractDispatcher = Dispatchers.Default + SupervisorJob()

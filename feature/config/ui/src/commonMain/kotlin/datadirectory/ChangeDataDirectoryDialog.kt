@@ -10,9 +10,7 @@ import com.slack.circuit.overlay.OverlayNavigator
 import com.slack.circuit.overlay.OverlayTransitionController
 import kotlinx.coroutines.CoroutineScope
 
-/** Shown as a dialog overlay rather than a full navigated screen — see [CopyInstanceDialog][app.vercors.feature.instance.ui.copy.CopyInstanceDialog]
- *  for the same pattern. Finishes with `Unit` on cancel; on success it never returns — [AppRestartService.restart]
- *  ends the process before the dialog would otherwise finish. */
+// On success this never finishes: AppRestartService.restart ends the process
 class ChangeDataDirectoryDialog(
     private val currentPath: String,
     private val appId: String,

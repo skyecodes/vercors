@@ -76,26 +76,26 @@ fun Route.projectRoutes(service: ProjectService, json: Json) {
         respond(result)
     }
 
-    routeWithRaise(ProjectFiles.ProjectFileId.get) {
+    routeWithRaise(ProjectFiles.FileId.get) {
         val platformId = idOf(Platforms.PlatformId)
         val projectId = idOf(Projects.ProjectId)
-        val fileId = idOf(ProjectFiles.ProjectFileId)
+        val fileId = idOf(ProjectFiles.FileId)
         val result = service.getProjectFile(platformId, projectId, fileId)
         call.response.cache(1.minutes)
         respond(result)
     }
 
-    routeWithRaise(PlatformFiles.get) {
+    routeWithRaise(PlatformFiles.list) {
         val platformId = idOf(Platforms.PlatformId)
         val result = service.getFiles(platformId, parameters.fileIds)
         call.response.cache(1.minutes)
         respond(result)
     }
 
-    routeWithRaise(ProjectFiles.ProjectFileId.download) {
+    routeWithRaise(ProjectFiles.FileId.download) {
         val platformId = idOf(Platforms.PlatformId)
         val projectId = idOf(Projects.ProjectId)
-        val fileId = idOf(ProjectFiles.ProjectFileId)
+        val fileId = idOf(ProjectFiles.FileId)
         val url = service.getFileDownloadUrl(platformId, projectId, fileId)
         call.response.cache(1.hours)
         call.respondRedirect(url)

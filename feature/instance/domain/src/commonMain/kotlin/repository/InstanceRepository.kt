@@ -18,33 +18,22 @@ interface InstanceRepository {
 
     suspend fun deleteInstance(instanceId: InstanceId)
 
-    /** Deletes an instance's on-disk game directory — [deleteInstance] only removes its metadata. */
     suspend fun deleteInstanceFiles(instanceId: InstanceId)
 
-    /** Recursively copies [sourceId]'s on-disk game directory into [targetId]'s. No-ops if the source dir doesn't
-     *  exist. The `mods`/`resourcepacks`/`shaderpacks` subdirectories are hardlinked rather than byte-copied. */
     suspend fun copyInstanceFiles(sourceId: InstanceId, targetId: InstanceId)
 
     context(_: Raise<InstanceError>)
     suspend fun findInstance(id: InstanceId): Instance
 
-    /** Copies [sourcePath] (an arbitrary local file, never deleted) into the instance's managed icon storage. */
     context(_: Raise<InstanceError>)
     suspend fun setInstanceIcon(instanceId: InstanceId, sourcePath: String)
 
-    /**
-     * Best-effort: downloads [url] into the instance's managed icon storage. Never raises — returns `false` on
-     * failure. Takes the full [instance] (rather than just its ID) so callers that already have a freshly-created
-     * one in hand — e.g. right after [saveInstance] — aren't forced through the reactive [instances] map, which
-     * only catches up once the file watcher notices the on-disk write and can otherwise lose this race entirely.
-     */
+    // Takes the full instance: the reactive instances map may lag behind a fresh write
     suspend fun setInstanceIconFromUrl(instance: Instance, url: String): Boolean
 
-    /** Deletes the instance's custom icon (if any) and reverts it to the default icon. */
     context(_: Raise<InstanceError>)
     suspend fun removeInstanceIcon(instanceId: InstanceId)
 
-    /** Opens [folder] (creating it first if it doesn't exist) in the OS file manager. Returns whether it succeeded. */
     suspend fun openInstanceFolder(instanceId: InstanceId, folder: InstanceFolder): Boolean
 
     fun updateInstanceStatus(id: InstanceId, status: InstanceStatus)

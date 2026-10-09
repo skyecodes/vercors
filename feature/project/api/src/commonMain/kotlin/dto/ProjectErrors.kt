@@ -6,13 +6,13 @@ import kotlinx.serialization.Serializable
 sealed interface PlatformOrProjectNotFoundData
 
 @Serializable
-data class ProjectNotFoundData(val projectId: String, val platformId: String) : PlatformOrProjectNotFoundData
+data class ProjectNotFoundData(val platformId: String, val notFoundProjectId: String) : PlatformOrProjectNotFoundData
 
 @Serializable
-data class PlatformNotFoundData(val platformId: String) : PlatformOrProjectNotFoundData
+data class PlatformNotFoundData(val notFoundPlatformId: String) : PlatformOrProjectNotFoundData
 
 @Serializable
-data class UnsupportedProjectTypeData(val projectType: ProjectTypeData)
+data class UnsupportedProjectTypeData(val unsupportedProjectType: ProjectTypeData)
 
 @Serializable
 data class PlatformErrorData(

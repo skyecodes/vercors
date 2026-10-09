@@ -55,11 +55,6 @@ fun <T> AppSelectField(
     )
 }
 
-/**
- * [AppSelectField] scaffolding shared by simple labeled dropdowns (e.g. game version/loader/loader-version
- * selectors): wires [displayName]/[badgeIcon] into [AppSelectItem] and defaults to the 300dp-wide,
- * `surface2`-backed shape those selectors all use.
- */
 @Composable
 fun <T> AppLabeledSelectField(
     label: String,

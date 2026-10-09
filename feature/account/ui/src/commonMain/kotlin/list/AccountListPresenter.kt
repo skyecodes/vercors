@@ -69,15 +69,15 @@ class AccountListPresenter(
         setPromptLogin: (Boolean) -> Unit,
     ) {
         when (event) {
-            AccountListEvent.CancelLogin -> {
+            AccountListEvent.OnLoginDismiss -> {
                 loginJob?.cancel(CancellationException("Login cancelled by user"))
                 setPromptLogin(false)
             }
 
-            is AccountListEvent.CopyToClipboard -> copyToClipboard(event.data)
-            AccountListEvent.Login -> handleLogin(presenterScope, loginState, setPromptLogin, setLoginJob)
-            is AccountListEvent.Logout -> presenterScope.launch { handleAccountError { logout(event.accountId) } }
-            is AccountListEvent.SelectAccount ->
+            is AccountListEvent.OnCopyClick -> copyToClipboard(event.data)
+            AccountListEvent.OnLoginClick -> handleLogin(presenterScope, loginState, setPromptLogin, setLoginJob)
+            is AccountListEvent.OnLogoutClick -> presenterScope.launch { handleAccountError { logout(event.accountId) } }
+            is AccountListEvent.OnAccountClick ->
                 presenterScope.launch { handleAccountError { selectAccount(event.accountId) } }
         }
     }

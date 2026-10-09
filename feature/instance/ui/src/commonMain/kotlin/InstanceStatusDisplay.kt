@@ -41,7 +41,6 @@ val InstanceStatus.progress: Float?
         else -> null
     }
 
-/** Tint for a status badge, or `null` when the status doesn't warrant one (e.g. [InstanceStatus.Idle]). */
 val InstanceStatus.badgeTone: ThemeToken<Color>?
     get() = when (this) {
         InstanceStatus.Idle -> null

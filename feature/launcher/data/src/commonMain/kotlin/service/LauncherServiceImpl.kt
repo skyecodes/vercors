@@ -21,7 +21,6 @@ import arrow.core.raise.Raise
 import arrow.core.raise.either
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
-import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.Dispatchers
@@ -38,7 +37,6 @@ private val logger = KotlinLogging.logger {}
 
 @SingleIn(AppScope::class)
 @ContributesBinding(AppScope::class)
-@Inject
 class LauncherServiceImpl(
     private val appPaths: AppPaths,
     private val ruleEvaluator: LaunchRuleEvaluator,
@@ -86,12 +84,7 @@ class LauncherServiceImpl(
         logger.info { "Instance ${instance.name} finished" }
     }
 
-    /**
-     * Surfaces what's actually being launched in the instance's log — java executable, JVM arguments, program
-     * arguments — with [account]'s username/uuid/access token redacted (the access token in particular appears
-     * under two different variable names, legacy and modern, in [command] — see [LaunchVariables.toMap] — so
-     * redaction matches by value, not by flag name).
-     */
+    // Redacts by value: the access token appears under both legacy and modern variable names
     private suspend fun ProducerScope<InstanceLaunchEvent>.logLaunchCommand(
         command: List<String>,
         mainClass: String,

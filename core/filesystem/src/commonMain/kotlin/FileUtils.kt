@@ -35,7 +35,6 @@ suspend inline fun Path.isDirectory(
     context: CoroutineContext = Dispatchers.IO
 ) = metadataOrNull(context)?.isDirectory == true
 
-
 suspend inline fun Path.list(
     context: CoroutineContext = Dispatchers.IO
 ): Collection<Path> = withContext(context) {
@@ -203,8 +202,6 @@ suspend fun Path.linkOrCopyTo(target: Path, context: CoroutineContext = Dispatch
             tryOrFalse { createLink(target, context, true) } ||
             tryOrFalse { copyTo(target, context); true }
 
-/** Like [copyRecursively], but hardlinks (falling back to a symlink, then a real copy — see [linkOrCopyTo]) each
- *  file instead of copying its bytes. */
 suspend fun Path.linkRecursively(target: Path, context: CoroutineContext = Dispatchers.IO) {
     if (isDirectory(context)) {
         target.createDirectories(context)
@@ -233,18 +230,10 @@ expect suspend fun Path.createLink(
     isSymbolic: Boolean = false
 ): Boolean
 
-/** The file's last-modified time, or `null` if it doesn't exist or the platform can't report one. */
 expect suspend fun Path.lastModifiedOrNull(context: CoroutineContext = Dispatchers.IO): Instant?
 
-/** Marks the file as executable (`chmod +x` on POSIX; a no-op on Windows, which has no executable bit). */
 expect suspend fun Path.setExecutable(context: CoroutineContext = Dispatchers.IO): Boolean
 
-/** Restricts the file to owner-only read/write (`chmod 600` on POSIX). Best-effort on Windows
- *  (no real ACL restriction — see the JVM/mingw actuals); returns whether it succeeded. */
 expect suspend fun Path.restrictToOwner(context: CoroutineContext = Dispatchers.IO): Boolean
 
-/** Resolves symlinks (and, on Windows, junctions/reparse points) to the canonical absolute path, or `null` if the
- *  path doesn't exist or can't be resolved. Useful for deduplicating candidates that are really the same file
- *  reached through different symlinked paths (e.g. Linux distros symlinking `/usr/lib/jvm/default` to a specific
- *  JDK, or `lib64` to `lib`). */
 expect suspend fun Path.realPath(context: CoroutineContext = Dispatchers.IO): Path?

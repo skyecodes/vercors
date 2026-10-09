@@ -11,8 +11,7 @@ import kotlin.coroutines.CoroutineContext
 
 actual suspend fun Path.createLink(target: Path, context: CoroutineContext, isSymbolic: Boolean): Boolean {
     target.createParentDirectories()
-    // withContext's lambda has CoroutineScope as its implicit receiver, which shadows this Path receiver for bare
-    // member calls like toString() — capture both path strings first so we never call the wrong toString().
+    // Capture path strings before withContext: its CoroutineScope receiver shadows bare toString()
     val sourcePath = toString()
     val targetPath = target.toString()
     return withContext(context) {

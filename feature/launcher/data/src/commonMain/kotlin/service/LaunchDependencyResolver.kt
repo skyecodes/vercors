@@ -9,7 +9,6 @@ import dev.zacsweers.metro.Inject
 
 private const val GAME_ASSET_DOWNLOAD_URL = "https://resources.download.minecraft.net"
 
-/** Maps a resolved version manifest onto the set of files an instance needs on disk. */
 @Inject
 class LaunchDependencyResolver(
     private val appPaths: AppPaths,

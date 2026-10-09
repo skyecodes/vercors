@@ -12,12 +12,7 @@ import kotlinx.io.files.Path
 
 private val logger = KotlinLogging.logger {}
 
-/**
- * Reads the servers a user has added to this instance from its `servers.dat` (uncompressed NBT — unlike gzip-
- * compressed `level.dat`). Defensive by design: [path] is entirely game/user-owned, so any structural surprise is
- * logged and treated as "no servers" rather than failing the whole Servers tab.
- */
-suspend fun parseServersDat(path: Path): List<InstalledServer> = try {
+internal suspend fun parseServersDat(path: Path): List<InstalledServer> = try {
     val root = readNbt(path.readData().toByteArray())
     root.getList("servers")?.value.orEmpty().mapNotNull { entry ->
         val compound = entry as? NbtCompound ?: return@mapNotNull null

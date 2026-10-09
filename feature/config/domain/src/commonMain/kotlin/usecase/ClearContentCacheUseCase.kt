@@ -5,7 +5,7 @@ import dev.zacsweers.metro.Inject
 
 @Inject
 class ClearContentCacheUseCase(
-    private val repository: ContentCacheRepository
+    private val contentCacheRepository: ContentCacheRepository
 ) {
-    suspend operator fun invoke() = repository.clear()
+    suspend operator fun invoke(): Unit = contentCacheRepository.clear()
 }

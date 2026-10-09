@@ -16,30 +16,19 @@ import com.slack.circuit.overlay.OverlayTransitionController
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 
-/**
- * A [ConfirmDialogButton]'s accent. [Theme]'s color tokens (e.g. [error]/[onError]) are themselves
- * `@Composable` reads (animated on theme/accent change), so they can't be resolved at [ConfirmDialog]
- * construction time (built outside composition, inside `OverlayEffect`'s suspend block) — [ConfirmDialogButton]
- * carries this role instead, resolved inside [ConfirmDialogButton.Render].
- */
+// Theme colors are @Composable reads, so the role is resolved at render time rather than at construction
 enum class ConfirmDialogButtonStyle {
     Neutral,
     Destructive,
     Primary,
 }
 
-/** One button of a [ConfirmDialog]. */
 data class ConfirmDialogButton(
     val textResource: StringResource,
     val icon: ImageVector,
     val style: ConfirmDialogButtonStyle = ConfirmDialogButtonStyle.Neutral,
 )
 
-/**
- * Generic yes/no confirmation dialog: a message plus a neutral "cancel" button (returns `false`) and an
- * accented "action" button (returns `true`). Replaces the former `ConfirmDeleteDialog`/`ConfirmRemoveDialog`/
- * `ConfirmInstallJavaDialog` (`feature/instance/ui`), which only differed in message/button text/icon/color.
- */
 class ConfirmDialog(
     private val messageResource: StringResource,
     private val messageArgs: List<Any> = emptyList(),

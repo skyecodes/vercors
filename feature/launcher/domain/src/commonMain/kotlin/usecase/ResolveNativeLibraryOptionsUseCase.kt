@@ -7,9 +7,6 @@ import app.vercors.shared.domain.usecase.DetectNativeLibraryPathUseCase
 import dev.zacsweers.metro.Inject
 import opensavvy.state.progressive.ProgressiveOutcome
 
-/** Resolves the effective native library options: per-field, the instance's own override if it has one,
- *  otherwise the globally-configured value. When a library is enabled but has no explicit path, resolves the
- *  real system-installed path so it can be passed to LWJGL instead of a bare library name. */
 @Inject
 class ResolveNativeLibraryOptionsUseCase(
     private val configurationRepository: ConfigurationRepository,

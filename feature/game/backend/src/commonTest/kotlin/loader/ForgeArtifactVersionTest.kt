@@ -4,8 +4,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
-// Real entries observed on maven.minecraftforge.net's
-// /api/maven/versions/releases/net%2Fminecraftforge%2Fforge for MC 1.7.10.
+// Real entries from maven.minecraftforge.net for MC 1.7.10
 private val REAL_1_7_10_RAW_VERSIONS = listOf(
     "1.7.10-10.13.0.1150",
     "1.7.10-10.13.2.1300-1.7.10",

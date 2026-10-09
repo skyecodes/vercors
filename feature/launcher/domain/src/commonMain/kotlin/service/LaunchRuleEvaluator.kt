@@ -7,15 +7,8 @@ import app.vercors.feature.game.domain.model.GameVersionDetails.Rule
 import app.vercors.feature.launcher.domain.model.InstanceLaunchFeature
 import dev.zacsweers.metro.Inject
 
-/**
- * Evaluates the platform- and feature-conditional rules attached to a Mojang version manifest.
- *
- * Takes the host identity as an [OsInfo] value rather than a `SystemService`, so it can be
- * evaluated against any platform without touching the machine it runs on.
- */
 @Inject
 class LaunchRuleEvaluator(private val hostOs: OsInfo) {
-    /** Drops the libraries and arguments that do not apply to [hostOs] and the enabled [features]. */
     fun applyRules(
         version: GameVersionDetails,
         features: Collection<InstanceLaunchFeature>

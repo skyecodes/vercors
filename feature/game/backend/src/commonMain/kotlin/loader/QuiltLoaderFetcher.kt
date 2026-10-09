@@ -5,14 +5,14 @@ import app.vercors.feature.game.api.dto.LoaderVersionData
 import arrow.core.raise.Raise
 import dev.zacsweers.metro.*
 
-private const val QUILT_META_BASE_URL = "https://meta.quiltmc.org/v3"
+internal const val QUILT_LOADER_ID = "quilt"
+internal const val QUILT_META_BASE_URL = "https://meta.quiltmc.org/v3"
 
 @SingleIn(AppScope::class)
 @ContributesIntoMap(AppScope::class)
-@StringKey("quilt")
-@Inject
+@StringKey(QUILT_LOADER_ID)
 class QuiltLoaderFetcher(
-    @Named("quilt") private val api: MetaLoaderApi
+    @Named(QUILT_LOADER_ID) private val api: MetaLoaderApi
 ) : LoaderFetcher {
     context(_: Raise<LoaderErrorData>)
     override suspend fun getVersions(gameVersion: String): List<LoaderVersionData> =

@@ -1,7 +1,7 @@
 package app.vercors.feature.instance.data.dto
 
+import app.vercors.feature.instance.domain.model.ContentKind
 import app.vercors.feature.instance.domain.model.PendingManualDownload
-import app.vercors.feature.instance.domain.usecase.ContentKind
 import kotlinx.serialization.Serializable
 
 @Serializable

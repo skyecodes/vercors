@@ -8,8 +8,8 @@ import dev.zacsweers.metro.Inject
 
 @Inject
 class ParsePrismInstanceUseCase(
-    private val repository: PrismInstanceImportRepository
+    private val prismInstanceImportRepository: PrismInstanceImportRepository
 ) {
     context(_: Raise<LocalImportError>)
-    suspend operator fun invoke(sourcePath: String): PrismInstanceInfo = repository.parse(sourcePath)
+    suspend operator fun invoke(sourcePath: String): PrismInstanceInfo = prismInstanceImportRepository.parse(sourcePath)
 }

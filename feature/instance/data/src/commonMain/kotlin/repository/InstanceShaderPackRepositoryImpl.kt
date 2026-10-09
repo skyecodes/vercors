@@ -6,13 +6,11 @@ import app.vercors.feature.instance.domain.model.InstanceId
 import app.vercors.feature.instance.domain.repository.InstanceShaderPackRepository
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
-import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
 import opensavvy.state.coroutines.ProgressiveFlow
 
 @SingleIn(AppScope::class)
 @ContributesBinding(AppScope::class)
-@Inject
 class InstanceShaderPackRepositoryImpl(
     private val scannerService: InstanceShaderPackScannerService
 ) : InstanceShaderPackRepository {
@@ -25,16 +23,16 @@ class InstanceShaderPackRepositoryImpl(
         platformId: String,
         projectId: String,
         fileId: String
-    ) = scannerService.recordOrigin(instanceId, fileName, platformId, projectId, fileId)
+    ): Unit = scannerService.recordOrigin(instanceId, fileName, platformId, projectId, fileId)
 
-    override suspend fun setShaderPackEnabled(instanceId: InstanceId, fileName: String, enabled: Boolean) =
+    override suspend fun setShaderPackEnabled(instanceId: InstanceId, fileName: String, enabled: Boolean): Unit =
         scannerService.setEnabled(instanceId, fileName, enabled)
 
-    override suspend fun removeShaderPack(instanceId: InstanceId, fileName: String) =
+    override suspend fun removeShaderPack(instanceId: InstanceId, fileName: String): Unit =
         scannerService.removeFile(instanceId, fileName)
 
     override suspend fun importShaderPack(instanceId: InstanceId, sourcePath: String): Boolean =
         scannerService.importFile(instanceId, sourcePath)
 
-    override suspend fun refreshInstalledShaderPacks(instanceId: InstanceId) = scannerService.refresh(instanceId)
+    override suspend fun refreshInstalledShaderPacks(instanceId: InstanceId): Unit = scannerService.refresh(instanceId)
 }

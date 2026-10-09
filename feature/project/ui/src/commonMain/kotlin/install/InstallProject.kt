@@ -15,7 +15,6 @@ import app.vercors.feature.game.ui.LoaderSelector
 import app.vercors.feature.game.ui.LoaderVersionSelector
 import app.vercors.feature.instance.domain.model.ManualDownloadItem
 import app.vercors.feature.project.ui.*
-import app.vercors.feature.project.ui.list.displayName
 import app.vercors.shared.ui.*
 import com.composables.icons.lucide.*
 import com.composeunstyled.theme.Theme
@@ -25,10 +24,12 @@ import org.jetbrains.compose.resources.stringResource
 @Composable
 fun InstallProject(
     store: Store<InstallProjectState, InstallProjectEvent>,
+    modifier: Modifier = Modifier,
 ) {
     val (state, eventSink) = store
 
     AppDialog(
+        modifier = modifier,
         onClickOutside = {
             eventSink(
                 if (state.completedInstanceId != null) InstallProjectEvent.OnCloseClick
@@ -46,15 +47,15 @@ fun InstallProject(
                     style = Theme[textStyles][title]
                 )
 
-                InstanceSelector(state)
-                NewInstanceForm(state)
-                FileSelector(state)
-                DependenciesSection(state)
-                ManualDownloadsSection(state)
+                InstallProjectInstanceSelector(state)
+                InstallProjectNewInstanceForm(state)
+                InstallProjectFileSelector(state)
+                InstallProjectDependenciesSection(state)
+                InstallProjectManualDownloadsSection(state)
                 if (state.installing || state.installProgress > 0f) {
                     AppProgressIndicator(progress = state.installProgress, modifier = Modifier.fillMaxWidth())
                 }
-                ActionButtons(state)
+                InstallProjectActionButtons(state)
             }
         }
     }
@@ -62,7 +63,7 @@ fun InstallProject(
 
 @Composable
 context(eventSink: EventSink<InstallProjectEvent>)
-private fun InstanceSelector(state: InstallProjectState) {
+private fun InstallProjectInstanceSelector(state: InstallProjectState) {
     val createNewInstanceLabel = stringResource(
         ProjectRes.string.createNewInstanceWithProject,
         state.projectType.displayName.lowercase()
@@ -86,7 +87,7 @@ private fun InstanceSelector(state: InstallProjectState) {
 
 @Composable
 context(eventSink: EventSink<InstallProjectEvent>)
-private fun NewInstanceForm(state: InstallProjectState) {
+private fun InstallProjectNewInstanceForm(state: InstallProjectState) {
     if (!state.creatingNewInstance) return
 
     AppTextField(
@@ -120,7 +121,7 @@ private fun NewInstanceForm(state: InstallProjectState) {
 
 @Composable
 context(eventSink: EventSink<InstallProjectEvent>)
-private fun FileSelector(state: InstallProjectState) {
+private fun InstallProjectFileSelector(state: InstallProjectState) {
     val targetResolved = state.selectedInstance != null ||
             (state.creatingNewInstance && state.selectedNewGameVersion != null)
     if (!targetResolved) return
@@ -137,7 +138,7 @@ private fun FileSelector(state: InstallProjectState) {
 
 @Composable
 context(eventSink: EventSink<InstallProjectEvent>)
-private fun DependenciesSection(state: InstallProjectState) {
+private fun InstallProjectDependenciesSection(state: InstallProjectState) {
     if (state.dependencies.isEmpty()) return
 
     AppText(text = stringResource(ProjectRes.string.requiredDependencies))
@@ -154,13 +155,13 @@ private fun DependenciesSection(state: InstallProjectState) {
 
 @Composable
 context(eventSink: EventSink<InstallProjectEvent>)
-private fun ManualDownloadsSection(state: InstallProjectState) {
+private fun InstallProjectManualDownloadsSection(state: InstallProjectState) {
     if (state.manualDownloadItems.isEmpty()) return
 
     val uriHandler = LocalUriHandler.current
     AppText(text = stringResource(ProjectRes.string.manualDownloadsRequired))
     state.manualDownloadItems.forEach { item ->
-        ManualDownloadRow(item)
+        InstallProjectManualDownloadRow(item)
     }
     AppIconTextButton(
         onClick = { state.manualDownloadItems.forEach { uriHandler.openUri(it.downloadUrl) } },
@@ -171,7 +172,7 @@ private fun ManualDownloadsSection(state: InstallProjectState) {
 
 @Composable
 context(eventSink: EventSink<InstallProjectEvent>)
-private fun ManualDownloadRow(item: ManualDownloadItem) {
+private fun InstallProjectManualDownloadRow(item: ManualDownloadItem) {
     Row(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -196,7 +197,7 @@ private fun ManualDownloadRow(item: ManualDownloadItem) {
 
 @Composable
 context(eventSink: EventSink<InstallProjectEvent>)
-private fun ActionButtons(state: InstallProjectState) {
+private fun InstallProjectActionButtons(state: InstallProjectState) {
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         if (state.completedInstanceId != null) {
             AppIconTextButton(

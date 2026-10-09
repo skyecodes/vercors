@@ -19,12 +19,6 @@ import kotlinx.coroutines.sync.withLock
 import opensavvy.state.coroutines.ProgressiveFlow
 import opensavvy.state.progressive.successfulWithProgress
 
-/**
- * Reactive reader of an instance's `servers.dat`, backing the Servers tab. Watches the instance's game directory
- * (`servers.dat` is a single file, not a directory like `saves/`) and re-parses the file on every change. A
- * missing `servers.dat` is completely normal (the game creates it itself the first time a server is added) and
- * is never manufactured here — it just means "no servers yet".
- */
 @SingleIn(AppScope::class)
 @Inject
 class InstanceServerScannerService(
@@ -64,9 +58,7 @@ class InstanceServerScannerService(
         instanceId: InstanceId,
         state: MutableProgressiveStateFlow<Nothing, List<InstalledServer>>
     ) {
-        // Ensured to exist before activate() starts watching it below — kfswatch's JVM watcher silently never
-        // retries a watch attempted against a nonexistent directory, permanently losing live updates for the
-        // rest of the app session.
+        // Created before watching: kfswatch never retries a watch on a missing directory
         val gameDir = appPaths.gameDir(instanceId)
         if (!gameDir.exists()) gameDir.createDirectories()
         val file = appPaths.serversDatFile(instanceId)

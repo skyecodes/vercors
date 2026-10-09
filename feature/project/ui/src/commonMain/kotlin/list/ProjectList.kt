@@ -13,7 +13,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.layout.ContentScale
@@ -53,7 +52,6 @@ import com.slack.circuit.sharedelements.SharedElementTransitionScope
 import dev.zacsweers.metro.AppScope
 import opensavvy.state.progressive.*
 import org.jetbrains.compose.resources.stringResource
-import org.jetbrains.compose.resources.vectorResource
 
 @CircuitInject(ProjectListScreen::class, AppScope::class)
 @Composable
@@ -723,42 +721,3 @@ private fun LazyItemScope.ProjectListItemCardLayout(
         }
     }
 }
-
-val ProjectSortBy.displayName: String
-    @Composable get() = stringResource(
-        when (this) {
-            ProjectSortBy.Relevance -> ProjectRes.string.relevance
-            ProjectSortBy.Downloads -> ProjectRes.string.downloads
-            ProjectSortBy.DateUpdated -> ProjectRes.string.dateUpdated
-            ProjectSortBy.DateCreated -> ProjectRes.string.dateCreated
-        }
-    )
-
-val ProjectType.displayName: String
-    @Composable get() = stringResource(
-        when (this) {
-            ProjectType.Mod -> ProjectRes.string.mod
-            ProjectType.Modpack -> ProjectRes.string.modpack
-            ProjectType.ResourcePack -> ProjectRes.string.resourcePack
-            ProjectType.ShaderPack -> ProjectRes.string.shaderPack
-            ProjectType.DataPack -> ProjectRes.string.dataPack
-            ProjectType.World -> ProjectRes.string.world
-        }
-    )
-
-val ProjectType.icon: ImageVector
-    get() = when (this) {
-        ProjectType.Mod -> Lucide.Box
-        ProjectType.Modpack -> Lucide.PackageOpen
-        ProjectType.ResourcePack -> Lucide.Paintbrush
-        ProjectType.ShaderPack -> Lucide.Glasses
-        ProjectType.DataPack -> Lucide.Braces
-        ProjectType.World -> Lucide.Earth
-    }
-
-val ProjectPlatformView?.icon: ImageVector
-    @Composable get() = when (this?.id) {
-        "modrinth" -> vectorResource(ProjectRes.drawable.modrinth)
-        "curseforge" -> vectorResource(ProjectRes.drawable.curseforge)
-        else -> Lucide.CircleQuestionMark
-    }

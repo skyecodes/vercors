@@ -34,8 +34,7 @@ sealed interface LocalImportPreview {
         override val sourcePath: String,
         val manifest: ModpackManifest,
     ) : LocalImportPreview {
-        // A local .mrpack's modrinth.index.json carries no real project/version ID for the pack
-        // itself (only individual mod files get IDs, heuristically recovered from CDN URLs).
+        // A local .mrpack carries no project/version ID for the pack itself
         override val modpackInfo: InstanceModpackInfo? get() = null
     }
 }

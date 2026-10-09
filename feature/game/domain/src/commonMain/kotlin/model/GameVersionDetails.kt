@@ -15,10 +15,7 @@ data class GameVersionDetails(
     val mainClass: String,
     val assets: String,
     val assetIndex: AssetIndex,
-    // FML-based loaders (Forge/NeoForge) locate the (patched) client and their own jar themselves, by
-    // scanning the "library_directory" launch variable for well-known maven coordinates — putting those on
-    // the classpath instead makes FML think it's running inside a Gradle modding workspace, not a normal
-    // launch. When set, the command builder omits the client jar from the classpath.
+    // FML locates the client jar itself: putting it on the classpath breaks normal launches
     val omitClientFromClasspath: Boolean = false
 ) {
     sealed interface Argument {
@@ -65,8 +62,7 @@ data class GameVersionDetails(
     ) {
         data class Artifact(
             val path: String,
-            // Not every loader repo publishes a hash/size for every library (e.g. Fabric's meta API omits
-            // both for its own loader/intermediary jars) — null skips validation instead of always failing it.
+            // Some loader repos omit hash/size: null skips validation
             val sha1: String?,
             val size: Long?,
             val url: String
@@ -98,11 +94,7 @@ data class GameVersionDetails(
         val url: String
     )
 
-    /**
-     * Merges a mod loader's [profile] on top of this vanilla version: the loader's main class replaces the
-     * vanilla one, its libraries are appended (a loader-supplied artifact wins over a vanilla one for the same
-     * `group:artifact`), and its arguments are appended after the vanilla ones.
-     */
+    // A loader library wins over a vanilla one with the same group:artifact
     fun mergeWith(profile: LoaderInstallProfile): GameVersionDetails {
         val loaderCoordinates = profile.libraries.map { it.coordinate }.toSet()
         return copy(

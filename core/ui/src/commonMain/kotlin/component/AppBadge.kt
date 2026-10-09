@@ -14,7 +14,6 @@ import app.vercors.core.ui.theme.colors
 import app.vercors.core.ui.theme.surface
 import com.composeunstyled.theme.Theme
 
-/** A small colored status dot, e.g. to indicate an item's live state on a card without taking up layout space. */
 @Composable
 fun AppBadge(
     color: Color,

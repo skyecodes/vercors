@@ -3,6 +3,7 @@ package app.vercors.feature.instance.ui.details
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -29,6 +30,14 @@ import com.composeunstyled.theme.Theme
 import com.slack.circuit.overlay.OverlayNavigator
 import com.slack.circuit.overlay.OverlayTransitionController
 import org.jetbrains.compose.resources.stringResource
+
+@Immutable
+data class JavaInstallProgressView(
+    val majorVersion: Int = 0,
+    val progress: Float? = null,
+    val done: Boolean = false,
+    val error: (@Composable () -> String)? = null,
+)
 
 class InstallJavaProgressDialog(
     private val state: State<JavaInstallProgressView>,

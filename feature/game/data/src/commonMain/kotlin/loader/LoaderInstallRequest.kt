@@ -10,11 +10,7 @@ import opensavvy.spine.api.invoke
 import opensavvy.spine.client.bodyOrThrow
 import opensavvy.spine.client.request
 
-/**
- * A loader's install artifact (Fabric/Quilt's `profile/json`, Forge/NeoForge's installer jar) is fetched
- * through the meta API rather than an upstream URL hardcoded here: the meta API resolves the real, possibly
- * loader-specific upstream location and redirects to it, so this client never needs to know it.
- */
+// Fetched via the meta API, which redirects to the loader-specific upstream
 internal fun loaderInstallArtifactRequest(
     gameVersionId: String,
     loaderId: String,

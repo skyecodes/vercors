@@ -61,22 +61,22 @@ fun ProjectDetails(
 ) {
     val (state, eventSink) = store
 
-    if (state.promptInstall) {
-        OverlayEffect {
-            if (state.project.valueOrNull?.type == ProjectType.Modpack) {
-                val result = show(state.installModpackDialog)
-                eventSink(ProjectDetailsEvent.OnInstallModpackResult(result))
-            } else {
-                val result = show(state.installProjectDialog)
-                eventSink(ProjectDetailsEvent.OnInstallResult(result))
-            }
-        }
-    }
-
     with(eventSink) {
         state.project.onSuccess { ProjectDetails(state.projectId, it, modifier) }
         state.project.onFailure { AppError(it.message) }
         state.project.onIncomplete { AppLoading() }
+
+        if (state.promptInstall) {
+            OverlayEffect {
+                if (state.project.valueOrNull?.type == ProjectType.Modpack) {
+                    val result = show(state.installModpackDialog)
+                    eventSink(ProjectDetailsEvent.OnInstallModpackResult(result))
+                } else {
+                    val result = show(state.installProjectDialog)
+                    eventSink(ProjectDetailsEvent.OnInstallResult(result))
+                }
+            }
+        }
     }
 }
 

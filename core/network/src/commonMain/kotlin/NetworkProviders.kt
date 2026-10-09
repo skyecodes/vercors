@@ -38,8 +38,7 @@ interface NetworkProviders {
             }
         }
 
-    /** Minimal, no-retry, short-timeout client used only for [MetaApiConnectivityPoller]'s health pings —
-     *  the main [provideHttpClient] client's retry/backoff would make the liveness probe itself slow to fail. */
+    // No retry/backoff, so the liveness probe itself fails fast
     @SingleIn(AppScope::class)
     @Provides
     @Named("metaHealthCheckHttpClient")
@@ -60,6 +59,4 @@ interface NetworkProviders {
 
 internal expect val platformHttpClientEngineFactory: HttpClientEngineFactory<*>
 
-/** Wires the OS-native certificate trust store into the client's engine (JVM only; no-op elsewhere —
- *  Kotlin/Native's Curl engine already consults the OS trust store on its own). */
 internal expect fun <T : HttpClientEngineConfig> HttpClientConfig<T>.installPlatformTrustStore()

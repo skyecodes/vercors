@@ -8,19 +8,17 @@ import arrow.core.raise.Raise
 import com.github.ajalt.clikt.core.Context
 import com.github.ajalt.mordant.rendering.BorderType
 import com.github.ajalt.mordant.table.table
-import dev.zacsweers.metro.AppScope
-import dev.zacsweers.metro.ContributesIntoSet
+import dev.zacsweers.metro.Inject
 import opensavvy.state.coroutines.now
 import opensavvy.state.outcome.value
 
-@ContributesIntoSet(AppScope::class)
-class JavaListCommand(private val observeJavaInstallations: ObserveJavaInstallationsUseCase) :
-    AbstractCommand("java-list") {
+@Inject
+class JavaListCommand(private val observeJavaInstallations: ObserveJavaInstallationsUseCase) : AbstractCommand("list") {
     context(_: Raise<CommandError>)
     override suspend fun execute() {
         val installations = observeJavaInstallations().now().value
         if (installations.isEmpty()) {
-            echo("No Java installation found. Run 'vercors java-scan' or 'vercors java-add <path>'.")
+            echo("No Java installation found. Run 'vercors java scan' or 'vercors java add <path>'.")
         } else {
             echo("Found ${installations.size} Java installation${plural(installations)}:")
             echo(table {
@@ -35,5 +33,5 @@ class JavaListCommand(private val observeJavaInstallations: ObserveJavaInstallat
         }
     }
 
-    override fun help(context: Context): String = "Lists detected Java installations"
+    override fun help(context: Context): String = "List detected Java installations"
 }

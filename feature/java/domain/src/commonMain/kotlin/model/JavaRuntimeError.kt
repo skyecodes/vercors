@@ -1,13 +1,16 @@
 package app.vercors.feature.java.domain.model
 
-sealed interface JavaRuntimeError {
-    data class InvalidManifest(val cause: Any) : JavaRuntimeError
-    data class ComponentNotAvailable(val majorVersion: Int) : JavaRuntimeError
-    data class DownloadFailed(val cause: Any) : JavaRuntimeError
-    data object ProbeFailed : JavaRuntimeError
-}
+import kotlin.jvm.JvmInline
 
-sealed interface JavaRuntimeInstallStatus {
-    data class Downloading(val fraction: Float?) : JavaRuntimeInstallStatus
-    data object Done : JavaRuntimeInstallStatus
+sealed interface JavaRuntimeError {
+    @JvmInline
+    value class InvalidManifest(val cause: Any) : JavaRuntimeError
+
+    @JvmInline
+    value class ComponentNotAvailable(val majorVersion: Int) : JavaRuntimeError
+
+    @JvmInline
+    value class DownloadFailed(val cause: Any) : JavaRuntimeError
+
+    data object ProbeFailed : JavaRuntimeError
 }

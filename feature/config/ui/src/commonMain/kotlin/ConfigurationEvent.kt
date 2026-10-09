@@ -5,49 +5,46 @@ import app.vercors.feature.config.domain.model.StartupScreen
 import app.vercors.shared.ui.Event
 
 sealed interface ConfigurationEvent : Event {
-    data class SelectTab(val tab: ConfigurationTab) : ConfigurationEvent
+    data class OnTabClick(val tab: ConfigurationTab) : ConfigurationEvent
 
-    @JvmInline
-    value class SelectTheme(val themeId: String) : ConfigurationEvent
+    data class OnThemeChange(val themeId: String) : ConfigurationEvent
 
-    @JvmInline
-    value class SelectAccent(val accentId: String) : ConfigurationEvent
+    data class OnAccentChange(val accentId: String) : ConfigurationEvent
 
-    data object ToggleAnimations : ConfigurationEvent
-    data object ToggleHorizontalTabs : ConfigurationEvent
+    data object OnAnimationsToggle : ConfigurationEvent
+    data object OnHorizontalTabsToggle : ConfigurationEvent
 
-    data class SetUiScalePercent(val value: Int) : ConfigurationEvent
+    data class OnUiScalePercentChange(val value: Int) : ConfigurationEvent
 
-    data class SetMetaApiUrl(val value: String) : ConfigurationEvent
-    data class SetNetworkTimeout(val value: Int) : ConfigurationEvent
-    data class SetParallelDownloads(val value: Int) : ConfigurationEvent
-    data class SetParallelFilesystemOperations(val value: Int) : ConfigurationEvent
-    data class SetPreferredPlatform(val value: String) : ConfigurationEvent
-    data class SetStartupScreen(val value: StartupScreen) : ConfigurationEvent
-    data class SetHomeCategories(val value: List<HomeCategoryConfig>) : ConfigurationEvent
+    data class OnMetaApiUrlChange(val value: String) : ConfigurationEvent
+    data class OnNetworkTimeoutChange(val value: Int) : ConfigurationEvent
+    data class OnParallelDownloadsChange(val value: Int) : ConfigurationEvent
+    data class OnParallelFilesystemOperationsChange(val value: Int) : ConfigurationEvent
+    data class OnPreferredPlatformChange(val value: String) : ConfigurationEvent
+    data class OnStartupScreenChange(val value: StartupScreen) : ConfigurationEvent
+    data class OnHomeCategoriesChange(val value: List<HomeCategoryConfig>) : ConfigurationEvent
 
-    @JvmInline
-    value class AddJavaInstallation(val path: String) : ConfigurationEvent
+    data class OnJavaInstallationSelected(val path: String) : ConfigurationEvent
 
-    data object RescanJavaInstallations : ConfigurationEvent
+    data object OnRescanJavaClick : ConfigurationEvent
 
-    data class SetPreferredJava(val majorVersion: Int, val installationId: String) : ConfigurationEvent
+    data class OnPreferredJavaChange(val majorVersion: Int, val installationId: String) : ConfigurationEvent
 
-    data object DismissJavaAddError : ConfigurationEvent
+    data object OnJavaAddErrorDismiss : ConfigurationEvent
 
-    data class SetMinMemoryMb(val value: Int?) : ConfigurationEvent
-    data class SetMaxMemoryMb(val value: Int?) : ConfigurationEvent
-    data class SetExtraJvmArgs(val value: String) : ConfigurationEvent
+    data class OnMinMemoryMbChange(val value: Int?) : ConfigurationEvent
+    data class OnMaxMemoryMbChange(val value: Int?) : ConfigurationEvent
+    data class OnExtraJvmArgsChange(val value: String) : ConfigurationEvent
 
-    data class ToggleUseSystemGlfw(val checked: Boolean) : ConfigurationEvent
-    data class SetGlfwPath(val value: String) : ConfigurationEvent
-    data class ToggleUseSystemOpenAl(val checked: Boolean) : ConfigurationEvent
-    data class SetOpenAlPath(val value: String) : ConfigurationEvent
+    data class OnUseSystemGlfwToggle(val checked: Boolean) : ConfigurationEvent
+    data class OnGlfwPathChange(val value: String) : ConfigurationEvent
+    data class OnUseSystemOpenAlToggle(val checked: Boolean) : ConfigurationEvent
+    data class OnOpenAlPathChange(val value: String) : ConfigurationEvent
 
-    data object PromptClearContentCache : ConfigurationEvent
+    data object OnClearContentCacheClick : ConfigurationEvent
     data class OnConfirmClearContentCache(val result: Boolean) : ConfigurationEvent
 
-    data object OpenDataDirectory : ConfigurationEvent
-    data object PromptChangeDataDirectory : ConfigurationEvent
-    data object DismissChangeDataDirectoryPrompt : ConfigurationEvent
+    data object OnOpenDataDirectoryClick : ConfigurationEvent
+    data object OnChangeDataDirectoryClick : ConfigurationEvent
+    data object OnChangeDataDirectoryDismiss : ConfigurationEvent
 }

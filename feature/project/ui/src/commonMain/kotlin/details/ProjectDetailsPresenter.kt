@@ -44,8 +44,7 @@ class ProjectDetailsPresenter(
         val loaders = project.valueOrNull?.loaders
         val name = project.valueOrNull?.name
         val installProjectDialog = remember(screen.projectId, type, loaders) {
-            // The placeholder ProjectType.Mod is never actually installed against — the Install button (which is
-            // the only way to make promptInstall true) only renders once project has loaded successfully.
+            // Placeholder type: Install only renders once the project has loaded
             installProjectDialogFactory.create(
                 screen.projectId,
                 type ?: ProjectType.Mod,
@@ -105,6 +104,6 @@ private fun ProjectType.toInstanceDetailsTab(): InstanceDetailsTab = when (this)
     ProjectType.ResourcePack -> InstanceDetailsTab.ResourcePacks
     ProjectType.ShaderPack -> InstanceDetailsTab.ShaderPacks
     ProjectType.World -> InstanceDetailsTab.Worlds
-    // No dedicated tab for these — falls back to the instance's Options tab, same as Modpack.
+    // No dedicated tab for these: fall back to the Options tab, same as Modpack
     ProjectType.DataPack, ProjectType.Modpack -> InstanceDetailsTab.Options
 }

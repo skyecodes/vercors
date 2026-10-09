@@ -28,10 +28,14 @@ import org.jetbrains.compose.resources.stringResource
 @Composable
 fun CopyInstance(
     store: Store<CopyInstanceState, CopyInstanceEvent>,
+    modifier: Modifier = Modifier,
 ) {
     val (state, eventSink) = store
 
-    AppDialog(onClickOutside = { eventSink(CopyInstanceEvent.OnCancelClick) }) {
+    AppDialog(
+        modifier = modifier,
+        onClickOutside = { eventSink(CopyInstanceEvent.OnCancelClick) }
+    ) {
         AppForm {
             AppText(
                 text = stringResource(InstanceRes.string.copyInstance),

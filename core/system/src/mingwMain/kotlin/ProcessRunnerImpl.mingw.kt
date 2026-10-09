@@ -16,8 +16,7 @@ private const val EXIT_CODE_MARKER = "__VERCORS_EXIT_CODE__:"
 class ProcessRunnerImpl : ProcessRunner {
     @OptIn(ExperimentalForeignApi::class)
     override suspend fun run(command: List<String>, workingDir: String): ProcessResult {
-        // /V:ON enables delayed (!var!) expansion so %errorlevel% reflects the command that just ran,
-        // rather than being expanded (to the wrong, pre-run value) when the whole line is parsed upfront.
+        // /V:ON delays expansion so the error level reflects the command that just ran
         val shellCommand = "cmd /V:ON /C \"cd /d ${workingDir.cmdQuote()} && " +
                 command.joinToString(" ") { it.cmdQuote() } +
                 " 2>&1 & echo $EXIT_CODE_MARKER!errorlevel!\""
@@ -34,7 +33,7 @@ class ProcessRunnerImpl : ProcessRunner {
         val markerIndex = output.lastIndexOf(EXIT_CODE_MARKER)
         check(markerIndex >= 0) { "Process output did not contain an exit code: $command" }
         val exitCode = output.substring(markerIndex + EXIT_CODE_MARKER.length).trim().toInt()
-        // _popen only exposes a single, merged stream; the combined output is reported as stdout.
+        // _popen exposes a single merged stream, reported as stdout
         return ProcessResult(exitCode, stdout = output.substring(0, markerIndex), stderr = "")
     }
 }

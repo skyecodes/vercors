@@ -13,8 +13,8 @@ internal fun CurseForgeProject.convertBrief(): BriefProjectData = BriefProjectDa
     id = id.toString(),
     platform = CURSEFORGE_PLATFORM_ID,
     name = name,
-    type = toProjectType(),
-    loaders = toProjectLoaders(),
+    type = convertToType(),
+    loaders = convertToLoaders(),
     description = summary,
     author = authors.first().name,
     url = "https://www.curseforge.com/minecraft/${classId.toCurseForgeUrlSegment()}/$slug",
@@ -28,13 +28,13 @@ internal fun CurseForgeProject.convert(descriptionHtml: String): ProjectData = P
     id = id.toString(),
     platform = CURSEFORGE_PLATFORM_ID,
     name = name,
-    type = toProjectType(),
+    type = convertToType(),
     description = summary,
     url = "https://www.curseforge.com/minecraft/${classId.toCurseForgeUrlSegment()}/$slug",
     body = descriptionHtml.toMarkdown(),
     logoUrl = logo?.thumbnailUrl,
     gameVersions = latestFilesIndexes.map { it.gameVersion }.distinct(),
-    loaders = toProjectLoaders(),
+    loaders = convertToLoaders(),
     categories = categories.map { it.convert() },
     authors = authors.map { ProjectAuthorData(name = it.name, url = it.url) },
     links = ProjectLinksData(
@@ -46,14 +46,13 @@ internal fun CurseForgeProject.convert(descriptionHtml: String): ProjectData = P
     )
 )
 
-// Falls back to Mod for a classId this launcher doesn't otherwise recognize — in practice unreachable, since
-// project search already filters results down to known classIds.
-private fun CurseForgeProject.toProjectType(): ProjectTypeData = classId.toProjectTypeData() ?: ProjectTypeData.Mod
+// Unreachable in practice: project search only returns known classIds
+private fun CurseForgeProject.convertToType(): ProjectTypeData = classId.convertToType() ?: ProjectTypeData.Mod
 
-private fun CurseForgeProject.toProjectLoaders(): List<ProjectLoaderData> =
-    latestFilesIndexes.mapNotNull { it.modLoader?.toProjectLoaderDataOrNull() }.distinct()
+private fun CurseForgeProject.convertToLoaders(): List<ProjectLoaderData> =
+    latestFilesIndexes.mapNotNull { it.modLoader?.convert() }.distinct()
 
-private fun CurseForgeModLoaderType.toProjectLoaderDataOrNull(): ProjectLoaderData? = when (this) {
+private fun CurseForgeModLoaderType.convert(): ProjectLoaderData? = when (this) {
     CurseForgeModLoaderType.Forge -> ProjectLoaderData.Forge
     CurseForgeModLoaderType.NeoForge -> ProjectLoaderData.NeoForge
     CurseForgeModLoaderType.Fabric -> ProjectLoaderData.Fabric
@@ -87,7 +86,7 @@ internal fun CurseForgeCategory.convertToType(): ProjectTypeData? = when (id) {
     else -> null
 }
 
-internal fun Int?.toProjectTypeData(): ProjectTypeData? = when (this) {
+internal fun Int?.convertToType(): ProjectTypeData? = when (this) {
     MOD_CLASS_ID -> ProjectTypeData.Mod
     MODPACK_CLASS_ID -> ProjectTypeData.Modpack
     RESOURCEPACK_CLASS_ID -> ProjectTypeData.ResourcePack
@@ -97,10 +96,9 @@ internal fun Int?.toProjectTypeData(): ProjectTypeData? = when (this) {
     else -> null
 }
 
-// Falls back to "mc-mods" for a classId this launcher doesn't otherwise recognize — in practice unreachable,
-// since project search already filters results down to known classIds.
+// Unreachable in practice: project search only returns known classIds
 internal fun Int?.toCurseForgeUrlSegment(): String =
-    (this.toProjectTypeData() ?: ProjectTypeData.Mod).toCurseForgeUrlSegment()
+    (this.convertToType() ?: ProjectTypeData.Mod).toCurseForgeUrlSegment()
 
 internal fun ProjectTypeData.toCurseForgeUrlSegment(): String = when (this) {
     ProjectTypeData.Mod -> "mc-mods"
@@ -125,19 +123,14 @@ internal fun ProjectSortByData.toCurseForgeSortField(): CurseForgeProjectSearchS
     ProjectSortByData.DateCreated -> CurseForgeProjectSearchSortField.ReleasedDate
 }
 
-/**
- * [CurseForgeFile] has no clean per-file loader field: [CurseForgeFile.gameVersions] mixes real version
- * strings and loader names (e.g. `["1.20.1", "Forge"]`) with no separator. When the caller already filtered
- * by [loaderFilter] server-side, just echo it back; otherwise fall back to scanning [CurseForgeFile.gameVersions]
- * against the known loader-name set.
- */
+// gameVersions mixes version strings and loader names; echo the server-side loader filter when there is one
 internal fun CurseForgeFile.convert(loaderFilter: ProjectLoaderData?): ProjectFileData = ProjectFileData(
     id = id.toString(),
     displayName = displayName,
     fileName = fileName,
     gameVersions = sortableGameVersions.map { it.gameVersion }.distinct(),
-    loaders = loaderFilter?.let { listOf(it) } ?: gameVersions.mapNotNull { it.toProjectLoaderDataOrNull() }.distinct(),
-    releaseChannel = releaseType.toProjectReleaseChannelData(),
+    loaders = loaderFilter?.let { listOf(it) } ?: gameVersions.mapNotNull { it.convertToLoader() }.distinct(),
+    releaseChannel = releaseType.convert(),
     size = fileLength,
     sha1 = hashes.firstOrNull { it.algo == CurseForgeHashAlgo.Sha1 }?.value,
     md5 = hashes.firstOrNull { it.algo == CurseForgeHashAlgo.Md5 }?.value,
@@ -146,7 +139,7 @@ internal fun CurseForgeFile.convert(loaderFilter: ProjectLoaderData?): ProjectFi
         .map { ProjectFileDependencyData(it.modId.toString()) }
 )
 
-private fun String.toProjectLoaderDataOrNull(): ProjectLoaderData? = when (this) {
+private fun String.convertToLoader(): ProjectLoaderData? = when (this) {
     "Forge" -> ProjectLoaderData.Forge
     "NeoForge" -> ProjectLoaderData.NeoForge
     "Fabric" -> ProjectLoaderData.Fabric
@@ -154,7 +147,7 @@ private fun String.toProjectLoaderDataOrNull(): ProjectLoaderData? = when (this)
     else -> null
 }
 
-internal fun CurseForgeFileReleaseType.toProjectReleaseChannelData(): ProjectReleaseChannelData = when (this) {
+internal fun CurseForgeFileReleaseType.convert(): ProjectReleaseChannelData = when (this) {
     CurseForgeFileReleaseType.Release -> ProjectReleaseChannelData.Release
     CurseForgeFileReleaseType.Beta -> ProjectReleaseChannelData.Beta
     CurseForgeFileReleaseType.Alpha -> ProjectReleaseChannelData.Alpha

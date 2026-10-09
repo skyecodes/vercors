@@ -12,7 +12,7 @@ import app.vercors.core.ui.theme.colors
 import app.vercors.core.ui.theme.surface
 import com.composeunstyled.theme.Theme
 
-private const val gradientSize = 64f
+private const val GRADIENT_SIZE = 64f
 
 @Composable
 fun Modifier.scrollGradient(
@@ -25,7 +25,7 @@ fun Modifier.scrollGradient(
         orientation = orientation,
         colors = listOf(color, Color.Transparent),
         start = 0f,
-        end = gradientSize
+        end = GRADIENT_SIZE
     )
     if (listState.canScrollForward) {
         val sizeOnAxis = when (orientation) {
@@ -35,7 +35,7 @@ fun Modifier.scrollGradient(
         drawGradient(
             orientation = orientation,
             colors = listOf(Color.Transparent, color),
-            start = sizeOnAxis - gradientSize,
+            start = sizeOnAxis - GRADIENT_SIZE,
             end = sizeOnAxis
         )
     }

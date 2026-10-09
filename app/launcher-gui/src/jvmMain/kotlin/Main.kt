@@ -97,7 +97,7 @@ private fun initializeApp(root: Path): AppGraph {
     logger.info { "Hello World!" }
     NotificationManager.initialize()
 
-    appGraph.metaApiConnectivityPoller // force eager construction so its background poll loop starts now
+    appGraph.metaApiConnectivityPoller // forces eager construction so its poll loop starts now
 
     Runtime.getRuntime().addShutdownHook(
         Thread {

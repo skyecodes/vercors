@@ -11,5 +11,5 @@ class RemoveInstanceIconUseCase(
     private val instanceRepository: InstanceRepository
 ) {
     context(_: Raise<InstanceError>)
-    suspend operator fun invoke(instanceId: InstanceId) = instanceRepository.removeInstanceIcon(instanceId)
+    suspend operator fun invoke(instanceId: InstanceId): Unit = instanceRepository.removeInstanceIcon(instanceId)
 }

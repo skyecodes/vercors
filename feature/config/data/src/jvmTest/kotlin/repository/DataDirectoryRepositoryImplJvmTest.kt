@@ -72,8 +72,7 @@ class DataDirectoryRepositoryImplJvmTest {
                 "moved mod file should be re-linked to the moved cache object, not an independent copy"
             )
         } finally {
-            // move() always writes the redirect marker to the *real* OS-default location for appId, regardless
-            // of where oldRoot/newRoot are — clean that up so the test doesn't leave it on the dev/CI machine.
+            // move() writes the redirect marker to the real OS-default location: clean it up
             defaultAppRoot(appId).let { if (SystemFileSystem.exists(it)) it.deleteRecursivelyForTest() }
         }
     }

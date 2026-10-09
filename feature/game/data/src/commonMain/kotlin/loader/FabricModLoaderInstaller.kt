@@ -12,13 +12,14 @@ import app.vercors.shared.data.AppPaths
 import app.vercors.shared.data.FileValidationService
 import arrow.core.raise.Raise
 import arrow.core.raise.context.withError
-import dev.zacsweers.metro.*
+import dev.zacsweers.metro.AppScope
+import dev.zacsweers.metro.ContributesIntoMap
+import dev.zacsweers.metro.SingleIn
+import dev.zacsweers.metro.StringKey
 
-/** Fetches Fabric's `profile/json`, which is already everything needed to launch: no local processing. */
 @SingleIn(AppScope::class)
 @ContributesIntoMap(AppScope::class)
 @StringKey("fabric")
-@Inject
 class FabricModLoaderInstaller(
     private val appPaths: AppPaths,
     private val fileValidationService: FileValidationService

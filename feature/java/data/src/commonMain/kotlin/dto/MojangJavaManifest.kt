@@ -3,8 +3,6 @@ package app.vercors.feature.java.data.dto
 import kotlinx.serialization.Serializable
 import kotlin.time.Instant
 
-/** Keyed by OS/arch id (e.g. "linux", "windows-x64", "mac-os-arm64"), then by runtime component name
- *  (e.g. "java-runtime-gamma"), matching Mojang's `all.json` schema. */
 typealias MojangJavaManifest = Map<String, Map<String, List<MojangJavaManifestEntry>>>
 
 @Serializable

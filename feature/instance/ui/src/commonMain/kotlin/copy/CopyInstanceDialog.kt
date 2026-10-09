@@ -16,9 +16,6 @@ sealed interface CopyInstanceResult {
     data object Cancelled : CopyInstanceResult
 }
 
-data class CopyInstanceTarget(val id: InstanceId, val name: String)
-
-/** Shown as a dialog overlay rather than a full navigated screen — see [CreateInstanceDialog][app.vercors.feature.instance.ui.create.CreateInstanceDialog] for the same pattern. */
 class CopyInstanceDialog(
     private val target: CopyInstanceTarget,
     private val globalScope: CoroutineScope,

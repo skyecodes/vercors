@@ -5,7 +5,7 @@ import dev.zacsweers.metro.Inject
 
 @Inject
 class GetContentCacheSizeUseCase(
-    private val repository: ContentCacheRepository
+    private val contentCacheRepository: ContentCacheRepository
 ) {
-    suspend operator fun invoke(): Long = repository.sizeBytes()
+    suspend operator fun invoke(): Long = contentCacheRepository.sizeBytes()
 }

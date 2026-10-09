@@ -64,7 +64,7 @@ internal interface AppGraph {
     @SingleIn(AppScope::class)
     fun provideAppRestartService(): AppRestartService = AppRestartService {
         if (ExecutableRuntime.isDev()) {
-            logger.warn { "Restarting under a dev run (no packaged launcher to relaunch) — the app will exit but not come back automatically; relaunch it manually." }
+            logger.warn { "Restarting under a dev run (no packaged launcher to relaunch): the app will exit but not come back automatically; relaunch it manually." }
         }
         AppRestarter.restartApplication()
     }
@@ -94,5 +94,5 @@ internal interface AppGraph {
 
 internal val LocalAppGraph: ProvidableCompositionLocal<AppGraph> =
     staticCompositionLocalOf {
-        error("LocalAppGraph not provided — use it inside CircuitContent(AppScreen).")
+        error("LocalAppGraph not provided: use it inside CircuitContent(AppScreen).")
     }

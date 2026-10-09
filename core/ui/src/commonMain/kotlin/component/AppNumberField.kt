@@ -26,9 +26,7 @@ fun AppNumberField(
     width: Dp = 72.dp,
     backgroundColor: Color = Theme[colors][surface2],
 ) {
-    // AppTextField sizes itself via Modifier.width(IntrinsicSize.Max) internally, which doesn't play
-    // well when placed next to a weight(1f) sibling in a Row (it can claim far more width than intended).
-    // A Box with a fixed width isolates it from that, giving this field a stable, predictable footprint.
+    // Fixed-width Box: AppTextField's IntrinsicSize.Max width misbehaves next to a weight(1f) sibling
     Box(modifier = modifier.width(width)) {
         AppTextField(
             initialValue = value.toString(),

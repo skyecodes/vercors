@@ -1,17 +1,25 @@
 package app.vercors.feature.instance.ui.details
 
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import app.vercors.feature.account.ui.list.LoginDialog
 import app.vercors.feature.game.domain.model.ModLoaderType
 import app.vercors.feature.game.ui.displayName
 import app.vercors.feature.instance.domain.model.*
 import app.vercors.feature.instance.ui.copy.CopyInstanceDialog
+import app.vercors.feature.instance.ui.details.content.InstalledContentEvent
+import app.vercors.feature.instance.ui.details.content.InstalledContentState
+import app.vercors.feature.instance.ui.details.logs.InstanceLogsEvent
+import app.vercors.feature.instance.ui.details.logs.InstanceLogsState
+import app.vercors.feature.instance.ui.details.options.InstanceOptionsEvent
+import app.vercors.feature.instance.ui.details.options.InstanceOptionsState
+import app.vercors.feature.instance.ui.details.servers.InstanceServersEvent
+import app.vercors.feature.instance.ui.details.servers.InstanceServersState
+import app.vercors.feature.instance.ui.details.worlds.InstalledWorldsEvent
+import app.vercors.feature.instance.ui.details.worlds.InstalledWorldsState
 import app.vercors.feature.instance.ui.install.FinishInstallationDialog
 import app.vercors.shared.domain.model.JvmMemoryOptions
 import app.vercors.shared.domain.model.NativeLibraryOptions
 import app.vercors.shared.ui.Store
-import nl.jacobras.humanreadable.HumanReadable
 import opensavvy.state.progressive.ProgressiveOutcome
 import kotlin.time.Duration
 import kotlin.time.Instant
@@ -36,7 +44,7 @@ data class InstanceDetailsState(
     val finishInstallationDialog: FinishInstallationDialog,
     val promptLogin: Boolean = false,
     val loginDialog: LoginDialog,
-    val promptJavaInstall: Boolean = false,
+    val promptJavaInstallProgress: Boolean = false,
     val installJavaProgressDialog: InstallJavaProgressDialog,
 )
 
@@ -61,18 +69,6 @@ data class InstanceView(
     val lastPlayedAt: Instant? = null
 )
 
-@Immutable
-data class InstanceLogEventView(
-    val timestamp: Instant,
-    val level: Level,
-    val message: String,
-    val isLauncher: Boolean,
-) {
-    enum class Level {
-        TRACE, DEBUG, INFO, WARN, ERROR, FATAL
-    }
-}
-
 fun InstanceAndStatus.toView(): InstanceView = InstanceView(
     id = instance.id,
     name = instance.name,
@@ -94,88 +90,3 @@ fun InstanceAndStatus.toView(): InstanceView = InstanceView(
 )
 
 val Instance.displayType: String get() = if (modpackInfo != null) "Modpack" else "Custom"
-
-@Immutable
-data class InstalledContentFileView(
-    val fileName: String,
-    val title: String,
-    val description: String?,
-    val version: String?,
-    val iconFilePath: String?,
-    val enabled: Boolean,
-    val providers: List<ModProvider>,
-    val lastModified: Instant?,
-)
-
-fun InstalledContentFile.toView(): InstalledContentFileView = InstalledContentFileView(
-    fileName = fileName,
-    title = title,
-    description = description,
-    version = version,
-    iconFilePath = iconFilePath,
-    enabled = enabled,
-    providers = providers,
-    lastModified = lastModified
-)
-
-@Immutable
-data class InstalledWorldView(
-    val folderName: String,
-    val displayName: String,
-    val iconFilePath: String?,
-    val lastModified: Instant?,
-) {
-    val lastModifiedReadable = lastModified?.let { HumanReadable.timeAgo(it) }
-}
-
-fun InstalledWorld.toView(): InstalledWorldView = InstalledWorldView(
-    folderName = folderName,
-    displayName = folderName.stripMinecraftFormattingForDisplay(),
-    iconFilePath = iconFilePath,
-    lastModified = lastModified
-)
-
-/**
- * World folder names are left untouched on disk (they may legitimately come from the save's own in-game name,
- * `§`-codes included) — this only cleans up how the name is *shown* in the UI, never what's written to disk or
- * used to identify the folder (removal, dedup, etc. all keep using the real folder name).
- */
-private val MINECRAFT_FORMATTING_CODE = Regex("§.")
-
-internal fun String.stripMinecraftFormattingForDisplay(): String =
-    replace(MINECRAFT_FORMATTING_CODE, "").replace("§", "").ifBlank { this }
-
-@Immutable
-data class InstalledServerView(
-    val name: String,
-    val address: String,
-)
-
-fun InstalledServer.toView(): InstalledServerView = InstalledServerView(
-    name = name.stripMinecraftFormattingForDisplay(),
-    address = address,
-)
-
-@Immutable
-data class JavaInstallProgressView(
-    val majorVersion: Int = 0,
-    val progress: Float? = null,
-    val done: Boolean = false,
-    val error: (@Composable () -> String)? = null,
-)
-
-fun InstanceLogEvent.toView(): InstanceLogEventView = when (this) {
-    is InstanceLogEvent.GameLog4j -> InstanceLogEventView(
-        timestamp = inst,
-        level = InstanceLogEventView.Level.valueOf(level.uppercase()),
-        message = toString(),
-        isLauncher = false
-    )
-
-    is InstanceLogEvent.Plain -> InstanceLogEventView(
-        timestamp = inst,
-        level = if (this is InstanceLogEvent.Error) InstanceLogEventView.Level.ERROR else InstanceLogEventView.Level.INFO,
-        message = toString(),
-        isLauncher = this is InstanceLogEvent.Launcher
-    )
-}

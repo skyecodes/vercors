@@ -17,7 +17,6 @@ import arrow.core.raise.context.bind
 import arrow.core.raise.context.ensureNotNull
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
-import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
@@ -39,7 +38,6 @@ private val logger = KotlinLogging.logger {}
 
 @SingleIn(AppScope::class)
 @ContributesBinding(AppScope::class)
-@Inject
 class AccountRepositoryImpl(
     coroutineScope: CoroutineScope,
     appPaths: AppPaths,

@@ -34,7 +34,7 @@ fun InstanceAndStatus.toBriefView(): BriefInstanceView = BriefInstanceView(
     modpackInfo = instance.modpackInfo,
 )
 
-/** Platform names aren't translated, so this is a plain lookup rather than a string resource. */
+// Platform names aren't translated
 fun String.toPlatformDisplayName(): String = when (this) {
     "modrinth" -> "Modrinth"
     "curseforge" -> "CurseForge"

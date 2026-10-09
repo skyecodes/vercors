@@ -12,13 +12,14 @@ import app.vercors.shared.data.AppPaths
 import app.vercors.shared.data.FileValidationService
 import arrow.core.raise.Raise
 import arrow.core.raise.context.withError
-import dev.zacsweers.metro.*
+import dev.zacsweers.metro.AppScope
+import dev.zacsweers.metro.ContributesIntoMap
+import dev.zacsweers.metro.SingleIn
+import dev.zacsweers.metro.StringKey
 
-/** Fetches Quilt's `profile/json`, which is already everything needed to launch: no local processing. */
 @SingleIn(AppScope::class)
 @ContributesIntoMap(AppScope::class)
 @StringKey("quilt")
-@Inject
 class QuiltModLoaderInstaller(
     private val appPaths: AppPaths,
     private val fileValidationService: FileValidationService

@@ -32,7 +32,7 @@ class ProcessRunnerImpl : ProcessRunner {
         val markerIndex = output.lastIndexOf(EXIT_CODE_MARKER)
         check(markerIndex >= 0) { "Process output did not contain an exit code: $command" }
         val exitCode = output.substring(markerIndex + EXIT_CODE_MARKER.length).trim().toInt()
-        // popen only exposes a single, merged stream; the combined output is reported as stdout.
+        // popen exposes a single merged stream, reported as stdout
         return ProcessResult(exitCode, stdout = output.substring(0, markerIndex), stderr = "")
     }
 }

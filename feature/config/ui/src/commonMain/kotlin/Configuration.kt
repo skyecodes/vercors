@@ -80,13 +80,13 @@ fun Configuration(
         if (state.promptChangeDataDirectory) {
             OverlayEffect {
                 show(state.changeDataDirectoryDialog)
-                eventSink(ConfigurationEvent.DismissChangeDataDirectoryPrompt)
+                eventSink(ConfigurationEvent.OnChangeDataDirectoryDismiss)
             }
         }
 
         AppTabGroup(
             selectedTab = state.selectedTab,
-            onSelectedTabChange = { eventSink(ConfigurationEvent.SelectTab(it)) },
+            onSelectedTabChange = { eventSink(ConfigurationEvent.OnTabClick(it)) },
             tabs = ConfigurationTab.entries.filter { it != ConfigurationTab.NativeLibraries || state.showNativeLibraryOptions },
             modifier = modifier.fillMaxSize(),
             orientation = if (state.horizontalTabs == true) Orientation.Horizontal else Orientation.Vertical,
@@ -122,7 +122,7 @@ private fun GeneralConfigurationTab(
                 AppSelectField(
                     value = state.platformList.find { it.id == state.preferredPlatform } ?: state.platformList.first(),
                     items = state.platformList,
-                    onValueChange = { eventSink(ConfigurationEvent.SetPreferredPlatform(it.id)) },
+                    onValueChange = { eventSink(ConfigurationEvent.OnPreferredPlatformChange(it.id)) },
                     itemRenderer = { platform, _ ->
                         AppText(text = platform.name)
                     },
@@ -138,9 +138,9 @@ private fun GeneralConfigurationTab(
                 AppSelectField(
                     value = state.startupScreen,
                     items = StartupScreen.entries,
-                    onValueChange = { eventSink(ConfigurationEvent.SetStartupScreen(it)) },
+                    onValueChange = { eventSink(ConfigurationEvent.OnStartupScreenChange(it)) },
                     itemRenderer = { startupScreen, _ ->
-                        AppText(text = stringResource(startupScreen.label()))
+                        AppText(text = stringResource(startupScreen.label))
                     },
                     modifier = Modifier.weight(1f)
                 )
@@ -172,7 +172,7 @@ private fun AdvancedConfigurationTab(
         ) {
             AppTextField(
                 initialValue = state.metaApiUrl.orEmpty(),
-                onValueChange = { eventSink(ConfigurationEvent.SetMetaApiUrl(it)) },
+                onValueChange = { eventSink(ConfigurationEvent.OnMetaApiUrlChange(it)) },
                 debounceMillis = 500,
                 backgroundColor = Theme[colors][surface2],
                 modifier = Modifier.weight(1f)
@@ -186,7 +186,7 @@ private fun AdvancedConfigurationTab(
             ) {
                 AppNumberField(
                     value = state.networkTimeoutSeconds,
-                    onValueChange = { eventSink(ConfigurationEvent.SetNetworkTimeout(it)) },
+                    onValueChange = { eventSink(ConfigurationEvent.OnNetworkTimeoutChange(it)) },
                     valueRange = 1..120,
                     modifier = Modifier.weight(1f)
                 )
@@ -199,7 +199,7 @@ private fun AdvancedConfigurationTab(
             ) {
                 AppNumberField(
                     value = state.parallelDownloads,
-                    onValueChange = { eventSink(ConfigurationEvent.SetParallelDownloads(it)) },
+                    onValueChange = { eventSink(ConfigurationEvent.OnParallelDownloadsChange(it)) },
                     valueRange = 1..64,
                     modifier = Modifier.weight(1f)
                 )
@@ -212,7 +212,7 @@ private fun AdvancedConfigurationTab(
             ) {
                 AppNumberField(
                     value = state.parallelFilesystemOperations,
-                    onValueChange = { eventSink(ConfigurationEvent.SetParallelFilesystemOperations(it)) },
+                    onValueChange = { eventSink(ConfigurationEvent.OnParallelFilesystemOperationsChange(it)) },
                     valueRange = 1..64,
                     modifier = Modifier.weight(1f)
                 )
@@ -221,27 +221,8 @@ private fun AdvancedConfigurationTab(
     }
 }
 
-private fun StartupScreen.label(): StringResource = when (this) {
-    StartupScreen.Home -> SharedRes.string.home
-    StartupScreen.Instances -> SharedRes.string.instances
-    StartupScreen.Content -> SharedRes.string.content
-    StartupScreen.Settings -> SharedRes.string.settings
-    StartupScreen.Accounts -> SharedRes.string.account
-    StartupScreen.LastPlayedInstance -> ConfigRes.string.startupScreenLastPlayedInstance
-}
-
-private fun HomeCategoryConfig.label(): StringResource = when (this) {
-    HomeCategoryConfig.Instances -> SharedRes.string.instances
-    HomeCategoryConfig.Modpacks -> ConfigRes.string.homeCategoryModpacks
-    HomeCategoryConfig.Mods -> SharedRes.string.mods
-    HomeCategoryConfig.ResourcePacks -> SharedRes.string.resourcePacks
-    HomeCategoryConfig.ShaderPacks -> SharedRes.string.shaderPacks
-}
-
 private val HOME_CATEGORY_ROW_HEIGHT = 32.dp
-
-private fun <T> List<T>.moved(from: Int, to: Int): List<T> =
-    toMutableList().apply { add(to, removeAt(from)) }
+private val UI_SCALE_OPTIONS = listOf(70, 80, 90, 100, 110, 125, 150, 175, 200)
 
 @Composable
 context(eventSink: EventSink<ConfigurationEvent>)
@@ -296,15 +277,15 @@ private fun LazyItemScope.CheckedHomeCategoryRow(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        ReorderArrow(
+        HomeCategoryReorderArrow(
             imageVector = Lucide.ChevronUp,
             enabled = index > 0,
-            onClick = { eventSink(ConfigurationEvent.SetHomeCategories(order.moved(index, index - 1))) },
+            onClick = { eventSink(ConfigurationEvent.OnHomeCategoriesChange(order.moved(index, index - 1))) },
         )
-        ReorderArrow(
+        HomeCategoryReorderArrow(
             imageVector = Lucide.ChevronDown,
             enabled = index < order.lastIndex,
-            onClick = { eventSink(ConfigurationEvent.SetHomeCategories(order.moved(index, index + 1))) },
+            onClick = { eventSink(ConfigurationEvent.OnHomeCategoriesChange(order.moved(index, index + 1))) },
         )
         AppIcon(
             imageVector = Lucide.GripVertical,
@@ -312,19 +293,19 @@ private fun LazyItemScope.CheckedHomeCategoryRow(
             modifier = Modifier.size(16.dp)
                 .pointerHoverIcon(icon = PointerIcon.Hand)
                 .homeCategoryDragHandle(latestIndex, rowHeightPx, orderState, draggedIndexState, dragOffsetState) {
-                    eventSink(ConfigurationEvent.SetHomeCategories(orderState.value))
+                    eventSink(ConfigurationEvent.OnHomeCategoriesChange(orderState.value))
                 }
         )
         AppCheckbox(
             checked = true,
-            onCheckedChange = { eventSink(ConfigurationEvent.SetHomeCategories(order - category)) }
+            onCheckedChange = { eventSink(ConfigurationEvent.OnHomeCategoriesChange(order - category)) }
         )
-        AppText(text = stringResource(category.label()), modifier = Modifier.weight(1f))
+        AppText(text = stringResource(category.label), modifier = Modifier.weight(1f))
     }
 }
 
 @Composable
-private fun ReorderArrow(imageVector: ImageVector, enabled: Boolean, onClick: () -> Unit) {
+private fun HomeCategoryReorderArrow(imageVector: ImageVector, enabled: Boolean, onClick: () -> Unit) {
     AppIcon(
         imageVector = imageVector,
         contentDescription = null,
@@ -384,10 +365,10 @@ private fun LazyItemScope.UncheckedHomeCategoryRow(
         Spacer(modifier = Modifier.size(64.dp))
         AppCheckbox(
             checked = false,
-            onCheckedChange = { eventSink(ConfigurationEvent.SetHomeCategories(homeCategories + category)) }
+            onCheckedChange = { eventSink(ConfigurationEvent.OnHomeCategoriesChange(homeCategories + category)) }
         )
         AppText(
-            text = stringResource(category.label()),
+            text = stringResource(category.label),
             modifier = Modifier.weight(1f),
             color = Theme[colors][onBackground].copy(alpha = 0.6f)
         )
@@ -408,7 +389,7 @@ private fun UIConfigurationTab(
                 AppSelectField(
                     value = state.selectedTheme,
                     items = state.themeList,
-                    onValueChange = { eventSink(ConfigurationEvent.SelectTheme(it.id)) },
+                    onValueChange = { eventSink(ConfigurationEvent.OnThemeChange(it.id)) },
                     itemRenderer = { theme, _ ->
                         AppText(text = theme.displayName)
                     },
@@ -423,7 +404,7 @@ private fun UIConfigurationTab(
                     AppSelectField(
                         value = state.selectedAccent,
                         items = state.selectedTheme.accents,
-                        onValueChange = { eventSink(ConfigurationEvent.SelectAccent(it.id)) },
+                        onValueChange = { eventSink(ConfigurationEvent.OnAccentChange(it.id)) },
                         itemRenderer = { accent, _ ->
                             Box(modifier = Modifier.size(16.dp).background(accent.color))
                             AppText(text = accent.name)
@@ -440,7 +421,7 @@ private fun UIConfigurationTab(
             ) {
                 AppCheckbox(
                     checked = state.animations,
-                    onCheckedChange = { eventSink(ConfigurationEvent.ToggleAnimations) }
+                    onCheckedChange = { eventSink(ConfigurationEvent.OnAnimationsToggle) }
                 )
             }
         }
@@ -452,7 +433,7 @@ private fun UIConfigurationTab(
                 AppSelectField(
                     value = state.uiScalePercent,
                     items = UI_SCALE_OPTIONS,
-                    onValueChange = { eventSink(ConfigurationEvent.SetUiScalePercent(it)) },
+                    onValueChange = { eventSink(ConfigurationEvent.OnUiScalePercentChange(it)) },
                     itemRenderer = { percent, _ -> AppSelectItem(text = "$percent%") },
                     modifier = Modifier.weight(1f)
                 )
@@ -465,7 +446,7 @@ private fun UIConfigurationTab(
             ) {
                 AppCheckbox(
                     checked = state.horizontalTabs,
-                    onCheckedChange = { eventSink(ConfigurationEvent.ToggleHorizontalTabs) }
+                    onCheckedChange = { eventSink(ConfigurationEvent.OnHorizontalTabsToggle) }
                 )
             }
         }
@@ -479,7 +460,7 @@ private fun JavaConfigurationTab(
 ) {
     ConfigurationTabScaffold(state.horizontalTabs) {
         val pickerLauncher = rememberDirectoryPickerLauncher { directory ->
-            directory?.let { eventSink(ConfigurationEvent.AddJavaInstallation(it.path)) }
+            directory?.let { eventSink(ConfigurationEvent.OnJavaInstallationSelected(it.path)) }
         }
 
         Row(
@@ -499,7 +480,7 @@ private fun JavaConfigurationTab(
                 imageVector = Lucide.Plus,
             )
             AppIconTextButton(
-                onClick = { eventSink(ConfigurationEvent.RescanJavaInstallations) },
+                onClick = { eventSink(ConfigurationEvent.OnRescanJavaClick) },
                 text = stringResource(if (state.javaScanInProgress) ConfigRes.string.rescanning else ConfigRes.string.rescan),
                 imageVector = Lucide.RefreshCw,
                 enabled = !state.javaScanInProgress,
@@ -515,7 +496,7 @@ private fun JavaConfigurationTab(
                 text = stringResource(ConfigRes.string.javaAddFailed, path),
                 color = Theme[colors][error],
                 modifier = Modifier.padding(horizontal = 8.dp)
-                    .clickable { eventSink(ConfigurationEvent.DismissJavaAddError) }
+                    .clickable { eventSink(ConfigurationEvent.OnJavaAddErrorDismiss) }
             )
         }
 
@@ -527,8 +508,8 @@ private fun JavaConfigurationTab(
                 defaultValue = defaultMax,
                 valueRange = 512..state.totalMemoryMb,
                 stepSize = 128,
-                onCheckedChange = { checked -> eventSink(ConfigurationEvent.SetMaxMemoryMb(if (checked) defaultMax else null)) },
-                onValueChange = { eventSink(ConfigurationEvent.SetMaxMemoryMb(it)) },
+                onCheckedChange = { checked -> eventSink(ConfigurationEvent.OnMaxMemoryMbChange(if (checked) defaultMax else null)) },
+                onValueChange = { eventSink(ConfigurationEvent.OnMaxMemoryMbChange(it)) },
             )
         }
         ConfigurationRow(title = ConfigRes.string.minMemory, description = ConfigRes.string.minMemoryDesc) {
@@ -537,14 +518,14 @@ private fun JavaConfigurationTab(
                 defaultValue = defaultMinMemoryMb(),
                 valueRange = 256..(state.jvmMemoryOptions.maxMemoryMb ?: defaultMax),
                 stepSize = 32,
-                onCheckedChange = { checked -> eventSink(ConfigurationEvent.SetMinMemoryMb(if (checked) defaultMinMemoryMb() else null)) },
-                onValueChange = { eventSink(ConfigurationEvent.SetMinMemoryMb(it)) },
+                onCheckedChange = { checked -> eventSink(ConfigurationEvent.OnMinMemoryMbChange(if (checked) defaultMinMemoryMb() else null)) },
+                onValueChange = { eventSink(ConfigurationEvent.OnMinMemoryMbChange(it)) },
             )
         }
         ConfigurationRow(title = ConfigRes.string.extraJvmArgs, description = ConfigRes.string.extraJvmArgsDesc) {
             AppTextField(
                 initialValue = state.jvmMemoryOptions.extraArgs.orEmpty(),
-                onValueChange = { eventSink(ConfigurationEvent.SetExtraJvmArgs(it)) },
+                onValueChange = { eventSink(ConfigurationEvent.OnExtraJvmArgsChange(it)) },
                 debounceMillis = 500,
                 backgroundColor = Theme[colors][surface2],
                 modifier = Modifier.weight(1f)
@@ -564,8 +545,8 @@ private fun NativeLibraryConfigurationTab(
                 checked = state.nativeLibraryOptions.useSystemGlfw == true,
                 path = state.nativeLibraryOptions.glfwPath.orEmpty(),
                 detectedPath = state.detectedGlfwPath,
-                onCheckedChange = { eventSink(ConfigurationEvent.ToggleUseSystemGlfw(it)) },
-                onPathChange = { eventSink(ConfigurationEvent.SetGlfwPath(it)) },
+                onCheckedChange = { eventSink(ConfigurationEvent.OnUseSystemGlfwToggle(it)) },
+                onPathChange = { eventSink(ConfigurationEvent.OnGlfwPathChange(it)) },
             )
         }
         ConfigurationRow(title = ConfigRes.string.useSystemOpenAl, description = ConfigRes.string.useSystemOpenAlDesc) {
@@ -573,8 +554,8 @@ private fun NativeLibraryConfigurationTab(
                 checked = state.nativeLibraryOptions.useSystemOpenAl == true,
                 path = state.nativeLibraryOptions.openAlPath.orEmpty(),
                 detectedPath = state.detectedOpenAlPath,
-                onCheckedChange = { eventSink(ConfigurationEvent.ToggleUseSystemOpenAl(it)) },
-                onPathChange = { eventSink(ConfigurationEvent.SetOpenAlPath(it)) },
+                onCheckedChange = { eventSink(ConfigurationEvent.OnUseSystemOpenAlToggle(it)) },
+                onPathChange = { eventSink(ConfigurationEvent.OnOpenAlPathChange(it)) },
             )
         }
     }
@@ -603,12 +584,12 @@ private fun StorageConfigurationTab(
                     modifier = Modifier.weight(1f, fill = false)
                 )
                 AppIconTextButton(
-                    onClick = { eventSink(ConfigurationEvent.OpenDataDirectory) },
+                    onClick = { eventSink(ConfigurationEvent.OnOpenDataDirectoryClick) },
                     text = stringResource(SharedRes.string.open),
                     imageVector = Lucide.FolderOpen,
                 )
                 AppIconTextButton(
-                    onClick = { eventSink(ConfigurationEvent.PromptChangeDataDirectory) },
+                    onClick = { eventSink(ConfigurationEvent.OnChangeDataDirectoryClick) },
                     text = stringResource(ConfigRes.string.changeDataDirectory),
                     imageVector = Lucide.FolderInput,
                     enabled = state.canChangeDataDirectory,
@@ -628,7 +609,7 @@ private fun StorageConfigurationTab(
                     AppText(text = it.toHumanReadableSize())
                 }
                 AppIconTextButton(
-                    onClick = { eventSink(ConfigurationEvent.PromptClearContentCache) },
+                    onClick = { eventSink(ConfigurationEvent.OnClearContentCacheClick) },
                     text = stringResource(ConfigRes.string.clearCache),
                     imageVector = Lucide.Trash,
                     backgroundColor = Theme[colors][error],
@@ -637,18 +618,6 @@ private fun StorageConfigurationTab(
             }
         }
     }
-}
-
-private fun Long.toHumanReadableSize(): String {
-    if (this < 1024) return "$this B"
-    val units = listOf("KB", "MB", "GB", "TB")
-    var value = this / 1024.0
-    var unitIndex = 0
-    while (value >= 1024 && unitIndex < units.lastIndex) {
-        value /= 1024
-        unitIndex++
-    }
-    return "${(value * 10).toInt() / 10.0} ${units[unitIndex]}"
 }
 
 @Composable
@@ -721,11 +690,6 @@ private fun RowScope.MemorySliderControl(
     }
 }
 
-private val UI_SCALE_OPTIONS = listOf(70, 80, 90, 100, 110, 125, 150, 175, 200)
-
-private fun defaultMaxMemoryMb(totalMemoryMb: Int): Int = (((totalMemoryMb / 4).coerceIn(1024, 4096)) / 128) * 128
-private fun defaultMinMemoryMb(): Int = 512
-
 @Composable
 context(eventSink: EventSink<ConfigurationEvent>)
 private fun JavaVersionGroup(majorVersion: Int, installations: List<JavaInstallation>, preferredId: String?) {
@@ -747,7 +711,7 @@ private fun JavaVersionGroup(majorVersion: Int, installations: List<JavaInstalla
         }
         AppRadioGroup(
             value = preferredId,
-            onValueChange = { id -> eventSink(ConfigurationEvent.SetPreferredJava(majorVersion, id)) },
+            onValueChange = { id -> eventSink(ConfigurationEvent.OnPreferredJavaChange(majorVersion, id)) },
         ) {
             Column(
                 verticalArrangement = Arrangement.spacedBy(4.dp)
@@ -808,26 +772,6 @@ private fun ConfigurationTabScaffold(
     }
 }
 
-private val ConfigurationTab.icon: ImageVector
-    @Stable get() = when (this) {
-        ConfigurationTab.General -> Lucide.Settings
-        ConfigurationTab.UI -> Lucide.Eye
-        ConfigurationTab.Java -> Lucide.Coffee
-        ConfigurationTab.NativeLibraries -> Lucide.Package
-        ConfigurationTab.Storage -> Lucide.HardDrive
-        ConfigurationTab.Advanced -> Lucide.Wrench
-    }
-
-private val ConfigurationTab.title: String
-    @Composable get() = when (this) {
-        ConfigurationTab.General -> stringResource(ConfigRes.string.general)
-        ConfigurationTab.UI -> stringResource(ConfigRes.string.ui)
-        ConfigurationTab.Java -> stringResource(ConfigRes.string.java)
-        ConfigurationTab.NativeLibraries -> stringResource(ConfigRes.string.nativeLibraries)
-        ConfigurationTab.Storage -> stringResource(ConfigRes.string.storage)
-        ConfigurationTab.Advanced -> stringResource(ConfigRes.string.advanced)
-    }
-
 @Composable
 private fun ConfigurationRow(
     title: StringResource,
@@ -857,3 +801,60 @@ private fun ConfigurationRow(
         content()
     }
 }
+
+private fun <T> List<T>.moved(from: Int, to: Int): List<T> =
+    toMutableList().apply { add(to, removeAt(from)) }
+
+private fun Long.toHumanReadableSize(): String {
+    if (this < 1024) return "$this B"
+    val units = listOf("KB", "MB", "GB", "TB")
+    var value = this / 1024.0
+    var unitIndex = 0
+    while (value >= 1024 && unitIndex < units.lastIndex) {
+        value /= 1024
+        unitIndex++
+    }
+    return "${(value * 10).toInt() / 10.0} ${units[unitIndex]}"
+}
+
+private fun defaultMaxMemoryMb(totalMemoryMb: Int): Int = (((totalMemoryMb / 4).coerceIn(1024, 4096)) / 128) * 128
+private fun defaultMinMemoryMb(): Int = 512
+
+private val ConfigurationTab.icon: ImageVector
+    @Stable get() = when (this) {
+        ConfigurationTab.General -> Lucide.Settings
+        ConfigurationTab.UI -> Lucide.Eye
+        ConfigurationTab.Java -> Lucide.Coffee
+        ConfigurationTab.NativeLibraries -> Lucide.Package
+        ConfigurationTab.Storage -> Lucide.HardDrive
+        ConfigurationTab.Advanced -> Lucide.Wrench
+    }
+
+private val ConfigurationTab.title: String
+    @Composable get() = when (this) {
+        ConfigurationTab.General -> stringResource(ConfigRes.string.general)
+        ConfigurationTab.UI -> stringResource(ConfigRes.string.ui)
+        ConfigurationTab.Java -> stringResource(ConfigRes.string.java)
+        ConfigurationTab.NativeLibraries -> stringResource(ConfigRes.string.nativeLibraries)
+        ConfigurationTab.Storage -> stringResource(ConfigRes.string.storage)
+        ConfigurationTab.Advanced -> stringResource(ConfigRes.string.advanced)
+    }
+
+private val StartupScreen.label: StringResource
+    get() = when (this) {
+        StartupScreen.Home -> SharedRes.string.home
+        StartupScreen.Instances -> SharedRes.string.instances
+        StartupScreen.Content -> SharedRes.string.content
+        StartupScreen.Settings -> SharedRes.string.settings
+        StartupScreen.Accounts -> SharedRes.string.account
+        StartupScreen.LastPlayedInstance -> ConfigRes.string.startupScreenLastPlayedInstance
+    }
+
+private val HomeCategoryConfig.label: StringResource
+    get() = when (this) {
+        HomeCategoryConfig.Instances -> SharedRes.string.instances
+        HomeCategoryConfig.Modpacks -> ConfigRes.string.homeCategoryModpacks
+        HomeCategoryConfig.Mods -> SharedRes.string.mods
+        HomeCategoryConfig.ResourcePacks -> SharedRes.string.resourcePacks
+        HomeCategoryConfig.ShaderPacks -> SharedRes.string.shaderPacks
+    }

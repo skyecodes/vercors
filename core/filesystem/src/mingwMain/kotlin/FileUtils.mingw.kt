@@ -9,15 +9,13 @@ import kotlin.time.Instant
 
 @OptIn(ExperimentalForeignApi::class)
 actual suspend fun Path.createLink(target: Path, context: CoroutineContext, isSymbolic: Boolean): Boolean {
-    // CreateSymbolicLinkW isn't implemented — linkOrCopyTo's final fallback (a real copy) is an acceptable
-    // substitute for the rare paths that specifically request a symlink.
+    // CreateSymbolicLinkW isn't implemented; linkOrCopyTo falls back to a plain copy
     if (isSymbolic) return false
-    // withContext's lambda has CoroutineScope as its implicit receiver, which shadows bare Path member calls
-    // like toString() — capture both path strings before entering it (same footgun as realPath below).
+    // Capture path strings before withContext: its CoroutineScope receiver shadows bare toString()
     val existingFileName = toString()
     val newFileName = target.toString()
     return withContext(context) {
-        // Win32 argument order is reversed from POSIX link(): new link name first, existing file second.
+        // Win32 argument order: new link name first, existing file second
         CreateHardLinkW(newFileName, existingFileName, null) != 0
     }
 }
@@ -27,19 +25,16 @@ actual suspend fun Path.lastModifiedOrNull(context: CoroutineContext): Instant? 
     return null
 }
 
-/** Windows has no executable permission bit — an `.exe` extension is sufficient. */
+// Windows has no executable bit
 actual suspend fun Path.setExecutable(context: CoroutineContext): Boolean = true
 
-/** TODO: Windows has no POSIX permission bits; real restriction needs ACL manipulation
- *  (SetNamedSecurityInfoW + current-user SID lookup), not implemented yet. */
+// TODO real restriction needs ACL manipulation (SetNamedSecurityInfoW + current-user SID)
 actual suspend fun Path.restrictToOwner(context: CoroutineContext): Boolean = false
 
-/** Resolves NTFS symlinks/junctions via a real handle, unlike `_fullpath`, which only normalizes the path
- *  textually without touching reparse points. */
+// Uses a real handle: _fullpath only normalizes textually and ignores reparse points
 @OptIn(ExperimentalForeignApi::class)
 actual suspend fun Path.realPath(context: CoroutineContext): Path? {
-    // withContext's lambda has CoroutineScope as its implicit receiver, which shadows this Path receiver for bare
-    // member calls like toString() — capture the path string first so we never call the wrong toString().
+    // Capture the path string before withContext: its CoroutineScope receiver shadows bare toString()
     val path = toString()
     return withContext(context) {
         val handle = CreateFileW(

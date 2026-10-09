@@ -24,25 +24,25 @@ private fun MutableList<Byte>.writeString(value: String) {
 }
 
 private fun MutableList<Byte>.writeNamedString(name: String, value: String) {
-    writeTagId(8) // TAG_String
+    writeTagId(8)
     writeString(name)
     writeString(value)
 }
 
 class NbtReaderTest {
     @Test
-    fun decodesServersDatShapedDocument() {
+    fun `decodes a servers dat shaped document`() {
         val bytes = buildList {
-            writeTagId(10) // root TAG_Compound
-            writeString("") // root name, conventionally empty
-            writeTagId(9) // "servers": TAG_List
+            writeTagId(10)
+            writeString("")
+            writeTagId(9)
             writeString("servers")
-            writeTagId(10) // element type: TAG_Compound
-            writeInt(1) // list length
+            writeTagId(10)
+            writeInt(1)
             writeNamedString("name", "Test Server")
             writeNamedString("ip", "127.0.0.1:25565")
-            writeTagId(0) // end of list element compound
-            writeTagId(0) // end of root compound
+            writeTagId(0)
+            writeTagId(0)
         }.toByteArray()
 
         val root = readNbt(bytes)
@@ -55,14 +55,14 @@ class NbtReaderTest {
     }
 
     @Test
-    fun decodesMultiByteIntegersAsBigEndian() {
+    fun `decodes multi-byte integers as big-endian`() {
         val bytes = buildList {
             writeTagId(10)
             writeString("")
-            writeTagId(2) // TAG_Short
+            writeTagId(2)
             writeString("value")
             add(0x01)
-            add(0x00) // big-endian 0x0100 == 256; little-endian misread would yield 1
+            add(0x00) // big-endian 0x0100 == 256; a little-endian misread would yield 1
             writeTagId(0)
         }.toByteArray()
 
@@ -71,11 +71,11 @@ class NbtReaderTest {
     }
 
     @Test
-    fun skipsUnrelatedFieldsWhileWalkingACompound() {
+    fun `skips unrelated fields while walking a compound`() {
         val bytes = buildList {
             writeTagId(10)
             writeString("")
-            writeTagId(7) // TAG_Byte_Array, unrelated field that must be correctly skipped
+            writeTagId(7)
             writeString("icon")
             writeInt(3)
             add(1); add(2); add(3)

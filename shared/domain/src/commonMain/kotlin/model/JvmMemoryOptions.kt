@@ -7,11 +7,7 @@ data class JvmMemoryOptions(
     val maxMemoryMb: Int? = null,
     val extraArgs: String? = null,
 ) {
-    /** Per-field inheritance: any `null` field here falls back to the corresponding field in [global].
-     *  [minMemoryEnabled]/[maxMemoryEnabled] additionally fall back to "a concrete value is present on
-     *  either side" when neither this instance nor [global] set them explicitly — this keeps
-     *  pre-existing persisted overrides (created before these enabled flags existed) behaving exactly as
-     *  before: a plain value with no enabled flag still emits its JVM arg. */
+    // Enabled flags fall back to "a value is set on either side", for overrides saved before the flags existed
     fun withFallback(global: JvmMemoryOptions): JvmMemoryOptions {
         val minEnabled = minMemoryEnabled
             ?: global.minMemoryEnabled

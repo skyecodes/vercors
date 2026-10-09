@@ -12,17 +12,6 @@ import kotlinx.coroutines.launch
 
 private val logger = KotlinLogging.logger {}
 
-/**
- * Starts (or restarts) the Microsoft/Xbox/Mojang login flow: resets [loginState], opens the login dialog
- * via [setPromptLogin], launches a collector of [login]'s [LoginState] flow on [scope], and records the
- * resulting [Job] via [setLoginJob] so the caller can later cancel it (e.g. a "Cancel" button in the login
- * dialog calling `loginJob?.cancel(CancellationException(...))`).
- *
- * Shared by [AccountListPresenter] (launches on its own `presenterScope`) and `InstanceDetailsPresenter`
- * (launches on its injected app-wide `globalScope`, so login can outlive navigating away from the Instance
- * Details screen mid-launch) — see CLAUDE.md's `DialogOverlay`/`invokeOnCompletion` gotchas for why the
- * `it !is CancellationException` guard below must stay exactly as-is.
- */
 fun startLoginFlow(
     scope: CoroutineScope,
     login: LoginUseCase,

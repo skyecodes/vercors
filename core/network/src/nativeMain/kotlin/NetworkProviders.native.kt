@@ -7,5 +7,5 @@ import io.ktor.client.engine.curl.*
 internal actual val platformHttpClientEngineFactory: HttpClientEngineFactory<*> = Curl
 
 internal actual fun <T : HttpClientEngineConfig> HttpClientConfig<T>.installPlatformTrustStore() {
-    // No-op: Curl's engine already consults the OS trust store.
+    // Curl already consults the OS trust store
 }

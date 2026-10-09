@@ -2,12 +2,6 @@ package app.vercors.feature.game.data.dto
 
 import kotlinx.serialization.Serializable
 
-/**
- * A Forge/NeoForge-family installer's `install_profile.json`: libraries to download plus an ordered list of
- * "processors" that must actually be executed (each a `java -cp <classpath> <Main-Class> <args>` invocation)
- * to produce the loader's real libraries/patched client jar, whose final shape is described by the installer's
- * separate `version.json` (see [LoaderVersionProfile]).
- */
 @Serializable
 data class InstallProfileData(
     val data: Map<String, SidedValue> = emptyMap(),

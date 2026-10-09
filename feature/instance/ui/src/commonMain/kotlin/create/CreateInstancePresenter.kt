@@ -9,7 +9,6 @@ import app.vercors.feature.game.domain.usecase.ObserveLoaderVersionsUseCase
 import app.vercors.feature.game.ui.GameVersionView
 import app.vercors.feature.instance.domain.model.*
 import app.vercors.feature.instance.domain.model.localimport.LocalImportError
-import app.vercors.feature.instance.domain.model.localimport.LocalImportNotPrismFormat
 import app.vercors.feature.instance.domain.usecase.*
 import app.vercors.feature.instance.ui.*
 import app.vercors.feature.instance.ui.install.toFractionOrNull
@@ -32,11 +31,6 @@ import org.jetbrains.compose.resources.stringResource
 
 private val logger = KotlinLogging.logger {}
 
-/**
- * Not `@CircuitInject`-wired since [CreateInstanceDialog] isn't a navigated [Screen][app.vercors.shared.ui.Screen] —
- * it's constructed manually by the dialog for each show, mirroring how a `Presenter.Factory` builds a presenter
- * per screen visit, just without Circuit's own screen-resolution machinery.
- */
 class CreateInstancePresenter(
     private val navigator: OverlayNavigator<CreateInstanceResult>,
     private val globalScope: CoroutineScope,
@@ -189,9 +183,7 @@ class CreateInstancePresenter(
         }
     }
 
-    /** Auto-detects the local file's format: tries the PrismLauncher-export parser first, falling back to a
-     *  Modrinth `.mrpack` parse only on [LocalImportNotPrismFormat] specifically — mirrors PrismLauncher's own
-     *  detection order (`instance.cfg` checked before `modrinth.index.json`). */
+    // Prism format first, then .mrpack, matching PrismLauncher's own detection order
     private fun handleImportFileSelected(
         sourcePath: String,
         setImportPreview: (LocalImportPreview?) -> Unit,
@@ -212,7 +204,7 @@ class CreateInstancePresenter(
                     info
                 )
             }) { error: LocalImportError ->
-                if (error == LocalImportNotPrismFormat) tryParseAsMrpack(sourcePath) else null
+                if (error == LocalImportError.NotPrismFormat) tryParseAsMrpack(sourcePath) else null
             }
             setImportPreview(preview)
             setImportInstanceName(preview?.name.orEmpty())
@@ -236,16 +228,7 @@ class CreateInstancePresenter(
             null
         }
 
-    /**
-     * Mirrors the online modpack-install flow's shape: creates the instance immediately, fires the "created"
-     * result so the caller can navigate away, then keeps copying/downloading files on [globalScope] so it
-     * survives the dialog being dismissed. `Instance.modpackInfo` is populated only when the source records
-     * genuine managed-pack provenance (e.g. a Prism export's `ManagedPack*` fields) — a local import never sets
-     * `installStage` though, since there's no backend to resume an interrupted import from, so it's never
-     * flagged as [InstanceStatus.Installing.Interrupted] on restart. Rolls back (deletes the instance) only
-     * if the job is genuinely cancelled, not on an ordinary install failure (which instead leaves the instance in
-     * place with [InstanceStatus.Failed.InstallFailed], since the user may already be looking at it).
-     */
+    // Rolled back only on cancellation: an install failure leaves the instance visible as InstallFailed
     private fun handleConfirmImport(
         preview: LocalImportPreview?,
         instanceName: String,
@@ -301,9 +284,7 @@ class CreateInstancePresenter(
             false
         }
         if (ok) {
-            // The extraction writes hundreds of files directly to disk outside the content scanners' normal
-            // single-file APIs — same rationale as those, never rely on the live file watcher alone to pick up a
-            // bulk write like this.
+            // Bulk write outside the scanners' APIs: refresh explicitly rather than relying on the watcher
             refreshInstalledContent(ContentKind.Mod, instanceId)
             refreshInstalledContent(ContentKind.ResourcePack, instanceId)
             refreshInstalledContent(ContentKind.ShaderPack, instanceId)
@@ -317,10 +298,7 @@ class CreateInstancePresenter(
         return ok
     }
 
-    // Local mrpack files always carry a real `downloadUrl` (parsed straight from modrinth.index.json's own
-    // `downloads` list), so `ModpackManifestFile.manualDownloadUrl` is always null for this path — nothing to
-    // await manually, unlike an online CurseForge install. This would silently break if CurseForge local import
-    // were ever added later (CurseForge files can have `manualDownloadUrl` set).
+    // Local mrpack files always have a download URL, so there's never a manual download to await
     private suspend fun runMrpackImport(preview: LocalImportPreview.Mrpack, instanceId: InstanceId): Boolean =
         recover({
             installModpackFiles(preview.manifest, instanceId, localSourcePath = preview.sourcePath) { progress ->

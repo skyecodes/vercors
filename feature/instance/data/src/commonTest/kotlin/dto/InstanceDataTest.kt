@@ -10,7 +10,7 @@ class InstanceDataTest {
     private val json = Json { ignoreUnknownKeys = true }
 
     @Test
-    fun roundTripsPendingManualDownloads() {
+    fun `round-trips pending manual downloads`() {
         val data = InstanceData(
             name = "Test Instance",
             gameVersion = "1.21.1",
@@ -41,12 +41,9 @@ class InstanceDataTest {
         assertEquals(data, decoded)
     }
 
-    /**
-     * Existing on-disk instance JSON files (from before [InstanceData.pendingManualDownloads] existed) don't have
-     * this key at all — this is the backward-compatibility guarantee the launcher-restart fix relies on.
-     */
+    // Files saved before this field existed must still decode
     @Test
-    fun missingPendingManualDownloadsKeyDecodesToEmptyList() {
+    fun `missing pending manual downloads key decodes to an empty list`() {
         val legacyJson = """
             {
                 "name": "Legacy Instance",
@@ -66,7 +63,7 @@ class InstanceDataTest {
     }
 
     @Test
-    fun roundTripsInstallStage() {
+    fun `round-trips install stage`() {
         val data = InstanceData(
             name = "Test Instance",
             gameVersion = "1.21.1",
@@ -85,12 +82,9 @@ class InstanceDataTest {
         assertEquals(data, decoded)
     }
 
-    /**
-     * Existing on-disk instance JSON files (from before [InstanceData.installStage] existed) don't have this key at
-     * all — this is the backward-compatibility guarantee the interrupted-install-resume fix relies on.
-     */
+    // Files saved before this field existed must still decode
     @Test
-    fun missingInstallStageKeyDecodesToNull() {
+    fun `missing install stage key decodes to null`() {
         val legacyJson = """
             {
                 "name": "Legacy Instance",

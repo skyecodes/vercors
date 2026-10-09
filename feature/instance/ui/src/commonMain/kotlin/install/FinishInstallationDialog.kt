@@ -29,7 +29,6 @@ import com.slack.circuit.overlay.OverlayNavigator
 import com.slack.circuit.overlay.OverlayTransitionController
 import org.jetbrains.compose.resources.stringResource
 
-/** Shows the modpack files that couldn't be downloaded automatically, live-updating as they get placed. */
 class FinishInstallationDialog(
     private val instanceId: InstanceId,
     private val observeManualDownloadItems: ObserveManualDownloadItemsUseCase,

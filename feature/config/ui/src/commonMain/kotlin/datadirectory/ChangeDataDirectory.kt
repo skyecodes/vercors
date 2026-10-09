@@ -27,6 +27,7 @@ import org.jetbrains.compose.resources.stringResource
 @Composable
 fun ChangeDataDirectory(
     store: Store<ChangeDataDirectoryState, ChangeDataDirectoryEvent>,
+    modifier: Modifier = Modifier,
 ) {
     val (state, eventSink) = store
 
@@ -35,7 +36,7 @@ fun ChangeDataDirectory(
     }
 
     AppDialog(
-        modifier = Modifier.width(480.dp),
+        modifier = modifier.width(480.dp),
         onClickOutside = { if (!state.isMoving) eventSink(ChangeDataDirectoryEvent.OnCancelClick) },
     ) {
         AppForm {

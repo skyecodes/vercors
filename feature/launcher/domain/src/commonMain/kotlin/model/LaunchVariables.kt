@@ -4,12 +4,7 @@ import app.vercors.feature.account.domain.model.Account
 import app.vercors.feature.game.domain.model.GameVersionDetails
 import app.vercors.feature.instance.domain.model.Instance
 
-/**
- * The substitution variables that Mojang's argument templates are resolved against.
- *
- * Directories are taken as strings rather than paths so this stays independent of any filesystem
- * API, keeping the domain layer free of `kotlinx.io`.
- */
+// Directories are strings to keep the domain layer free of kotlinx.io
 data class LaunchVariables(
     val account: Account,
     val instance: Instance,

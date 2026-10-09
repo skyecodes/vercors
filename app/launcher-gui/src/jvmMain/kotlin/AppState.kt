@@ -18,7 +18,6 @@ data class AppState(
     val lastPlayedInstanceId: InstanceId?
 )
 
-/** Aggregate taskbar-progress signal across every instance currently installing or launching. */
 @Immutable
 sealed interface InstallTaskbarProgress {
     data object None : InstallTaskbarProgress

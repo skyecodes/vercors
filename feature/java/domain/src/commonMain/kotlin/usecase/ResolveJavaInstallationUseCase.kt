@@ -6,8 +6,6 @@ import app.vercors.shared.domain.model.JavaInstallation
 import dev.zacsweers.metro.Inject
 import opensavvy.state.progressive.ProgressiveOutcome
 
-/** Resolves the effective Java installation for a required major version: instance override, then the
- *  globally-configured preference for that major version, or null if neither resolves to an existing installation. */
 @Inject
 class ResolveJavaInstallationUseCase(
     private val javaRepository: JavaRepository,

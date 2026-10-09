@@ -1,12 +1,10 @@
 package app.vercors.feature.game.backend.loader
 
-private val versionPartRegex = Regex("\\d+|\\D+")
+private val VERSION_PART_REGEX = Regex("\\d+|\\D+")
 
-// Splits into alternating numeric/non-numeric runs and compares them piecewise (numeric runs as
-// numbers, others lexically); a shorter, otherwise-equal version wins since it has no qualifier suffix.
 internal val versionComparator = Comparator<String> { a, b ->
-    val partsA = versionPartRegex.findAll(a).map { it.value }.toList()
-    val partsB = versionPartRegex.findAll(b).map { it.value }.toList()
+    val partsA = VERSION_PART_REGEX.findAll(a).map { it.value }.toList()
+    val partsB = VERSION_PART_REGEX.findAll(b).map { it.value }.toList()
     var result = 0
     for (i in 0 until minOf(partsA.size, partsB.size)) {
         val partA = partsA[i]

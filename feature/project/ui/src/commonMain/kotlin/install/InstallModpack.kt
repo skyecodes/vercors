@@ -20,10 +20,14 @@ import org.jetbrains.compose.resources.stringResource
 @Composable
 fun InstallModpack(
     store: Store<InstallModpackState, InstallModpackEvent>,
+    modifier: Modifier = Modifier,
 ) {
     val (state, eventSink) = store
 
-    AppDialog(onClickOutside = { eventSink(InstallModpackEvent.OnCancelClick) }) {
+    AppDialog(
+        modifier = modifier,
+        onClickOutside = { eventSink(InstallModpackEvent.OnCancelClick) }
+    ) {
         Column(
             verticalArrangement = Arrangement.spacedBy(16.dp),
             modifier = Modifier.width(IntrinsicSize.Max)

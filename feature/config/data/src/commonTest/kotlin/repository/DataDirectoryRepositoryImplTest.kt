@@ -48,16 +48,11 @@ class DataDirectoryRepositoryImplTest {
             assertEquals("hello", Path(newRoot, "instances", "note.txt").source { it.readString() })
             assertFalse(oldRoot.exists())
         } finally {
-            // move() always writes the redirect marker to the *real* OS-default location for appId, regardless
-            // of where oldRoot/newRoot are — clean that up so the test doesn't leave it on the dev/CI machine.
+            // move() writes the redirect marker to the real OS-default location: clean it up
             defaultAppRoot(appId).let { if (SystemFileSystem.exists(it)) it.deleteRecursivelyForTest() }
         }
     }
 
-    /** Regression test: when the old root *is* the OS-default location (the common case — moving away from the
-     *  default for the first time), writeAppRoot's marker file lands inside the very tree being cleaned up
-     *  afterward. A naive `deleteRecursively()` there deletes the marker it just wrote, making the app think
-     *  it's a fresh install on the next launch even though the move itself fully succeeded. */
     @Test
     fun `move preserves the redirect marker when the old root is the OS-default location`() = runTest {
         val appId = "vercors-test-marker-regression"

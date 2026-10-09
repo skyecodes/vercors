@@ -12,11 +12,6 @@ import kotlinx.serialization.json.Json
 
 private const val RESOURCE_PACK_KIND = "resourcepack"
 
-/**
- * Thin, resourcepack-specific wrapper around [ContentDirScannerEngine] — see that class for how scanning/caching/
- * watching actually works. This class only supplies the resourcepack-specific pieces: the `resourcepacks/`
- * directory, the `.zip` extension, [ResourcePackParser], and the `resourcepack`-kind cache directories.
- */
 @SingleIn(AppScope::class)
 @Inject
 class InstanceResourcePackScannerService(

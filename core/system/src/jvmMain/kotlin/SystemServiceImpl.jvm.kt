@@ -47,10 +47,7 @@ actual class SystemServiceImpl(
         Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.OPEN)
     }
 
-    // SystemInfo() performs slow native hardware enumeration (JNA) — the first synchronous access to this
-    // property used to cause a noticeable UI freeze (e.g. opening Settings or an instance's details for the
-    // first time). Warm it on a background thread as soon as this singleton is constructed instead; the
-    // getter below only blocks if something reads the property before that warm-up finishes.
+    // SystemInfo() does slow JNA hardware enumeration: warm it off the UI thread
     @Volatile
     private var cachedTotalPhysicalMemoryBytes: Long? = null
 

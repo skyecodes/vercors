@@ -14,16 +14,11 @@ private const val TAG_COMPOUND = 10
 private const val TAG_INT_ARRAY = 11
 private const val TAG_LONG_ARRAY = 12
 
-/**
- * Decodes a full, uncompressed NBT document (as used by e.g. `servers.dat` — `level.dat` and similar files are
- * gzip-compressed and need decompressing to raw bytes before being passed here). The root tag is required to be
- * a (possibly unnamed) [NbtCompound], matching every real-world use of NBT as a file format.
- */
 fun readNbt(bytes: ByteArray): NbtCompound {
     val reader = NbtByteReader(bytes)
     val rootType = reader.readTagId()
     require(rootType == TAG_COMPOUND) { "Root NBT tag must be a compound (type $TAG_COMPOUND), was type $rootType" }
-    reader.readNbtString() // Root tag's own name — conventionally empty, not needed by any caller.
+    reader.readNbtString() // root tag name, unused
     return reader.readCompoundPayload()
 }
 
@@ -66,8 +61,7 @@ private class NbtByteReader(private val bytes: ByteArray) {
         return result
     }
 
-    /** NBT's own modified-UTF-8 string encoding — decoded here as plain UTF-8, which matches for all ASCII and
-     * the vast majority of real-world content (server names/addresses in particular). */
+    // Modified UTF-8 decoded as plain UTF-8: identical for ASCII and nearly all real content
     fun readNbtString(): String = readByteArray(readUnsignedShort()).decodeToString()
 }
 

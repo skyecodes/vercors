@@ -93,7 +93,7 @@ internal fun IconData.toDomain(): ProjectCategory.Icon = when (this) {
 }
 
 internal fun UnsupportedProjectTypeData.toDomain(): UnsupportedProjectType =
-    UnsupportedProjectType(projectType.toDomain())
+    UnsupportedProjectType(unsupportedProjectType.toDomain())
 
 internal fun PlatformErrorData.toDomain(): PlatformError = PlatformError(error, description)
 
@@ -104,9 +104,9 @@ internal fun RemoteError.toPlatformError(): PlatformError = when (this) {
     is RemoteError.Http -> PlatformError("http_$status", body)
 }
 
-internal fun PlatformNotFoundData.toDomain(): PlatformNotFound = PlatformNotFound(platformId)
+internal fun PlatformNotFoundData.toDomain(): PlatformNotFound = PlatformNotFound(notFoundPlatformId)
 
-internal fun ProjectNotFoundData.toDomain(): ProjectNotFound = ProjectNotFound(projectId from platformId)
+internal fun ProjectNotFoundData.toDomain(): ProjectNotFound = ProjectNotFound(notFoundProjectId from platformId)
 
 internal fun ProjectFileData.toDomain(platform: PlatformId): ProjectFile = ProjectFile(
     id = id,

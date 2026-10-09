@@ -132,21 +132,18 @@ class InstallProjectPresenter(
         }
     }
 
-    /** Which instance the file will be installed onto: an existing one (defaulted once the list loads — preferred
-     *  instance if given and compatible, else the most-recently-updated one, else the new-instance form) or a
-     *  brand-new one, per [InstanceSelectionState.creatingNewInstance]. */
     @Composable
     private fun rememberInstanceSelectionState(
         instances: ProgressiveOutcome<Nothing, List<InstallableInstanceView>>
     ): InstanceSelectionState {
         val (selectedInstanceId, setSelectedInstanceId) = remember { mutableStateOf(preferredInstanceId) }
         val (creatingNewInstance, setCreatingNewInstance) = remember { mutableStateOf(false) }
-        var hasAppliedDefaultSelection by remember { mutableStateOf(false) }
+        val (hasAppliedDefaultSelection, setHasAppliedDefaultSelection) = remember { mutableStateOf(false) }
 
         LaunchedEffect(instances.valueOrNull) {
             if (hasAppliedDefaultSelection) return@LaunchedEffect
             val list = instances.valueOrNull ?: return@LaunchedEffect
-            hasAppliedDefaultSelection = true
+            setHasAppliedDefaultSelection(true)
             val preferred = preferredInstanceId?.let { id -> list.find { it.id == id } }
             val default = preferred ?: list.firstOrNull()
             if (default != null) setSelectedInstanceId(default.id) else setCreatingNewInstance(true)
@@ -160,13 +157,11 @@ class InstallProjectPresenter(
         )
     }
 
-    /** The "create a new instance" sub-form's own state: name, Minecraft version, and (optional) mod loader,
-     *  each constrained to what the project actually supports/has files for. */
     @Composable
     private fun rememberNewInstanceFormState(): NewInstanceFormState {
         val project = remember { mutableProgressiveStateOf<ProjectDetailsError, Project>() }
         val (newInstanceName, setNewInstanceName) = remember { mutableStateOf("") }
-        var hasEditedNewInstanceName by remember { mutableStateOf(false) }
+        val (hasEditedNewInstanceName, setHasEditedNewInstanceName) = remember { mutableStateOf(false) }
         val (selectedGameVersion, setSelectedGameVersion) = remember { mutableStateOf<GameVersionView?>(null) }
         val (selectedLoader, setSelectedLoader) = remember { mutableStateOf<ModLoaderType?>(null) }
         val (selectedLoaderVersion, setSelectedLoaderVersion) = remember { mutableStateOf<LoaderVersion?>(null) }
@@ -181,10 +176,7 @@ class InstallProjectPresenter(
             val allVersions = gameVersionList.valueOrNull.orEmpty()
             if (supportedVersions == null) allVersions else allVersions.filter { it.id in supportedVersions }
         }
-        // Only fetched/used when the project requires a loader — answers "which loaders does this project
-        // actually have a file for at this exact game version", as opposed to `compatibleLoaders`, which is a
-        // project-wide aggregate across every version ever published (can spuriously include a loader with no
-        // file for the specific version picked here).
+        // Per-version files: compatibleLoaders aggregates every version and can list loaders with no file for this one
         val versionFiles = remember { mutableProgressiveStateOf<ProjectDetailsError, List<ProjectFileView>>() }
         val loaderList = remember(availableLoaders, versionFiles.value) {
             if (!projectType.requiresLoader) {
@@ -232,7 +224,7 @@ class InstallProjectPresenter(
             project = project.value,
             newInstanceName = newInstanceName,
             setNewInstanceName = setNewInstanceName,
-            setHasEditedNewInstanceName = { hasEditedNewInstanceName = it },
+            setHasEditedNewInstanceName = setHasEditedNewInstanceName,
             gameVersionList = filteredGameVersionList,
             selectedGameVersion = selectedGameVersion,
             setSelectedGameVersion = setSelectedGameVersion,
@@ -245,8 +237,6 @@ class InstallProjectPresenter(
         )
     }
 
-    /** The file to install (and its resolved dependencies) for the current `(gameVersion, loader)` target —
-     *  shared by the existing-instance and new-instance-form paths, see [loadFiles]. */
     @Composable
     private fun rememberFileSelectionState(
         gameVersion: String?,
@@ -254,9 +244,9 @@ class InstallProjectPresenter(
         instanceId: InstanceId?,
     ): FileSelectionState {
         val (selectedFileId, setSelectedFileId) = remember { mutableStateOf<String?>(null) }
-        var dependencies by remember { mutableStateOf<List<DependencyFileView>>(emptyList()) }
+        val (dependencies, setDependencies) = remember { mutableStateOf<List<DependencyFileView>>(emptyList()) }
         val (selectedDependencyIds, setSelectedDependencyIds) = remember { mutableStateOf<Set<ProjectId>>(emptySet()) }
-        var resolvingDependencies by remember { mutableStateOf(false) }
+        val (resolvingDependencies, setResolvingDependencies) = remember { mutableStateOf(false) }
         val files = remember { mutableProgressiveStateOf<ProjectDetailsError, List<ProjectFileView>>() }
         val installedProviders by observeInstalledProvidersView(instanceId)
         val selectedFile = files.value.valueOrNull?.find { it.id == selectedFileId }
@@ -268,17 +258,17 @@ class InstallProjectPresenter(
         LaunchedEffect(selectedFileId, installedProviders) {
             when (val resolution = resolveDependencies(selectedFile, gameVersion, loader, installedProviders)) {
                 DependencyResolution.NotApplicable -> {
-                    dependencies = emptyList()
+                    setDependencies(emptyList())
                     setSelectedDependencyIds(emptySet())
-                    resolvingDependencies = false
+                    setResolvingDependencies(false)
                 }
 
-                DependencyResolution.Pending -> resolvingDependencies = true
+                DependencyResolution.Pending -> setResolvingDependencies(true)
 
                 is DependencyResolution.Resolved -> {
-                    dependencies = resolution.dependencies
+                    setDependencies(resolution.dependencies)
                     setSelectedDependencyIds(resolution.dependencies.map { it.projectId }.toSet())
-                    resolvingDependencies = false
+                    setResolvingDependencies(false)
                 }
             }
         }
@@ -427,21 +417,11 @@ class InstallProjectPresenter(
     private suspend fun loadProject(): ProgressiveOutcome<ProjectDetailsError, Project> =
         progressive { getProject(projectId) }
 
-    /** Unfiltered-by-loader file list for one game version — see [loadFiles]'s doc for why loader filtering
-     *  never happens upstream. Used only to compute [NewInstanceFormState.loaderList]. */
     @OptIn(ExperimentalProgressiveRaiseApi::class)
     private suspend fun loadVersionFiles(gameVersion: String): ProgressiveOutcome<ProjectDetailsError, List<ProjectFileView>> =
         progressive { getProjectFiles(projectId, gameVersion, loader = null).map { it.toView() } }
 
-    /** Fetches the compatible files for the target `(gameVersion, loader)` and picks a default selection — used
-     *  both for an existing selected instance and for the new-instance sub-form's in-progress selections, since
-     *  the backend only needs plain values, not a real instance, to resolve compatible files.
-     *  Always fetches with `loader = null` — both CurseForge and Modrinth apply a non-null `loader` as a strict
-     *  upstream exact-match filter against each file's own provider-side loader tag, which can return zero files
-     *  for a loader a mod genuinely supports but never explicitly tagged for this specific game version (e.g. a
-     *  Fabric-tagged file that also works on Quilt via its Fabric-compat layer). Filtering locally against
-     *  [ProjectFileView.loaders] instead is strictly more permissive and avoids that false-negative.
-     */
+    // Always fetched with loader = null: upstream loader filters are strict exact matches (e.g. Fabric files that run on Quilt)
     @OptIn(ExperimentalProgressiveRaiseApi::class)
     private suspend fun loadFiles(
         gameVersion: String?,
@@ -458,13 +438,7 @@ class InstallProjectPresenter(
         return outcome.valueOrNull?.let(::pickRecommendedFile)?.id
     }
 
-    /**
-     * Resolves [file]'s required dependencies against what's already installed at `(gameVersion, loader)`,
-     * skipping any that are already present. Deliberately stays [DependencyResolution.Pending] while
-     * [installedProviders] is still loading rather than resolving against a possibly-empty set — otherwise an
-     * already-installed dependency can briefly look missing and get re-downloaded if the user confirms before the
-     * scan catches up.
-     */
+    // Stays Pending while installed content loads, or an installed dependency could look missing and be re-downloaded
     private suspend fun resolveDependencies(
         file: ProjectFileView?,
         gameVersion: String?,
@@ -503,13 +477,6 @@ class InstallProjectPresenter(
         pickRecommendedFile(fileList)?.let { DependencyFileView(dependencyId, project.name, project.type, it) }
     }) { null }
 
-    /**
-     * Installs [file] (and each of [selectedDependencies]) onto an existing [instanceId], auto files first (as one
-     * batch download, so their progress can be merged into a single fraction), then manual ones. [onProgressChanged]
-     * reports the overall fraction (0..1) across every candidate — auto candidates count as done once the batch
-     * download finishes, manual candidates count as done one by one as [runManualDownloads] reports each item
-     * downloaded.
-     */
     private fun confirmInstall(
         instanceId: InstanceId,
         file: ProjectFileView,
@@ -530,14 +497,7 @@ class InstallProjectPresenter(
         return job
     }
 
-    /**
-     * Creates a brand-new instance from the new-instance sub-form's selections, then installs [file] (and
-     * [selectedDependencies]) into it. Uses the [Instance] object returned by [createInstance] directly rather
-     * than re-reading it back out of the reactive instance cache, which lags behind the write. If instance
-     * creation itself fails, [onFinished] is called with a `null` id and `false`. If creation succeeds but the
-     * install afterward fails, the instance is deliberately left in place (no rollback) — the user can retry from
-     * the normal existing-instance selection, same as an existing-instance install failure already behaves.
-     */
+    // Uses the returned Instance directly: the reactive cache lags behind the write
     private fun confirmCreateAndInstall(
         newInstanceName: String,
         selectedNewGameVersion: GameVersionView,
@@ -584,7 +544,7 @@ class InstallProjectPresenter(
             null
         }
 
-    /** Best-effort only: a missing/broken project logo must never fail or delay the install. */
+    // Best-effort: a missing logo must never fail the install
     private suspend fun fetchAndApplyProjectIcon(instance: Instance) {
         recover({
             val logoUrl = getProject(projectId).logoUrl
@@ -623,9 +583,6 @@ class InstallProjectPresenter(
                     onProgressChanged((progress.toFractionOrNull() ?: 0f) * autoCandidates.size / totalCount)
                 }
                 autoCandidates.forEach { candidate ->
-                    // Every installable type (Mod/ResourcePack/ShaderPack — World never reaches installFiles, and
-                    // Modpack/DataPack are never installable via this presenter) has a ContentKind, whether it's
-                    // the primary project's own type or a dependency's own (possibly different) type.
                     val kind = requireNotNull(candidate.type.toContentKindOrNull())
                     recordInstalledContentOrigin(
                         kind,
@@ -666,13 +623,6 @@ class InstallProjectPresenter(
         }
     }
 
-    /**
-     * World installs are a single file with no dependencies and no content-kind/provider tracking (there's no
-     * "already installed" concept to dedupe against, unlike mods) — handled as its own, simpler path rather than
-     * folded into [installFiles]'s multi-candidate/dependency-batching logic above. The downloaded archive is
-     * extracted as a new world directory rather than moved into a flat folder — see
-     * [app.vercors.feature.project.domain.repository.ProjectRepository.installWorldFile].
-     */
     private suspend fun installWorldFileFor(
         instanceId: InstanceId,
         file: ProjectFileView,
@@ -745,7 +695,6 @@ class InstallProjectPresenter(
         }
 }
 
-/** Which instance the install targets — see [InstallProjectPresenter.rememberInstanceSelectionState]. */
 private data class InstanceSelectionState(
     val selectedInstanceId: InstanceId?,
     val setSelectedInstanceId: (InstanceId?) -> Unit,
@@ -753,7 +702,6 @@ private data class InstanceSelectionState(
     val setCreatingNewInstance: (Boolean) -> Unit,
 )
 
-/** The "create a new instance" sub-form's state — see [InstallProjectPresenter.rememberNewInstanceFormState]. */
 private data class NewInstanceFormState(
     val project: ProgressiveOutcome<ProjectDetailsError, Project>,
     val newInstanceName: String,
@@ -770,7 +718,6 @@ private data class NewInstanceFormState(
     val setSelectedLoaderVersion: (LoaderVersion?) -> Unit,
 )
 
-/** The file to install and its resolved dependencies — see [InstallProjectPresenter.rememberFileSelectionState]. */
 private data class FileSelectionState(
     val files: MutableState<ProgressiveOutcome<ProjectDetailsError, List<ProjectFileView>>>,
     val selectedFileId: String?,
@@ -793,8 +740,6 @@ internal fun pickRecommendedFile(files: List<ProjectFileView>): ProjectFileView?
     files.filter { it.releaseChannel == ProjectReleaseChannel.Release }.maxByOrNull { it.publishedAt }
         ?: files.maxByOrNull { it.publishedAt }
 
-/** Only Mod/ResourcePack/ShaderPack have a [ContentKind] (an "already installed" concept to dedupe dependencies
- *  against) — Modpack never reaches this presenter, World has no dependencies, and DataPack isn't installable. */
 private fun ProjectType.toContentKindOrNull(): ContentKind? = when (this) {
     ProjectType.Mod -> ContentKind.Mod
     ProjectType.ResourcePack -> ContentKind.ResourcePack

@@ -16,5 +16,5 @@ class InstallWorldFileUseCase(
         candidate: ProjectFileDownloadCandidate,
         instanceId: String,
         onProgress: (Progress) -> Unit = {}
-    ) = projectRepository.installWorldFile(candidate, instanceId, onProgress)
+    ): Unit = projectRepository.installWorldFile(candidate, instanceId, onProgress)
 }

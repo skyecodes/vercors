@@ -56,19 +56,7 @@ internal fun FabricLoaderProfile.Library.toDomain(): GameVersionDetails.Library 
     )
 }
 
-/**
- * Unlike modern Forge/NeoForge, legacy Forge does no client-jar binary-patching, so `omitClientFromClasspath`
- * stays `false` (default): the vanilla client jar must remain on the classpath, unmodified, alongside the
- * universal jar.
- *
- * `versionInfo.libraries` typically also lists the loader's own coordinate ([LegacyForgeInstallProfile.Install.path])
- * as if it were a normal downloadable library, with a real-looking maven `url` — it isn't actually fetchable
- * there (confirmed 404 against the real maven for a real build). `ForgeFamilyInstall.kt`'s legacy branch
- * extracts that coordinate's real content — the "universal" jar bundled inside the installer jar itself —
- * directly to that exact (unclassified) library path before this mapping runs, so that self-referencing entry
- * is filtered out of the normal per-library download list here and replaced with a single locally-produced,
- * never-fetched (`url = ""`) one instead.
- */
+// The installer's own coordinate is listed with a URL that 404s: it's extracted locally instead (see ForgeFamilyInstall)
 internal fun LegacyForgeInstallProfile.toDomain(): LoaderInstallProfile {
     val universalLibrary = GameVersionDetails.Library(
         name = install.path,
@@ -85,10 +73,7 @@ internal fun LegacyForgeInstallProfile.toDomain(): LoaderInstallProfile {
             .map { it.toDomain() } + universalLibrary,
         gameArgs = versionInfo.minecraftArguments?.toBasicArguments(),
         jvmArgs = null,
-        // versionInfo.minecraftArguments is already a complete, self-sufficient args list (it textually
-        // repeats every standard flag itself) — must replace, not append to, the vanilla version's own
-        // (also minecraftArguments-derived) gameArgs, or every flag ends up duplicated. See the doc comment
-        // on LoaderInstallProfile.replacesGameArgs.
+        // minecraftArguments is already complete: replace, never append, or every flag is duplicated
         replacesGameArgs = true
     )
 }

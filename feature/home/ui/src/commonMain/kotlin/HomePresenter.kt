@@ -50,9 +50,9 @@ import org.jetbrains.compose.resources.stringResource
 
 @AssistedInject
 class HomePresenter(
-    @Assisted val navigator: Navigator,
-    val observeHomeSectionList: ObserveHomeSectionListUseCase,
-    val createInstanceDialog: CreateInstanceDialog,
+    @Assisted private val navigator: Navigator,
+    private val observeHomeSectionList: ObserveHomeSectionListUseCase,
+    private val createInstanceDialog: CreateInstanceDialog,
     private val globalScope: CoroutineScope,
     private val launchInstance: LaunchInstanceUseCase,
     private val stopInstance: StopInstanceUseCase,

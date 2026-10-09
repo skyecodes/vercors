@@ -14,7 +14,6 @@ import app.vercors.shared.domain.model.NativeLibraryOptions
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.Named
 
-/** Assembles the process command line for an instance whose dependencies are already resolved. */
 @Inject
 class LaunchCommandBuilder(
     private val appPaths: AppPaths,

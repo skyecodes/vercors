@@ -9,6 +9,6 @@ import kotlinx.coroutines.Job
 class UpdateInstanceJobUseCase(
     private val instanceRepository: InstanceRepository
 ) {
-    operator fun invoke(instanceId: InstanceId, job: Job?) =
+    operator fun invoke(instanceId: InstanceId, job: Job?): Unit =
         instanceRepository.updateInstanceJob(instanceId, job)
 }

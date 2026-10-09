@@ -6,13 +6,11 @@ import app.vercors.feature.instance.domain.model.InstanceId
 import app.vercors.feature.instance.domain.repository.InstanceServerRepository
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
-import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
 import opensavvy.state.coroutines.ProgressiveFlow
 
 @SingleIn(AppScope::class)
 @ContributesBinding(AppScope::class)
-@Inject
 class InstanceServerRepositoryImpl(
     private val scannerService: InstanceServerScannerService
 ) : InstanceServerRepository {

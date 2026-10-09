@@ -1,25 +1,23 @@
 package app.vercors.feature.instance.ui.details
 
-import androidx.compose.runtime.Immutable
 import app.vercors.feature.instance.domain.model.InstanceFolder
 import app.vercors.feature.instance.ui.copy.CopyInstanceResult
 import app.vercors.feature.launcher.domain.model.QuickPlayTarget
 import app.vercors.feature.project.domain.model.ProjectType
 import app.vercors.shared.ui.Event
 
-@Immutable
 sealed interface InstanceDetailsEvent : Event {
-    data object Launch : InstanceDetailsEvent
-    data class QuickJoin(val target: QuickPlayTarget) : InstanceDetailsEvent
-    data object Cancel : InstanceDetailsEvent
-    data object CancelSetup : InstanceDetailsEvent
-    data object Stop : InstanceDetailsEvent
-    data object Kill : InstanceDetailsEvent
-    data object Delete : InstanceDetailsEvent
-    data class ConfirmDelete(val result: Boolean) : InstanceDetailsEvent
+    data object OnLaunchClick : InstanceDetailsEvent
+    data class OnQuickJoinClick(val target: QuickPlayTarget) : InstanceDetailsEvent
+    data object OnCancelClick : InstanceDetailsEvent
+    data object OnCancelSetupClick : InstanceDetailsEvent
+    data object OnStopClick : InstanceDetailsEvent
+    data object OnKillClick : InstanceDetailsEvent
+    data object OnDeleteClick : InstanceDetailsEvent
+    data class OnConfirmDelete(val result: Boolean) : InstanceDetailsEvent
     data object OnCopyClick : InstanceDetailsEvent
     data class OnCopyInstanceResult(val result: CopyInstanceResult) : InstanceDetailsEvent
-    data class SelectTab(val tab: InstanceDetailsTab) : InstanceDetailsEvent
+    data class OnTabClick(val tab: InstanceDetailsTab) : InstanceDetailsEvent
     data object OnInstallJavaConfirm : InstanceDetailsEvent
     data object OnInstallJavaDismiss : InstanceDetailsEvent
     data class OnOpenProjectClick(val platformId: String, val projectId: String) : InstanceDetailsEvent
@@ -31,6 +29,6 @@ sealed interface InstanceDetailsEvent : Event {
     data object OnFinishInstallationClick : InstanceDetailsEvent
     data object OnFinishInstallationDismiss : InstanceDetailsEvent
     data object OnResumeInstallationClick : InstanceDetailsEvent
-    data object CancelLogin : InstanceDetailsEvent
-    data object OnJavaInstallDialogDismiss : InstanceDetailsEvent
+    data object OnLoginDismiss : InstanceDetailsEvent
+    data object OnJavaInstallProgressDismiss : InstanceDetailsEvent
 }

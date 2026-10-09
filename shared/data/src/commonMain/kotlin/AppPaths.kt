@@ -5,13 +5,7 @@ import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
 import kotlinx.io.files.Path
 
-/**
- * Single source of truth for the launcher's on-disk layout.
- *
- * Note that [instanceStore] and [gameDirs] are unrelated despite both being named "instances":
- * the former holds the serialized instance metadata, the latter holds the working directory each
- * instance's game process actually runs in.
- */
+// instanceStore holds instance metadata; gameDirs holds each instance's game working directory
 @SingleIn(AppScope::class)
 @Inject
 class AppPaths(val root: Path) {
@@ -37,7 +31,7 @@ class AppPaths(val root: Path) {
     val iconCacheRoot = Path(data, "cache", "icon")
     val contentCacheRoot = Path(data, "cache", "projects")
 
-    /** Scratch space for in-progress downloads — deliberately outside any directory a content directory watcher observes. */
+    // Outside any directory a content watcher observes
     val downloadsTmp = Path(data, "tmp")
 
     fun versionDir(versionId: String): Path = Path(versions, versionId)
@@ -46,18 +40,14 @@ class AppPaths(val root: Path) {
 
     fun versionInfoFile(versionId: String): Path = Path(versionDir(versionId), "$versionId.json")
 
-    /** Where the list of mod loaders available for a given game version is cached. */
     fun availableLoadersFile(gameVersion: String): Path = Path(versionDir(gameVersion), "loaders.json")
 
-    /** Where the list of available versions for a given mod loader on a given game version is cached. */
     fun loaderVersionsFile(gameVersion: String, loaderType: String): Path =
         Path(versionDir(gameVersion), "$loaderType-loader-versions.json")
 
-    /** Where a mod loader's resolved profile (mainClass/libraries/args) is cached for a given game+loader version. */
     fun loaderProfileFile(gameVersion: String, loaderType: String, loaderVersion: String): Path =
         Path(versionDir("$gameVersion-$loaderType-$loaderVersion"), "profile.json")
 
-    /** Where a Forge/NeoForge-family installer jar is cached for a given loader+version. */
     fun installerJarFile(loaderType: String, gameVersion: String, loaderVersion: String): Path =
         Path(versionDir("$gameVersion-$loaderType-$loaderVersion"), "installer.jar")
 
@@ -65,7 +55,6 @@ class AppPaths(val root: Path) {
 
     fun assetObjectFile(hash: String): Path = Path(assetObjects, hash.take(2), hash)
 
-    /** Resolves a Mojang library artifact path such as `com/mojang/logging/1.0.0/logging-1.0.0.jar`. */
     fun libraryFile(artifactPath: String): Path = Path(libraries, *artifactPath.pathSegments())
 
     fun loggingConfigFile(typeDir: String, fileId: String): Path = Path(loggingConfigs, typeDir, fileId)
@@ -92,8 +81,6 @@ class AppPaths(val root: Path) {
 
     fun iconCache(kind: String): Path = Path(iconCacheRoot, kind)
 
-    /** Where a downloaded mod/resource pack/shader pack is cached, keyed by content kind + sha1, so identical
-     *  files can be hardlinked into every instance that needs them instead of re-downloaded/re-stored per instance. */
     fun contentCacheObjectFile(kind: ContentCacheKind, sha1: String): Path =
         Path(contentCacheRoot, kind.name.lowercase(), sha1.take(2), sha1)
 

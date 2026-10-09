@@ -2,21 +2,25 @@ package app.vercors.feature.game.backend.loader
 
 import app.vercors.feature.game.api.dto.LoaderErrorData
 import app.vercors.feature.game.api.dto.LoaderVersionData
+import app.vercors.feature.game.backend.loader.dto.MavenVersionsResponse
 import arrow.core.raise.Raise
 import arrow.core.raise.context.ensureNotNull
-import dev.zacsweers.metro.*
+import dev.zacsweers.metro.AppScope
+import dev.zacsweers.metro.ContributesIntoMap
+import dev.zacsweers.metro.SingleIn
+import dev.zacsweers.metro.StringKey
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.request.*
 
+internal const val FORGE_LOADER_ID = "forge"
 private const val FORGE_MAVEN_BASE_URL = "https://maven.minecraftforge.net"
 private const val FORGE_MAVEN_VERSIONS_URL =
     "$FORGE_MAVEN_BASE_URL/api/maven/versions/releases/net%2Fminecraftforge%2Fforge"
 
 @SingleIn(AppScope::class)
 @ContributesIntoMap(AppScope::class)
-@StringKey("forge")
-@Inject
+@StringKey(FORGE_LOADER_ID)
 class ForgeLoaderFetcher(
     private val httpClient: HttpClient
 ) : LoaderFetcher {
@@ -49,20 +53,10 @@ class ForgeLoaderFetcher(
     }
 }
 
-/**
- * Forge's maven build number is always shaped `\d+(\.\d+)+` and never contains `-`, so any qualifier suffix a
- * build's maven artifact-version adds after it (e.g. the game version repeated, as in "10.13.4.1614-1.7.10", or
- * an arbitrary qualifier like "10.13.3.1389-1710ls") is reliably delimited by the first `-`. A no-op on an
- * already-bare build number.
- */
+// Forge build numbers never contain '-', so the first '-' delimits any qualifier suffix
 private fun String.bareForgeBuildNumber(): String = substringBefore('-')
 
-/**
- * Resolves [loaderVersion] (either a bare build number, e.g. from a CurseForge modpack manifest, or a full raw
- * suffixed remainder already round-tripped through [ForgeLoaderFetcher.getVersions]) against [rawVersions] (raw,
- * unstripped maven artifact-version strings for [gameVersion]) to the true maven artifact-version string —
- * instead of assuming it's always exactly "$gameVersion-$loaderVersion", which 404s for builds with a suffix.
- */
+// Some builds carry a suffix, so "$gameVersion-$loaderVersion" isn't always the real artifact version
 internal fun resolveForgeArtifactVersion(
     gameVersion: String,
     loaderVersion: String,

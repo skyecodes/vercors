@@ -1,9 +1,9 @@
 package app.vercors.feature.instance.ui.install
 
+import app.vercors.feature.instance.domain.model.ContentKind
 import app.vercors.feature.instance.domain.model.InstanceId
 import app.vercors.feature.instance.domain.model.ManualDownloadItem
 import app.vercors.feature.instance.domain.model.PendingManualDownload
-import app.vercors.feature.instance.domain.usecase.ContentKind
 import app.vercors.feature.instance.domain.usecase.RecordInstalledContentOriginUseCase
 import app.vercors.feature.instance.domain.usecase.UpdateInstanceUseCase
 import app.vercors.feature.instance.ui.message
@@ -76,12 +76,7 @@ fun PendingManualDownload.toManualDownloadCandidate(instanceId: InstanceId): Man
         providerFileId = providerFileId,
     )
 
-/**
- * Runs [candidates]' manual downloads in parallel — opening one browser tab per file is pointless if we then only
- * watch for them one at a time — reporting live per-item status via [onItemsChanged] as each one is detected and
- * moved into place. Returns `true` only once every candidate has succeeded; a single failure still lets the others
- * finish before reporting overall failure, since there's no reason to abandon downloads already in flight.
- */
+// Parallel: opening a browser tab per file is pointless if they're then awaited one at a time
 suspend fun runManualDownloads(
     candidates: List<ManualDownloadCandidate>,
     awaitManualDownload: AwaitManualDownloadUseCase,
@@ -137,12 +132,7 @@ suspend fun runManualDownloads(
     return results.all { it }
 }
 
-/**
- * Persists which of [candidates] are still outstanding (i.e. not yet marked `downloaded` in [items]) onto the
- * instance's metadata, so a launcher restart mid-wait doesn't lose track of them (see
- * [app.vercors.feature.instance.data.repository.InstanceRepositoryImpl]'s startup reconciliation). Best-effort: a
- * failure here must never fail the surrounding install/resume flow.
- */
+// Best-effort: must never fail the surrounding install
 suspend fun persistPendingManualDownloads(
     instanceId: InstanceId,
     candidates: List<ManualDownloadCandidate>,

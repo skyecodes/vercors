@@ -1,14 +1,11 @@
 package app.vercors.feature.instance.domain.usecase
 
+import app.vercors.feature.instance.domain.model.ContentKind
 import app.vercors.feature.instance.domain.model.InstanceId
 import app.vercors.feature.instance.domain.repository.InstanceModRepository
 import app.vercors.feature.instance.domain.repository.InstanceResourcePackRepository
 import app.vercors.feature.instance.domain.repository.InstanceShaderPackRepository
 import dev.zacsweers.metro.Inject
-
-enum class ContentKind {
-    Mod, ResourcePack, ShaderPack
-}
 
 @Inject
 class RecordInstalledContentOriginUseCase(
@@ -23,7 +20,7 @@ class RecordInstalledContentOriginUseCase(
         platformId: String,
         projectId: String,
         fileId: String
-    ) = when (kind) {
+    ): Unit = when (kind) {
         ContentKind.Mod -> instanceModRepository.recordModOrigin(instanceId, fileName, platformId, projectId, fileId)
         ContentKind.ResourcePack -> instanceResourcePackRepository.recordResourcePackOrigin(
             instanceId,

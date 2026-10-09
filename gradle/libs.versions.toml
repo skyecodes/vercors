@@ -37,7 +37,7 @@ coil = "3.6.3"
 coil-resvg = "1.1.2"
 markdown-renderer = "0.45.0"
 webview = "2.0.3"
-nucleusframework = "2.6.0-dev-202610052111"
+nucleusframework = "3.0.0-dev-202610081711"
 composenativetray = "2.1.7"
 filekit = "0.16.0"
 # CLI
@@ -75,7 +75,6 @@ kotlinx-io-core = { module = "org.jetbrains.kotlinx:kotlinx-io-core", version.re
 ktor-server-core = { module = "io.ktor:ktor-server-core", version.ref = "ktor" }
 ktor-server-cio = { module = "io.ktor:ktor-server-cio", version.ref = "ktor" }
 ktor-server-content-negotiation = { module = "io.ktor:ktor-server-content-negotiation", version.ref = "ktor" }
-ktor-server-caching-headers = { module = "io.ktor:ktor-server-caching-headers", version.ref = "ktor" }
 ktor-server-status-pages = { module = "io.ktor:ktor-server-status-pages", version.ref = "ktor" }
 ktor-server-test-host = { module = "io.ktor:ktor-server-test-host", version.ref = "ktor" }
 ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }

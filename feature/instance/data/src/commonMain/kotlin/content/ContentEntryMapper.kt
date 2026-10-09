@@ -2,7 +2,7 @@ package app.vercors.feature.instance.data.content
 
 import app.vercors.feature.instance.domain.model.InstalledContentFile
 
-internal fun ContentEntry.toInstalledContentFile() = InstalledContentFile(
+internal fun ContentEntry.toDomain(): InstalledContentFile = InstalledContentFile(
     fileName = fileName,
     title = title,
     description = description,

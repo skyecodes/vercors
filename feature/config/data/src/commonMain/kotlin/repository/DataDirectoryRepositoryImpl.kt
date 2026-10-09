@@ -37,8 +37,7 @@ class DataDirectoryRepositoryImpl(
         val oldRoot = appPaths.root
         val newRoot = withAppFolderName(appId, Path(newPath))
         val defaultRoot = defaultAppRoot(appId)
-        // Defensive: the caller is expected to skip calling this when the (normalized) path is unchanged, but
-        // copying a directory tree into itself below would corrupt it — never proceed regardless of the caller.
+        // Copying a tree into itself would corrupt it
         if (newRoot.toString() == oldRoot.toString()) return
         ensure(ensureRootReachable(newRoot)) { DataDirectoryError.Unreachable }
 
@@ -51,13 +50,12 @@ class DataDirectoryRepositoryImpl(
         }
 
         try {
-            // Content cache first — establishes the new cache before anything below tries to link against it.
+            // Content cache first: everything below links against it
             if (appPaths.contentCacheRoot.exists()) {
                 appPaths.contentCacheRoot.copyRecursively(newAppPaths.contentCacheRoot, onFileCopied = onFileCopied)
             }
 
-            // mods/resourcepacks/shaderpacks are re-linked against the new cache (see copyContentDir) instead of
-            // byte-copied, so instances sharing a file keep sharing one inode at the new location too.
+            // Re-linked against the new cache instead of copied, so shared files keep sharing one inode
             if (appPaths.gameDirs.exists()) {
                 val contentKindByDirName = mapOf(
                     appPaths.modsDir("").name to ContentCacheKind.Mod,
@@ -78,11 +76,7 @@ class DataDirectoryRepositoryImpl(
                 }
             }
 
-            // Everything else — root-level files, instance metadata, themes, logs, versions/libraries/assets,
-            // java runtimes, the other (non-content) caches, tmp — a single generic copy skipping the two
-            // subtrees already handled above (plus the redirect marker itself, if oldRoot happens to be the
-            // OS-default location — it isn't app data, and copying it would leave a stale, confusing copy of
-            // someone else's redirect sitting inside the new root).
+            // Skips the redirect marker: it isn't app data
             oldRoot.copyRecursivelySkipping(
                 target = newRoot,
                 skip = setOf(
@@ -101,11 +95,7 @@ class DataDirectoryRepositoryImpl(
         writeAppRoot(defaultRoot, newRoot)
         onProgress(done())
 
-        // oldRoot may be defaultRoot itself (the common case: moving away from the default location for the
-        // first time) — the marker file just written above would live inside it. Never delete that: every other
-        // FileStore/FileListStore still watching oldRoot's other files for the rest of this process's life can
-        // also race a delete here and resurrect a default copy of what it watches (harmless clutter, unlike the
-        // marker), which is why this whole cleanup stays best-effort/non-fatal.
+        // oldRoot may be the default root holding the marker just written: never delete it, and keep cleanup best-effort
         runCatching {
             oldRoot.deleteRecursivelySkipping(setOf(defaultRoot.dataDirectoryMarkerFile().toString()))
         }.onFailure {
@@ -113,11 +103,6 @@ class DataDirectoryRepositoryImpl(
         }
     }
 
-    /** Walks [oldDir]'s content files, re-linking each one against the new content cache when it matches a
-     *  cached hash (already populated at [newAppPaths] by the time this runs) instead of copying its bytes —
-     *  see the "Preserving the content-cache hardlinks" note in this feature's plan. A file with no cache
-     *  match (not cache-eligible, or the cache was cleared/incomplete) falls back to a plain copy of the old
-     *  file; old→new is never linked directly, only new cache → new instance file. */
     private suspend fun copyContentDir(
         oldDir: Path,
         newDir: Path,
@@ -160,12 +145,7 @@ private suspend fun Path.copyRecursivelySkipping(
     }
 }
 
-/** Like [deleteRecursively], but never touches anything whose path is in [skip] — nor, consequently, any
- *  ancestor directory of a skipped path (it's left behind non-empty, on purpose). A file can still slip back
- *  into a directory between this listing it as empty and deleting it (e.g. a live `FileStoreImpl` watcher
- *  elsewhere in the process resurrecting a default copy of whatever it watches) — that's why every caller of
- *  this wraps the whole thing in `runCatching`; a leftover directory is an acceptable, non-fatal outcome,
- *  unlike deleting something in [skip]. */
+// Best-effort: a live watcher may resurrect files mid-delete, so callers wrap this in runCatching
 private suspend fun Path.deleteRecursivelySkipping(skip: Set<String>) {
     if (toString() in skip) return
     if (isDirectory()) {

@@ -12,14 +12,9 @@ import kotlin.test.assertEquals
 class ModJarMetadataParserTest {
     private val json = Json { ignoreUnknownKeys = true }
 
-    /**
-     * Real fabric.mod.json/mods.toml files carry many fields beyond what [FabricModJson]/[ForgeModsToml] model
-     * (entrypoints, mixins, dependencies, ...). Both kotlinx.serialization's Json and ktoml's Toml reject
-     * unknown keys by default, which made every real-world mod jar silently fall back to filename-derived
-     * metadata — this pins down that unknown fields must be tolerated.
-     */
+    // Real manifests carry unmodelled fields that must be tolerated
     @Test
-    fun parsesFabricModJsonWithUnknownFields() {
+    fun `parses fabric mod json with unknown fields`() {
         val path = Path("build/diag-fabric.jar")
         Zip.open(path, mode = Zip.Mode.Write).use { zip ->
             zip.entryFromSource(
@@ -49,7 +44,7 @@ class ModJarMetadataParserTest {
     }
 
     @Test
-    fun parsesForgeModsTomlWithUnknownFields() {
+    fun `parses forge mods toml with unknown fields`() {
         val path = Path("build/diag-forge.jar")
         Zip.open(path, mode = Zip.Mode.Write).use { zip ->
             zip.entryFromSource(
@@ -76,13 +71,9 @@ class ModJarMetadataParserTest {
         assertEquals("1.2.3", result.version)
     }
 
-    /**
-     * Legacy Forge `mcmod.info` (Minecraft 1.12.2 and earlier) is a bare JSON array, not an object like the other
-     * three formats — and real mcmod.info files carry extra fields (mcversion, authorList, url, ...) beyond what
-     * [McModInfoEntry] models, so unknown-field tolerance needs pinning down here too.
-     */
+    // mcmod.info is a bare array and real files carry unmodelled fields
     @Test
-    fun parsesLegacyForgeMcModInfoWithUnknownFields() {
+    fun `parses legacy forge mcmod info with unknown fields`() {
         val path = Path("build/diag-legacy-forge.jar")
         Zip.open(path, mode = Zip.Mode.Write).use { zip ->
             zip.entryFromSource(

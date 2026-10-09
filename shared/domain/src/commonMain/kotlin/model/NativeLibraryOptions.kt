@@ -6,7 +6,6 @@ data class NativeLibraryOptions(
     val useSystemOpenAl: Boolean? = null,
     val openAlPath: String? = null,
 ) {
-    /** Per-field inheritance: any `null` field here falls back to the corresponding field in [global]. */
     fun withFallback(global: NativeLibraryOptions): NativeLibraryOptions = NativeLibraryOptions(
         useSystemGlfw = useSystemGlfw ?: global.useSystemGlfw,
         glfwPath = glfwPath ?: global.glfwPath,

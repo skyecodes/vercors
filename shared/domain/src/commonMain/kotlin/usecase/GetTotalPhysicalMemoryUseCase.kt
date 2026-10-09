@@ -7,6 +7,5 @@ import dev.zacsweers.metro.Inject
 class GetTotalPhysicalMemoryUseCase(
     private val systemService: SystemService
 ) {
-    /** Total installed physical RAM, in bytes, or `null` if it can't be determined. */
     operator fun invoke(): Long? = systemService.totalPhysicalMemoryBytes
 }

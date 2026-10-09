@@ -9,6 +9,6 @@ import dev.zacsweers.metro.Inject
 class UpdateManualDownloadItemsUseCase(
     private val instanceRepository: InstanceRepository,
 ) {
-    operator fun invoke(id: InstanceId, items: List<ManualDownloadItem>) =
+    operator fun invoke(id: InstanceId, items: List<ManualDownloadItem>): Unit =
         instanceRepository.updateManualDownloadItems(id, items)
 }

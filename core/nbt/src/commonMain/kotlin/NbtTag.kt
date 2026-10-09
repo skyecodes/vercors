@@ -1,6 +1,5 @@
 package app.vercors.core.nbt
 
-/** A decoded NBT (Named Binary Tag) value. See [readNbt] for the entry point. */
 sealed interface NbtTag
 
 data class NbtByte(val value: Byte) : NbtTag

@@ -94,9 +94,7 @@ class CurseForgeService(
             modLoaderType = loader?.toCurseForgeModLoaderType()
         ).bindResponse().data
 
-        // `downloadUrl` can be null in the file listing response even for files that ARE downloadable — the
-        // dedicated /download-url endpoint sometimes succeeds where the listing's inline field doesn't, so check
-        // it before treating a file as distribution-restricted.
+        // A null downloadUrl doesn't always mean distribution-restricted: the dedicated endpoint can still succeed
         val needsCheck = files.filter { it.downloadUrl == null }
         val downloadableIds = needsCheck.map { file ->
             async {
@@ -122,8 +120,6 @@ class CurseForgeService(
     override suspend fun getFiles(fileIds: List<String>): List<ProjectFileData> = coroutineScope {
         val files = api.getFiles(CurseForgeGetFilesRequest(fileIds.map { it.toInt() })).bindResponse().data
 
-        // As in getProjectFiles/getProjectFile: a null downloadUrl doesn't always mean distribution-restricted —
-        // the dedicated endpoint can still succeed, so try it before falling back to a manual-download link.
         val needsCheck = files.filter { it.downloadUrl == null }
         val downloadableIds = needsCheck.map { file ->
             async {
@@ -134,15 +130,13 @@ class CurseForgeService(
             }
         }.awaitAll().filter { it.second }.map { it.first }.toSet()
 
-        // One batch project lookup covering every distinct mod in the response (not just files needing a
-        // manual-download check) — also needed to resolve each file's project type (classId), which the file
-        // listing itself never carries.
+        // Also resolves each file's project type: the file listing never carries classId
         val projectsByModId = api.getProjects(CurseForgeGetModsRequest(files.map { it.modId }.distinct()))
             .bindResponse().data.associateBy { it.id }
 
         files.map { file ->
             val project = projectsByModId[file.modId]
-            val data = file.convert(loaderFilter = null).copy(type = project?.classId.toProjectTypeData())
+            val data = file.convert(loaderFilter = null).copy(type = project?.classId.convertToType())
             if (project != null && file.downloadUrl == null && file.id !in downloadableIds) {
                 data.copy(manualDownloadUrl = manualDownloadUrl(project.slug, project.classId, file.id))
             } else data
@@ -160,8 +154,6 @@ class CurseForgeService(
         val file = api.getFile(projectId, fileId).bindResponse().data
         val data = file.convert(loaderFilter = null)
         if (file.downloadUrl != null) return data
-        // As in getProjectFiles: a null downloadUrl here doesn't always mean distribution-restricted — the
-        // dedicated endpoint can still succeed, so try it before falling back to a manual-download link.
         val downloadable = recover({
             api.getFileDownloadUrl(projectId, fileId).bindResponse()
             true

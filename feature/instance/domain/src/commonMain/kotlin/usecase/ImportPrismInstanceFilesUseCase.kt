@@ -9,7 +9,7 @@ import dev.zacsweers.metro.Inject
 
 @Inject
 class ImportPrismInstanceFilesUseCase(
-    private val repository: PrismInstanceImportRepository
+    private val prismInstanceImportRepository: PrismInstanceImportRepository
 ) {
     context(_: Raise<LocalImportError>)
     suspend operator fun invoke(
@@ -17,5 +17,5 @@ class ImportPrismInstanceFilesUseCase(
         instanceId: InstanceId,
         info: PrismInstanceInfo,
         onProgress: (Float?) -> Unit = {}
-    ): String? = repository.importGameFiles(sourcePath, instanceId, info, onProgress)
+    ): String? = prismInstanceImportRepository.importGameFiles(sourcePath, instanceId, info, onProgress)
 }

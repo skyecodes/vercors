@@ -16,11 +16,6 @@ import kotlinx.serialization.json.Json
 
 private const val MOD_KIND = "mod"
 
-/**
- * Thin, mod-specific wrapper around [ContentDirScannerEngine] — see that class for how scanning/caching/watching
- * actually works. This class only supplies the mod-specific pieces: the `mods/` directory, the `.jar` extension,
- * the jar-manifest parser ([parseModJar]), and the `mod`-kind cache directories.
- */
 @SingleIn(AppScope::class)
 @Inject
 class InstanceModScannerService(
@@ -43,7 +38,7 @@ class InstanceModScannerService(
     )
 )
 
-private fun ParsedModInfo.toContentInfo() = ParsedContentInfo(
+private fun ParsedModInfo.toContentInfo(): ParsedContentInfo = ParsedContentInfo(
     title = title,
     description = description,
     version = version,

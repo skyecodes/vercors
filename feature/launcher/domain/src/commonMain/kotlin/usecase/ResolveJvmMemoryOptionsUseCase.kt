@@ -5,8 +5,6 @@ import app.vercors.shared.domain.model.JvmMemoryOptions
 import dev.zacsweers.metro.Inject
 import opensavvy.state.progressive.ProgressiveOutcome
 
-/** Resolves the effective JVM memory options: per-field, the instance's own override if it has one,
- *  otherwise the globally-configured value. */
 @Inject
 class ResolveJvmMemoryOptionsUseCase(
     private val configurationRepository: ConfigurationRepository,

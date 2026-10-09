@@ -26,8 +26,7 @@ import io.github.vinceglb.filekit.path
 import kotlinx.io.files.Path
 import org.jetbrains.compose.resources.stringResource
 
-/** The app's default theme (Catppuccin Mocha / Mauve) — hardcoded rather than read through
- *  `ObserveThemesUseCase`, since this screen runs before the DI graph (and its theme repository) exists. */
+// Hardcoded: this screen runs before the DI graph (and its theme repository) exists
 private val SetupThemeColors = ThemeColors(
     background = ThemeColor.Argb(0xFF1E1E2EL),
     backgroundAlt = ThemeColor.Argb(0xFF181825L),
@@ -43,12 +42,9 @@ private val SetupThemeColors = ThemeColors(
     surface2 = ThemeColor.Argb(0xFF45475AL),
     surface3 = ThemeColor.Argb(0xFF585B70L),
 )
-private const val SetupAccentColor = 0xFFCBA6F7L // mauve
+private const val SetupAccentColor = 0xFFCBA6F7L
 
-/**
- * Shown once, on first launch, before the DI graph exists — building the graph is what first writes to disk
- * (config.json, logs/), so the app root has to be chosen before that.
- */
+// Shown before the DI graph exists: building it is what first writes to disk
 @Composable
 fun NucleusApplicationScope.FirstLaunchSetupWindow(
     defaultRoot: Path,

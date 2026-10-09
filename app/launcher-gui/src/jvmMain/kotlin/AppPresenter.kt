@@ -45,13 +45,13 @@ class AppPresenter(
         val themes by observeThemes().collectProgressiveAsState()
         val instances by observeInstanceList().collectProgressiveAsState()
 
-        var snackbarMessage by remember { mutableStateOf<SnackbarMessage?>(null) }
+        val (snackbarMessage, setSnackbarMessage) = remember { mutableStateOf<SnackbarMessage?>(null) }
         val dismissRequests = remember { MutableSharedFlow<Unit>(extraBufferCapacity = 1) }
         LaunchedEffect(Unit) {
             for (message in snackbarService.messages) {
-                snackbarMessage = message
+                setSnackbarMessage(message)
                 withTimeoutOrNull(SNACKBAR_DURATION_MS.milliseconds) { dismissRequests.first() }
-                snackbarMessage = null
+                setSnackbarMessage(null)
             }
         }
 
@@ -83,11 +83,11 @@ class AppPresenter(
             lastPlayedInstanceId = lastPlayedInstanceId
         ) + {
             when (it) {
-                AppEvent.ToggleDrawer -> backgroundScope.launch {
+                AppEvent.OnDrawerToggle -> backgroundScope.launch {
                     updateGuiConfiguration { copy(menuDrawerOpen = !menuDrawerOpen) }
                 }
 
-                AppEvent.DismissSnackbar -> dismissRequests.tryEmit(Unit)
+                AppEvent.OnSnackbarDismiss -> dismissRequests.tryEmit(Unit)
             }
         }
     }

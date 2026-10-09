@@ -40,5 +40,5 @@ class ListCommand(private val observeInstanceList: ObserveInstanceListUseCase) :
         }
     }
 
-    override fun help(context: Context): String = "Lists existing instances"
+    override fun help(context: Context): String = "List existing instances"
 }

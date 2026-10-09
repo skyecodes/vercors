@@ -109,8 +109,7 @@ class FileValidationServiceImpl(
         }
     }
 
-    /** Only sha1 is used as a cache key — some providers (CurseForge) only ever supply md5, which stays relevant
-     *  to [validate] but is never strong enough on its own to key the shared cache off of. */
+    // Only sha1 keys the cache: md5-only providers aren't strong enough to share files
     private fun FileValidationRequest.cacheObjectPath(): Path? {
         val kind = cacheKind ?: return null
         val hash = sha1 ?: return null
@@ -119,14 +118,11 @@ class FileValidationServiceImpl(
 
     context(_: Raise<RemoteError>)
     override suspend fun FileValidationRequest.download() {
-        // A blank URL means this file can only ever be produced locally (e.g. a mod loader installer's
-        // patched jar) — there's nothing to fetch.
+        // A blank URL means the file is only ever produced locally (e.g. a loader installer's patched jar)
         ensure(this !is FileValidationRequest.Url || url.isNotBlank()) { RemoteError.Network }
         val cacheObject = cacheObjectPath()
         if (cacheObject != null && cacheObject.exists()) {
-            // path may already exist (e.g. alwaysRedownload, or reinstalling a modpack) — createLink fails with
-            // EEXIST on an existing target, which linkOrCopyTo silently swallows and falls back to a full copy,
-            // so delete first to actually take the hardlink path.
+            // createLink fails on an existing target and would silently fall back to a copy, so delete first
             if (path.exists()) path.delete()
             if (cacheObject.linkOrCopyTo(path)) {
                 logger.trace { "Served $path from content cache ($cacheObject)" }
@@ -135,8 +131,7 @@ class FileValidationServiceImpl(
             logger.warn { "Content cache hit for $path but linking from $cacheObject failed; falling back to network" }
         }
         logger.trace { "Downloading file $this" }
-        // Download to a sibling temp file and only replace the existing copy once the download has fully
-        // succeeded — a failed request (e.g. offline) must never destroy a previously cached, still-valid file.
+        // Download to a temp sibling so a failed request never destroys a valid cached copy
         val tempPath = Path("$path.tmp")
         try {
             if (this is FileValidationRequest.Channel) {

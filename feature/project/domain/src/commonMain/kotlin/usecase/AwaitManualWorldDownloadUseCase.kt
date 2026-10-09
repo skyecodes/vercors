@@ -16,5 +16,5 @@ class AwaitManualWorldDownloadUseCase(
         size: Long?,
         sha1: String?,
         md5: String?
-    ) = projectRepository.awaitManualWorldDownload(fileName, instanceId, size, sha1, md5)
+    ): Unit = projectRepository.awaitManualWorldDownload(fileName, instanceId, size, sha1, md5)
 }

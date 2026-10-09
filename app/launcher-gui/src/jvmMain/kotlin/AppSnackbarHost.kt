@@ -35,7 +35,7 @@ fun BoxScope.AppSnackbarHost(
         exit = fadeOut() + slideOutVertically { it / 2 },
     ) {
         if (message != null) {
-            val (backgroundColor, contentColor, icon) = message.type.style()
+            val (backgroundColor, contentColor, icon) = message.type.style
             Row(
                 modifier = Modifier
                     .widthIn(max = 480.dp)
@@ -60,10 +60,15 @@ fun BoxScope.AppSnackbarHost(
 
 private data class SnackbarStyle(val backgroundColor: Color, val contentColor: Color, val icon: ImageVector)
 
-@Composable
-private fun SnackbarMessage.Type.style(): SnackbarStyle = when (this) {
-    SnackbarMessage.Type.INFO -> SnackbarStyle(Theme[colors][surface2], LocalContentColor.current, Lucide.Info)
-    SnackbarMessage.Type.SUCCESS -> SnackbarStyle(Theme[colors][success], Theme[colors][onSuccess], Lucide.CircleCheck)
-    SnackbarMessage.Type.WARN -> SnackbarStyle(Theme[colors][warn], LocalContentColor.current, Lucide.TriangleAlert)
-    SnackbarMessage.Type.ERROR -> SnackbarStyle(Theme[colors][error], Theme[colors][onError], Lucide.CircleX)
-}
+private val SnackbarMessage.Type.style: SnackbarStyle
+    @Composable get() = when (this) {
+        SnackbarMessage.Type.INFO -> SnackbarStyle(Theme[colors][surface2], LocalContentColor.current, Lucide.Info)
+        SnackbarMessage.Type.SUCCESS -> SnackbarStyle(
+            Theme[colors][success],
+            Theme[colors][onSuccess],
+            Lucide.CircleCheck
+        )
+
+        SnackbarMessage.Type.WARN -> SnackbarStyle(Theme[colors][warn], LocalContentColor.current, Lucide.TriangleAlert)
+        SnackbarMessage.Type.ERROR -> SnackbarStyle(Theme[colors][error], Theme[colors][onError], Lucide.CircleX)
+    }

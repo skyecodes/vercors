@@ -22,7 +22,6 @@ import arrow.core.raise.context.ensureNotNull
 import arrow.core.raise.recover
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
-import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
@@ -44,7 +43,6 @@ private const val DEFAULT_ICON_EXTENSION = "png"
 
 @SingleIn(AppScope::class)
 @ContributesBinding(AppScope::class)
-@Inject
 class InstanceRepositoryImpl(
     coroutineScope: CoroutineScope,
     private val dataSource: InstanceDataSource,
@@ -73,13 +71,7 @@ class InstanceRepositoryImpl(
     override val manualDownloads = _manualDownloads.asStateFlow()
 
     init {
-        // Restores AwaitingManualDownloads (from pendingManualDownloads) or Installing.Interrupted (from
-        // installStage) status from disk for any instance still mid-install when the launcher was last closed —
-        // otherwise it silently defaults to Idle (see getInstanceStatus) and looks fully installed/launchable.
-        // pendingManualDownloads takes priority: it reflects a strictly later stage than installStage, which is
-        // always cleared to null before pendingManualDownloads is ever populated (see ModpackInstallRunner.run).
-        // Skips instances that already have a live status entry so it never clobbers an in-progress session's own
-        // updates once its write round-trips back here.
+        // Restores statuses persisted by an interrupted install; pendingManualDownloads wins since it's the later stage
         coroutineScope.launch {
             instances.collect { outcome ->
                 val map = outcome.valueOrNull ?: return@collect
@@ -128,9 +120,7 @@ class InstanceRepositoryImpl(
         val sourceDir = appPaths.gameDir(sourceId)
         if (!sourceDir.exists()) return
         val targetDir = appPaths.gameDir(targetId)
-        // mods/resourcepacks/shaderpacks are hardlinked instead of byte-copied — they're read-only game content
-        // shared identically between the two instances, unlike saves/config/options.txt, which are genuinely
-        // per-instance mutable state and must stay real copies.
+        // Content dirs are hardlinked: read-only game content, unlike saves/config which stay real copies
         val hardlinkedNames = setOf(
             appPaths.modsDir(sourceId).name,
             appPaths.resourcePacksDir(sourceId).name,
@@ -201,10 +191,7 @@ class InstanceRepositoryImpl(
         return systemService.openInFileManager(dir.toString())
     }
 
-    /**
-     * Deletes the previously-stored icon file, unless it's the exact file we just wrote the new icon to (same
-     * extension as before — [FileValidationRequest]/[copyTo] already overwrote it in place).
-     */
+    // Skip when the new icon overwrote the same file in place
     private suspend fun deletePreviousIconIfDifferent(previousIconFilePath: String?, newTargetPath: Path) {
         if (previousIconFilePath == null || previousIconFilePath == newTargetPath.toString()) return
         val oldPath = Path(previousIconFilePath)

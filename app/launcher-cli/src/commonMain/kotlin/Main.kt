@@ -44,10 +44,6 @@ class MainCommand : SuspendingCliktCommand("vercors") {
     override suspend fun run() = Unit
 }
 
-/**
- * The CLI has no interactive picker, so first launch silently confirms the default location — writing the
- * marker file so a later GUI first launch (or a later CLI run) doesn't re-prompt/re-decide.
- */
 private fun resolveAppRoot(): Path {
     val defaultRoot = defaultAppRoot(BuildConfig.APP_ID)
     val configuredRoot = readAppRoot(defaultRoot) ?: defaultRoot.also { writeAppRoot(defaultRoot, it) }

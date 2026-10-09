@@ -10,14 +10,15 @@ import app.vercors.feature.game.domain.service.ModLoaderInstaller
 import app.vercors.shared.data.AppPaths
 import app.vercors.shared.data.FileValidationService
 import arrow.core.raise.Raise
-import dev.zacsweers.metro.*
+import dev.zacsweers.metro.AppScope
+import dev.zacsweers.metro.ContributesIntoMap
+import dev.zacsweers.metro.SingleIn
+import dev.zacsweers.metro.StringKey
 import kotlinx.serialization.json.Json
 
-/** NeoForge is a Forge fork sharing the same installer/`install_profile.json` lineage — see [ForgeModLoaderInstaller]. */
 @SingleIn(AppScope::class)
 @ContributesIntoMap(AppScope::class)
 @StringKey("neoforge")
-@Inject
 class NeoForgeModLoaderInstaller(
     private val appPaths: AppPaths,
     private val fileValidationService: FileValidationService,

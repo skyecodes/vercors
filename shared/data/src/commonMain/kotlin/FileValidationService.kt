@@ -32,11 +32,7 @@ interface FileValidationService {
     context(_: Raise<RemoteError>)
     suspend fun FileValidationRequest.download()
 
-    /** Hardlinks this request's already-validated file at [FileValidationRequest.path] into the shared content
-     *  cache keyed by [FileValidationRequest.cacheKind] + sha1, if not already present there. No-ops when
-     *  [FileValidationRequest.cacheKind] is null or [FileValidationRequest.sha1] is null. Callers must only
-     *  invoke this once [path]'s contents are known-good (e.g. right after [validate] succeeds) — anything
-     *  placed here is later served to *other* installs of the same hash with no re-verification. */
+    // Only call once the file is known-good: cached files are served to other installs without re-verification
     suspend fun FileValidationRequest.populateCache()
 }
 
@@ -48,9 +44,6 @@ interface FileValidationRequest {
     val md5: String?
     val alwaysRedownload: Boolean
 
-    /** When non-null (and [sha1] is present), this request's file is eligible for the shared content cache: a
-     *  cache hit skips the network download entirely, and a cache miss populates the cache after a successful
-     *  download for future installs of the same file to hit. */
     val cacheKind: ContentCacheKind?
 
     open class Url(

@@ -65,16 +65,17 @@ fun App(
     AppStartupNavigationEffect(state, navigator)
 
     if (state.config != null && state.theme != null && state.accentColor != null) {
-        AppMainContent(
-            state = state,
-            config = state.config,
-            theme = state.theme,
-            accentColor = state.accentColor,
-            navStack = navStack,
-            navigator = navigator,
-            eventSink = eventSink,
-            modifier = modifier,
-        )
+        with(eventSink) {
+            AppMainContent(
+                state = state,
+                config = state.config,
+                theme = state.theme,
+                accentColor = state.accentColor,
+                navStack = navStack,
+                navigator = navigator,
+                modifier = modifier,
+            )
+        }
     }
 }
 
@@ -120,6 +121,7 @@ private fun StartupScreen.toStartupDestination(lastPlayedInstanceId: InstanceId?
 }
 
 @Composable
+context(eventSink: EventSink<AppEvent>)
 private fun AppMainContent(
     state: AppState,
     config: Configuration,
@@ -127,7 +129,6 @@ private fun AppMainContent(
     accentColor: Long,
     navStack: NavStack<out NavStack.Record>,
     navigator: Navigator,
-    eventSink: EventSink<AppEvent>,
     modifier: Modifier,
 ) {
     val density = LocalDensity.current
@@ -166,7 +167,7 @@ private fun AppMainContent(
                             AppMenu(
                                 currentBackStackEntry = navStack.currentRecord?.screen as? Screen,
                                 isDrawerOpen = config.menuDrawerOpen,
-                                onToggleDrawerClick = { eventSink(AppEvent.ToggleDrawer) },
+                                onToggleDrawerClick = { eventSink(AppEvent.OnDrawerToggle) },
                                 onMenuButtonClick = { navigator.goTo(it) }
                             )
                             AppContent(navStack, navigator)
@@ -176,7 +177,7 @@ private fun AppMainContent(
                 }
                 AppSnackbarHost(
                     message = state.snackbarMessage,
-                    onDismiss = { eventSink(AppEvent.DismissSnackbar) },
+                    onDismiss = { eventSink(AppEvent.OnSnackbarDismiss) },
                 )
             }
         }

@@ -1,10 +1,10 @@
 package app.vercors.feature.instance.ui.install
 
-import app.vercors.feature.instance.domain.model.InstanceId
-import app.vercors.feature.instance.domain.model.InstanceInstallStage
-import app.vercors.feature.instance.domain.model.InstanceModpackInfo
-import app.vercors.feature.instance.domain.model.InstanceStatus
-import app.vercors.feature.instance.domain.usecase.*
+import app.vercors.feature.instance.domain.model.*
+import app.vercors.feature.instance.domain.usecase.RecordInstalledContentOriginUseCase
+import app.vercors.feature.instance.domain.usecase.UpdateInstanceStatusUseCase
+import app.vercors.feature.instance.domain.usecase.UpdateInstanceUseCase
+import app.vercors.feature.instance.domain.usecase.UpdateManualDownloadItemsUseCase
 import app.vercors.feature.instance.ui.InstanceRes
 import app.vercors.feature.instance.ui.notificationInstallFailedMessage
 import app.vercors.feature.instance.ui.notificationInstallFinishedMessage
@@ -26,7 +26,6 @@ import org.jetbrains.compose.resources.getString
 
 private val logger = KotlinLogging.logger {}
 
-/** Fired once a modpack install (fresh or resumed) reaches its terminal state — see [ModpackInstallRunner.run]. */
 suspend fun notifyModpackInstallResult(instanceName: String, ok: Boolean) {
     notification(
         title = instanceName,
@@ -40,18 +39,7 @@ suspend fun notifyModpackInstallResult(instanceName: String, ok: Boolean) {
     ).send()
 }
 
-/**
- * Runs the shared, resumable portion of the modpack-install pipeline for an already-created instance: resolve the
- * manifest's files → download them → record provenance → await any manual downloads. Shared between the
- * fresh-install path (`InstallModpackPresenter.confirmInstall`, which already has the [ModpackManifest] in hand and
- * passes it as `initialManifest` to avoid a redundant refetch) and the resume path (`InstanceDetailsPresenter`,
- * which only has the instance's persisted [InstanceModpackInfo] and passes `initialManifest = null` to have it
- * refetched — cheap, since [GetModpackManifestUseCase] routes through the same skip-if-already-valid
- * `FileValidationService.submit`).
- *
- * Resuming always restarts the whole pipeline from the top rather than tracking granular per-file progress; this is
- * safe/cheap for the same reason (every download call skips files that already validate).
- */
+// Resuming always restarts the whole pipeline: every download skips files that already validate
 @Inject
 class ModpackInstallRunner(
     private val getModpackManifest: GetModpackManifestUseCase,
@@ -64,19 +52,12 @@ class ModpackInstallRunner(
     private val updateManualDownloadItems: UpdateManualDownloadItemsUseCase,
     private val snackbarService: SnackbarService,
 ) {
-    /**
-     * Returns `true` once every step succeeded and all manual downloads (if any) completed — the caller should then
-     * set [InstanceStatus.Idle]. Returns `false` on any failure — the caller should then set
-     * [InstanceStatus.Failed.InstallFailed].
-     */
     suspend fun run(
         instanceId: InstanceId,
         modpackInfo: InstanceModpackInfo,
         initialManifest: ModpackManifest?
     ): Boolean {
-        // Immediate live-status feedback the instant this starts — matters most for a resume, where the manifest
-        // refetch below is a real network call with no progress callback of its own; without this the "Resume
-        // Installation" button would look inert for however long that takes.
+        // Immediate feedback: a resume's manifest refetch has no progress callback of its own
         updateInstanceStatus(instanceId, InstanceStatus.Installing.ResolvingFiles(progress = null))
         persistInstallStage(instanceId, InstanceInstallStage.ResolvingFiles)
 

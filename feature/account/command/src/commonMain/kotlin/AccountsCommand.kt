@@ -45,5 +45,5 @@ class AccountsCommand(
         }
     }
 
-    override fun help(context: Context): String = "Lists existing accounts"
+    override fun help(context: Context): String = "List existing accounts"
 }

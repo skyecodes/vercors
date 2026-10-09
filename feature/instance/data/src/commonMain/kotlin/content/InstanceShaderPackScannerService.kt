@@ -11,11 +11,6 @@ import kotlinx.coroutines.CoroutineScope
 
 private const val SHADER_PACK_KIND = "shaderpack"
 
-/**
- * Thin, shaderpack-specific wrapper around [ContentDirScannerEngine] — see that class for how scanning/caching/
- * watching actually works. This class only supplies the shaderpack-specific pieces: the `shaderpacks/` directory,
- * the `.zip` extension, [ShaderPackParser], and the `shaderpack`-kind cache directories.
- */
 @SingleIn(AppScope::class)
 @Inject
 class InstanceShaderPackScannerService(

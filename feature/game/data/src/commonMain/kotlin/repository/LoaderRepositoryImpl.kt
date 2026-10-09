@@ -20,7 +20,6 @@ import arrow.core.raise.context.raise
 import arrow.core.raise.context.withError
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
-import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.*
@@ -48,7 +47,6 @@ private val logger = KotlinLogging.logger {}
 
 @SingleIn(AppScope::class)
 @ContributesBinding(AppScope::class)
-@Inject
 class LoaderRepositoryImpl(
     private val httpClient: HttpClient,
     private val json: Json,

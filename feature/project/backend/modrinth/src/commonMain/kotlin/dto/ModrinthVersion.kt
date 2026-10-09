@@ -21,38 +21,3 @@ data class ModrinthVersion(
     val files: List<ModrinthVersionFile> = emptyList(),
     val dependencies: List<ModrinthVersionDependency> = emptyList()
 )
-
-@Serializable
-data class ModrinthVersionDependency(
-    @SerialName("project_id")
-    val projectId: String? = null,
-    @SerialName("dependency_type")
-    val dependencyType: ModrinthDependencyType
-)
-
-@JvmInline
-@Serializable
-value class ModrinthDependencyType(val value: String) {
-    companion object {
-        const val REQUIRED = "required"
-    }
-}
-
-@Serializable
-data class ModrinthVersionFile(
-    val hashes: Map<String, String> = emptyMap(),
-    val url: String,
-    val filename: String,
-    val primary: Boolean = false,
-    val size: Long
-)
-
-@JvmInline
-@Serializable
-value class ModrinthVersionType(val value: String) {
-    companion object {
-        const val RELEASE = "release"
-        const val BETA = "beta"
-        const val ALPHA = "alpha"
-    }
-}

@@ -11,6 +11,6 @@ class SetInstanceIconUseCase(
     private val instanceRepository: InstanceRepository
 ) {
     context(_: Raise<InstanceError>)
-    suspend operator fun invoke(instanceId: InstanceId, sourcePath: String) =
+    suspend operator fun invoke(instanceId: InstanceId, sourcePath: String): Unit =
         instanceRepository.setInstanceIcon(instanceId, sourcePath)
 }

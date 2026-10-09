@@ -11,7 +11,9 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 private val logger = KotlinLogging.logger {}
 
 @Inject
-class LogoutUseCase(private val accountRepository: AccountRepository) {
+class LogoutUseCase(
+    private val accountRepository: AccountRepository
+) {
     context(_: Raise<AccountError>)
     suspend operator fun invoke(accountId: AccountId): Account {
         val account = accountRepository.findAccount(accountId)

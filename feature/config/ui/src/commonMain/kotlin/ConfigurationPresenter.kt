@@ -84,16 +84,16 @@ class ConfigurationPresenter(
             ((getTotalPhysicalMemory() ?: (16384L * 1024 * 1024)) / (1024 * 1024)).toInt()
         }
         val showNativeLibraryOptions = systemService.osType == OsType.Linux
-        var detectedGlfwPath by remember { mutableStateOf<String?>(null) }
-        var detectedOpenAlPath by remember { mutableStateOf<String?>(null) }
+        val (detectedGlfwPath, setDetectedGlfwPath) = remember { mutableStateOf<String?>(null) }
+        val (detectedOpenAlPath, setDetectedOpenAlPath) = remember { mutableStateOf<String?>(null) }
         LaunchedEffect(showNativeLibraryOptions) {
             if (showNativeLibraryOptions) {
-                detectedGlfwPath = detectNativeLibraryPath(NativeLibraryType.Glfw)
-                detectedOpenAlPath = detectNativeLibraryPath(NativeLibraryType.OpenAl)
+                setDetectedGlfwPath(detectNativeLibraryPath(NativeLibraryType.Glfw))
+                setDetectedOpenAlPath(detectNativeLibraryPath(NativeLibraryType.OpenAl))
             }
         }
-        var contentCacheSizeBytes by remember { mutableStateOf<Long?>(null) }
-        LaunchedEffect(Unit) { contentCacheSizeBytes = getContentCacheSize() }
+        val (contentCacheSizeBytes, setContentCacheSizeBytes) = remember { mutableStateOf<Long?>(null) }
+        LaunchedEffect(Unit) { setContentCacheSizeBytes(getContentCacheSize()) }
         val (promptClearContentCache, setPromptClearContentCache) = remember { mutableStateOf(false) }
         val dataDirectory = remember { appPaths.root.toString() }
         val instances by observeInstanceList().collectProgressiveAsState()
@@ -156,7 +156,7 @@ class ConfigurationPresenter(
                 javaScanInProgress = javaScanInProgress,
                 setJavaScanInProgress = setJavaScanInProgress,
                 setPromptClearContentCache = setPromptClearContentCache,
-                setContentCacheSizeBytes = { contentCacheSizeBytes = it },
+                setContentCacheSizeBytes = setContentCacheSizeBytes,
                 dataDirectory = dataDirectory,
                 setPromptChangeDataDirectory = setPromptChangeDataDirectory,
             )
@@ -177,63 +177,63 @@ class ConfigurationPresenter(
         setPromptChangeDataDirectory: (Boolean) -> Unit,
     ) {
         when (event) {
-            is ConfigurationEvent.SelectTab -> setSelectedTab(event.tab)
+            is ConfigurationEvent.OnTabClick -> setSelectedTab(event.tab)
 
-            is ConfigurationEvent.SelectTheme -> presenterScope.launch {
+            is ConfigurationEvent.OnThemeChange -> presenterScope.launch {
                 selectTheme(themeList.first { t -> t.id == event.themeId })
             }
 
-            is ConfigurationEvent.SelectAccent -> presenterScope.launch {
+            is ConfigurationEvent.OnAccentChange -> presenterScope.launch {
                 updateConfiguration { copy(selectedAccent = event.accentId) }
             }
 
-            ConfigurationEvent.ToggleAnimations -> presenterScope.launch {
+            ConfigurationEvent.OnAnimationsToggle -> presenterScope.launch {
                 updateConfiguration { copy(animations = !animations) }
             }
 
-            ConfigurationEvent.ToggleHorizontalTabs -> presenterScope.launch {
+            ConfigurationEvent.OnHorizontalTabsToggle -> presenterScope.launch {
                 updateConfiguration { copy(horizontalTabs = !horizontalTabs) }
             }
 
-            is ConfigurationEvent.SetUiScalePercent -> presenterScope.launch {
+            is ConfigurationEvent.OnUiScalePercentChange -> presenterScope.launch {
                 updateConfiguration { copy(uiScalePercent = event.value) }
             }
 
-            is ConfigurationEvent.SetMetaApiUrl -> presenterScope.launch {
+            is ConfigurationEvent.OnMetaApiUrlChange -> presenterScope.launch {
                 updateConfiguration { copy(metaApiUrl = event.value) }
             }
 
-            is ConfigurationEvent.SetNetworkTimeout -> presenterScope.launch {
+            is ConfigurationEvent.OnNetworkTimeoutChange -> presenterScope.launch {
                 updateConfiguration { copy(networkTimeout = event.value.seconds) }
             }
 
-            is ConfigurationEvent.SetParallelDownloads -> presenterScope.launch {
+            is ConfigurationEvent.OnParallelDownloadsChange -> presenterScope.launch {
                 updateConfiguration { copy(parallelDownloads = event.value) }
             }
 
-            is ConfigurationEvent.SetParallelFilesystemOperations -> presenterScope.launch {
+            is ConfigurationEvent.OnParallelFilesystemOperationsChange -> presenterScope.launch {
                 updateConfiguration { copy(parallelFilesystemOperations = event.value) }
             }
 
-            is ConfigurationEvent.SetPreferredPlatform -> presenterScope.launch {
+            is ConfigurationEvent.OnPreferredPlatformChange -> presenterScope.launch {
                 updateConfiguration { copy(preferredPlatform = event.value) }
             }
 
-            is ConfigurationEvent.SetStartupScreen -> presenterScope.launch {
+            is ConfigurationEvent.OnStartupScreenChange -> presenterScope.launch {
                 updateConfiguration { copy(startupScreen = event.value) }
             }
 
-            is ConfigurationEvent.SetHomeCategories -> presenterScope.launch {
+            is ConfigurationEvent.OnHomeCategoriesChange -> presenterScope.launch {
                 updateConfiguration { copy(homeCategories = event.value) }
             }
 
-            is ConfigurationEvent.AddJavaInstallation ->
+            is ConfigurationEvent.OnJavaInstallationSelected ->
                 handleAddJavaInstallation(event.path, presenterScope, setJavaAddError)
 
-            ConfigurationEvent.RescanJavaInstallations ->
+            ConfigurationEvent.OnRescanJavaClick ->
                 handleRescanJavaInstallations(presenterScope, javaScanInProgress, setJavaScanInProgress)
 
-            is ConfigurationEvent.SetPreferredJava -> presenterScope.launch {
+            is ConfigurationEvent.OnPreferredJavaChange -> presenterScope.launch {
                 updateConfiguration {
                     copy(
                         preferredJavaByMajorVersion = preferredJavaByMajorVersion +
@@ -242,39 +242,39 @@ class ConfigurationPresenter(
                 }
             }
 
-            ConfigurationEvent.DismissJavaAddError -> setJavaAddError(null)
+            ConfigurationEvent.OnJavaAddErrorDismiss -> setJavaAddError(null)
 
-            is ConfigurationEvent.SetMinMemoryMb -> presenterScope.launch {
+            is ConfigurationEvent.OnMinMemoryMbChange -> presenterScope.launch {
                 updateConfiguration { copy(jvmMemoryOptions = jvmMemoryOptions.copy(minMemoryMb = event.value)) }
             }
 
-            is ConfigurationEvent.SetMaxMemoryMb -> handleSetMaxMemoryMb(event.value, presenterScope)
+            is ConfigurationEvent.OnMaxMemoryMbChange -> handleSetMaxMemoryMb(event.value, presenterScope)
 
-            is ConfigurationEvent.SetExtraJvmArgs -> presenterScope.launch {
+            is ConfigurationEvent.OnExtraJvmArgsChange -> presenterScope.launch {
                 updateConfiguration { copy(jvmMemoryOptions = jvmMemoryOptions.copy(extraArgs = event.value)) }
             }
 
-            is ConfigurationEvent.ToggleUseSystemGlfw -> presenterScope.launch {
+            is ConfigurationEvent.OnUseSystemGlfwToggle -> presenterScope.launch {
                 updateConfiguration {
                     copy(nativeLibraryOptions = nativeLibraryOptions.copy(useSystemGlfw = event.checked))
                 }
             }
 
-            is ConfigurationEvent.SetGlfwPath -> presenterScope.launch {
+            is ConfigurationEvent.OnGlfwPathChange -> presenterScope.launch {
                 updateConfiguration { copy(nativeLibraryOptions = nativeLibraryOptions.copy(glfwPath = event.value)) }
             }
 
-            is ConfigurationEvent.ToggleUseSystemOpenAl -> presenterScope.launch {
+            is ConfigurationEvent.OnUseSystemOpenAlToggle -> presenterScope.launch {
                 updateConfiguration {
                     copy(nativeLibraryOptions = nativeLibraryOptions.copy(useSystemOpenAl = event.checked))
                 }
             }
 
-            is ConfigurationEvent.SetOpenAlPath -> presenterScope.launch {
+            is ConfigurationEvent.OnOpenAlPathChange -> presenterScope.launch {
                 updateConfiguration { copy(nativeLibraryOptions = nativeLibraryOptions.copy(openAlPath = event.value)) }
             }
 
-            ConfigurationEvent.PromptClearContentCache -> setPromptClearContentCache(true)
+            ConfigurationEvent.OnClearContentCacheClick -> setPromptClearContentCache(true)
 
             is ConfigurationEvent.OnConfirmClearContentCache -> handleConfirmClearContentCache(
                 event = event,
@@ -283,10 +283,10 @@ class ConfigurationPresenter(
                 setContentCacheSizeBytes = setContentCacheSizeBytes,
             )
 
-            ConfigurationEvent.OpenDataDirectory -> handleOpenDataDirectory(dataDirectory, presenterScope)
+            ConfigurationEvent.OnOpenDataDirectoryClick -> handleOpenDataDirectory(dataDirectory, presenterScope)
 
-            ConfigurationEvent.PromptChangeDataDirectory -> setPromptChangeDataDirectory(true)
-            ConfigurationEvent.DismissChangeDataDirectoryPrompt -> setPromptChangeDataDirectory(false)
+            ConfigurationEvent.OnChangeDataDirectoryClick -> setPromptChangeDataDirectory(true)
+            ConfigurationEvent.OnChangeDataDirectoryDismiss -> setPromptChangeDataDirectory(false)
         }
     }
 

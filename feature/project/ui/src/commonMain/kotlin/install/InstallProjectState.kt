@@ -5,6 +5,7 @@ import app.vercors.feature.game.domain.model.LoaderError
 import app.vercors.feature.game.domain.model.LoaderVersion
 import app.vercors.feature.game.domain.model.ModLoaderType
 import app.vercors.feature.game.ui.GameVersionView
+import app.vercors.feature.instance.domain.model.Instance
 import app.vercors.feature.instance.domain.model.InstanceId
 import app.vercors.feature.instance.domain.model.ManualDownloadItem
 import app.vercors.feature.project.domain.model.*
@@ -63,7 +64,6 @@ data class InstallableInstanceView(
     val id: InstanceId,
     val name: String,
     val gameVersion: String,
-    /** Null for an instance with no mod loader — only relevant when the project being installed requires one. */
     val loaderType: ModLoaderType?,
     val loaderVersion: String?,
     val updatedAt: Instant,
@@ -89,8 +89,48 @@ data class ProjectFileView(
 data class DependencyFileView(
     val projectId: ProjectId,
     val name: String,
-    /** The dependency's own project type — e.g. a Mod dependency of a ResourcePack install is still [ProjectType.Mod],
-     *  and must be installed into `mods/`, not wherever the parent project's type would go. */
+    // A dependency's own type decides its target folder, not the parent's
     val type: ProjectType,
     val file: ProjectFileView,
+)
+
+internal fun Instance.toInstallableInstanceViewOrNull(
+    projectType: ProjectType,
+    compatibleLoaders: List<ModLoaderType>
+): InstallableInstanceView? {
+    if (projectType.requiresLoader) {
+        val loader = modLoader ?: return null
+        if (loader.type !in compatibleLoaders) return null
+        return InstallableInstanceView(
+            id = id,
+            name = name,
+            gameVersion = gameVersion,
+            loaderType = loader.type,
+            loaderVersion = loader.version,
+            updatedAt = updatedAt
+        )
+    }
+    return InstallableInstanceView(
+        id = id,
+        name = name,
+        gameVersion = gameVersion,
+        loaderType = modLoader?.type,
+        loaderVersion = modLoader?.version,
+        updatedAt = updatedAt
+    )
+}
+
+internal fun ProjectFile.toView(): ProjectFileView = ProjectFileView(
+    id = id,
+    displayName = displayName,
+    fileName = fileName,
+    gameVersions = gameVersions,
+    releaseChannel = releaseChannel,
+    size = size,
+    sha1 = sha1,
+    md5 = md5,
+    publishedAt = publishedAt,
+    dependencies = dependencies,
+    manualDownloadUrl = manualDownloadUrl,
+    loaders = loaders
 )

@@ -44,7 +44,6 @@ import kotlin.time.Instant
 
 private val logger = KotlinLogging.logger {}
 
-/** How often a running instance's [Instance.playTime]/[Instance.lastPlayedAt] are persisted while playing. */
 private val PLAYTIME_TICK_INTERVAL = 30.seconds
 
 @Inject
@@ -70,9 +69,7 @@ class LaunchInstanceUseCase(
         val (instance, account, version, assetIndex, javaExecutable, jvmMemoryOptions, nativeLibraryOptions) = try {
             job.await()
         } catch (e: RaiseCancellationException) {
-            // Arrow's raise() short-circuit is itself a CancellationException subtype — rethrow it
-            // untouched so it reaches the Raise<InstanceLaunchError> scope that installed it, instead
-            // of being mistaken for a real job cancellation below.
+            // raise() short-circuits via a CancellationException subtype: rethrow it so it reaches its Raise scope
             throw e
         } catch (_: CancellationException) {
             instanceRepository.updateInstanceStatus(instanceId, InstanceStatus.Idle)
@@ -125,14 +122,7 @@ class LaunchInstanceUseCase(
         instanceRepository.updateInstanceStatus(instanceId, InstanceStatus.Idle)
     }
 
-    /**
-     * Persists [instanceId]'s [Instance.playTime]/[Instance.lastPlayedAt] every [PLAYTIME_TICK_INTERVAL] while the
-     * instance is running, plus once immediately on start and once more on stop — so the values stay live without
-     * writing to disk more often than necessary (the reactive instance list only updates once the filesystem
-     * watcher picks up each write). [baselinePlayTime] is the instance's playtime *before* this session started;
-     * each persist recomputes the total from [baselinePlayTime] + elapsed-since-session-start, rather than
-     * incrementing tick-over-tick, so a delayed or duplicated tick can never double-count.
-     */
+    // Recomputes the total from the session baseline, so a delayed or duplicated tick never double-counts
     private suspend fun trackPlaytime(instanceId: InstanceId, baselinePlayTime: Duration) {
         val sessionStart = Clock.System.now()
         try {

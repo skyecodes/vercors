@@ -9,6 +9,6 @@ import dev.zacsweers.metro.Inject
 class UpdateInstanceStatusUseCase(
     private val instanceRepository: InstanceRepository
 ) {
-    operator fun invoke(instanceId: InstanceId, status: InstanceStatus) =
+    operator fun invoke(instanceId: InstanceId, status: InstanceStatus): Unit =
         instanceRepository.updateInstanceStatus(instanceId, status)
 }

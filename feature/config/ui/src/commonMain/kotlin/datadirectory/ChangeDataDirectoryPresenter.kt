@@ -20,10 +20,6 @@ import kotlinx.io.files.Path
 import opensavvy.progress.Progress
 import org.jetbrains.compose.resources.stringResource
 
-/**
- * Not `@CircuitInject`-wired since [ChangeDataDirectoryDialog] isn't a navigated [Screen][app.vercors.shared.ui.Screen] —
- * it's constructed manually by the dialog for each show, mirroring `CopyInstancePresenter`.
- */
 class ChangeDataDirectoryPresenter(
     private val currentPath: String,
     private val appId: String,

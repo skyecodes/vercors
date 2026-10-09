@@ -9,24 +9,26 @@ import arrow.core.raise.context.withError
 import com.github.ajalt.clikt.core.Context
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.arguments.validate
-import dev.zacsweers.metro.AppScope
-import dev.zacsweers.metro.ContributesIntoSet
+import dev.zacsweers.metro.Inject
 
-@ContributesIntoSet(AppScope::class)
-class JavaAddCommand(private val addJavaInstallation: AddJavaInstallationUseCase) : AbstractCommand("java-add") {
+@Inject
+class JavaAddCommand(private val addJavaInstallation: AddJavaInstallationUseCase) : AbstractCommand("add") {
     private val path by argument(help = "Path to a Java installation directory or executable").validate {
         require(it.isNotEmpty()) { "Path cannot be empty" }
     }
 
     context(_: Raise<CommandError>)
     override suspend fun execute() {
-        val installation = withError({ it.toCommandError() }) { addJavaInstallation(path) }
+        val installation = withError({ CommandError("Failed to add Java installation: ${it.message}") }) {
+            addJavaInstallation(path)
+        }
         echo("Added Java ${installation.majorVersion} installation at ${installation.path}")
     }
 
-    override fun help(context: Context): String = "Manually registers a Java installation"
+    override fun help(context: Context): String = "Register a Java installation manually"
 
-    private fun JavaInstallationError.toCommandError(): CommandError = when (this) {
-        is JavaInstallationError.NotAJavaInstallation -> CommandError("'$path' does not look like a valid Java installation")
-    }
+    private val JavaInstallationError.message: String
+        get() = when (this) {
+            is JavaInstallationError.NotAJavaInstallation -> "'$path' does not look like a valid Java installation"
+        }
 }

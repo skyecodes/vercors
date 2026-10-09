@@ -6,6 +6,8 @@ import dev.zacsweers.metro.Inject
 import opensavvy.state.coroutines.ProgressiveFlow
 
 @Inject
-class ObserveJavaInstallationsUseCase(private val javaRepository: JavaRepository) {
+class ObserveJavaInstallationsUseCase(
+    private val javaRepository: JavaRepository
+) {
     operator fun invoke(): ProgressiveFlow<Nothing, List<JavaInstallation>> = javaRepository.installations
 }

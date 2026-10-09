@@ -8,19 +8,19 @@ import io.ktor.client.*
 interface LoaderBackendProviders {
     @SingleIn(AppScope::class)
     @Provides
-    @Named("fabric")
+    @Named(FABRIC_LOADER_ID)
     fun provideFabricMetaApi(httpClient: HttpClient): MetaLoaderApi = Ktorfit.Builder()
         .httpClient(httpClient)
-        .baseUrl("https://meta.fabricmc.net/v2/")
+        .baseUrl("$FABRIC_META_BASE_URL/")
         .build()
         .platformCreateMetaLoaderApi()
 
     @SingleIn(AppScope::class)
     @Provides
-    @Named("quilt")
+    @Named(QUILT_LOADER_ID)
     fun provideQuiltMetaApi(httpClient: HttpClient): MetaLoaderApi = Ktorfit.Builder()
         .httpClient(httpClient)
-        .baseUrl("https://meta.quiltmc.org/v3/")
+        .baseUrl("$QUILT_META_BASE_URL/")
         .build()
         .platformCreateMetaLoaderApi()
 }

@@ -5,14 +5,14 @@ import app.vercors.feature.game.api.dto.LoaderVersionData
 import arrow.core.raise.Raise
 import dev.zacsweers.metro.*
 
-private const val FABRIC_META_BASE_URL = "https://meta.fabricmc.net/v2"
+internal const val FABRIC_LOADER_ID = "fabric"
+internal const val FABRIC_META_BASE_URL = "https://meta.fabricmc.net/v2"
 
 @SingleIn(AppScope::class)
 @ContributesIntoMap(AppScope::class)
-@StringKey("fabric")
-@Inject
+@StringKey(FABRIC_LOADER_ID)
 class FabricLoaderFetcher(
-    @Named("fabric") private val api: MetaLoaderApi
+    @Named(FABRIC_LOADER_ID) private val api: MetaLoaderApi
 ) : LoaderFetcher {
     context(_: Raise<LoaderErrorData>)
     override suspend fun getVersions(gameVersion: String): List<LoaderVersionData> =

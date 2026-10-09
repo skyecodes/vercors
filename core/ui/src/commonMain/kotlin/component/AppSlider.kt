@@ -25,9 +25,7 @@ import kotlin.math.roundToInt
 
 private const val DISABLED_ALPHA = 0.6f
 
-/** A RAM/MB-style slider: [value] snaps to the nearest multiple of [stepSize] within [valueRange]. Since
- *  [valueRange]'s span is rarely an exact multiple of [stepSize] (e.g. total system RAM), the usable upper bound is
- *  floor-aligned to a [stepSize] multiple from the lower bound — otherwise the top tick would be unreachable. */
+// Upper bound floor-aligned to stepSize so the top tick stays reachable
 @Composable
 fun AppSlider(
     value: Int,

@@ -25,7 +25,6 @@ import arrow.core.raise.context.raise
 import arrow.core.raise.context.withError
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
-import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -39,7 +38,6 @@ import opensavvy.spine.client.request
 
 @SingleIn(AppScope::class)
 @ContributesBinding(AppScope::class)
-@Inject
 class JavaRuntimeRepositoryImpl(
     private val fileValidationService: FileValidationService,
     private val systemService: SystemService,

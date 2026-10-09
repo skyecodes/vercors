@@ -28,11 +28,6 @@ import com.composeunstyled.UnstyledHorizontalSeparator
 import com.composeunstyled.theme.Theme
 import org.jetbrains.compose.resources.stringResource
 
-/**
- * Shared shell for [AppSelectField]/[AppMultiSelectField]: the label, the anchor [AppButton] (with its trailing
- * chevron), the width-matched [DropdownMenuPanel], and the optional search box — the two callers only differ in
- * what they render as the button's [trigger] content and the panel's [panel] content.
- */
 @Composable
 internal fun SelectFieldScaffold(
     label: String?,

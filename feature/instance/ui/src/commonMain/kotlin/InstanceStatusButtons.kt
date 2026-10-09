@@ -11,10 +11,6 @@ import com.composables.icons.lucide.X
 import com.composeunstyled.theme.Theme
 import org.jetbrains.compose.resources.stringResource
 
-// Cover only the Idle/Failed, Running, and Stopping statuses — shared between the Instance Details header and
-// brief instance cards. Details has additional status-specific actions (Cancel, Finish/Resume Installation) that
-// stay local to it, since brief cards have no equivalent.
-
 @Composable
 fun InstanceLaunchButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
     AppIconTextButton(

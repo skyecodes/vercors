@@ -8,6 +8,6 @@ import dev.zacsweers.metro.Inject
 class RemoveWorldUseCase(
     private val instanceWorldRepository: InstanceWorldRepository
 ) {
-    suspend operator fun invoke(instanceId: InstanceId, folderName: String) =
+    suspend operator fun invoke(instanceId: InstanceId, folderName: String): Unit =
         instanceWorldRepository.removeWorld(instanceId, folderName)
 }

@@ -24,9 +24,7 @@ internal data class ParsedModInfo(
 
 private const val MANIFEST_VERSION_PLACEHOLDER = $$"${file.jarVersion}"
 
-// Real fabric.mod.json/quilt.mod.json/mods.toml files carry many fields beyond what we model here
-// (entrypoints, mixins, dependencies, ...) — both kotlinx.serialization's Json and ktoml's Toml reject
-// unknown keys by default, which would otherwise make every real-world mod jar fail to parse.
+// Real manifests carry many unmodelled fields, which Json and Toml reject by default
 private val lenientToml = Toml(TomlInputConfig(ignoreUnknownNames = true))
 
 private const val LEGACY_FORGE_METADATA_FILENAME = "mcmod.info"
@@ -36,11 +34,6 @@ private const val FORGE_METADATA_FILENAME = "META-INF/mods.toml"
 private const val NEOFORGE_METADATA_FILENAME = "META-INF/neoforge.mods.toml"
 private const val MANIFEST_FILENAME = "META-INF/MANIFEST.MF"
 
-/**
- * Reads a mod jar's own metadata manifest (whichever of the five loader formats it ships) to extract
- * title/description/version/icon. Never throws — an unrecognized or unparseable jar still produces a
- * [ParsedModInfo] derived from its filename, so a jar is never silently dropped from the Mods tab.
- */
 internal fun parseModJar(jarPath: Path, json: Json): ParsedModInfo = runCatching {
     Zip.open(jarPath).use { zip ->
         val entryPaths = buildSet { zip.forEachEntry { add(it.path.toString()) } }
@@ -101,8 +94,7 @@ private fun Zip.parseForgeFamily(
     val text = entry(Path(entryName)) { readToBytes() }.decodeToString()
     val toml = lenientToml.decodeFromString(ForgeModsToml.serializer(), text)
     val mod = toml.mods.firstOrNull()
-    // mods.toml commonly leaves version as the literal placeholder "${file.jarVersion}", meaning the real
-    // version has to be read from the jar manifest instead (set by the build tool at build time).
+    // mods.toml often leaves version as "${file.jarVersion}": the real one is in the jar manifest
     val rawVersion = mod?.version?.takeIf { it.isNotBlank() && it != MANIFEST_VERSION_PLACEHOLDER }
     val version = rawVersion ?: readManifestImplementationVersion(entryPaths) ?: "unknown"
     return ParsedModInfo(
@@ -136,7 +128,6 @@ private fun Zip.readManifestImplementationVersion(entryPaths: Set<String>): Stri
         ?.takeIf { it.isNotBlank() }
 }
 
-/** Extracts the icon referenced by [iconEntryPath] out of the jar and writes it to [destDir], returning its filename. */
 internal suspend fun extractIcon(jarPath: Path, iconEntryPath: String, destDir: Path, destBaseName: String): String? =
     runCatching {
         Zip.open(jarPath).use { zip ->

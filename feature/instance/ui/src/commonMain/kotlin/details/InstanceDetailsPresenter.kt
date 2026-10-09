@@ -10,6 +10,7 @@ import app.vercors.feature.account.ui.list.LoginDialog
 import app.vercors.feature.account.ui.list.LoginStateView
 import app.vercors.feature.account.ui.list.startLoginFlow
 import app.vercors.feature.config.domain.usecase.ObserveConfigurationUseCase
+import app.vercors.feature.instance.domain.model.ContentKind
 import app.vercors.feature.instance.domain.model.InstanceError
 import app.vercors.feature.instance.domain.model.InstanceStatus
 import app.vercors.feature.instance.domain.usecase.*
@@ -17,6 +18,11 @@ import app.vercors.feature.instance.ui.*
 import app.vercors.feature.instance.ui.copy.CopyInstanceDialog
 import app.vercors.feature.instance.ui.copy.CopyInstanceResult
 import app.vercors.feature.instance.ui.copy.CopyInstanceTarget
+import app.vercors.feature.instance.ui.details.content.InstalledContentPresenter
+import app.vercors.feature.instance.ui.details.logs.InstanceLogsPresenter
+import app.vercors.feature.instance.ui.details.options.InstanceOptionsPresenter
+import app.vercors.feature.instance.ui.details.servers.InstanceServersPresenter
+import app.vercors.feature.instance.ui.details.worlds.InstalledWorldsPresenter
 import app.vercors.feature.instance.ui.install.*
 import app.vercors.feature.instance.ui.list.InstanceListScreen
 import app.vercors.feature.java.domain.model.JavaRuntimeInstallStatus
@@ -136,7 +142,7 @@ class InstanceDetailsPresenter(
         val loginDialog = remember { LoginDialog(loginState) { url -> copyToClipboard(url) } }
         val (loginJob, setLoginJob) = remember { mutableStateOf<Job?>(null) }
         val javaInstallState = remember { mutableStateOf(JavaInstallProgressView()) }
-        val (promptJavaInstall, setPromptJavaInstall) = remember { mutableStateOf(false) }
+        val (promptJavaInstallProgress, setPromptJavaInstallProgress) = remember { mutableStateOf(false) }
         val installJavaProgressDialog = remember { InstallJavaProgressDialog(javaInstallState) }
         val (javaInstallJob, setJavaInstallJob) = remember { mutableStateOf<Job?>(null) }
         val (pendingQuickPlayTarget, setPendingQuickPlayTarget) = remember {
@@ -183,7 +189,7 @@ class InstanceDetailsPresenter(
             finishInstallationDialog = finishInstallationDialog,
             promptLogin = promptLogin,
             loginDialog = loginDialog,
-            promptJavaInstall = promptJavaInstall,
+            promptJavaInstallProgress = promptJavaInstallProgress,
             installJavaProgressDialog = installJavaProgressDialog
         ) + { event ->
             handleEvent(
@@ -200,7 +206,7 @@ class InstanceDetailsPresenter(
                 loginJob = loginJob,
                 setLoginJob = setLoginJob,
                 javaInstallState = javaInstallState,
-                setPromptJavaInstall = setPromptJavaInstall,
+                setPromptJavaInstallProgress = setPromptJavaInstallProgress,
                 javaInstallJob = javaInstallJob,
                 setJavaInstallJob = setJavaInstallJob,
                 pendingQuickPlayTarget = pendingQuickPlayTarget,
@@ -223,19 +229,19 @@ class InstanceDetailsPresenter(
         loginJob: Job?,
         setLoginJob: (Job?) -> Unit,
         javaInstallState: MutableState<JavaInstallProgressView>,
-        setPromptJavaInstall: (Boolean) -> Unit,
+        setPromptJavaInstallProgress: (Boolean) -> Unit,
         javaInstallJob: Job?,
         setJavaInstallJob: (Job?) -> Unit,
         pendingQuickPlayTarget: QuickPlayTarget?,
         setPendingQuickPlayTarget: (QuickPlayTarget?) -> Unit
     ) {
         when (event) {
-            InstanceDetailsEvent.Launch -> handleLaunch(
+            InstanceDetailsEvent.OnLaunchClick -> handleLaunch(
                 setSelectedTab, setPromptInstallJava, loginState, setPromptLogin, setLoginJob,
                 setPendingQuickPlayTarget
             )
 
-            is InstanceDetailsEvent.QuickJoin -> handleLaunch(
+            is InstanceDetailsEvent.OnQuickJoinClick -> handleLaunch(
                 setSelectedTab, setPromptInstallJava, loginState, setPromptLogin, setLoginJob,
                 setPendingQuickPlayTarget, event.target
             )
@@ -244,15 +250,15 @@ class InstanceDetailsPresenter(
                 promptInstallJava,
                 setPromptInstallJava,
                 javaInstallState,
-                setPromptJavaInstall,
+                setPromptJavaInstallProgress,
                 setJavaInstallJob
             )
 
             InstanceDetailsEvent.OnInstallJavaDismiss -> setPromptInstallJava(null)
-            InstanceDetailsEvent.OnJavaInstallDialogDismiss -> handleJavaInstallDialogDismiss(
+            InstanceDetailsEvent.OnJavaInstallProgressDismiss -> handleJavaInstallDialogDismiss(
                 javaInstallJob,
                 javaInstallState,
-                setPromptJavaInstall,
+                setPromptJavaInstallProgress,
                 setSelectedTab,
                 setPromptInstallJava,
                 loginState,
@@ -262,7 +268,7 @@ class InstanceDetailsPresenter(
                 pendingQuickPlayTarget
             )
 
-            InstanceDetailsEvent.CancelLogin -> handleCancelLogin(
+            InstanceDetailsEvent.OnLoginDismiss -> handleCancelLogin(
                 loginJob,
                 loginState,
                 setPromptLogin,
@@ -273,18 +279,18 @@ class InstanceDetailsPresenter(
                 pendingQuickPlayTarget
             )
 
-            InstanceDetailsEvent.Delete -> setPromptDeleteConfirmation(true)
-            is InstanceDetailsEvent.ConfirmDelete -> handleConfirmDelete(event, setPromptDeleteConfirmation)
+            InstanceDetailsEvent.OnDeleteClick -> setPromptDeleteConfirmation(true)
+            is InstanceDetailsEvent.OnConfirmDelete -> handleConfirmDelete(event, setPromptDeleteConfirmation)
             InstanceDetailsEvent.OnCopyClick -> setPromptCopyInstance(true)
             is InstanceDetailsEvent.OnCopyInstanceResult -> {
                 setPromptCopyInstance(false)
                 if (event.result is CopyInstanceResult.Copied) navigator.goTo(InstanceDetailsScreen(event.result.instanceId))
             }
-            InstanceDetailsEvent.Cancel -> cancelInstance(screen.instanceId)
-            InstanceDetailsEvent.CancelSetup -> cancelInstanceSetup(screen.instanceId)
-            InstanceDetailsEvent.Stop -> globalScope.launch { stopInstance(screen.instanceId) }
-            InstanceDetailsEvent.Kill -> globalScope.launch { killInstance(screen.instanceId) }
-            is InstanceDetailsEvent.SelectTab -> setSelectedTab(event.tab)
+            InstanceDetailsEvent.OnCancelClick -> cancelInstance(screen.instanceId)
+            InstanceDetailsEvent.OnCancelSetupClick -> cancelInstanceSetup(screen.instanceId)
+            InstanceDetailsEvent.OnStopClick -> globalScope.launch { stopInstance(screen.instanceId) }
+            InstanceDetailsEvent.OnKillClick -> globalScope.launch { killInstance(screen.instanceId) }
+            is InstanceDetailsEvent.OnTabClick -> setSelectedTab(event.tab)
 
             is InstanceDetailsEvent.OnOpenProjectClick -> navigator.goTo(
                 ProjectDetailsScreen(event.projectId from event.platformId, preferredInstanceId = screen.instanceId)
@@ -442,13 +448,13 @@ class InstanceDetailsPresenter(
         promptInstallJava: Int?,
         setPromptInstallJava: (Int?) -> Unit,
         javaInstallState: MutableState<JavaInstallProgressView>,
-        setPromptJavaInstall: (Boolean) -> Unit,
+        setPromptJavaInstallProgress: (Boolean) -> Unit,
         setJavaInstallJob: (Job?) -> Unit,
     ) {
         setPromptInstallJava(null)
         val majorVersion = promptInstallJava ?: return
         javaInstallState.value = JavaInstallProgressView(majorVersion = majorVersion)
-        setPromptJavaInstall(true)
+        setPromptJavaInstallProgress(true)
         val job = globalScope.launch {
             coroutineScope {
                 val progressJob = launch {
@@ -481,7 +487,7 @@ class InstanceDetailsPresenter(
     private fun handleJavaInstallDialogDismiss(
         javaInstallJob: Job?,
         javaInstallState: MutableState<JavaInstallProgressView>,
-        setPromptJavaInstall: (Boolean) -> Unit,
+        setPromptJavaInstallProgress: (Boolean) -> Unit,
         setSelectedTab: (InstanceDetailsTab) -> Unit,
         setPromptInstallJava: (Int?) -> Unit,
         loginState: MutableState<LoginStateView>,
@@ -491,7 +497,7 @@ class InstanceDetailsPresenter(
         pendingQuickPlayTarget: QuickPlayTarget?,
     ) {
         javaInstallJob?.cancel()
-        setPromptJavaInstall(false)
+        setPromptJavaInstallProgress(false)
         val succeeded = javaInstallState.value.done && javaInstallState.value.error == null
         if (succeeded) {
             handleLaunch(
@@ -502,7 +508,7 @@ class InstanceDetailsPresenter(
     }
 
     private fun handleConfirmDelete(
-        event: InstanceDetailsEvent.ConfirmDelete,
+        event: InstanceDetailsEvent.OnConfirmDelete,
         setPromptDeleteConfirmation: (Boolean) -> Unit
     ) {
         setPromptDeleteConfirmation(false)

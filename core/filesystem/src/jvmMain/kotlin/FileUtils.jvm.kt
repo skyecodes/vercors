@@ -18,9 +18,7 @@ actual suspend fun Path.createLink(target: Path, context: CoroutineContext, isSy
     val dst = JvmPath(target.toString())
     dst.createParentDirectories()
     withContext(context) {
-        // createLinkPointingTo/createSymbolicLinkPointingTo's receiver is the NEW link to create, and its
-        // argument is the already-existing file it should point to — i.e. dst.createLinkPointingTo(src), not
-        // the other way around.
+        // The receiver is the new link, the argument the existing file
         if (isSymbolic) dst.createSymbolicLinkPointingTo(src) else dst.createLinkPointingTo(src)
     }
     return true

@@ -7,7 +7,9 @@ import arrow.core.raise.Raise
 import dev.zacsweers.metro.Inject
 
 @Inject
-class InstallJavaRuntimeUseCase(private val javaRuntimeRepository: JavaRuntimeRepository) {
+class InstallJavaRuntimeUseCase(
+    private val javaRuntimeRepository: JavaRuntimeRepository
+) {
     context(_: Raise<JavaRuntimeError>)
     suspend operator fun invoke(majorVersion: Int): JavaInstallation =
         javaRuntimeRepository.installRuntime(majorVersion)

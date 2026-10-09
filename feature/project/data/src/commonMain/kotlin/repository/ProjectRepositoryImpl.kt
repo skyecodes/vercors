@@ -34,7 +34,6 @@ import de.jonasbroeckmann.kzip.forEachEntry
 import de.jonasbroeckmann.kzip.open
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
-import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
 import io.ktor.client.*
 import io.ktor.client.plugins.*
@@ -57,15 +56,12 @@ import opensavvy.spine.client.request
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.uuid.Uuid
 
-/** Polling interval used to detect when a manually downloaded file has stopped growing. */
 private val STABLE_POLL_INTERVAL = 500.milliseconds
 
-/** Number of consecutive unchanged size polls required before treating a manual download as finished. */
 private const val STABLE_POLL_THRESHOLD = 3
 
 @SingleIn(AppScope::class)
 @ContributesBinding(AppScope::class)
-@Inject
 class ProjectRepositoryImpl(
     private val httpClient: HttpClient,
     private val json: Json,
@@ -75,7 +71,6 @@ class ProjectRepositoryImpl(
     private val systemService: SystemService,
     private val fileWatcherService: FileWatcherService
 ) : ProjectRepository {
-
     context(_: Raise<PlatformError>)
     override suspend fun getPlatformList(): List<ProjectPlatform> =
         withError(RemoteError::toPlatformError) {
@@ -230,8 +225,7 @@ class ProjectRepositoryImpl(
         downloads.forEach { (_, tempPath, finalPath) ->
             try {
                 finalPath.createParentDirectories()
-                // atomicMove overwrites finalPath if it already exists — no need to delete it first, and doing so
-                // would just reopen the window this atomic move is meant to close.
+                // atomicMove overwrites finalPath; deleting first would reopen the race it closes
                 tempPath.moveTo(finalPath)
             } catch (_: Exception) {
                 currentCoroutineContext().ensureActive()
@@ -268,7 +262,7 @@ class ProjectRepositoryImpl(
                 httpClient.request(
                     endpoint = ApiV1 / Platforms / Platforms.PlatformId(projectId.platform) / Projects / Projects.ProjectId(
                         projectId.id
-                    ) / ProjectFiles / ProjectFiles.ProjectFileId(fileId) / ProjectFiles.ProjectFileId.get,
+                    ) / ProjectFiles / ProjectFiles.FileId(fileId) / ProjectFiles.FileId.get,
                     configure = { expectSuccess = false }
                 )
             }
@@ -288,7 +282,7 @@ class ProjectRepositoryImpl(
         withError(RemoteError::toPlatformError) {
             makeMetaApiRequest {
                 httpClient.request(
-                    endpoint = ApiV1 / Platforms / Platforms.PlatformId(platformId) / PlatformFiles / PlatformFiles.get,
+                    endpoint = ApiV1 / Platforms / Platforms.PlatformId(platformId) / PlatformFiles / PlatformFiles.list,
                     parameters = { this.fileIds = fileIds },
                     configure = { expectSuccess = false }
                 )
@@ -313,9 +307,9 @@ class ProjectRepositoryImpl(
         recover({
             fileValidationService.submit(listOf(request), onProgress)
         }) { _: NonEmptyList<FileValidationFailure> ->
-            raise(ModpackDownloadFailed)
+            raise(ModpackResolutionError.DownloadFailed)
         }
-        val parser = ensureNotNull(modpackParsers[projectId.platform]) { ModpackUnsupportedPlatform }
+        val parser = ensureNotNull(modpackParsers[projectId.platform]) { ModpackResolutionError.UnsupportedPlatform }
         return parser.parse(zipPath, projectId, fileId)
     }
 
@@ -325,14 +319,14 @@ class ProjectRepositoryImpl(
         onProgress: (Progress) -> Unit
     ): ModpackManifest {
         val zipPath = modpackZipPath(manifest.platformId, manifest.projectId, manifest.fileId)
-        val parser = ensureNotNull(modpackParsers[manifest.platformId]) { ModpackUnsupportedPlatform }
+        val parser = ensureNotNull(modpackParsers[manifest.platformId]) { ModpackResolutionError.UnsupportedPlatform }
         return parser.resolveFiles(zipPath, manifest, onProgress)
     }
 
     context(_: Raise<ModpackResolutionError>)
     override suspend fun parseLocalModpack(sourcePath: String, platformId: String): ModpackManifest {
         val zipPath = Path(sourcePath)
-        val parser = ensureNotNull(modpackParsers[platformId]) { ModpackUnsupportedPlatform }
+        val parser = ensureNotNull(modpackParsers[platformId]) { ModpackResolutionError.UnsupportedPlatform }
         val projectId = ProjectId(id = "local", platform = platformId)
         val manifest = parser.parse(zipPath, projectId, fileId = "local")
         return parser.resolveFiles(zipPath, manifest)
@@ -361,8 +355,8 @@ class ProjectRepositoryImpl(
                     cacheKind = cacheKind
                 )
             } else {
-                val providerProjectId = ensureNotNull(file.providerProjectId) { ModpackInvalidFileEntry }
-                val providerFileId = ensureNotNull(file.providerFileId) { ModpackInvalidFileEntry }
+                val providerProjectId = ensureNotNull(file.providerProjectId) { ModpackInstallError.InvalidFileEntry }
+                val providerFileId = ensureNotNull(file.providerFileId) { ModpackInstallError.InvalidFileEntry }
                 projectFileDownloadRequest(
                     manifest.platformId,
                     providerProjectId,
@@ -378,7 +372,7 @@ class ProjectRepositoryImpl(
         recover({
             fileValidationService.submit(requests, onProgress)
         }) { _: NonEmptyList<FileValidationFailure> ->
-            raise(ModpackInstallDownloadFailed)
+            raise(ModpackInstallError.DownloadFailed)
         }
 
         val zipPath =
@@ -388,9 +382,9 @@ class ProjectRepositoryImpl(
         } catch (e: CancellationException) {
             throw e
         } catch (_: Exception) {
-            raise(ModpackOverridesExtractionFailed)
+            raise(ModpackInstallError.OverridesExtractionFailed)
         } finally {
-            // Never delete a caller-owned local file (localSourcePath != null) — only vercors' own downloaded tmp copy.
+            // Never delete a caller-owned local file, only our own downloaded tmp copy
             if (localSourcePath == null && zipPath.exists()) zipPath.deleteRecursively()
         }
 
@@ -423,7 +417,7 @@ class ProjectRepositoryImpl(
         } catch (e: CancellationException) {
             throw e
         } catch (_: Exception) {
-            raise(ManualDownloadFailed)
+            raise(ManualDownloadError.DownloadFailed)
         }
         recover({
             with(fileValidationService) {
@@ -440,25 +434,19 @@ class ProjectRepositoryImpl(
             }
         }) { _: FileValidationFailure ->
             if (targetPath.exists()) targetPath.deleteRecursively()
-            raise(ManualDownloadIntegrityMismatch)
+            raise(ManualDownloadError.IntegrityMismatch)
         }
     }
 
-    /**
-     * Suspends until [fileName] appears in the OS Downloads folder (or immediately if it's already there) and
-     * stops growing — shared preamble for [awaitManualDownload] and [awaitManualWorldDownload], which only differ
-     * in how the stabilized file is materialized afterward (move into a flat directory vs. extract as a world).
-     */
     context(_: Raise<ManualDownloadError>)
     private suspend fun awaitStableDownloadInDownloadsFolder(fileName: String, size: Long?): Path {
-        val downloadsDir = Path(ensureNotNull(systemService.downloadsDir()) { ManualDownloadFailed })
+        val downloadsDir = Path(ensureNotNull(systemService.downloadsDir()) { ManualDownloadError.DownloadFailed })
         val sourcePath = Path(downloadsDir, fileName)
         if (!sourcePath.exists()) {
             fileWatcherService.watchDirectory(downloadsDir)
                 .first { it.type == FileEvent.Type.CREATE && it.path.name == fileName }
         }
-        // The file existing (or having just been created) doesn't mean the browser is done writing to it — wait
-        // for it to stop growing before touching it, so we never move/validate a still-downloading file.
+        // Wait for the browser to finish writing before moving/validating
         awaitDownloadStable(sourcePath, size)
         return sourcePath
     }
@@ -510,7 +498,7 @@ class ProjectRepositoryImpl(
             }
         }) { _: FileValidationFailure ->
             if (sourcePath.exists()) sourcePath.deleteRecursively()
-            raise(ManualDownloadIntegrityMismatch)
+            raise(ManualDownloadError.IntegrityMismatch)
         }
         try {
             appPaths.extractWorldZip(sourcePath, instanceId, fileName)
@@ -518,16 +506,11 @@ class ProjectRepositoryImpl(
         } catch (e: CancellationException) {
             throw e
         } catch (_: Exception) {
-            raise(ManualDownloadFailed)
+            raise(ManualDownloadError.DownloadFailed)
         }
     }
 
-    /**
-     * Suspends until [path]'s size stops changing — either it reaches the already-known [expectedSize] (fast
-     * path), or it stays unchanged across [STABLE_POLL_THRESHOLD] consecutive polls. There's no cross-platform
-     * signal for "is another process still writing to this file" (`Path.lastModifiedOrNull()` is unavailable on
-     * mingw), so polling size is the only reliable option here.
-     */
+    // No cross-platform "still being written" signal (no mtime on mingw), so poll the size
     private suspend fun awaitDownloadStable(path: Path, expectedSize: Long?) {
         var lastSize: Long? = null
         var stableCount = 0

@@ -1,6 +1,8 @@
 package app.vercors.feature.instance.ui.copy
 
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import app.vercors.feature.instance.domain.usecase.CopyInstanceUseCase
 import app.vercors.shared.ui.Presenter
 import app.vercors.shared.ui.SnackbarService
@@ -11,10 +13,6 @@ import com.slack.circuit.overlay.OverlayNavigator
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
-/**
- * Not `@CircuitInject`-wired since [CopyInstanceDialog] isn't a navigated [Screen][app.vercors.shared.ui.Screen] —
- * it's constructed manually by the dialog for each show, mirroring [CreateInstancePresenter][app.vercors.feature.instance.ui.create.CreateInstancePresenter].
- */
 class CopyInstancePresenter(
     private val target: CopyInstanceTarget,
     private val navigator: OverlayNavigator<CopyInstanceResult>,
@@ -25,7 +23,7 @@ class CopyInstancePresenter(
     @Composable
     override fun present(): Store<CopyInstanceState, CopyInstanceEvent> {
         val (instanceName, setInstanceName) = remember { mutableStateOf("${target.name} (Copy)") }
-        var isCopying by remember { mutableStateOf(false) }
+        val (isCopying, setIsCopying) = remember { mutableStateOf(false) }
 
         return CopyInstanceState(
             instanceName = instanceName,
@@ -35,7 +33,7 @@ class CopyInstancePresenter(
                 event = event,
                 instanceName = instanceName,
                 setInstanceName = setInstanceName,
-                setIsCopying = { isCopying = it },
+                setIsCopying = setIsCopying,
             )
         }
     }

@@ -10,17 +10,15 @@ import app.vercors.feature.game.domain.service.ModLoaderInstaller
 import app.vercors.shared.data.AppPaths
 import app.vercors.shared.data.FileValidationService
 import arrow.core.raise.Raise
-import dev.zacsweers.metro.*
+import dev.zacsweers.metro.AppScope
+import dev.zacsweers.metro.ContributesIntoMap
+import dev.zacsweers.metro.SingleIn
+import dev.zacsweers.metro.StringKey
 import kotlinx.serialization.json.Json
 
-/**
- * Downloads Forge's installer and runs its processors (binary-patching the client jar, splitting/renaming it,
- * etc.) to produce the same `mainClass`/`libraries` shape Fabric/Quilt already return more directly.
- */
 @SingleIn(AppScope::class)
 @ContributesIntoMap(AppScope::class)
 @StringKey("forge")
-@Inject
 class ForgeModLoaderInstaller(
     private val appPaths: AppPaths,
     private val fileValidationService: FileValidationService,

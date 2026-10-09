@@ -22,14 +22,6 @@ import opensavvy.state.coroutines.ProgressiveFlow
 import opensavvy.state.progressive.map
 import opensavvy.state.progressive.successfulWithProgress
 
-/**
- * Reactive scanner over an instance's `saves/` directory, backing the Worlds tab. Deliberately much smaller than
- * [app.vercors.feature.instance.data.content.ContentDirScannerEngine]: a world is a *directory*, not a single
- * hashable file, so there's no hashing, no shared metadata cache, and no `.disabled`-suffix enable/disable concept
- * to maintain — each entry is resolved straight from the world folder's own `icon.png`/`level.dat`. A watcher
- * event on `saves/` just triggers a full re-list (cheap: only top-level folder names + two `exists`/`mtime`
- * checks per world, no per-byte hashing like the mod/resourcepack/shaderpack scanners need).
- */
 @SingleIn(AppScope::class)
 @Inject
 class InstanceWorldScannerService(
@@ -47,11 +39,7 @@ class InstanceWorldScannerService(
             .map { outcome -> outcome.map { it.values.toList() } }
     }
 
-    /**
-     * Forces an immediate full rescan, for a caller that just wrote a batch of world files outside
-     * [importWorld] (e.g. a Prism Launcher import extracting a whole `.minecraft` folder at once) — never rely
-     * on the watcher alone to eventually catch up.
-     */
+    // For bulk writes outside importWorld: never rely on the watcher alone
     suspend fun refresh(instanceId: InstanceId) = reconcile(instanceId, stateFor(instanceId))
 
     private fun stateFor(instanceId: InstanceId): MutableProgressiveStateFlow<Nothing, Map<String, InstalledWorld>> =
@@ -73,7 +61,6 @@ class InstanceWorldScannerService(
         }
     }
 
-    /** Full (re)scan: resolves every world directory currently on disk into the in-memory state. */
     private suspend fun reconcile(
         instanceId: InstanceId,
         state: MutableProgressiveStateFlow<Nothing, Map<String, InstalledWorld>>
@@ -100,19 +87,12 @@ class InstanceWorldScannerService(
         )
     }
 
-    /** Permanently deletes a world's directory (and everything in it) and drops its entry. */
     suspend fun removeWorld(instanceId: InstanceId, folderName: String) {
         val worldDir = appPaths.worldDir(instanceId, folderName)
         if (worldDir.exists()) worldDir.deleteRecursively()
         stateFor(instanceId).update { it.map { map -> map - folderName } }
     }
 
-    /**
-     * Extracts [sourcePath] (a local `.zip` of a save folder, never deleted) into [instanceId]'s `saves/`
-     * directory as a new world, then immediately reconciles — not relying on the watcher to eventually catch up.
-     * Returns `false` without extracting anything if [sourcePath] isn't a `.zip` file, or if extraction fails for
-     * any reason (e.g. a corrupt/invalid archive).
-     */
     suspend fun importWorld(instanceId: InstanceId, sourcePath: String): Boolean {
         val zipPath = Path(sourcePath)
         if (!zipPath.name.endsWith(".zip")) return false

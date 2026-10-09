@@ -32,11 +32,15 @@ import org.jetbrains.compose.resources.stringResource
 @Composable
 fun CreateInstance(
     store: Store<CreateInstanceState, CreateInstanceEvent>,
+    modifier: Modifier = Modifier,
 ) {
     val (state, eventSink) = store
 
     with(eventSink) {
-        AppDialog(onClickOutside = { eventSink(CreateInstanceEvent.OnCancelClick) }) {
+        AppDialog(
+            modifier = modifier,
+            onClickOutside = { eventSink(CreateInstanceEvent.OnCancelClick) }
+        ) {
             AppForm {
                 AppText(
                     text = stringResource(InstanceRes.string.createInstance),

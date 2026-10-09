@@ -23,7 +23,6 @@ import com.composeunstyled.UnstyledDropdownMenuItem
 import com.composeunstyled.theme.Theme
 import org.jetbrains.compose.resources.stringResource
 
-/** Like [AppSelectField], but any number of [items] can be selected via a checkbox instead of picking exactly one. */
 @Composable
 fun <T> AppMultiSelectField(
     values: Set<T>,

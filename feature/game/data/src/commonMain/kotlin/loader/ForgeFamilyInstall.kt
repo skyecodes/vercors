@@ -32,8 +32,7 @@ private val logger = KotlinLogging.logger {}
 private val PLACEHOLDER_REGEX = Regex("\\{([A-Za-z_]+)}")
 private const val MAX_ERROR_OUTPUT_LENGTH = 4000
 
-// Two concurrent installs for the same loader+version (e.g. a double-triggered launch) would otherwise race
-// on the same shared processor working directory and clobber each other's output files mid-write.
+// Concurrent installs of the same loader version would clobber the shared processor working directory
 private val installMutexesLock = Mutex()
 private val installMutexes = mutableMapOf<String, Mutex>()
 
@@ -41,14 +40,6 @@ private suspend fun installMutexFor(key: String): Mutex = installMutexesLock.wit
     installMutexes.getOrPut(key) { Mutex() }
 }
 
-/**
- * Downloads and runs a Forge/NeoForge-family installer, dispatching on whichever installer format it turns out
- * to be (see [InstallerProfiles]): the modern, processor-based format extracts `install_profile.json` +
- * `version.json` from the installer jar, downloads the libraries both reference, resolves each processor's
- * placeholder arguments and runs it (client-side processors only), then returns the resulting profile —
- * caching it so later launches skip straight past all of this. The legacy (pre-1.13 Forge) format has no
- * processors/patching step at all — see [InstallerProfiles.Legacy]/[extractProfiles].
- */
 context(_: Raise<ModLoaderInstallError>)
 internal suspend fun installForgeFamily(
     loaderType: ModLoaderType,
@@ -91,9 +82,7 @@ internal suspend fun installForgeFamily(
             profiles = profiles
         )
 
-        // Not written to profileCachePath: every launch re-extracts the already-downloaded, on-disk installer
-        // jar (a small, bounded local I/O cost, no network involved) rather than caching a second profile
-        // format alongside LoaderVersionProfile's modern-shaped one. Revisit if this becomes a real cost.
+        // Not cached: re-extracting from the local installer jar is cheap
         is InstallerProfiles.Legacy -> profiles.profile.toDomain()
     }
 }
@@ -135,14 +124,7 @@ private suspend fun installModernForgeFamily(
         processRunner
     )
 
-    // The maven coordinate the patched client jar ends up at isn't predictable from the loader's own
-    // artifact coordinate — it's whatever install_profile.json's own "PATCHED" data entry says (this has
-    // changed between Forge-family versions, e.g. newer NeoForge uses a "minecraft-client-patched" artifact
-    // name instead of its own), so it must be read from there rather than guessed. It — and NeoForge's own
-    // "universal" jar, downloaded above as one of install_profile's own libraries — are deliberately NOT added
-    // to the classpath: FML's own production locator finds both itself by scanning "library_directory" for
-    // these exact coordinates, and putting them on the classpath instead makes FML think it's running inside
-    // a Gradle modding workspace rather than a normal launch.
+    // Read from install_profile's PATCHED entry (it varies across versions); never on the classpath, FML scans library_directory for it
     val patchedArtifact = buildPatchedArtifact(loaderType, installProfile, resolvedData, appPaths)
     val finalProfile = versionProfile.copy(localArtifacts = listOfNotNull(patchedArtifact))
     profileCachePath.writeJson(LoaderVersionProfile.serializer(), finalProfile, json)
@@ -156,18 +138,13 @@ private sealed interface InstallerProfiles {
     data class Legacy(val profile: LegacyForgeInstallProfile) : InstallerProfiles
 }
 
-/**
- * A cached profile can outlive the local-only artifacts it points to (e.g. deleted by a bug, or by the user
- * clearing part of the cache) — this returns `null` (asking the caller to re-install) rather than handing out
- * dangling references.
- */
+// A cached profile can outlive its local artifacts: null asks the caller to re-install
 private suspend fun cachedProfileOrNull(profileCachePath: Path, appPaths: AppPaths, json: Json): LoaderInstallProfile? {
     if (!profileCachePath.exists()) return null
     val cached = profileCachePath.readJson(LoaderVersionProfile.serializer(), json)
     return cached.takeIf { it.locallyProducedArtifactsExist(appPaths) }?.toDomain()
 }
 
-/** Whether every locally-produced artifact this profile depends on (see [LoaderVersionProfile.localArtifacts]) still exists on disk. */
 private suspend fun LoaderVersionProfile.locallyProducedArtifactsExist(appPaths: AppPaths): Boolean =
     localArtifacts.all { artifact ->
         val metadata = appPaths.libraryFile(artifact.path).metadataOrNull()
@@ -192,8 +169,7 @@ private suspend fun downloadVanillaClientJar(
     appPaths: AppPaths,
     fileValidationService: FileValidationService
 ) {
-    // The vanilla client jar is normally downloaded later, by the launch pipeline's own dependency
-    // resolution — but the installer's processors need it to already be on disk to slim/split/patch it.
+    // The processors need the vanilla client jar on disk before the launch pipeline would download it
     withError({ ModLoaderInstallError.FetchFailed(loaderType, it) }) {
         fileValidationService.submit(
             listOf(
@@ -208,15 +184,6 @@ private suspend fun downloadVanillaClientJar(
     }
 }
 
-/**
- * Reads `install_profile.json` from the installer jar and, based on whether it also has a `version.json`
- * entry, decodes either the modern (processor-based) or legacy (pre-1.13 Forge) profile shape — `version.json`
- * only exists in the modern format, so its absence (checked via [Zip.entryOrNull], not by catching an
- * exception) is the confirmed, reliable signal to distinguish the two. For a legacy profile, the universal jar
- * named in `install.filePath` is extracted straight from the already-open installer jar to its library path —
- * legacy Forge never binary-patches the client jar, so unlike the modern flow, there's no separate processor
- * step needed to produce it.
- */
 context(_: Raise<ModLoaderInstallError>)
 private suspend fun extractProfiles(
     loaderType: ModLoaderType,
@@ -234,12 +201,7 @@ private suspend fun extractProfiles(
             )
         } else {
             val legacyProfile = json.decodeFromString(LegacyForgeInstallProfile.serializer(), installProfileText)
-            // versionInfo.libraries typically also lists this same coordinate (with a real-looking maven "url")
-            // as if it were a normal downloadable library — it isn't; that URL 404s on the real maven. The
-            // installer produces it locally instead, and every legacy Minecraft launcher places it at exactly
-            // this coordinate's own (unclassified) library path, not a separate "-universal.jar" classifier —
-            // toDomain() relies on that by filtering any self-referencing entry out of versionInfo.libraries
-            // and substituting this locally-extracted, non-fetched one in its place.
+            // The listed URL for this coordinate 404s: extract the bundled universal jar to its library path instead
             val universalFile = appPaths.libraryFile(mavenCoordinateToPath(legacyProfile.install.path))
             universalFile.createParentDirectories()
             zip.entryOrNull(Path(legacyProfile.install.filePath)) { readToPath(universalFile) } ?: raise(
@@ -334,8 +296,7 @@ private suspend fun buildPatchedArtifact(
         }
         MojangVersionInfo.Library.Downloads.Artifact(
             path = relativePath,
-            // Forge's install_profile.json provides this; NeoForge's doesn't — null skips the hash
-            // check instead of comparing against "" (which would never match and loop redownloads).
+            // NeoForge provides no hash here: null skips the check instead of comparing against ""
             sha1 = resolvedData["PATCHED_SHA"],
             size = size,
             url = ""

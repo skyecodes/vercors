@@ -142,17 +142,7 @@ class InstallModpackPresenter(
         }
     }
 
-    /**
-     * Parses the pack's own manifest (fast, local-file-only — enough to create the instance), creates the
-     * instance, then resolves the rest of the manifest (may be slow: CurseForge needs one network lookup per mod),
-     * downloads its files (prompting for manual downloads as needed), and records provenance. [onInstanceCreated]
-     * fires as soon as the instance exists, so the caller can navigate to it immediately — the remaining steps keep
-     * running on [globalScope] and report their progress via [updateInstanceStatus], surviving the dialog being
-     * dismissed. Failures before the instance exists call [onFinished] with nothing to clean up; failures afterward
-     * leave the instance in place with an [InstanceStatus.Failed] status instead of rolling it back, since the user
-     * may already be looking at it — only an explicit cancellation (job cancelled from the instance details screen)
-     * rolls it back.
-     */
+    // Failures after the instance exists leave it in place as Failed; only an explicit cancellation rolls it back
     private fun confirmInstall(
         file: ProjectFileView,
         instanceName: String,
@@ -187,9 +177,7 @@ class InstallModpackPresenter(
             updateInstanceStatus(instance.id, if (ok) InstanceStatus.Idle else InstanceStatus.Failed.InstallFailed)
             notifyModpackInstallResult(instanceName, ok)
         }
-        // Only reached with a non-null error on genuine cancellation (job.cancel() via CancelInstanceSetupUseCase)
-        // or a truly unexpected exception — expected step failures above already report InstanceStatus.Failed and
-        // complete normally instead of throwing, so they never reach this rollback path.
+        // Reached with an error only on cancellation or an unexpected exception: step failures complete normally
         job.invokeOnCompletion { error ->
             createdInstanceId?.let { updateInstanceJob(it, null) }
             if (error != null) createdInstanceId?.let { id -> globalScope.launch { rollback(id) } }
@@ -227,7 +215,7 @@ class InstallModpackPresenter(
             null
         }
 
-    /** Best-effort only: a missing/broken project logo must never fail or delay the modpack install. */
+    // Best-effort: a missing logo must never fail the install
     private suspend fun fetchAndApplyProjectIcon(instance: Instance) {
         recover({
             val logoUrl = getProject(projectId).logoUrl

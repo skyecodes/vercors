@@ -40,7 +40,7 @@ fun AccountList(
         if (state.promptLogin) {
             OverlayEffect {
                 show(state.loginDialog)
-                eventSink(AccountListEvent.CancelLogin)
+                eventSink(AccountListEvent.OnLoginDismiss)
             }
         }
 
@@ -76,7 +76,7 @@ private fun NoAccountsFoundDisplay(
         )
 
         AppIconTextButton(
-            onClick = { eventSink(AccountListEvent.Login) },
+            onClick = { eventSink(AccountListEvent.OnLoginClick) },
             text = stringResource(AccountRes.string.logIn),
             imageVector = Lucide.LogIn,
             backgroundColor = Theme[colors][primary],
@@ -138,7 +138,7 @@ private fun AccountList(
             contentAlignment = Alignment.Center
         ) {
             AppIconTextButton(
-                onClick = { eventSink(AccountListEvent.Login) },
+                onClick = { eventSink(AccountListEvent.OnLoginClick) },
                 text = stringResource(AccountRes.string.addAccount),
                 imageVector = Lucide.UserPlus,
                 backgroundColor = Theme[colors][primary],
@@ -193,7 +193,7 @@ private fun AccountCard(
                             imageVector = Lucide.ClipboardCopy,
                             contentDescription = stringResource(SharedRes.string.copy),
                             modifier = Modifier.size(16.dp)
-                                .clickableText { eventSink(AccountListEvent.CopyToClipboard(account.id.toString())) }
+                                .clickableText { eventSink(AccountListEvent.OnCopyClick(account.id.toString())) }
                         )
                     }
                 )
@@ -207,7 +207,7 @@ private fun AccountCard(
                 AppIconTextButton(
                     text = stringResource(SharedRes.string.select),
                     imageVector = Lucide.UserCheck,
-                    onClick = { eventSink(AccountListEvent.SelectAccount(account.id)) },
+                    onClick = { eventSink(AccountListEvent.OnAccountClick(account.id)) },
                     backgroundColor = Theme[colors][primary],
                     contentColor = Theme[colors][onPrimary],
                     modifier = Modifier.fillMaxWidth()
@@ -216,7 +216,7 @@ private fun AccountCard(
             AppIconTextButton(
                 text = stringResource(AccountRes.string.logOut),
                 imageVector = Lucide.LogOut,
-                onClick = { eventSink(AccountListEvent.Logout(account.id)) },
+                onClick = { eventSink(AccountListEvent.OnLogoutClick(account.id)) },
                 backgroundColor = Theme[colors][error],
                 contentColor = Theme[colors][onError],
                 modifier = Modifier.fillMaxWidth()

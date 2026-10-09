@@ -16,5 +16,5 @@ class DownloadProjectFilesUseCase(
         candidates: List<ProjectFileDownloadCandidate>,
         instanceId: String,
         onProgress: (Progress) -> Unit = {}
-    ) = projectRepository.downloadProjectFiles(candidates, instanceId, onProgress)
+    ): Unit = projectRepository.downloadProjectFiles(candidates, instanceId, onProgress)
 }

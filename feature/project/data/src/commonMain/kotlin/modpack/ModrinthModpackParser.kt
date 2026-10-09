@@ -1,66 +1,38 @@
 package app.vercors.feature.project.data.modpack
 
 import app.vercors.feature.game.domain.model.ModLoaderType
+import app.vercors.feature.project.data.dto.MrpackIndex
 import app.vercors.feature.project.domain.model.ProjectId
 import app.vercors.feature.project.domain.model.modpack.ModpackManifest
 import app.vercors.feature.project.domain.model.modpack.ModpackManifestFile
-import app.vercors.feature.project.domain.model.modpack.ModpackParseFailed
 import app.vercors.feature.project.domain.model.modpack.ModpackResolutionError
 import arrow.core.raise.Raise
 import arrow.core.raise.context.raise
 import de.jonasbroeckmann.kzip.Zip
 import de.jonasbroeckmann.kzip.open
-import dev.zacsweers.metro.*
+import dev.zacsweers.metro.AppScope
+import dev.zacsweers.metro.ContributesIntoMap
+import dev.zacsweers.metro.SingleIn
+import dev.zacsweers.metro.StringKey
 import kotlinx.coroutines.CancellationException
 import kotlinx.io.files.Path
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import opensavvy.progress.Progress
 import opensavvy.progress.done
 
 private const val MODRINTH_PLATFORM_ID = "modrinth"
 
-/**
- * Modrinth's CDN download URLs conventionally encode the project and version IDs directly, e.g.
- * `https://cdn.modrinth.com/data/<projectId>/versions/<versionId>/<fileName>` — `modrinth.index.json` itself
- * carries no per-file project/version ID field, so this is the only way to recover them without an API call.
- * Not every download URL follows this shape (mirrors, CDN changes, etc.), so entries that don't match are left
- * without a provider rather than guessed at.
- */
+// modrinth.index.json has no per-file project/version IDs: recover them from the CDN URL when it matches
 private val MODRINTH_CDN_URL_REGEX = Regex("""^https://cdn\.modrinth\.com/data/([^/]+)/versions/([^/]+)/[^/]+$""")
 
-@Serializable
-private data class MrpackIndex(
-    val name: String,
-    val files: List<MrpackFile> = emptyList(),
-    val dependencies: Map<String, String> = emptyMap()
-)
-
-@Serializable
-private data class MrpackFile(
-    val path: String,
-    val hashes: MrpackHashes = MrpackHashes(),
-    val env: MrpackEnv? = null,
-    val downloads: List<String> = emptyList(),
-    val fileSize: Long? = null
-)
-
-@Serializable
-private data class MrpackHashes(val sha1: String? = null)
-
-@Serializable
-private data class MrpackEnv(val client: String = "required", val server: String = "required")
-
-/** Parses a Modrinth `.mrpack` — a zip containing `modrinth.index.json` plus `overrides`/`client-overrides` folders. */
 @SingleIn(AppScope::class)
 @ContributesIntoMap(AppScope::class)
 @StringKey(MODRINTH_PLATFORM_ID)
-@Inject
 class ModrinthModpackParser(private val json: Json) : ModpackManifestParser {
     context(_: Raise<ModpackResolutionError>)
     override suspend fun parse(zipPath: Path, projectId: ProjectId, fileId: String): ModpackManifest {
         val index = readIndex(zipPath)
-        val gameVersion = index.dependencies["minecraft"] ?: raise(ModpackParseFailed)
+        val gameVersion = index.dependencies["minecraft"] ?: raise(ModpackResolutionError.ParseFailed)
         val (loaderType, loaderVersion) = index.dependencies.firstNotNullOfOrNull { (key, version) ->
             key.toModLoaderTypeOrNull()?.let { it to version }
         } ?: (null to null)
@@ -94,7 +66,7 @@ class ModrinthModpackParser(private val json: Json) : ModpackManifestParser {
         )
     }
 
-    // .mrpack files already embed each entry's filename/hash/download URL, so parse() resolves everything upfront.
+    // .mrpack already embeds every file's metadata, so parse() resolves everything
     context(_: Raise<ModpackResolutionError>)
     override suspend fun resolveFiles(
         zipPath: Path,
@@ -114,7 +86,7 @@ class ModrinthModpackParser(private val json: Json) : ModpackManifestParser {
     } catch (e: CancellationException) {
         throw e
     } catch (_: Exception) {
-        raise(ModpackParseFailed)
+        raise(ModpackResolutionError.ParseFailed)
     }
 }
 

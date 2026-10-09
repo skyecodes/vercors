@@ -13,11 +13,6 @@ import kotlin.time.Duration.Companion.seconds
 
 private val logger = KotlinLogging.logger {}
 
-/**
- * Periodically pings the meta API's `/health` endpoint and updates [MetaApiConnectivity] so meta-API-bound
- * calls ([makeMetaApiRequest]) can skip the network attempt entirely once the backend is known-unreachable,
- * instead of paying the shared HttpClient's retry/backoff delay on every single call.
- */
 @SingleIn(AppScope::class)
 @Inject
 class MetaApiConnectivityPoller(

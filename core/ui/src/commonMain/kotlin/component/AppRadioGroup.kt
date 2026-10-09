@@ -74,8 +74,6 @@ fun <T> AppRadioGroupScope.AppRadioButton(
 @JvmInline
 value class AppRadioButtonScope(val scope: RadioButtonScope)
 
-/** A radio button with a leading (or, if [invert], trailing) [label] and a circular selection indicator —
- *  the higher-level counterpart to [AppRadioButton]'s bare primitive, mirroring [AppCheckbox]'s ergonomics. */
 @Composable
 fun <T> AppRadioGroupScope.AppRadioButton(
     value: T,

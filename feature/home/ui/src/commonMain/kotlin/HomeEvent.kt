@@ -1,6 +1,5 @@
 package app.vercors.feature.home.ui
 
-import androidx.compose.runtime.Immutable
 import app.vercors.feature.instance.domain.model.InstanceId
 import app.vercors.feature.instance.ui.copy.CopyInstanceResult
 import app.vercors.feature.instance.ui.create.CreateInstanceResult
@@ -10,7 +9,6 @@ import app.vercors.feature.project.ui.install.InstallModpackResult
 import app.vercors.feature.project.ui.install.InstallProjectResult
 import app.vercors.shared.ui.Event
 
-@Immutable
 sealed interface HomeEvent : Event {
     data object OnCreateInstanceClick : HomeEvent
     data class OnCreateInstanceResult(val result: CreateInstanceResult) : HomeEvent

@@ -6,13 +6,11 @@ import app.vercors.feature.instance.domain.model.InstanceId
 import app.vercors.feature.instance.domain.repository.InstanceResourcePackRepository
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
-import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
 import opensavvy.state.coroutines.ProgressiveFlow
 
 @SingleIn(AppScope::class)
 @ContributesBinding(AppScope::class)
-@Inject
 class InstanceResourcePackRepositoryImpl(
     private val scannerService: InstanceResourcePackScannerService
 ) : InstanceResourcePackRepository {
@@ -25,16 +23,17 @@ class InstanceResourcePackRepositoryImpl(
         platformId: String,
         projectId: String,
         fileId: String
-    ) = scannerService.recordOrigin(instanceId, fileName, platformId, projectId, fileId)
+    ): Unit = scannerService.recordOrigin(instanceId, fileName, platformId, projectId, fileId)
 
-    override suspend fun setResourcePackEnabled(instanceId: InstanceId, fileName: String, enabled: Boolean) =
+    override suspend fun setResourcePackEnabled(instanceId: InstanceId, fileName: String, enabled: Boolean): Unit =
         scannerService.setEnabled(instanceId, fileName, enabled)
 
-    override suspend fun removeResourcePack(instanceId: InstanceId, fileName: String) =
+    override suspend fun removeResourcePack(instanceId: InstanceId, fileName: String): Unit =
         scannerService.removeFile(instanceId, fileName)
 
     override suspend fun importResourcePack(instanceId: InstanceId, sourcePath: String): Boolean =
         scannerService.importFile(instanceId, sourcePath)
 
-    override suspend fun refreshInstalledResourcePacks(instanceId: InstanceId) = scannerService.refresh(instanceId)
+    override suspend fun refreshInstalledResourcePacks(instanceId: InstanceId): Unit =
+        scannerService.refresh(instanceId)
 }

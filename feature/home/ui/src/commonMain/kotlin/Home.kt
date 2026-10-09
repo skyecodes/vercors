@@ -48,7 +48,6 @@ import app.vercors.feature.project.ui.*
 import app.vercors.feature.project.ui.details.isInstallable
 import app.vercors.feature.project.ui.install.ProjectInstallButton
 import app.vercors.feature.project.ui.install.ProjectInstallTarget
-import app.vercors.feature.project.ui.list.icon
 import app.vercors.shared.ui.*
 import app.vercors.shared.ui.overlay.ConfirmDialog
 import app.vercors.shared.ui.overlay.ConfirmDialogButton
@@ -279,7 +278,7 @@ private fun LazyListScope.fakeCardItem(
     }
 }
 
-private const val scrollValue = 1000f
+private const val SCROLL_VALUE = 1000f
 
 @Composable
 private fun BoxScope.HomeScrollButton(
@@ -287,7 +286,7 @@ private fun BoxScope.HomeScrollButton(
     isRight: Boolean
 ) {
     AppButton(
-        onClick = { onClick(if (isRight) scrollValue else -scrollValue) },
+        onClick = { onClick(if (isRight) SCROLL_VALUE else -SCROLL_VALUE) },
         shape = CircleShape,
         backgroundColor = Theme[colors][surface],
         modifier = Modifier.align(if (isRight) Alignment.CenterEnd else Alignment.CenterStart).padding(8.dp).size(32.dp)
