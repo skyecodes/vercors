@@ -95,20 +95,18 @@ class ModrinthService(
     ).bindResponse().mapNotNull { it.convert() }
 
     context(_: Raise<PlatformErrorData>)
-    override suspend fun getFileDownloadUrl(projectId: String, fileId: String): String {
-        val version = api.getVersion(fileId).bindResponse()
-        val file = version.files.firstOrNull { it.primary } ?: version.files.first()
-        return file.url
-    }
+    override suspend fun getFileDownloadUrl(projectId: String, fileId: String): String =
+        ensureNotNull(api.getVersion(fileId).bindResponse().primaryFileOrNull()) { noFiles(fileId) }.url
 
     context(_: Raise<PlatformErrorData>)
     override suspend fun getProjectFile(projectId: String, fileId: String): ProjectFileData =
-        ensureNotNull(api.getVersion(fileId).bindResponse().convert()) {
-            PlatformErrorData("NoFiles", "Version $fileId has no files")
-        }
+        ensureNotNull(api.getVersion(fileId).bindResponse().convert()) { noFiles(fileId) }
 
     context(_: Raise<PlatformErrorData>)
     override suspend fun getFiles(fileIds: List<String>): List<ProjectFileData> =
         api.getVersionsByIds(fileIds.joinToString(",", "[", "]") { "\"$it\"" }).bindResponse()
             .mapNotNull { it.convert() }
+
+    private fun noFiles(fileId: String): PlatformErrorData =
+        PlatformErrorData("NoFiles", "Version $fileId has no files")
 }

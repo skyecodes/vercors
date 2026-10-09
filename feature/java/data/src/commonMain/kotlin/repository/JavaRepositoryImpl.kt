@@ -26,6 +26,8 @@ import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.io.files.Path
+import opensavvy.state.coroutines.now
+import opensavvy.state.outcome.valueOrNull
 import opensavvy.state.progressive.ProgressiveOutcome
 import opensavvy.state.progressive.successfulWithProgress
 
@@ -59,8 +61,7 @@ class JavaRepositoryImpl(
         if (currentConfiguration()?.javaInstallations.isNullOrEmpty()) rescan()
     }
 
-    private fun currentConfiguration(): Configuration? =
-        (configurationRepository.state.value as? ProgressiveOutcome.Success)?.value
+    private suspend fun currentConfiguration(): Configuration? = configurationRepository.state.now().valueOrNull
 
     // Waits instead of skipping when a scan is running: short-lived callers like `vercors java scan` need it done
     override suspend fun rescan() {

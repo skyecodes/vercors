@@ -5,9 +5,11 @@ import app.vercors.feature.instance.data.content.InstanceResourcePackScannerServ
 import app.vercors.feature.instance.data.content.InstanceShaderPackScannerService
 import app.vercors.feature.instance.data.mods.InstanceModScannerService
 import app.vercors.feature.instance.domain.model.ContentKind
+import app.vercors.feature.instance.domain.model.ImportError
 import app.vercors.feature.instance.domain.model.InstalledContentFile
 import app.vercors.feature.instance.domain.model.InstanceId
 import app.vercors.feature.instance.domain.repository.InstanceContentRepository
+import arrow.core.raise.Raise
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
 import dev.zacsweers.metro.SingleIn
@@ -44,7 +46,8 @@ class InstanceContentRepositoryImpl(
     override suspend fun remove(kind: ContentKind, instanceId: InstanceId, fileName: String): Unit =
         scannerFor(kind).removeFile(instanceId, fileName)
 
-    override suspend fun import(kind: ContentKind, instanceId: InstanceId, sourcePath: String): Boolean =
+    context(_: Raise<ImportError>)
+    override suspend fun import(kind: ContentKind, instanceId: InstanceId, sourcePath: String): Unit =
         scannerFor(kind).importFile(instanceId, sourcePath)
 
     override suspend fun refresh(kind: ContentKind, instanceId: InstanceId): Unit = scannerFor(kind).refresh(instanceId)

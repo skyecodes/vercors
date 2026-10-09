@@ -1,7 +1,9 @@
 package app.vercors.feature.instance.data.content
 
+import app.vercors.feature.instance.domain.model.ImportError
 import app.vercors.feature.instance.domain.model.InstalledContentFile
 import app.vercors.feature.instance.domain.model.InstanceId
+import arrow.core.raise.Raise
 import kotlinx.coroutines.flow.map
 import kotlinx.io.files.Path
 import opensavvy.state.coroutines.ProgressiveFlow
@@ -27,7 +29,8 @@ abstract class ContentDirScannerService internal constructor(private val engine:
     suspend fun removeFile(instanceId: InstanceId, fileName: String): Unit =
         engine.removeFile(instanceId, fileName)
 
-    suspend fun importFile(instanceId: InstanceId, sourcePath: String): Boolean =
+    context(_: Raise<ImportError>)
+    suspend fun importFile(instanceId: InstanceId, sourcePath: String): Unit =
         engine.importFile(instanceId, Path(sourcePath))
 
     suspend fun refresh(instanceId: InstanceId): Unit = engine.refresh(instanceId)

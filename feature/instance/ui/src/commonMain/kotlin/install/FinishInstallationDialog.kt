@@ -3,8 +3,8 @@ package app.vercors.feature.instance.ui.install
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
@@ -16,8 +16,7 @@ import app.vercors.core.ui.layout.AppDialog
 import app.vercors.core.ui.layout.AppForm
 import app.vercors.core.ui.modifier.clickableText
 import app.vercors.core.ui.theme.*
-import app.vercors.feature.instance.domain.model.InstanceId
-import app.vercors.feature.instance.domain.usecase.ObserveManualDownloadItemsUseCase
+import app.vercors.feature.instance.domain.model.ManualDownloadItem
 import app.vercors.feature.instance.ui.*
 import app.vercors.shared.ui.SharedRes
 import app.vercors.shared.ui.cancel
@@ -31,8 +30,7 @@ import com.slack.circuit.overlay.OverlayTransitionController
 import org.jetbrains.compose.resources.stringResource
 
 class FinishInstallationDialog(
-    private val instanceId: InstanceId,
-    private val observeManualDownloadItems: ObserveManualDownloadItemsUseCase,
+    private val manualDownloadItems: State<List<ManualDownloadItem>>,
     private val onCopyUrl: (String) -> Unit,
 ) : DialogOverlay<Unit>() {
     @Composable
@@ -40,9 +38,7 @@ class FinishInstallationDialog(
         navigator: OverlayNavigator<Unit>,
         transitionController: OverlayTransitionController,
     ) {
-        val items by produceState(emptyList(), instanceId) {
-            observeManualDownloadItems(instanceId).collect { value = it }
-        }
+        val items by manualDownloadItems
         val uriHandler = LocalUriHandler.current
 
         AppDialog(onClickOutside = { navigator.finish(Unit) }) {

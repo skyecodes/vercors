@@ -2,10 +2,14 @@ package app.vercors.feature.instance.data.worlds
 
 import app.vercors.core.domain.MutableProgressiveStateFlow
 import app.vercors.core.filesystem.*
+import app.vercors.feature.instance.domain.model.ImportError
 import app.vercors.feature.instance.domain.model.InstalledWorld
 import app.vercors.feature.instance.domain.model.InstanceId
 import app.vercors.shared.data.AppPaths
 import app.vercors.shared.data.extractWorldZip
+import arrow.core.raise.Raise
+import arrow.core.raise.context.ensure
+import arrow.core.raise.context.raise
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
@@ -93,17 +97,17 @@ class InstanceWorldScannerService(
         stateFor(instanceId).update { it.map { map -> map - folderName } }
     }
 
-    suspend fun importWorld(instanceId: InstanceId, sourcePath: String): Boolean {
+    context(_: Raise<ImportError>)
+    suspend fun importWorld(instanceId: InstanceId, sourcePath: String) {
         val zipPath = Path(sourcePath)
-        if (!zipPath.name.endsWith(".zip")) return false
+        ensure(zipPath.name.endsWith(".zip")) { ImportError.UnsupportedFileType }
         try {
             appPaths.extractWorldZip(zipPath, instanceId, zipPath.name)
         } catch (e: CancellationException) {
             throw e
         } catch (_: Exception) {
-            return false
+            raise(ImportError.CopyFailed)
         }
         reconcile(instanceId, stateFor(instanceId))
-        return true
     }
 }

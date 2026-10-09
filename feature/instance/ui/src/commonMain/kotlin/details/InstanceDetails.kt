@@ -81,9 +81,9 @@ fun InstanceDetails(
             }
         }
 
-        if (state.promptCopyInstance) {
-            OverlayEffect {
-                eventSink(InstanceDetailsEvent.OnCopyInstanceResult(show(state.copyInstanceDialog)))
+        state.copyInstanceDialog?.let { dialog ->
+            OverlayEffect(dialog) {
+                eventSink(InstanceDetailsEvent.OnCopyInstanceResult(show(dialog)))
             }
         }
 

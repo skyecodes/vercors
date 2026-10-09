@@ -1,8 +1,10 @@
 package app.vercors.feature.instance.domain.repository
 
 import app.vercors.feature.instance.domain.model.ContentKind
+import app.vercors.feature.instance.domain.model.ImportError
 import app.vercors.feature.instance.domain.model.InstalledContentFile
 import app.vercors.feature.instance.domain.model.InstanceId
+import arrow.core.raise.Raise
 import opensavvy.state.coroutines.ProgressiveFlow
 
 interface InstanceContentRepository {
@@ -24,7 +26,8 @@ interface InstanceContentRepository {
 
     suspend fun remove(kind: ContentKind, instanceId: InstanceId, fileName: String)
 
-    suspend fun import(kind: ContentKind, instanceId: InstanceId, sourcePath: String): Boolean
+    context(_: Raise<ImportError>)
+    suspend fun import(kind: ContentKind, instanceId: InstanceId, sourcePath: String)
 
     suspend fun refresh(kind: ContentKind, instanceId: InstanceId)
 }

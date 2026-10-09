@@ -47,10 +47,7 @@ class InstanceListPresenter(
         val (typeFilter, setTypeFilter) = remember { mutableStateOf("") }
         val (promptCreateInstance, setPromptCreateInstance) = remember { mutableStateOf(false) }
         val (pendingDeleteInstanceId, setPendingDeleteInstanceId) = remember { mutableStateOf<InstanceId?>(null) }
-        val (pendingCopyInstance, setPendingCopyInstance) = remember { mutableStateOf<CopyInstanceTarget?>(null) }
-        val copyInstanceDialog = pendingCopyInstance?.let { target ->
-            remember(target) { copyInstanceDialogFactory.create(target) }
-        }
+        val (copyInstanceDialog, setCopyInstanceDialog) = remember { mutableStateOf<CopyInstanceDialog?>(null) }
         return InstanceListState(
             instances = instances,
             nameFilter = nameFilter,
@@ -71,7 +68,7 @@ class InstanceListPresenter(
                 setPromptCreateInstance = setPromptCreateInstance,
                 pendingDeleteInstanceId = pendingDeleteInstanceId,
                 setPendingDeleteInstanceId = setPendingDeleteInstanceId,
-                setPendingCopyInstance = setPendingCopyInstance,
+                setCopyInstanceDialog = setCopyInstanceDialog,
             )
         }
     }
@@ -85,7 +82,7 @@ class InstanceListPresenter(
         setPromptCreateInstance: (Boolean) -> Unit,
         pendingDeleteInstanceId: InstanceId?,
         setPendingDeleteInstanceId: (InstanceId?) -> Unit,
-        setPendingCopyInstance: (CopyInstanceTarget?) -> Unit,
+        setCopyInstanceDialog: (CopyInstanceDialog?) -> Unit,
     ) {
         when (event) {
             InstanceListEvent.OnCreateInstanceClick -> setPromptCreateInstance(true)
@@ -124,10 +121,17 @@ class InstanceListPresenter(
             )
 
             is InstanceListEvent.OnCopyInstanceClick ->
-                setPendingCopyInstance(CopyInstanceTarget(event.instanceId, event.name))
+                setCopyInstanceDialog(
+                    copyInstanceDialogFactory.create(
+                        CopyInstanceTarget(
+                            event.instanceId,
+                            event.name
+                        )
+                    )
+                )
 
             is InstanceListEvent.OnCopyInstanceResult -> {
-                setPendingCopyInstance(null)
+                setCopyInstanceDialog(null)
                 if (event.result is CopyInstanceResult.Copied) navigator.goTo(InstanceDetailsScreen(event.result.instanceId))
             }
         }

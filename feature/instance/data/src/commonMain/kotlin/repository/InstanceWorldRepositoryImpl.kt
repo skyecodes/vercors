@@ -1,9 +1,11 @@
 package app.vercors.feature.instance.data.repository
 
 import app.vercors.feature.instance.data.worlds.InstanceWorldScannerService
+import app.vercors.feature.instance.domain.model.ImportError
 import app.vercors.feature.instance.domain.model.InstalledWorld
 import app.vercors.feature.instance.domain.model.InstanceId
 import app.vercors.feature.instance.domain.repository.InstanceWorldRepository
+import arrow.core.raise.Raise
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
 import dev.zacsweers.metro.SingleIn
@@ -20,7 +22,8 @@ class InstanceWorldRepositoryImpl(
     override suspend fun removeWorld(instanceId: InstanceId, folderName: String): Unit =
         scannerService.removeWorld(instanceId, folderName)
 
-    override suspend fun importWorld(instanceId: InstanceId, sourcePath: String): Boolean =
+    context(_: Raise<ImportError>)
+    override suspend fun importWorld(instanceId: InstanceId, sourcePath: String): Unit =
         scannerService.importWorld(instanceId, sourcePath)
 
     override suspend fun refreshInstalledWorlds(instanceId: InstanceId): Unit = scannerService.refresh(instanceId)

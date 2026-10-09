@@ -123,9 +123,11 @@ private fun String.convertToLoader(): ProjectLoaderData? = when (this) {
 }
 
 // Versions can carry several files: keep the primary one
-internal fun ModrinthVersion.convert(): ProjectFileData? {
-    val file = files.firstOrNull { it.primary } ?: files.firstOrNull() ?: return null
-    return ProjectFileData(
+internal fun ModrinthVersion.primaryFileOrNull(): ModrinthVersionFile? =
+    files.firstOrNull { it.primary } ?: files.firstOrNull()
+
+internal fun ModrinthVersion.convert(): ProjectFileData? = primaryFileOrNull()?.let { file ->
+    ProjectFileData(
         id = id,
         displayName = name,
         fileName = file.filename,

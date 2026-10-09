@@ -4,10 +4,13 @@ import app.vercors.feature.project.api.PlatformFiles
 import app.vercors.feature.project.api.Platforms
 import app.vercors.feature.project.api.ProjectFiles
 import app.vercors.feature.project.api.Projects
+import app.vercors.feature.project.api.dto.PlatformErrorData
 import app.vercors.feature.project.api.dto.ProjectLoaderData
 import app.vercors.feature.project.api.dto.ProjectSortByData
 import app.vercors.feature.project.api.dto.ProjectTypeData
 import app.vercors.shared.backend.cache
+import app.vercors.shared.backend.decodeEnumParameter
+import arrow.core.raise.Raise
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.serialization.json.Json
@@ -41,13 +44,13 @@ fun Route.projectRoutes(service: ProjectService, json: Json) {
         val platformId = idOf(Platforms.PlatformId)
         val result = service.search(
             platformId = platformId,
-            projectType = parameters.type?.let { json.decodeFromString<ProjectTypeData>("\"$it\"") },
-            loaders = parameters.loaders.map { json.decodeFromString<ProjectLoaderData>("\"$it\"") }
+            projectType = parameters.type?.let { json.decodeParameter<ProjectTypeData>(it) },
+            loaders = parameters.loaders.map { json.decodeParameter<ProjectLoaderData>(it) }
                 .ifEmpty { null },
             gameVersions = parameters.gameVersions.ifEmpty { null },
             categories = parameters.categories.ifEmpty { null },
             query = parameters.query,
-            sortBy = parameters.sortBy?.let { json.decodeFromString<ProjectSortByData>("\"$it\"") },
+            sortBy = parameters.sortBy?.let { json.decodeParameter<ProjectSortByData>(it) },
             pageSize = parameters.pageSize,
             offset = parameters.offset
         )
@@ -70,7 +73,7 @@ fun Route.projectRoutes(service: ProjectService, json: Json) {
             platformId = platformId,
             projectId = projectId,
             gameVersion = parameters.gameVersion,
-            loader = parameters.loader?.let { json.decodeFromString<ProjectLoaderData>("\"$it\"") }
+            loader = parameters.loader?.let { json.decodeParameter<ProjectLoaderData>(it) }
         )
         call.response.cache(1.minutes)
         respond(result)
@@ -101,3 +104,7 @@ fun Route.projectRoutes(service: ProjectService, json: Json) {
         call.respondRedirect(url)
     }
 }
+
+context(_: Raise<PlatformErrorData>)
+private inline fun <reified T> Json.decodeParameter(value: String): T =
+    decodeEnumParameter(value) { PlatformErrorData("InvalidParameter", "Unknown parameter value: $it") }

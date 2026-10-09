@@ -16,6 +16,7 @@ import app.vercors.shared.ui.Presenter
 import app.vercors.shared.ui.SnackbarService
 import app.vercors.shared.ui.Store
 import app.vercors.shared.ui.error
+import arrow.core.raise.context.either
 import com.slack.circuit.retained.produceAndCollectAsRetainedState
 import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedFactory
@@ -74,8 +75,8 @@ class InstalledContentPresenter(
                 handleConfirmRemove(event, promptRemoveConfirmation, setPromptRemoveConfirmation)
 
             is InstalledContentEvent.OnImportClick -> globalScope.launch {
-                val imported = importContent(kind, instanceId, event.sourcePath)
-                if (!imported) snackbarService.error { stringResource(InstanceRes.string.errorImportFailed) }
+                either { importContent(kind, instanceId, event.sourcePath) }
+                    .onLeft { snackbarService.error { stringResource(InstanceRes.string.errorImportFailed) } }
             }
         }
     }

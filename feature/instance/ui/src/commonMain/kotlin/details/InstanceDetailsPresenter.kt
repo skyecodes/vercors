@@ -48,6 +48,7 @@ import app.vercors.shared.ui.error
 import arrow.core.raise.context.either
 import arrow.core.raise.recover
 import com.slack.circuit.codegen.annotations.CircuitInject
+import com.slack.circuit.retained.produceAndCollectAsRetainedState
 import com.slack.circuit.runtime.Navigator
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Assisted
@@ -131,11 +132,14 @@ class InstanceDetailsPresenter(
             instanceLogsPresenterFactory.create(screen.instanceId)
         }.present()
 
-        val (promptDeleteConfirmation, setPromptDeleteConfirmation) = rememberSaveable { mutableStateOf(false) }
-        val (promptCopyInstance, setPromptCopyInstance) = rememberSaveable { mutableStateOf(false) }
-        val (promptFinishInstallation, setPromptFinishInstallation) = rememberSaveable { mutableStateOf(false) }
+        val (promptDeleteConfirmation, setPromptDeleteConfirmation) = remember { mutableStateOf(false) }
+        val (copyInstanceDialog, setCopyInstanceDialog) = remember { mutableStateOf<CopyInstanceDialog?>(null) }
+        val (promptFinishInstallation, setPromptFinishInstallation) = remember { mutableStateOf(false) }
+        val manualDownloadItems = produceAndCollectAsRetainedState(screen.instanceId, initial = emptyList()) {
+            observeManualDownloadItems(screen.instanceId)
+        }
         val finishInstallationDialog = remember(screen.instanceId) {
-            FinishInstallationDialog(screen.instanceId, observeManualDownloadItems) { url -> copyToClipboard(url) }
+            FinishInstallationDialog(manualDownloadItems) { url -> copyToClipboard(url) }
         }
         val loginState = remember { mutableStateOf(LoginStateView()) }
         val (promptLogin, setPromptLogin) = remember { mutableStateOf(false) }
@@ -152,9 +156,6 @@ class InstanceDetailsPresenter(
             mutableStateOf(screen.initialTab ?: InstanceDetailsTab.Options)
         }
         val currentInstance = instance.valueOrNull
-        val copyInstanceDialog = remember(screen.instanceId, currentInstance?.name) {
-            copyInstanceDialogFactory.create(CopyInstanceTarget(screen.instanceId, currentInstance?.name ?: ""))
-        }
 
         LaunchedEffect(screen.instanceId, screen.autoLaunch) {
             if (screen.autoLaunch) {
@@ -169,7 +170,6 @@ class InstanceDetailsPresenter(
             instance = instance,
             promptInstallJava = promptInstallJava,
             promptDeleteConfirmation = promptDeleteConfirmation,
-            promptCopyInstance = promptCopyInstance,
             copyInstanceDialog = copyInstanceDialog,
             selectedTab = selectedTab,
             horizontalTabs = horizontalTabs,
@@ -190,7 +190,7 @@ class InstanceDetailsPresenter(
             handleEvent(
                 event = event,
                 setPromptDeleteConfirmation = setPromptDeleteConfirmation,
-                setPromptCopyInstance = setPromptCopyInstance,
+                setCopyInstanceDialog = setCopyInstanceDialog,
                 setSelectedTab = setSelectedTab,
                 currentInstance = currentInstance,
                 setPromptFinishInstallation = setPromptFinishInstallation,
@@ -213,7 +213,7 @@ class InstanceDetailsPresenter(
     private fun handleEvent(
         event: InstanceDetailsEvent,
         setPromptDeleteConfirmation: (Boolean) -> Unit,
-        setPromptCopyInstance: (Boolean) -> Unit,
+        setCopyInstanceDialog: (CopyInstanceDialog?) -> Unit,
         setSelectedTab: (InstanceDetailsTab) -> Unit,
         currentInstance: InstanceView?,
         setPromptFinishInstallation: (Boolean) -> Unit,
@@ -276,9 +276,11 @@ class InstanceDetailsPresenter(
 
             InstanceDetailsEvent.OnDeleteClick -> setPromptDeleteConfirmation(true)
             is InstanceDetailsEvent.OnConfirmDelete -> handleConfirmDelete(event, setPromptDeleteConfirmation)
-            InstanceDetailsEvent.OnCopyClick -> setPromptCopyInstance(true)
+            InstanceDetailsEvent.OnCopyClick -> setCopyInstanceDialog(
+                copyInstanceDialogFactory.create(CopyInstanceTarget(screen.instanceId, currentInstance?.name.orEmpty()))
+            )
             is InstanceDetailsEvent.OnCopyInstanceResult -> {
-                setPromptCopyInstance(false)
+                setCopyInstanceDialog(null)
                 if (event.result is CopyInstanceResult.Copied) navigator.goTo(InstanceDetailsScreen(event.result.instanceId))
             }
             InstanceDetailsEvent.OnCancelClick -> cancelInstance(screen.instanceId)

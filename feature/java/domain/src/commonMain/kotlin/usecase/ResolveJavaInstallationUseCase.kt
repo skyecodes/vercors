@@ -4,6 +4,8 @@ import app.vercors.feature.config.domain.repository.ConfigurationRepository
 import app.vercors.feature.java.domain.repository.JavaRepository
 import app.vercors.shared.domain.model.JavaInstallation
 import dev.zacsweers.metro.Inject
+import opensavvy.state.coroutines.now
+import opensavvy.state.outcome.valueOrNull
 import opensavvy.state.progressive.ProgressiveOutcome
 
 @Inject
@@ -13,7 +15,7 @@ class ResolveJavaInstallationUseCase(
 ) {
     suspend operator fun invoke(majorVersion: Int, instanceOverrideId: String?): JavaInstallation? {
         val installations = (javaRepository.installations.value as? ProgressiveOutcome.Success)?.value.orEmpty()
-        val configuration = (configurationRepository.state.value as? ProgressiveOutcome.Success)?.value
+        val configuration = configurationRepository.state.now().valueOrNull
         val preferredId = instanceOverrideId ?: configuration?.preferredJavaByMajorVersion?.get(majorVersion)
         return installations.find { it.id == preferredId }
     }

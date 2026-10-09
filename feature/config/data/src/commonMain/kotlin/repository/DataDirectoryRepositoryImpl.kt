@@ -36,70 +36,78 @@ class DataDirectoryRepositoryImpl(
     override suspend fun move(newPath: String, onProgress: (Progress) -> Unit) {
         val oldRoot = appPaths.root
         val newRoot = withAppFolderName(appId, Path(newPath))
-        val defaultRoot = defaultAppRoot(appId)
         // Copying a tree into itself would corrupt it
         if (newRoot.toString() == oldRoot.toString()) return
         ensure(ensureRootReachable(newRoot)) { DataDirectoryError.Unreachable }
 
-        val newAppPaths = AppPaths(newRoot)
-        val totalBytes = oldRoot.sizeRecursively().coerceAtLeast(1)
-        var doneBytes = 0L
-        val onFileCopied: (Long) -> Unit = { bytes ->
-            doneBytes += bytes
-            onProgress(loading((doneBytes.toDouble() / totalBytes).coerceIn(0.0, 1.0)))
-        }
+        val defaultRoot = defaultAppRoot(appId)
+        val markerFile = defaultRoot.dataDirectoryMarkerFile()
+        val onFileCopied = byteProgressReporter(oldRoot.sizeRecursively(), onProgress)
+        copyDataDirectory(newRoot, markerFile, onFileCopied)
+        writeAppRoot(defaultRoot, newRoot)
+        onProgress(done())
+        deleteOldDataDirectory(newRoot, markerFile)
+    }
 
+    private fun byteProgressReporter(totalBytes: Long, onProgress: (Progress) -> Unit): (Long) -> Unit {
+        val total = totalBytes.coerceAtLeast(1)
+        var doneBytes = 0L
+        return { bytes ->
+            doneBytes += bytes
+            onProgress(loading((doneBytes.toDouble() / total).coerceIn(0.0, 1.0)))
+        }
+    }
+
+    context(_: Raise<DataDirectoryError>)
+    private suspend fun copyDataDirectory(newRoot: Path, markerFile: Path, onFileCopied: (Long) -> Unit) {
+        val newAppPaths = AppPaths(newRoot)
         try {
             // Content cache first: everything below links against it
             if (appPaths.contentCacheRoot.exists()) {
                 appPaths.contentCacheRoot.copyRecursively(newAppPaths.contentCacheRoot, onFileCopied = onFileCopied)
             }
-
-            // Re-linked against the new cache instead of copied, so shared files keep sharing one inode
-            if (appPaths.gameDirs.exists()) {
-                val contentKindByDirName = mapOf(
-                    appPaths.modsDir("").name to ContentCacheKind.Mod,
-                    appPaths.resourcePacksDir("").name to ContentCacheKind.ResourcePack,
-                    appPaths.shaderPacksDir("").name to ContentCacheKind.ShaderPack,
-                )
-                for (instanceDir in appPaths.gameDirs.list()) {
-                    val newInstanceDir = Path(newAppPaths.gameDirs, instanceDir.name)
-                    for (child in instanceDir.list()) {
-                        val kind = contentKindByDirName[child.name]
-                        val newChild = Path(newInstanceDir, child.name)
-                        if (kind != null && child.isDirectory()) {
-                            copyContentDir(child, newChild, kind, newAppPaths, onFileCopied)
-                        } else {
-                            child.copyRecursively(newChild, onFileCopied = onFileCopied)
-                        }
-                    }
-                }
-            }
-
+            if (appPaths.gameDirs.exists()) copyGameDirs(newAppPaths, onFileCopied)
             // Skips the redirect marker: it isn't app data
-            oldRoot.copyRecursivelySkipping(
+            appPaths.root.copyRecursivelySkipping(
                 target = newRoot,
-                skip = setOf(
-                    appPaths.contentCacheRoot.toString(),
-                    appPaths.gameDirs.toString(),
-                    defaultRoot.dataDirectoryMarkerFile().toString(),
-                ),
+                skip = setOf(appPaths.contentCacheRoot.toString(), appPaths.gameDirs.toString(), markerFile.toString()),
                 onFileCopied = onFileCopied,
             )
         } catch (e: Exception) {
             currentCoroutineContext().ensureActive()
-            logger.error(e) { "Failed to copy data directory from $oldRoot to $newRoot" }
+            logger.error(e) { "Failed to copy data directory from ${appPaths.root} to $newRoot" }
             raise(DataDirectoryError.CopyFailed)
         }
+    }
 
-        writeAppRoot(defaultRoot, newRoot)
-        onProgress(done())
+    // Re-linked against the new cache instead of copied, so shared files keep sharing one inode
+    private suspend fun copyGameDirs(newAppPaths: AppPaths, onFileCopied: (Long) -> Unit) {
+        val contentKindByDirName = mapOf(
+            appPaths.modsDir("").name to ContentCacheKind.Mod,
+            appPaths.resourcePacksDir("").name to ContentCacheKind.ResourcePack,
+            appPaths.shaderPacksDir("").name to ContentCacheKind.ShaderPack,
+        )
+        for (instanceDir in appPaths.gameDirs.list()) {
+            val newInstanceDir = Path(newAppPaths.gameDirs, instanceDir.name)
+            for (child in instanceDir.list()) {
+                val kind = contentKindByDirName[child.name]
+                val newChild = Path(newInstanceDir, child.name)
+                if (kind != null && child.isDirectory()) {
+                    copyContentDir(child, newChild, kind, newAppPaths, onFileCopied)
+                } else {
+                    child.copyRecursively(newChild, onFileCopied = onFileCopied)
+                }
+            }
+        }
+    }
 
-        // oldRoot may be the default root holding the marker just written: never delete it, and keep cleanup best-effort
-        runCatching {
-            oldRoot.deleteRecursivelySkipping(setOf(defaultRoot.dataDirectoryMarkerFile().toString()))
-        }.onFailure {
-            logger.warn(it) { "Failed to delete old data directory $oldRoot after moving to $newRoot" }
+    // The old root may be the default root holding the marker just written: never delete it, and keep cleanup best-effort
+    private suspend fun deleteOldDataDirectory(newRoot: Path, markerFile: Path) {
+        try {
+            appPaths.root.deleteRecursivelySkipping(setOf(markerFile.toString()))
+        } catch (e: Exception) {
+            currentCoroutineContext().ensureActive()
+            logger.warn(e) { "Failed to delete old data directory ${appPaths.root} after moving to $newRoot" }
         }
     }
 
@@ -145,7 +153,7 @@ private suspend fun Path.copyRecursivelySkipping(
     }
 }
 
-// Best-effort: a live watcher may resurrect files mid-delete, so callers wrap this in runCatching
+// Best-effort: a live watcher may resurrect files mid-delete, so callers treat failures as non-fatal
 private suspend fun Path.deleteRecursivelySkipping(skip: Set<String>) {
     if (toString() in skip) return
     if (isDirectory()) {

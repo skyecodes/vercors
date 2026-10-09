@@ -5,8 +5,14 @@ import app.vercors.core.domain.MutableProgressiveStateFlow
 import app.vercors.core.filesystem.*
 import app.vercors.feature.game.domain.model.ModLoaderType
 import app.vercors.feature.instance.data.mods.extractIcon
+import app.vercors.feature.instance.domain.model.ImportError
 import app.vercors.feature.instance.domain.model.InstanceId
 import app.vercors.feature.instance.domain.model.ModProvider
+import arrow.core.raise.Raise
+import arrow.core.raise.context.ensure
+import arrow.core.raise.context.raise
+import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
@@ -19,6 +25,8 @@ import kotlinx.io.files.Path
 import opensavvy.state.coroutines.ProgressiveFlow
 import opensavvy.state.progressive.map
 import opensavvy.state.progressive.successfulWithProgress
+
+private val logger = KotlinLogging.logger {}
 
 // activate() reconciles on every subscription: the JVM watcher silently fails to attach to a missing directory
 internal class ContentDirScannerEngine(
@@ -202,14 +210,20 @@ internal class ContentDirScannerEngine(
         updateEntry(stateFor(instanceId), to)
     }
 
-    suspend fun importFile(instanceId: InstanceId, sourcePath: Path): Boolean {
-        if (!isContentFile(sourcePath.name, extension)) return false
-        val dir = instanceDir(instanceId)
-        if (!dir.exists()) dir.createDirectories()
-        val targetPath = Path(dir, sourcePath.name)
-        sourcePath.copyTo(targetPath)
+    context(_: Raise<ImportError>)
+    suspend fun importFile(instanceId: InstanceId, sourcePath: Path) {
+        ensure(isContentFile(sourcePath.name, extension)) { ImportError.UnsupportedFileType }
+        val targetPath = try {
+            val dir = instanceDir(instanceId)
+            if (!dir.exists()) dir.createDirectories()
+            Path(dir, sourcePath.name).also { sourcePath.copyTo(it) }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            logger.error(e) { "Failed to import $sourcePath into $instanceId" }
+            raise(ImportError.CopyFailed)
+        }
         updateEntry(stateFor(instanceId), targetPath)
-        return true
     }
 
     suspend fun removeFile(instanceId: InstanceId, fileName: String) {

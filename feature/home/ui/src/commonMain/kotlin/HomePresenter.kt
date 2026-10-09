@@ -51,10 +51,7 @@ class HomePresenter(
         val (promptCreateInstance, setPromptCreateInstance) = remember { mutableStateOf(false) }
         val (installTarget, setInstallTarget) = remember { mutableStateOf<ProjectInstallTarget?>(null) }
         val (pendingDeleteInstanceId, setPendingDeleteInstanceId) = remember { mutableStateOf<InstanceId?>(null) }
-        val (pendingCopyInstance, setPendingCopyInstance) = remember { mutableStateOf<CopyInstanceTarget?>(null) }
-        val copyInstanceDialog = pendingCopyInstance?.let { target ->
-            remember(target) { copyInstanceDialogFactory.create(target) }
-        }
+        val (copyInstanceDialog, setCopyInstanceDialog) = remember { mutableStateOf<CopyInstanceDialog?>(null) }
 
         return HomeState(
             sections = sections,
@@ -70,7 +67,7 @@ class HomePresenter(
                 setInstallTarget = setInstallTarget,
                 pendingDeleteInstanceId = pendingDeleteInstanceId,
                 setPendingDeleteInstanceId = setPendingDeleteInstanceId,
-                setPendingCopyInstance = setPendingCopyInstance,
+                setCopyInstanceDialog = setCopyInstanceDialog,
             )
         }
     }
@@ -81,7 +78,7 @@ class HomePresenter(
         setInstallTarget: (ProjectInstallTarget?) -> Unit,
         pendingDeleteInstanceId: InstanceId?,
         setPendingDeleteInstanceId: (InstanceId?) -> Unit,
-        setPendingCopyInstance: (CopyInstanceTarget?) -> Unit,
+        setCopyInstanceDialog: (CopyInstanceDialog?) -> Unit,
     ) {
         when (event) {
             HomeEvent.OnCreateInstanceClick -> setPromptCreateInstance(true)
@@ -128,10 +125,17 @@ class HomePresenter(
             )
 
             is HomeEvent.OnCopyInstanceClick ->
-                setPendingCopyInstance(CopyInstanceTarget(event.instanceId, event.name))
+                setCopyInstanceDialog(
+                    copyInstanceDialogFactory.create(
+                        CopyInstanceTarget(
+                            event.instanceId,
+                            event.name
+                        )
+                    )
+                )
 
             is HomeEvent.OnCopyInstanceResult -> {
-                setPendingCopyInstance(null)
+                setCopyInstanceDialog(null)
                 if (event.result is CopyInstanceResult.Copied) navigator.goTo(InstanceDetailsScreen(event.result.instanceId))
             }
         }

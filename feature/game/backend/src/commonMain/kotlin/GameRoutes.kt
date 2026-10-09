@@ -6,9 +6,9 @@ import app.vercors.feature.game.api.dto.LoaderErrorData
 import app.vercors.feature.game.api.dto.LoaderTypeData
 import app.vercors.feature.game.backend.loader.LoaderService
 import app.vercors.shared.backend.cache
+import app.vercors.shared.backend.decodeEnumParameter
 import arrow.core.raise.Raise
 import arrow.core.raise.context.ensureNotNull
-import arrow.core.raise.context.raise
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.serialization.json.Json
@@ -53,8 +53,5 @@ fun Route.gameRoutes(loaderService: LoaderService, json: Json) {
 }
 
 context(_: Raise<LoaderErrorData>)
-private fun decodeLoaderId(json: Json, loaderId: String): LoaderTypeData = try {
-    json.decodeFromString<LoaderTypeData>("\"$loaderId\"")
-} catch (_: IllegalArgumentException) {
-    raise(LoaderErrorData("InvalidLoader", "Unknown loader id: $loaderId"))
-}
+private fun decodeLoaderId(json: Json, loaderId: String): LoaderTypeData =
+    json.decodeEnumParameter(loaderId) { LoaderErrorData("InvalidLoader", "Unknown loader id: $it") }
