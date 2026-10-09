@@ -2,20 +2,13 @@ package app.vercors.feature.instance.domain.usecase
 
 import app.vercors.feature.instance.domain.model.ContentKind
 import app.vercors.feature.instance.domain.model.InstanceId
-import app.vercors.feature.instance.domain.repository.InstanceModRepository
-import app.vercors.feature.instance.domain.repository.InstanceResourcePackRepository
-import app.vercors.feature.instance.domain.repository.InstanceShaderPackRepository
+import app.vercors.feature.instance.domain.repository.InstanceContentRepository
 import dev.zacsweers.metro.Inject
 
 @Inject
 class ImportContentUseCase(
-    private val instanceModRepository: InstanceModRepository,
-    private val instanceResourcePackRepository: InstanceResourcePackRepository,
-    private val instanceShaderPackRepository: InstanceShaderPackRepository
+    private val instanceContentRepository: InstanceContentRepository
 ) {
-    suspend operator fun invoke(kind: ContentKind, instanceId: InstanceId, sourcePath: String): Boolean = when (kind) {
-        ContentKind.Mod -> instanceModRepository.importMod(instanceId, sourcePath)
-        ContentKind.ResourcePack -> instanceResourcePackRepository.importResourcePack(instanceId, sourcePath)
-        ContentKind.ShaderPack -> instanceShaderPackRepository.importShaderPack(instanceId, sourcePath)
-    }
+    suspend operator fun invoke(kind: ContentKind, instanceId: InstanceId, sourcePath: String): Boolean =
+        instanceContentRepository.import(kind, instanceId, sourcePath)
 }

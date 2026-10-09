@@ -56,10 +56,7 @@ internal fun parseModJar(jarPath: Path, json: Json): ParsedModInfo = runCatching
             else -> null
         }
     }
-}.getOrElse { e ->
-    if (e is CancellationException) throw e
-    null
-} ?: fallback(jarPath)
+}.getOrNull() ?: fallback(jarPath)
 
 private fun Zip.parseFabric(json: Json): ParsedModInfo {
     val text = entry(Path(FABRIC_METADATA_FILENAME)) { readToBytes() }.decodeToString()

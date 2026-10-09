@@ -24,7 +24,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -45,13 +44,9 @@ import app.vercors.feature.instance.ui.*
 import app.vercors.feature.project.domain.model.ProjectId
 import app.vercors.feature.project.domain.model.ProjectType
 import app.vercors.feature.project.ui.*
-import app.vercors.feature.project.ui.details.isInstallable
 import app.vercors.feature.project.ui.install.ProjectInstallButton
 import app.vercors.feature.project.ui.install.ProjectInstallTarget
 import app.vercors.shared.ui.*
-import app.vercors.shared.ui.overlay.ConfirmDialog
-import app.vercors.shared.ui.overlay.ConfirmDialogButton
-import app.vercors.shared.ui.overlay.ConfirmDialogButtonStyle
 import coil3.compose.rememberAsyncImagePainter
 import com.composables.icons.lucide.*
 import com.composeunstyled.theme.Theme
@@ -97,17 +92,7 @@ fun Home(
 
         state.pendingDeleteInstanceId?.let {
             OverlayEffect(it) {
-                val result = show(
-                    ConfirmDialog(
-                        messageResource = InstanceRes.string.deleteInstanceConfirmation,
-                        actionButton = ConfirmDialogButton(
-                            SharedRes.string.delete,
-                            Lucide.Trash,
-                            ConfirmDialogButtonStyle.Destructive
-                        ),
-                    )
-                )
-                eventSink(HomeEvent.OnConfirmDeleteInstance(result))
+                eventSink(HomeEvent.OnConfirmDeleteInstance(show(deleteInstanceConfirmDialog())))
             }
         }
 
@@ -383,42 +368,6 @@ private fun HomeProjectCard(
             title = { AppLoadingTextPlaceholder(Modifier.width(150.dp)) },
             author = { AppLoadingTextPlaceholder(Modifier.width(100.dp)) },
             image = { AppLoadingPlaceholder(Modifier.fillMaxSize()) },
-        )
-    }
-}
-
-@Composable
-private fun projectContextMenuItems(
-    project: BriefProjectView,
-    onInstallClick: (BriefProjectView) -> Unit,
-    onProjectClick: (ProjectId) -> Unit,
-): () -> List<ContextMenuItem> {
-    val uriHandler = LocalUriHandler.current
-    val installLabel = stringResource(ProjectRes.string.install)
-    val openDetailsLabel = stringResource(SharedRes.string.openDetails)
-    val openInBrowserLabel = stringResource(SharedRes.string.openInBrowser)
-    val primaryColor = Theme[colors][primary]
-
-    return {
-        listOfNotNull(
-            if (project.type.isInstallable) {
-                AppContextMenuItem(
-                    label = installLabel,
-                    imageVector = Lucide.Download,
-                    contentColor = primaryColor,
-                    onClick = { onInstallClick(project) },
-                )
-            } else null,
-            AppContextMenuItem(
-                label = openDetailsLabel,
-                imageVector = Lucide.Info,
-                onClick = { onProjectClick(project.id) },
-            ),
-            AppContextMenuItem(
-                label = openInBrowserLabel,
-                imageVector = Lucide.ExternalLink,
-                onClick = { uriHandler.openUri(project.url) },
-            ),
         )
     }
 }

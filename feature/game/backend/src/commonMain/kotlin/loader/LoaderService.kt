@@ -27,18 +27,17 @@ class LoaderService(
     }
 
     context(_: Raise<LoaderErrorData>)
-    suspend fun getLoaderVersions(gameVersion: String, loaderType: LoaderTypeData): List<LoaderVersionData> {
-        val fetcher = ensureNotNull(fetchers[loaderType.key]) {
-            LoaderErrorData("UnknownLoader", "Unknown loader type: $loaderType")
-        }
-        return fetcher.getVersions(gameVersion).sortedWith(compareBy(versionComparator) { it.version }).asReversed()
-    }
+    suspend fun getLoaderVersions(gameVersion: String, loaderType: LoaderTypeData): List<LoaderVersionData> =
+        fetcherFor(loaderType).getVersions(gameVersion)
+            .sortedWith(compareBy(versionComparator) { it.version })
+            .asReversed()
 
     context(_: Raise<LoaderErrorData>)
-    suspend fun getInstallUrl(gameVersion: String, loaderType: LoaderTypeData, loaderVersion: String): String {
-        val fetcher = ensureNotNull(fetchers[loaderType.key]) {
-            LoaderErrorData("UnknownLoader", "Unknown loader type: $loaderType")
-        }
-        return fetcher.getInstallUrl(gameVersion, loaderVersion)
+    suspend fun getInstallUrl(gameVersion: String, loaderType: LoaderTypeData, loaderVersion: String): String =
+        fetcherFor(loaderType).getInstallUrl(gameVersion, loaderVersion)
+
+    context(_: Raise<LoaderErrorData>)
+    private fun fetcherFor(loaderType: LoaderTypeData): LoaderFetcher = ensureNotNull(fetchers[loaderType.key]) {
+        LoaderErrorData("UnknownLoader", "Unknown loader type: $loaderType")
     }
 }

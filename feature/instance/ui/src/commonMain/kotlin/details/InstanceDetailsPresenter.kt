@@ -100,7 +100,7 @@ class InstanceDetailsPresenter(
     private val getProject: GetProjectUseCase,
     private val setInstanceIconFromUrl: SetInstanceIconFromUrlUseCase,
     private val openInstanceFolder: OpenInstanceFolderUseCase,
-    private val copyInstance: CopyInstanceUseCase,
+    private val copyInstanceDialogFactory: CopyInstanceDialog.Factory,
 ) : Presenter<InstanceDetailsState, InstanceDetailsEvent> {
     @Composable
     override fun present(): Store<InstanceDetailsState, InstanceDetailsEvent> {
@@ -153,12 +153,7 @@ class InstanceDetailsPresenter(
         }
         val currentInstance = instance.valueOrNull
         val copyInstanceDialog = remember(screen.instanceId, currentInstance?.name) {
-            CopyInstanceDialog(
-                target = CopyInstanceTarget(screen.instanceId, currentInstance?.name ?: ""),
-                globalScope = globalScope,
-                copyInstance = copyInstance,
-                snackbarService = snackbarService
-            )
+            copyInstanceDialogFactory.create(CopyInstanceTarget(screen.instanceId, currentInstance?.name ?: ""))
         }
 
         LaunchedEffect(screen.instanceId, screen.autoLaunch) {

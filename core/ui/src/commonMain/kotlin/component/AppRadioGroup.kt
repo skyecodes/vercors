@@ -15,13 +15,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import app.vercors.core.ui.modifier.disabledAlpha
 import app.vercors.core.ui.theme.colors
 import app.vercors.core.ui.theme.onBackground
 import app.vercors.core.ui.theme.primary
@@ -98,19 +98,17 @@ fun <T> AppRadioGroupScope.AppRadioButton(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            if (label != null && !invert) AppText(text = label, modifier = disabledAlpha(enabled))
+            if (label != null && !invert) AppText(text = label, modifier = Modifier.disabledAlpha(enabled))
             RadioIndicator(
                 borderColor = borderColor,
                 selectedColor = selectedColor,
                 radioSize = radioSize,
-                modifier = disabledAlpha(enabled),
+                modifier = Modifier.disabledAlpha(enabled),
             )
-            if (label != null && invert) AppText(text = label, modifier = disabledAlpha(enabled))
+            if (label != null && invert) AppText(text = label, modifier = Modifier.disabledAlpha(enabled))
         }
     }
 }
-
-private fun disabledAlpha(enabled: Boolean): Modifier = if (enabled) Modifier else Modifier.alpha(0.6f)
 
 @Composable
 private fun AppRadioButtonScope.RadioIndicator(

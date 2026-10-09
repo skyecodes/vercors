@@ -56,7 +56,7 @@ internal fun FabricLoaderProfile.Library.toDomain(): GameVersionDetails.Library 
     )
 }
 
-// The installer's own coordinate is listed with a URL that 404s: it's extracted locally instead (see ForgeFamilyInstall)
+// The installer's own coordinate is listed with a URL that 404s: it's extracted locally instead (see ForgeFamilyInstaller)
 internal fun LegacyForgeInstallProfile.toDomain(): LoaderInstallProfile {
     val universalLibrary = GameVersionDetails.Library(
         name = install.path,

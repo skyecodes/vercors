@@ -10,11 +10,12 @@ import java.io.File
 
 @SingleIn(AppScope::class)
 @ContributesBinding(AppScope::class)
-class ProcessRunnerImpl : ProcessRunner {
-    override suspend fun run(command: List<String>, workingDir: String): ProcessResult = withContext(Dispatchers.IO) {
-        val process = ProcessBuilder(command).directory(File(workingDir)).start()
-        val stdout = async { process.inputStream.bufferedReader().readText() }
-        val stderr = async { process.errorStream.bufferedReader().readText() }
-        ProcessResult(exitCode = process.waitFor(), stdout = stdout.await(), stderr = stderr.await())
-    }
+actual class ProcessRunnerImpl : ProcessRunner {
+    actual override suspend fun run(command: List<String>, workingDir: String): ProcessResult =
+        withContext(Dispatchers.IO) {
+            val process = ProcessBuilder(command).directory(File(workingDir)).start()
+            val stdout = async { process.inputStream.bufferedReader().readText() }
+            val stderr = async { process.errorStream.bufferedReader().readText() }
+            ProcessResult(exitCode = process.waitFor(), stdout = stdout.await(), stderr = stderr.await())
+        }
 }

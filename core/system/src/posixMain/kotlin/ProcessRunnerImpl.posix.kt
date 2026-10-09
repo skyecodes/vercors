@@ -13,9 +13,9 @@ private const val EXIT_CODE_MARKER = "__VERCORS_EXIT_CODE__:"
 
 @SingleIn(AppScope::class)
 @ContributesBinding(AppScope::class)
-class ProcessRunnerImpl : ProcessRunner {
+actual class ProcessRunnerImpl : ProcessRunner {
     @OptIn(ExperimentalForeignApi::class)
-    override suspend fun run(command: List<String>, workingDir: String): ProcessResult {
+    actual override suspend fun run(command: List<String>, workingDir: String): ProcessResult {
         val shellCommand = "cd ${workingDir.shellQuote()} && " +
                 command.joinToString(" ") { it.shellQuote() } +
                 " 2>&1; echo \"$EXIT_CODE_MARKER$?\""

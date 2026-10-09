@@ -1,5 +1,6 @@
 package app.vercors.core.filesystem
 
+import app.vercors.core.domain.AppConstants
 import app.vercors.core.domain.MutableProgressiveStateFlow
 import app.vercors.core.domain.forEachAsync
 import arrow.core.Either
@@ -39,7 +40,7 @@ internal class FileListStoreImpl<T>(
     private val json: Json,
     private val fileWatcherService: FileWatcherService,
     private val backgroundScope: CoroutineScope,
-    @Named("parallelFilesystemOperations") private val parallelFilesystemOperationsProvider: () -> Int
+    @Named(AppConstants.PARALLEL_FILESYSTEM_OPERATIONS_KEY) private val parallelFilesystemOperationsProvider: () -> Int
 ) : FileListStore<T> {
     private val loadMutex = Mutex()
     private val fileWriteLock = mutableMapOf<String, Mutex>()
@@ -153,7 +154,7 @@ class FileListStoreFactoryImpl(
     private val json: Json,
     private val fileWatcherService: FileWatcherService,
     private val backgroundScope: CoroutineScope,
-    @Named("parallelFilesystemOperations") private val parallelFilesystemOperationsProvider: () -> Int
+    @Named(AppConstants.PARALLEL_FILESYSTEM_OPERATIONS_KEY) private val parallelFilesystemOperationsProvider: () -> Int
 ) : FileListStoreFactory {
     override operator fun <T> invoke(directoryPath: Path, serializer: KSerializer<T>): FileListStore<T> =
         FileListStoreImpl(

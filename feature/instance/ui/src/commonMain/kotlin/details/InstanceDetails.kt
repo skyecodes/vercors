@@ -26,10 +26,7 @@ import app.vercors.feature.game.ui.icon
 import app.vercors.feature.instance.domain.model.InstanceFolder
 import app.vercors.feature.instance.domain.model.InstanceStatus
 import app.vercors.feature.instance.ui.*
-import app.vercors.feature.instance.ui.details.content.InstalledContentEvent
-import app.vercors.feature.instance.ui.details.content.InstalledMods
-import app.vercors.feature.instance.ui.details.content.InstalledResourcePacks
-import app.vercors.feature.instance.ui.details.content.InstalledShaderPacks
+import app.vercors.feature.instance.ui.details.content.*
 import app.vercors.feature.instance.ui.details.logs.InstanceLogs
 import app.vercors.feature.instance.ui.details.options.InstanceAdvancedOptions
 import app.vercors.feature.instance.ui.details.options.InstanceJavaOptions
@@ -38,6 +35,8 @@ import app.vercors.feature.instance.ui.details.options.InstanceOptionsEvent
 import app.vercors.feature.instance.ui.details.servers.InstanceServers
 import app.vercors.feature.instance.ui.details.worlds.InstalledWorlds
 import app.vercors.feature.instance.ui.details.worlds.InstalledWorldsEvent
+import app.vercors.feature.launcher.domain.model.QuickPlayTarget
+import app.vercors.feature.project.domain.model.ProjectType
 import app.vercors.shared.ui.*
 import app.vercors.shared.ui.overlay.ConfirmDialog
 import app.vercors.shared.ui.overlay.ConfirmDialogButton
@@ -78,17 +77,7 @@ fun InstanceDetails(
 
         if (state.promptDeleteConfirmation) {
             OverlayEffect {
-                val result = show(
-                    ConfirmDialog(
-                        messageResource = InstanceRes.string.deleteInstanceConfirmation,
-                        actionButton = ConfirmDialogButton(
-                            textResource = SharedRes.string.delete,
-                            icon = Lucide.Trash,
-                            style = ConfirmDialogButtonStyle.Destructive,
-                        ),
-                    )
-                )
-                eventSink(InstanceDetailsEvent.OnConfirmDelete(result))
+                eventSink(InstanceDetailsEvent.OnConfirmDelete(show(deleteInstanceConfirmDialog())))
             }
         }
 
@@ -98,67 +87,12 @@ fun InstanceDetails(
             }
         }
 
-        state.modsContent.state.promptRemoveConfirmation?.let { pending ->
-            OverlayEffect(pending) {
-                val result = show(
-                    ConfirmDialog(
-                        messageResource = InstanceRes.string.removeContentConfirmation,
-                        messageArgs = listOf(pending.title),
-                        actionButton = ConfirmDialogButton(
-                            textResource = InstanceRes.string.remove,
-                            icon = Lucide.Trash,
-                            style = ConfirmDialogButtonStyle.Destructive,
-                        ),
-                    )
-                )
-                state.modsContent.eventSink(InstalledContentEvent.OnConfirmRemove(result))
-            }
-        }
-        state.resourcePacksContent.state.promptRemoveConfirmation?.let { pending ->
-            OverlayEffect(pending) {
-                val result = show(
-                    ConfirmDialog(
-                        messageResource = InstanceRes.string.removeContentConfirmation,
-                        messageArgs = listOf(pending.title),
-                        actionButton = ConfirmDialogButton(
-                            textResource = InstanceRes.string.remove,
-                            icon = Lucide.Trash,
-                            style = ConfirmDialogButtonStyle.Destructive,
-                        ),
-                    )
-                )
-                state.resourcePacksContent.eventSink(InstalledContentEvent.OnConfirmRemove(result))
-            }
-        }
-        state.shaderPacksContent.state.promptRemoveConfirmation?.let { pending ->
-            OverlayEffect(pending) {
-                val result = show(
-                    ConfirmDialog(
-                        messageResource = InstanceRes.string.removeContentConfirmation,
-                        messageArgs = listOf(pending.title),
-                        actionButton = ConfirmDialogButton(
-                            textResource = InstanceRes.string.remove,
-                            icon = Lucide.Trash,
-                            style = ConfirmDialogButtonStyle.Destructive,
-                        ),
-                    )
-                )
-                state.shaderPacksContent.eventSink(InstalledContentEvent.OnConfirmRemove(result))
-            }
-        }
+        InstalledContentRemoveConfirmEffect(state.modsContent)
+        InstalledContentRemoveConfirmEffect(state.resourcePacksContent)
+        InstalledContentRemoveConfirmEffect(state.shaderPacksContent)
         state.worldsContent.state.promptRemoveConfirmation?.let { pending ->
             OverlayEffect(pending) {
-                val result = show(
-                    ConfirmDialog(
-                        messageResource = InstanceRes.string.removeContentConfirmation,
-                        messageArgs = listOf(pending.folderName.stripMinecraftFormattingForDisplay()),
-                        actionButton = ConfirmDialogButton(
-                            textResource = InstanceRes.string.remove,
-                            icon = Lucide.Trash,
-                            style = ConfirmDialogButtonStyle.Destructive,
-                        ),
-                    )
-                )
+                val result = show(removeContentConfirmDialog(pending.folderName.stripMinecraftFormattingForDisplay()))
                 state.worldsContent.eventSink(InstalledWorldsEvent.OnConfirmRemove(result))
             }
         }
@@ -200,6 +134,15 @@ fun InstanceDetails(
                 show(state.loginDialog)
                 eventSink(InstanceDetailsEvent.OnLoginDismiss)
             }
+        }
+    }
+}
+
+@Composable
+private fun InstalledContentRemoveConfirmEffect(content: Store<InstalledContentState, InstalledContentEvent>) {
+    content.state.promptRemoveConfirmation?.let { pending ->
+        OverlayEffect(pending) {
+            content.eventSink(InstalledContentEvent.OnConfirmRemove(show(removeContentConfirmDialog(pending.title))))
         }
     }
 }
@@ -268,15 +211,55 @@ private fun AppTabScope.InstanceDetailsTabTitle(tab: InstanceDetailsTab, state: 
 @Composable
 context(eventSink: EventSink<InstanceDetailsEvent>)
 private fun InstanceDetailsTabContent(tab: InstanceDetailsTab, instance: InstanceView, state: InstanceDetailsState) {
+    val onOpenProject: (String, String) -> Unit = { platformId, projectId ->
+        eventSink(InstanceDetailsEvent.OnOpenProjectClick(platformId, projectId))
+    }
+    val onOpenFolder: (InstanceFolder) -> Unit = { eventSink(InstanceDetailsEvent.OnOpenInstanceFolderClick(it)) }
     when (tab) {
         InstanceDetailsTab.Options -> InstanceOptions(instance, state.optionsContent, state.horizontalTabs)
         InstanceDetailsTab.Java -> InstanceJavaOptions(instance, state.optionsContent, state.horizontalTabs)
         InstanceDetailsTab.Advanced -> InstanceAdvancedOptions(instance, state.optionsContent, state.horizontalTabs)
-        InstanceDetailsTab.Mods -> InstalledMods(instance, state.modsContent, state.horizontalTabs)
-        InstanceDetailsTab.ResourcePacks -> InstalledResourcePacks(state.resourcePacksContent, state.horizontalTabs)
-        InstanceDetailsTab.ShaderPacks -> InstalledShaderPacks(state.shaderPacksContent, state.horizontalTabs)
-        InstanceDetailsTab.Worlds -> InstalledWorlds(instance, state.worldsContent, state.horizontalTabs)
-        InstanceDetailsTab.Servers -> InstanceServers(instance, state.serversContent, state.horizontalTabs)
+        InstanceDetailsTab.Mods -> InstalledMods(
+            instance = instance,
+            content = state.modsContent,
+            horizontalTabs = state.horizontalTabs,
+            onAddClick = { eventSink(InstanceDetailsEvent.OnAddContentClick(ProjectType.Mod)) },
+            onOpenProject = onOpenProject,
+            onOpenFolder = onOpenFolder,
+        )
+
+        InstanceDetailsTab.ResourcePacks -> InstalledResourcePacks(
+            content = state.resourcePacksContent,
+            horizontalTabs = state.horizontalTabs,
+            onAddClick = { eventSink(InstanceDetailsEvent.OnAddContentClick(ProjectType.ResourcePack)) },
+            onOpenProject = onOpenProject,
+            onOpenFolder = onOpenFolder,
+        )
+
+        InstanceDetailsTab.ShaderPacks -> InstalledShaderPacks(
+            content = state.shaderPacksContent,
+            horizontalTabs = state.horizontalTabs,
+            onAddClick = { eventSink(InstanceDetailsEvent.OnAddContentClick(ProjectType.ShaderPack)) },
+            onOpenProject = onOpenProject,
+            onOpenFolder = onOpenFolder,
+        )
+
+        InstanceDetailsTab.Worlds -> InstalledWorlds(
+            instance = instance,
+            content = state.worldsContent,
+            horizontalTabs = state.horizontalTabs,
+            onAddClick = { eventSink(InstanceDetailsEvent.OnAddContentClick(ProjectType.World)) },
+            onOpenFolder = { eventSink(InstanceDetailsEvent.OnOpenInstanceFolderClick(InstanceFolder.Saves)) },
+            onQuickJoinClick = { eventSink(InstanceDetailsEvent.OnQuickJoinClick(QuickPlayTarget.Singleplayer(it))) },
+        )
+
+        InstanceDetailsTab.Servers -> InstanceServers(
+            instance = instance,
+            content = state.serversContent,
+            horizontalTabs = state.horizontalTabs,
+            onQuickJoinClick = { eventSink(InstanceDetailsEvent.OnQuickJoinClick(QuickPlayTarget.Multiplayer(it))) },
+        )
+
         InstanceDetailsTab.Logs -> InstanceLogs(state.logsContent, state.horizontalTabs)
     }
 }

@@ -16,7 +16,7 @@ private val logger = KotlinLogging.logger {}
 @SingleIn(AppScope::class)
 @Inject
 class MetaApiConnectivityPoller(
-    @Named("metaHealthCheckHttpClient") private val httpClient: HttpClient,
+    @Named(META_HEALTH_CHECK_HTTP_CLIENT) private val httpClient: HttpClient,
     coroutineScope: CoroutineScope,
 ) {
     init {

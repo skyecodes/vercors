@@ -5,15 +5,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import app.vercors.core.ui.modifier.disabledAlpha
 import app.vercors.core.ui.theme.colors
 import app.vercors.core.ui.theme.surface2
 import com.composeunstyled.theme.Theme
-
-private const val DISABLED_ALPHA = 0.6f
 
 @Composable
 fun AppNumberField(
@@ -38,7 +36,7 @@ fun AppNumberField(
             debounceMillis = debounceMillis,
             enabled = enabled,
             backgroundColor = backgroundColor,
-            modifier = Modifier.fillMaxWidth().alpha(if (enabled) 1f else DISABLED_ALPHA),
+            modifier = Modifier.fillMaxWidth().disabledAlpha(enabled),
         )
     }
 }

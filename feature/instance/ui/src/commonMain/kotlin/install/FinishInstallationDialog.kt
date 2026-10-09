@@ -13,6 +13,7 @@ import app.vercors.core.ui.component.AppIcon
 import app.vercors.core.ui.component.AppIconTextButton
 import app.vercors.core.ui.component.AppText
 import app.vercors.core.ui.layout.AppDialog
+import app.vercors.core.ui.layout.AppForm
 import app.vercors.core.ui.modifier.clickableText
 import app.vercors.core.ui.theme.*
 import app.vercors.feature.instance.domain.model.InstanceId
@@ -45,10 +46,7 @@ class FinishInstallationDialog(
         val uriHandler = LocalUriHandler.current
 
         AppDialog(onClickOutside = { navigator.finish(Unit) }) {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-                modifier = Modifier.width(IntrinsicSize.Max)
-            ) {
+            AppForm(modifier = Modifier.width(IntrinsicSize.Max)) {
                 AppText(
                     text = stringResource(InstanceRes.string.finishInstallation),
                     style = Theme[textStyles][title],

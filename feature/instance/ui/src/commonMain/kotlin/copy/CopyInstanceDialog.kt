@@ -9,6 +9,9 @@ import app.vercors.shared.ui.SnackbarService
 import app.vercors.shared.ui.overlay.DialogOverlay
 import com.slack.circuit.overlay.OverlayNavigator
 import com.slack.circuit.overlay.OverlayTransitionController
+import dev.zacsweers.metro.Assisted
+import dev.zacsweers.metro.AssistedFactory
+import dev.zacsweers.metro.AssistedInject
 import kotlinx.coroutines.CoroutineScope
 
 sealed interface CopyInstanceResult {
@@ -16,8 +19,9 @@ sealed interface CopyInstanceResult {
     data object Cancelled : CopyInstanceResult
 }
 
+@AssistedInject
 class CopyInstanceDialog(
-    private val target: CopyInstanceTarget,
+    @Assisted private val target: CopyInstanceTarget,
     private val globalScope: CoroutineScope,
     private val copyInstance: CopyInstanceUseCase,
     private val snackbarService: SnackbarService,
@@ -37,5 +41,10 @@ class CopyInstanceDialog(
             )
         }
         CopyInstance(store = presenter.present())
+    }
+
+    @AssistedFactory
+    fun interface Factory {
+        fun create(target: CopyInstanceTarget): CopyInstanceDialog
     }
 }

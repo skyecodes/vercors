@@ -4,6 +4,7 @@ plugins {
 }
 
 dependencies {
+    commonMainImplementation(projects.core.domain)
     commonMainApi(libs.kotlinx.io.core)
     commonMainApi(libs.spine.client)
     commonMainImplementation(libs.spine.client.arrow)

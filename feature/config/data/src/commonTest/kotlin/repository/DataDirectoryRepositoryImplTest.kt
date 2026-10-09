@@ -14,17 +14,10 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class DataDirectoryRepositoryImplTest {
-    private fun freshDir(name: String): Path {
+    private suspend fun freshDir(name: String): Path {
         val dir = Path("build/data-directory-repository-test/$name")
-        if (SystemFileSystem.exists(dir)) dir.deleteRecursivelyForTest()
+        if (SystemFileSystem.exists(dir)) dir.deleteRecursively()
         return dir
-    }
-
-    private fun Path.deleteRecursivelyForTest() {
-        if (SystemFileSystem.metadataOrNull(this)?.isDirectory == true) {
-            SystemFileSystem.list(this).forEach { it.deleteRecursivelyForTest() }
-        }
-        SystemFileSystem.delete(this)
     }
 
     @Test
@@ -49,7 +42,7 @@ class DataDirectoryRepositoryImplTest {
             assertFalse(oldRoot.exists())
         } finally {
             // move() writes the redirect marker to the real OS-default location: clean it up
-            defaultAppRoot(appId).let { if (SystemFileSystem.exists(it)) it.deleteRecursivelyForTest() }
+            defaultAppRoot(appId).let { if (SystemFileSystem.exists(it)) it.deleteRecursively() }
         }
     }
 
@@ -57,7 +50,7 @@ class DataDirectoryRepositoryImplTest {
     fun `move preserves the redirect marker when the old root is the OS-default location`() = runTest {
         val appId = "vercors-test-marker-regression"
         val oldRoot = defaultAppRoot(appId)
-        if (SystemFileSystem.exists(oldRoot)) oldRoot.deleteRecursivelyForTest()
+        if (SystemFileSystem.exists(oldRoot)) oldRoot.deleteRecursively()
         val newRoot = Path(freshDir("marker-regression-new-parent"), appId)
 
         try {
@@ -75,7 +68,7 @@ class DataDirectoryRepositoryImplTest {
                 "the marker written during the move must survive the old root's own cleanup"
             )
         } finally {
-            if (SystemFileSystem.exists(oldRoot)) oldRoot.deleteRecursivelyForTest()
+            if (SystemFileSystem.exists(oldRoot)) oldRoot.deleteRecursively()
         }
     }
 }

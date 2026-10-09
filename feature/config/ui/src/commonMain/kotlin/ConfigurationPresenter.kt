@@ -3,13 +3,15 @@ package app.vercors.feature.config.ui
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.graphics.Color
-import app.vercors.core.domain.AppConstants
 import app.vercors.core.system.OsType
 import app.vercors.core.system.SystemService
 import app.vercors.core.ui.state.collectProgressiveAsState
 import app.vercors.core.ui.state.produceProgressiveState
 import app.vercors.feature.config.domain.model.HomeCategoryConfig
-import app.vercors.feature.config.domain.usecase.*
+import app.vercors.feature.config.domain.usecase.ClearContentCacheUseCase
+import app.vercors.feature.config.domain.usecase.GetContentCacheSizeUseCase
+import app.vercors.feature.config.domain.usecase.ObserveConfigurationUseCase
+import app.vercors.feature.config.domain.usecase.UpdateConfigurationUseCase
 import app.vercors.feature.config.ui.datadirectory.ChangeDataDirectoryDialog
 import app.vercors.feature.instance.domain.model.InstanceStatus
 import app.vercors.feature.instance.domain.usecase.ObserveInstanceListUseCase
@@ -28,14 +30,13 @@ import app.vercors.shared.domain.model.JvmMemoryOptions
 import app.vercors.shared.domain.model.NativeLibraryOptions
 import app.vercors.shared.domain.model.NativeLibraryType
 import app.vercors.shared.domain.usecase.DetectNativeLibraryPathUseCase
-import app.vercors.shared.domain.usecase.GetTotalPhysicalMemoryUseCase
+import app.vercors.shared.domain.usecase.GetTotalPhysicalMemoryMbUseCase
 import app.vercors.shared.ui.*
 import arrow.core.raise.context.either
 import com.slack.circuit.codegen.annotations.CircuitInject
 import com.slack.circuit.retained.collectAsRetainedState
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Inject
-import dev.zacsweers.metro.Named
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -58,17 +59,14 @@ class ConfigurationPresenter(
     private val scanJavaInstallations: ScanJavaInstallationsUseCase,
     private val addJavaInstallation: AddJavaInstallationUseCase,
     private val snackbarService: SnackbarService,
-    private val getTotalPhysicalMemory: GetTotalPhysicalMemoryUseCase,
+    private val getTotalPhysicalMemoryMb: GetTotalPhysicalMemoryMbUseCase,
     private val detectNativeLibraryPath: DetectNativeLibraryPathUseCase,
     private val systemService: SystemService,
     private val getContentCacheSize: GetContentCacheSizeUseCase,
     private val clearContentCache: ClearContentCacheUseCase,
     private val appPaths: AppPaths,
     private val observeInstanceList: ObserveInstanceListUseCase,
-    private val moveDataDirectory: MoveDataDirectoryUseCase,
-    private val appRestartService: AppRestartService,
-    private val globalScope: CoroutineScope,
-    @Named(AppConstants.APP_ID_KEY) private val appId: String,
+    private val changeDataDirectoryDialogFactory: ChangeDataDirectoryDialog.Factory,
 ) : Presenter<ConfigurationState, ConfigurationEvent> {
     @Composable
     override fun present(): Store<ConfigurationState, ConfigurationEvent> {
@@ -80,9 +78,7 @@ class ConfigurationPresenter(
         val platformList by observePlatformList()
         val (javaAddError, setJavaAddError) = remember { mutableStateOf<String?>(null) }
         val (javaScanInProgress, setJavaScanInProgress) = remember { mutableStateOf(false) }
-        val totalMemoryMb = remember {
-            ((getTotalPhysicalMemory() ?: (16384L * 1024 * 1024)) / (1024 * 1024)).toInt()
-        }
+        val totalMemoryMb = remember { getTotalPhysicalMemoryMb() }
         val showNativeLibraryOptions = systemService.osType == OsType.Linux
         val (detectedGlfwPath, setDetectedGlfwPath) = remember { mutableStateOf<String?>(null) }
         val (detectedOpenAlPath, setDetectedOpenAlPath) = remember { mutableStateOf<String?>(null) }
@@ -99,15 +95,8 @@ class ConfigurationPresenter(
         val instances by observeInstanceList().collectProgressiveAsState()
         val hasRunningInstance = instances.valueOrNull?.any { it.getOrNull()?.status is InstanceStatus.Running } == true
         val (promptChangeDataDirectory, setPromptChangeDataDirectory) = remember { mutableStateOf(false) }
-        val changeDataDirectoryDialog = remember(dataDirectory) {
-            ChangeDataDirectoryDialog(
-                currentPath = dataDirectory,
-                appId = appId,
-                globalScope = globalScope,
-                moveDataDirectory = moveDataDirectory,
-                appRestartService = appRestartService,
-            )
-        }
+        val changeDataDirectoryDialog =
+            remember(dataDirectory) { changeDataDirectoryDialogFactory.create(dataDirectory) }
         val cfg = configuration.valueOrNull
         val selectedTheme = themeList.find { it.id == cfg?.selectedThemeId }
         val selectedAccent = selectedTheme?.accents?.find { it.id == cfg?.selectedAccent }

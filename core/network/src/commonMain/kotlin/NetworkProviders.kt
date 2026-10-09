@@ -1,5 +1,6 @@
 package app.vercors.core.network
 
+import app.vercors.core.domain.AppConstants
 import dev.zacsweers.metro.*
 import io.ktor.client.*
 import io.ktor.client.engine.*
@@ -10,14 +11,16 @@ import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.json.Json
 import kotlin.time.Duration
 
+internal const val META_HEALTH_CHECK_HTTP_CLIENT = "metaHealthCheckHttpClient"
+
 @ContributesTo(AppScope::class)
 @BindingContainer
 object NetworkProviders {
     @SingleIn(AppScope::class)
     @Provides
     fun provideHttpClient(
-        @Named("metaApiUrl") metaApiUrl: String,
-        @Named("networkTimeout") networkTimeout: Duration
+        @Named(AppConstants.META_API_URL_KEY) metaApiUrl: String,
+        @Named(AppConstants.NETWORK_TIMEOUT_KEY) networkTimeout: Duration
     ): HttpClient =
         HttpClient(platformHttpClientEngineFactory) {
             expectSuccess = true
@@ -45,8 +48,8 @@ object NetworkProviders {
     // No retry/backoff, so the liveness probe itself fails fast
     @SingleIn(AppScope::class)
     @Provides
-    @Named("metaHealthCheckHttpClient")
-    fun provideMetaHealthCheckHttpClient(@Named("metaApiUrl") metaApiUrl: String): HttpClient =
+    @Named(META_HEALTH_CHECK_HTTP_CLIENT)
+    fun provideMetaHealthCheckHttpClient(@Named(AppConstants.META_API_URL_KEY) metaApiUrl: String): HttpClient =
         HttpClient(platformHttpClientEngineFactory) {
             installPlatformTrustStore()
             install(DefaultRequest) {

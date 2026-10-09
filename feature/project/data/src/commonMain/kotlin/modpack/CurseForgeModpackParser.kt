@@ -19,7 +19,6 @@ import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesIntoMap
 import dev.zacsweers.metro.SingleIn
 import dev.zacsweers.metro.StringKey
-import kotlinx.coroutines.CancellationException
 import kotlinx.io.files.Path
 import kotlinx.serialization.json.Json
 import opensavvy.progress.Progress
@@ -111,8 +110,6 @@ class CurseForgeModpackParser(
             val text = zip.entry(Path("manifest.json")) { readToBytes() }.decodeToString()
             json.decodeFromString(CurseForgeManifest.serializer(), text)
         }
-    } catch (e: CancellationException) {
-        throw e
     } catch (_: Exception) {
         raise(ModpackResolutionError.ParseFailed)
     }

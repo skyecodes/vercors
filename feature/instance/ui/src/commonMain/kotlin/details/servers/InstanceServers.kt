@@ -27,12 +27,9 @@ import app.vercors.core.ui.theme.success
 import app.vercors.core.ui.theme.surface2
 import app.vercors.feature.instance.domain.model.InstanceStatus
 import app.vercors.feature.instance.ui.InstanceRes
-import app.vercors.feature.instance.ui.details.InstanceDetailsEvent
 import app.vercors.feature.instance.ui.details.InstanceView
 import app.vercors.feature.instance.ui.noServersAdded
 import app.vercors.feature.instance.ui.quickJoin
-import app.vercors.feature.launcher.domain.model.QuickPlayTarget
-import app.vercors.shared.ui.EventSink
 import app.vercors.shared.ui.Store
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Play
@@ -41,19 +38,17 @@ import com.composeunstyled.theme.Theme
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
-context(eventSink: EventSink<InstanceDetailsEvent>)
 fun InstanceServers(
     instance: InstanceView,
     content: Store<InstanceServersState, InstanceServersEvent>,
-    horizontalTabs: Boolean
+    horizontalTabs: Boolean,
+    onQuickJoinClick: (address: String) -> Unit
 ) {
     val canQuickJoin = instance.status is InstanceStatus.Idle || instance.status is InstanceStatus.Failed
     InstalledServerList(
         servers = content.state.servers,
         canQuickJoin = canQuickJoin,
-        onQuickJoinClick = { address ->
-            eventSink(InstanceDetailsEvent.OnQuickJoinClick(QuickPlayTarget.Multiplayer(address)))
-        },
+        onQuickJoinClick = onQuickJoinClick,
         horizontalTabs = horizontalTabs
     )
 }

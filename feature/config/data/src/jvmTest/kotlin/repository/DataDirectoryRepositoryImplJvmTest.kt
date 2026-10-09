@@ -18,15 +18,8 @@ import kotlin.io.path.Path as JvmPath
 class DataDirectoryRepositoryImplJvmTest {
     private suspend fun freshDir(name: String): Path {
         val dir = Path("build/data-directory-repository-jvm-test/$name")
-        if (SystemFileSystem.exists(dir)) dir.deleteRecursivelyForTest()
+        if (SystemFileSystem.exists(dir)) dir.deleteRecursively()
         return dir
-    }
-
-    private suspend fun Path.deleteRecursivelyForTest() {
-        if (SystemFileSystem.metadataOrNull(this)?.isDirectory == true) {
-            SystemFileSystem.list(this).forEach { it.deleteRecursivelyForTest() }
-        }
-        SystemFileSystem.delete(this)
     }
 
     private fun Path.createParentDirectoriesForTest() {
@@ -73,7 +66,7 @@ class DataDirectoryRepositoryImplJvmTest {
             )
         } finally {
             // move() writes the redirect marker to the real OS-default location: clean it up
-            defaultAppRoot(appId).let { if (SystemFileSystem.exists(it)) it.deleteRecursivelyForTest() }
+            defaultAppRoot(appId).let { if (SystemFileSystem.exists(it)) it.deleteRecursively() }
         }
     }
 }

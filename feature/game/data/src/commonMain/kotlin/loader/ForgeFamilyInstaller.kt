@@ -21,6 +21,9 @@ import arrow.core.raise.context.raise
 import arrow.core.raise.context.withError
 import de.jonasbroeckmann.kzip.Zip
 import de.jonasbroeckmann.kzip.open
+import dev.zacsweers.metro.AppScope
+import dev.zacsweers.metro.Inject
+import dev.zacsweers.metro.SingleIn
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.sync.Mutex
@@ -32,16 +35,46 @@ private val logger = KotlinLogging.logger {}
 private val PLACEHOLDER_REGEX = Regex("\\{([A-Za-z_]+)}")
 private const val MAX_ERROR_OUTPUT_LENGTH = 4000
 
-// Concurrent installs of the same loader version would clobber the shared processor working directory
-private val installMutexesLock = Mutex()
-private val installMutexes = mutableMapOf<String, Mutex>()
+@SingleIn(AppScope::class)
+@Inject
+class ForgeFamilyInstaller(
+    private val appPaths: AppPaths,
+    private val fileValidationService: FileValidationService,
+    private val processRunner: ProcessRunner,
+    private val systemService: SystemService,
+    private val json: Json
+) {
+    // Concurrent installs of the same loader version would clobber the shared processor working directory
+    private val installMutexesLock = Mutex()
+    private val installMutexes = mutableMapOf<String, Mutex>()
 
-private suspend fun installMutexFor(key: String): Mutex = installMutexesLock.withLock {
-    installMutexes.getOrPut(key) { Mutex() }
+    context(_: Raise<ModLoaderInstallError>)
+    suspend fun install(
+        loaderType: ModLoaderType,
+        loaderKey: String,
+        gameVersion: GameVersionDetails,
+        loaderVersion: String
+    ): LoaderInstallProfile = installMutexFor("$loaderKey-${gameVersion.id}-$loaderVersion").withLock {
+        installForgeFamily(
+            loaderType = loaderType,
+            loaderKey = loaderKey,
+            gameVersion = gameVersion,
+            loaderVersion = loaderVersion,
+            appPaths = appPaths,
+            fileValidationService = fileValidationService,
+            processRunner = processRunner,
+            systemService = systemService,
+            json = json
+        )
+    }
+
+    private suspend fun installMutexFor(key: String): Mutex = installMutexesLock.withLock {
+        installMutexes.getOrPut(key) { Mutex() }
+    }
 }
 
 context(_: Raise<ModLoaderInstallError>)
-internal suspend fun installForgeFamily(
+private suspend fun installForgeFamily(
     loaderType: ModLoaderType,
     loaderKey: String,
     gameVersion: GameVersionDetails,
@@ -51,9 +84,9 @@ internal suspend fun installForgeFamily(
     processRunner: ProcessRunner,
     systemService: SystemService,
     json: Json
-): LoaderInstallProfile = installMutexFor("$loaderKey-${gameVersion.id}-$loaderVersion").withLock {
+): LoaderInstallProfile {
     val profileCachePath = appPaths.loaderProfileFile(gameVersion.id, loaderKey, loaderVersion)
-    cachedProfileOrNull(profileCachePath, appPaths, json)?.let { return@withLock it }
+    cachedProfileOrNull(profileCachePath, appPaths, json)?.let { return it }
 
     val rootDir = appPaths.versionDir("${gameVersion.id}-$loaderKey-$loaderVersion")
     val installerJarPath = appPaths.installerJarFile(loaderKey, gameVersion.id, loaderVersion)
@@ -67,7 +100,7 @@ internal suspend fun installForgeFamily(
     downloadInstallerJar(loaderType, installerRequest, fileValidationService)
     downloadVanillaClientJar(loaderType, gameVersion, appPaths, fileValidationService)
 
-    when (val profiles = extractProfiles(loaderType, installerJarPath, appPaths, json)) {
+    return when (val profiles = extractProfiles(loaderType, installerJarPath, appPaths, json)) {
         is InstallerProfiles.Modern -> installModernForgeFamily(
             loaderType = loaderType,
             gameVersion = gameVersion,
@@ -316,7 +349,6 @@ private fun Path.readMainClassOrRaise(loaderType: ModLoaderType, processorJar: S
         }
     }
     return result.getOrElse { e ->
-        if (e is CancellationException) throw e
         logger.error(e) { "Failed to read main class from processor jar $processorJar ($this)" }
         raise(
             ModLoaderInstallError.ProcessFailed(

@@ -2,6 +2,7 @@ package app.vercors.feature.project.ui.install
 
 import androidx.compose.runtime.*
 import app.vercors.core.domain.filterIsRight
+import app.vercors.core.domain.toFractionOrNull
 import app.vercors.core.ui.state.mutableProgressiveStateOf
 import app.vercors.core.ui.state.produceAndCollectAsProgressiveState
 import app.vercors.feature.game.domain.model.LoaderError
@@ -15,7 +16,7 @@ import app.vercors.feature.instance.domain.model.*
 import app.vercors.feature.instance.domain.usecase.*
 import app.vercors.feature.instance.ui.install.ManualDownloadCandidate
 import app.vercors.feature.instance.ui.install.runManualDownloads
-import app.vercors.feature.instance.ui.install.toFractionOrNull
+import app.vercors.feature.instance.ui.install.toContentKindOrNull
 import app.vercors.feature.instance.ui.observeAvailableLoadersView
 import app.vercors.feature.instance.ui.observeGameVersionListView
 import app.vercors.feature.instance.ui.observeLoaderVersionsView
@@ -740,9 +741,3 @@ internal fun pickRecommendedFile(files: List<ProjectFileView>): ProjectFileView?
     files.filter { it.releaseChannel == ProjectReleaseChannel.Release }.maxByOrNull { it.publishedAt }
         ?: files.maxByOrNull { it.publishedAt }
 
-private fun ProjectType.toContentKindOrNull(): ContentKind? = when (this) {
-    ProjectType.Mod -> ContentKind.Mod
-    ProjectType.ResourcePack -> ContentKind.ResourcePack
-    ProjectType.ShaderPack -> ContentKind.ShaderPack
-    ProjectType.Modpack, ProjectType.DataPack, ProjectType.World -> null
-}

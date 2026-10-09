@@ -1,12 +1,12 @@
 package app.vercors.feature.project.ui.install
 
 import androidx.compose.runtime.*
+import app.vercors.core.domain.toFractionOrNull
 import app.vercors.core.ui.state.mutableProgressiveStateOf
 import app.vercors.feature.instance.domain.model.*
 import app.vercors.feature.instance.domain.usecase.*
 import app.vercors.feature.instance.ui.install.ModpackInstallRunner
 import app.vercors.feature.instance.ui.install.notifyModpackInstallResult
-import app.vercors.feature.instance.ui.install.toFractionOrNull
 import app.vercors.feature.project.domain.model.ProjectDetailsError
 import app.vercors.feature.project.domain.model.ProjectId
 import app.vercors.feature.project.domain.model.modpack.ModpackManifest

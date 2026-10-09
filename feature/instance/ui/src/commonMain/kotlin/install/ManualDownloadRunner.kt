@@ -36,20 +36,6 @@ data class ManualDownloadCandidate(
     val providerFileId: String,
 )
 
-private fun ProjectType.toContentKind(): ContentKind = when (this) {
-    ProjectType.Mod -> ContentKind.Mod
-    ProjectType.ResourcePack -> ContentKind.ResourcePack
-    ProjectType.ShaderPack -> ContentKind.ShaderPack
-    ProjectType.Modpack, ProjectType.DataPack, ProjectType.World ->
-        error("Manual download is not supported for project type $this")
-}
-
-private fun ContentKind.toProjectType(): ProjectType = when (this) {
-    ContentKind.Mod -> ProjectType.Mod
-    ContentKind.ResourcePack -> ProjectType.ResourcePack
-    ContentKind.ShaderPack -> ProjectType.ShaderPack
-}
-
 fun ManualDownloadCandidate.toPendingManualDownload(): PendingManualDownload = PendingManualDownload(
     fileName = fileName,
     downloadUrl = downloadUrl,
@@ -148,3 +134,6 @@ suspend fun persistPendingManualDownloads(
     either { updateInstance(instanceId) { it.copy(pendingManualDownloads = pending) } }
         .onLeft { error -> logger.warn { "Failed to persist pending manual downloads for $instanceId: $error" } }
 }
+
+private fun ProjectType.toContentKind(): ContentKind =
+    checkNotNull(toContentKindOrNull()) { "Manual download is not supported for project type $this" }

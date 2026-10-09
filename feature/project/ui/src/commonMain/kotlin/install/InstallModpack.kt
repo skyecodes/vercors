@@ -6,6 +6,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import app.vercors.core.ui.component.*
 import app.vercors.core.ui.layout.AppDialog
+import app.vercors.core.ui.layout.AppForm
 import app.vercors.core.ui.theme.*
 import app.vercors.feature.project.ui.*
 import app.vercors.shared.ui.SharedRes
@@ -28,10 +29,7 @@ fun InstallModpack(
         modifier = modifier,
         onClickOutside = { eventSink(InstallModpackEvent.OnCancelClick) }
     ) {
-        Column(
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-            modifier = Modifier.width(IntrinsicSize.Max)
-        ) {
+        AppForm(modifier = Modifier.width(IntrinsicSize.Max)) {
             AppText(
                 text = stringResource(ProjectRes.string.installModpack),
                 style = Theme[textStyles][title]

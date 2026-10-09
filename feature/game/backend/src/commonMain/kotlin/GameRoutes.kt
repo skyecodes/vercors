@@ -11,7 +11,6 @@ import arrow.core.raise.context.ensureNotNull
 import arrow.core.raise.context.raise
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import opensavvy.spine.server.arrow.routeWithRaise
 import opensavvy.spine.server.respond
@@ -56,8 +55,6 @@ fun Route.gameRoutes(loaderService: LoaderService, json: Json) {
 context(_: Raise<LoaderErrorData>)
 private fun decodeLoaderId(json: Json, loaderId: String): LoaderTypeData = try {
     json.decodeFromString<LoaderTypeData>("\"$loaderId\"")
-} catch (_: SerializationException) {
-    raise(LoaderErrorData("InvalidLoader", "Unknown loader id: $loaderId"))
 } catch (_: IllegalArgumentException) {
     raise(LoaderErrorData("InvalidLoader", "Unknown loader id: $loaderId"))
 }

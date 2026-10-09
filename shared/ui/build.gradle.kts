@@ -11,6 +11,7 @@ dependencies {
     commonMainApi(libs.composables.icons.lucide)
     commonMainApi(libs.composables.icons.fontawesome.brands)
     commonMainApi(libs.metrox.viewmodel.compose)
+    commonMainImplementation(libs.filekit.dialogs.compose)
 }
 
 compose.resources {

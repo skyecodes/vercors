@@ -9,12 +9,12 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.unit.dp
+import app.vercors.core.ui.modifier.disabledAlpha
 import app.vercors.core.ui.theme.colors
 import app.vercors.core.ui.theme.primary
 import app.vercors.core.ui.theme.surface2
@@ -22,8 +22,6 @@ import com.composeunstyled.SliderState
 import com.composeunstyled.UnstyledSlider
 import com.composeunstyled.theme.Theme
 import kotlin.math.roundToInt
-
-private const val DISABLED_ALPHA = 0.6f
 
 // Upper bound floor-aligned to stepSize so the top tick stays reachable
 @Composable
@@ -62,7 +60,7 @@ private fun AppSliderTrack(state: SliderState, enabled: Boolean, trackColor: Col
         modifier = Modifier
             .fillMaxWidth()
             .height(4.dp)
-            .alpha(if (enabled) 1f else DISABLED_ALPHA)
+            .disabledAlpha(enabled)
             .clip(RoundedCornerShape(2.dp))
             .background(trackColor)
     ) {
@@ -81,7 +79,7 @@ private fun AppSliderThumb(enabled: Boolean, color: Color) {
     Box(
         modifier = Modifier
             .size(16.dp)
-            .alpha(if (enabled) 1f else DISABLED_ALPHA)
+            .disabledAlpha(enabled)
             .clip(CircleShape)
             .background(color)
     )

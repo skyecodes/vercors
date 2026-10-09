@@ -8,6 +8,7 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
 import app.vercors.core.ui.component.*
 import app.vercors.core.ui.layout.AppDialog
+import app.vercors.core.ui.layout.AppForm
 import app.vercors.core.ui.modifier.clickableText
 import app.vercors.core.ui.theme.*
 import app.vercors.feature.game.ui.GameVersionSelector
@@ -38,10 +39,7 @@ fun InstallProject(
         }
     ) {
         with(eventSink) {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-                modifier = Modifier.width(IntrinsicSize.Max)
-            ) {
+            AppForm(modifier = Modifier.width(IntrinsicSize.Max)) {
                 AppText(
                     text = stringResource(ProjectRes.string.installToInstance),
                     style = Theme[textStyles][title]

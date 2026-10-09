@@ -29,7 +29,7 @@ import app.vercors.shared.domain.model.JvmMemoryOptions
 import app.vercors.shared.domain.model.NativeLibraryOptions
 import app.vercors.shared.domain.model.NativeLibraryType
 import app.vercors.shared.domain.usecase.DetectNativeLibraryPathUseCase
-import app.vercors.shared.domain.usecase.GetTotalPhysicalMemoryUseCase
+import app.vercors.shared.domain.usecase.GetTotalPhysicalMemoryMbUseCase
 import app.vercors.shared.ui.Presenter
 import app.vercors.shared.ui.SnackbarService
 import app.vercors.shared.ui.Store
@@ -55,7 +55,7 @@ class InstanceOptionsPresenter(
     private val observeAvailableLoaders: ObserveAvailableLoadersUseCase,
     private val observeLoaderVersions: ObserveLoaderVersionsUseCase,
     private val observeJavaInstallations: ObserveJavaInstallationsUseCase,
-    private val getTotalPhysicalMemory: GetTotalPhysicalMemoryUseCase,
+    private val getTotalPhysicalMemoryMb: GetTotalPhysicalMemoryMbUseCase,
     private val detectNativeLibraryPath: DetectNativeLibraryPathUseCase,
     private val systemService: SystemService,
     private val observeConfiguration: ObserveConfigurationUseCase,
@@ -70,9 +70,7 @@ class InstanceOptionsPresenter(
         val javaInstallations by observeJavaInstallationsView()
         val configuration by observeConfiguration().collectProgressiveAsState()
         val (editedInstance, setEditedInstance) = rememberSaveable { mutableStateOf(InstanceEditState()) }
-        val totalMemoryMb = remember {
-            ((getTotalPhysicalMemory() ?: (16384L * 1024 * 1024)) / (1024 * 1024)).toInt()
-        }
+        val totalMemoryMb = remember { getTotalPhysicalMemoryMb() }
         val showNativeLibraryOptions = systemService.osType == OsType.Linux
         val (detectedGlfwPath, setDetectedGlfwPath) = remember { mutableStateOf<String?>(null) }
         val (detectedOpenAlPath, setDetectedOpenAlPath) = remember { mutableStateOf<String?>(null) }

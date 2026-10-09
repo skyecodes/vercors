@@ -22,13 +22,12 @@ import app.vercors.core.ui.component.*
 import app.vercors.core.ui.layout.AppLoading
 import app.vercors.core.ui.modifier.appCard
 import app.vercors.core.ui.theme.*
-import app.vercors.feature.instance.domain.model.InstanceFolder
 import app.vercors.feature.instance.domain.model.InstanceStatus
 import app.vercors.feature.instance.ui.*
-import app.vercors.feature.instance.ui.details.InstanceDetailsEvent
+import app.vercors.feature.instance.ui.details.ContentSortBy
 import app.vercors.feature.instance.ui.details.InstanceView
-import app.vercors.feature.launcher.domain.model.QuickPlayTarget
-import app.vercors.feature.project.domain.model.ProjectType
+import app.vercors.feature.instance.ui.details.displayName
+import app.vercors.feature.instance.ui.details.filteredAndSorted
 import app.vercors.shared.ui.EventSink
 import app.vercors.shared.ui.SharedRes
 import app.vercors.shared.ui.Store
@@ -42,25 +41,24 @@ import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
 import io.github.vinceglb.filekit.path
 import okio.Path.Companion.toPath
 import org.jetbrains.compose.resources.stringResource
-import kotlin.time.Instant
 
 @Composable
-context(eventSink: EventSink<InstanceDetailsEvent>)
 fun InstalledWorlds(
     instance: InstanceView,
     content: Store<InstalledWorldsState, InstalledWorldsEvent>,
-    horizontalTabs: Boolean
+    horizontalTabs: Boolean,
+    onAddClick: () -> Unit,
+    onOpenFolder: () -> Unit,
+    onQuickJoinClick: (folderName: String) -> Unit
 ) {
     val canQuickJoin = instance.status is InstanceStatus.Idle || instance.status is InstanceStatus.Failed
     with(content.eventSink) {
         InstalledWorldList(
             worlds = content.state.worlds,
             canQuickJoin = canQuickJoin,
-            onAddClick = { eventSink(InstanceDetailsEvent.OnAddContentClick(ProjectType.World)) },
-            onOpenFolder = { eventSink(InstanceDetailsEvent.OnOpenInstanceFolderClick(InstanceFolder.Saves)) },
-            onQuickJoinClick = { folderName ->
-                eventSink(InstanceDetailsEvent.OnQuickJoinClick(QuickPlayTarget.Singleplayer(folderName)))
-            },
+            onAddClick = onAddClick,
+            onOpenFolder = onOpenFolder,
+            onQuickJoinClick = onQuickJoinClick,
             horizontalTabs = horizontalTabs
         )
     }
@@ -77,7 +75,7 @@ private fun InstalledWorldList(
     horizontalTabs: Boolean,
 ) {
     var searchQuery by remember { mutableStateOf("") }
-    var sortBy by remember { mutableStateOf(WorldSortBy.LastModified) }
+    var sortBy by remember { mutableStateOf(ContentSortBy.LastModified) }
     val listState = rememberLazyListState()
     val importPickerLauncher = rememberFilePickerLauncher(type = FileKitType.File("zip")) { file ->
         file?.let { eventSink(InstalledWorldsEvent.OnImportClick(it.path)) }
@@ -85,7 +83,12 @@ private fun InstalledWorldList(
 
     LaunchedEffect(searchQuery, sortBy) { listState.scrollToItem(0) }
 
-    val filteredWorlds = worlds?.filteredAndSorted(searchQuery, sortBy)
+    val filteredWorlds = worlds?.filteredAndSorted(
+        searchQuery,
+        sortBy,
+        name = { it.displayName },
+        lastModified = { it.lastModified },
+    )
 
     Column(
         modifier = Modifier
@@ -111,7 +114,7 @@ private fun InstalledWorldList(
             )
             AppSelectField(
                 value = sortBy,
-                items = WorldSortBy.entries,
+                items = ContentSortBy.entries,
                 onValueChange = { sortBy = it },
                 itemRenderer = { value, isButton ->
                     AppSelectItem(
@@ -229,26 +232,3 @@ private fun InstalledWorldRow(world: InstalledWorldView, canQuickJoin: Boolean, 
     }
 }
 
-private enum class WorldSortBy {
-    Name,
-    LastModified
-}
-
-private val WorldSortBy.displayName: String
-    @Composable get() = stringResource(
-        when (this) {
-            WorldSortBy.Name -> InstanceRes.string.sortByName
-            WorldSortBy.LastModified -> InstanceRes.string.sortByLastModified
-        }
-    )
-
-private fun List<InstalledWorldView>.filteredAndSorted(
-    searchQuery: String,
-    sortBy: WorldSortBy,
-): List<InstalledWorldView> {
-    val filtered = filter { searchQuery.isBlank() || it.displayName.contains(searchQuery, ignoreCase = true) }
-    return when (sortBy) {
-        WorldSortBy.Name -> filtered.sortedBy { it.displayName.lowercase() }
-        WorldSortBy.LastModified -> filtered.sortedByDescending { it.lastModified ?: Instant.DISTANT_PAST }
-    }
-}

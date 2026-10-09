@@ -76,15 +76,7 @@ internal fun ProjectTypeData.toCurseForgeClassId(): Int = when (this) {
     ProjectTypeData.World -> WORLD_CLASS_ID
 }
 
-internal fun CurseForgeCategory.convertToType(): ProjectTypeData? = when (id) {
-    MOD_CLASS_ID -> ProjectTypeData.Mod
-    MODPACK_CLASS_ID -> ProjectTypeData.Modpack
-    RESOURCEPACK_CLASS_ID -> ProjectTypeData.ResourcePack
-    SHADERPACK_CLASS_ID -> ProjectTypeData.ShaderPack
-    DATAPACK_CLASS_ID -> ProjectTypeData.DataPack
-    WORLD_CLASS_ID -> ProjectTypeData.World
-    else -> null
-}
+internal fun CurseForgeCategory.convertToType(): ProjectTypeData? = id.convertToType()
 
 internal fun Int?.convertToType(): ProjectTypeData? = when (this) {
     MOD_CLASS_ID -> ProjectTypeData.Mod

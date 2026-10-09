@@ -4,8 +4,10 @@ import app.vercors.feature.project.api.dto.*
 import app.vercors.feature.project.backend.PlatformInfo
 import app.vercors.feature.project.backend.PlatformServiceBase
 import app.vercors.feature.project.backend.bindResponse
+import app.vercors.feature.project.backend.curseforge.dto.CurseForgeFile
 import app.vercors.feature.project.backend.curseforge.dto.CurseForgeGetFilesRequest
 import app.vercors.feature.project.backend.curseforge.dto.CurseForgeGetModsRequest
+import app.vercors.feature.project.backend.curseforge.dto.CurseForgeProject
 import arrow.core.raise.Raise
 import arrow.core.raise.recover
 import dev.zacsweers.metro.AppScope
@@ -94,41 +96,17 @@ class CurseForgeService(
             modLoaderType = loader?.toCurseForgeModLoaderType()
         ).bindResponse().data
 
-        // A null downloadUrl doesn't always mean distribution-restricted: the dedicated endpoint can still succeed
-        val needsCheck = files.filter { it.downloadUrl == null }
-        val downloadableIds = needsCheck.map { file ->
-            async {
-                file.id to recover({
-                    api.getFileDownloadUrl(projectId, file.id.toString()).bindResponse()
-                    true
-                }) { _: PlatformErrorData -> false }
-            }
-        }.awaitAll().filter { it.second }.map { it.first }.toSet()
+        val downloadableIds = files.downloadableIds()
+        val needsManualUrl = files.any { it.downloadUrl == null && it.id !in downloadableIds }
+        val project = if (needsManualUrl) api.getProject(projectId).bindResponse().data else null
 
-        val stillManual = needsCheck.filterNot { it.id in downloadableIds }
-        val project = if (stillManual.isNotEmpty()) api.getProject(projectId).bindResponse().data else null
-
-        files.map { file ->
-            val data = file.convert(loader)
-            if (project != null && file.downloadUrl == null && file.id !in downloadableIds) {
-                data.copy(manualDownloadUrl = manualDownloadUrl(project.slug, project.classId, file.id))
-            } else data
-        }
+        files.map { file -> file.convert(loader).withManualDownloadUrl(file, project, downloadableIds) }
     }
 
     context(_: Raise<PlatformErrorData>)
     override suspend fun getFiles(fileIds: List<String>): List<ProjectFileData> = coroutineScope {
         val files = api.getFiles(CurseForgeGetFilesRequest(fileIds.map { it.toInt() })).bindResponse().data
-
-        val needsCheck = files.filter { it.downloadUrl == null }
-        val downloadableIds = needsCheck.map { file ->
-            async {
-                file.id to recover({
-                    api.getFileDownloadUrl(file.modId.toString(), file.id.toString()).bindResponse()
-                    true
-                }) { _: PlatformErrorData -> false }
-            }
-        }.awaitAll().filter { it.second }.map { it.first }.toSet()
+        val downloadableIds = files.downloadableIds()
 
         // Also resolves each file's project type: the file listing never carries classId
         val projectsByModId = api.getProjects(CurseForgeGetModsRequest(files.map { it.modId }.distinct()))
@@ -136,32 +114,50 @@ class CurseForgeService(
 
         files.map { file ->
             val project = projectsByModId[file.modId]
-            val data = file.convert(loaderFilter = null).copy(type = project?.classId.convertToType())
-            if (project != null && file.downloadUrl == null && file.id !in downloadableIds) {
-                data.copy(manualDownloadUrl = manualDownloadUrl(project.slug, project.classId, file.id))
-            } else data
+            file.convert(loaderFilter = null)
+                .copy(type = project?.classId.convertToType())
+                .withManualDownloadUrl(file, project, downloadableIds)
         }
     }
 
     context(_: Raise<PlatformErrorData>)
-    override suspend fun getFileDownloadUrl(projectId: String, fileId: String): String {
-        val file = api.getFile(projectId, fileId).bindResponse().data
-        return file.downloadUrl ?: api.getFileDownloadUrl(projectId, fileId).bindResponse().data
-    }
+    override suspend fun getFileDownloadUrl(projectId: String, fileId: String): String =
+        api.getFile(projectId, fileId).bindResponse().data.downloadUrl
+            ?: api.getFileDownloadUrl(projectId, fileId).bindResponse().data
 
     context(_: Raise<PlatformErrorData>)
-    override suspend fun getProjectFile(projectId: String, fileId: String): ProjectFileData {
-        val file = api.getFile(projectId, fileId).bindResponse().data
-        val data = file.convert(loaderFilter = null)
-        if (file.downloadUrl != null) return data
-        val downloadable = recover({
-            api.getFileDownloadUrl(projectId, fileId).bindResponse()
-            true
-        }) { _: PlatformErrorData -> false }
-        if (downloadable) return data
-        val project = api.getProject(projectId).bindResponse().data
-        return data.copy(manualDownloadUrl = manualDownloadUrl(project.slug, project.classId, file.id))
+    override suspend fun getProjectFile(projectId: String, fileId: String): ProjectFileData =
+        api.getFile(projectId, fileId).bindResponse().data.let { file ->
+            val data = file.convert(loaderFilter = null)
+            if (file.downloadUrl != null || isDownloadable(projectId, fileId)) data
+            else data.withManualDownloadUrl(api.getProject(projectId).bindResponse().data, file.id)
+        }
+
+    // A null downloadUrl doesn't always mean distribution-restricted: the dedicated endpoint can still succeed
+    private suspend fun isDownloadable(projectId: String, fileId: String): Boolean = recover({
+        api.getFileDownloadUrl(projectId, fileId).bindResponse()
+        true
+    }) { _: PlatformErrorData -> false }
+
+    private suspend fun List<CurseForgeFile>.downloadableIds(): Set<Int> = coroutineScope {
+        filter { it.downloadUrl == null }
+            .map { file -> async { file.id.takeIf { isDownloadable(file.modId.toString(), file.id.toString()) } } }
+            .awaitAll()
+            .filterNotNull()
+            .toSet()
     }
+
+    private fun ProjectFileData.withManualDownloadUrl(
+        file: CurseForgeFile,
+        project: CurseForgeProject?,
+        downloadableIds: Set<Int>
+    ): ProjectFileData =
+        if (project != null && file.downloadUrl == null && file.id !in downloadableIds) {
+            withManualDownloadUrl(project, file.id)
+        } else this
+
+    private fun ProjectFileData.withManualDownloadUrl(project: CurseForgeProject, fileId: Int): ProjectFileData =
+        copy(manualDownloadUrl = manualDownloadUrl(project.slug, project.classId, fileId))
 
     private fun manualDownloadUrl(slug: String, classId: Int?, fileId: Int): String =
         "https://www.curseforge.com/minecraft/${classId.toCurseForgeUrlSegment()}/$slug/download/$fileId"

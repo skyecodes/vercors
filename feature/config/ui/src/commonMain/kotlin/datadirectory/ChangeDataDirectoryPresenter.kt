@@ -3,6 +3,7 @@ package app.vercors.feature.config.ui.datadirectory
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import app.vercors.core.domain.toFractionOrNull
 import app.vercors.core.filesystem.withAppFolderName
 import app.vercors.feature.config.domain.model.DataDirectoryError
 import app.vercors.feature.config.domain.usecase.MoveDataDirectoryUseCase
@@ -17,7 +18,6 @@ import com.slack.circuit.overlay.OverlayNavigator
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.io.files.Path
-import opensavvy.progress.Progress
 import org.jetbrains.compose.resources.stringResource
 
 class ChangeDataDirectoryPresenter(
@@ -125,8 +125,3 @@ class ChangeDataDirectoryPresenter(
     }
 }
 
-private fun Progress.toFractionOrNull(): Float? = when (this) {
-    is Progress.Loading.Quantified -> normalized.toFloat()
-    Progress.Done -> 1f
-    Progress.Loading.Unquantified -> null
-}

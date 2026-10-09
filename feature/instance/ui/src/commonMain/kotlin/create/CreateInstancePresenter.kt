@@ -1,6 +1,7 @@
 package app.vercors.feature.instance.ui.create
 
 import androidx.compose.runtime.*
+import app.vercors.core.domain.toFractionOrNull
 import app.vercors.feature.game.domain.model.LoaderVersion
 import app.vercors.feature.game.domain.model.ModLoaderType
 import app.vercors.feature.game.domain.usecase.ObserveAvailableLoadersUseCase
@@ -11,7 +12,6 @@ import app.vercors.feature.instance.domain.model.*
 import app.vercors.feature.instance.domain.model.localimport.LocalImportError
 import app.vercors.feature.instance.domain.usecase.*
 import app.vercors.feature.instance.ui.*
-import app.vercors.feature.instance.ui.install.toFractionOrNull
 import app.vercors.feature.project.domain.model.modpack.ModpackInstallError
 import app.vercors.feature.project.domain.model.modpack.ModpackResolutionError
 import app.vercors.feature.project.domain.usecase.InstallModpackFilesUseCase

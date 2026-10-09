@@ -1,5 +1,6 @@
 package app.vercors.feature.java.data.repository
 
+import app.vercors.core.domain.toFractionOrNull
 import app.vercors.core.filesystem.exists
 import app.vercors.core.filesystem.realPath
 import app.vercors.core.filesystem.setExecutable
@@ -31,7 +32,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.io.files.Path
 import kotlinx.serialization.serializer
-import opensavvy.progress.Progress
 import opensavvy.spine.api.div
 import opensavvy.spine.client.arrow.body
 import opensavvy.spine.client.request
@@ -128,8 +128,3 @@ private fun SystemService.mojangJavaRuntimeKey(): String = when (osType) {
     OsType.MacOs -> "mac-os-arm64"
 }
 
-private fun Progress.toFractionOrNull(): Float? = when (this) {
-    is Progress.Loading.Quantified -> normalized.toFloat()
-    Progress.Done -> 1f
-    Progress.Loading.Unquantified -> null
-}

@@ -1,5 +1,6 @@
 package app.vercors.feature.config.domain
 
+import app.vercors.core.domain.AppConstants
 import app.vercors.feature.config.domain.model.Configuration
 import app.vercors.feature.config.domain.usecase.ObserveConfigurationUseCase
 import dev.zacsweers.metro.*
@@ -17,15 +18,15 @@ object ConfigurationDomainProviders {
         runBlocking { observeConfiguration().now().mapFailure { error("Unable to load configuration: $it") }.value }
 
     @Provides
-    @Named("metaApiUrl")
+    @Named(AppConstants.META_API_URL_KEY)
     fun provideMetaUrl(configuration: Configuration): String = configuration.metaApiUrl
 
     @Provides
-    @Named("networkTimeout")
+    @Named(AppConstants.NETWORK_TIMEOUT_KEY)
     fun provideNetworkTimeout(configuration: Configuration): Duration = configuration.networkTimeout
 
     @Provides
-    @Named("parallelFilesystemOperations")
+    @Named(AppConstants.PARALLEL_FILESYSTEM_OPERATIONS_KEY)
     fun provideParallelFilesystemOperations(configuration: Configuration): Int =
         configuration.parallelFilesystemOperations
 }

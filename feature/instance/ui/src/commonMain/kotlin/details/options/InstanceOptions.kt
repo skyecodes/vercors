@@ -17,17 +17,17 @@ import app.vercors.core.ui.theme.*
 import app.vercors.feature.game.ui.*
 import app.vercors.feature.instance.ui.*
 import app.vercors.feature.instance.ui.details.InstanceView
+import app.vercors.shared.domain.model.DEFAULT_MIN_MEMORY_MB
 import app.vercors.shared.domain.model.JvmMemoryOptions
 import app.vercors.shared.domain.model.NativeLibraryOptions
+import app.vercors.shared.domain.model.defaultMaxMemoryMb
 import app.vercors.shared.ui.EventSink
 import app.vercors.shared.ui.Store
-import com.composables.icons.lucide.FolderOpen
+import app.vercors.shared.ui.component.LibraryPathInputs
+import app.vercors.shared.ui.component.MemorySliderInputs
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.RotateCcw
 import com.composeunstyled.theme.Theme
-import io.github.vinceglb.filekit.dialogs.FileKitType
-import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
-import io.github.vinceglb.filekit.path
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 
@@ -280,7 +280,7 @@ private fun InstanceJavaOptionsSection(instance: InstanceView, state: InstanceOp
         description = InstanceRes.string.minMemoryDesc,
         edited = state.isMinMemoryEdited,
         checked = effectiveOptions.minMemoryEnabled == true,
-        value = effectiveOptions.minMemoryMb ?: defaultMinMemoryMb(),
+        value = effectiveOptions.minMemoryMb ?: DEFAULT_MIN_MEMORY_MB,
         valueRange = 256..(effectiveOptions.maxMemoryMb ?: defaultMax),
         stepSize = 32,
         isOverridden = currentOptions.minMemoryEnabled != null || currentOptions.minMemoryMb != null,
@@ -290,7 +290,7 @@ private fun InstanceJavaOptionsSection(instance: InstanceView, state: InstanceOp
                 opts.copy(
                     minMemoryEnabled = checked,
                     minMemoryMb = if (checked) opts.minMemoryMb ?: effectiveOptions.minMemoryMb
-                    ?: defaultMinMemoryMb() else opts.minMemoryMb,
+                    ?: DEFAULT_MIN_MEMORY_MB else opts.minMemoryMb,
                 )
             }
         },
@@ -381,9 +381,6 @@ private fun InstanceLibraryOverrideRow(
     onCheckedChange: (Boolean) -> Unit,
     onPathChange: (String) -> Unit,
 ) {
-    val pickerLauncher = rememberFilePickerLauncher(type = FileKitType.File("so")) { file ->
-        file?.let { onPathChange(it.path) }
-    }
     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
         AppText(
             text = stringResource(title) + if (edited) "*" else "",
@@ -398,25 +395,7 @@ private fun InstanceLibraryOverrideRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            AppCheckbox(
-                checked = checked,
-                onCheckedChange = onCheckedChange
-            )
-            AppTextField(
-                initialValue = path,
-                onValueChange = onPathChange,
-                debounceMillis = 500,
-                enabled = checked,
-                placeholder = { AppText(text = detectedPath ?: stringResource(InstanceRes.string.useDefaultPath)) },
-                backgroundColor = Theme[colors][surface2],
-                modifier = Modifier.weight(1f)
-            )
-            AppIconTextButton(
-                onClick = pickerLauncher::launch,
-                text = stringResource(InstanceRes.string.browse),
-                imageVector = Lucide.FolderOpen,
-                enabled = checked,
-            )
+            LibraryPathInputs(checked, path, detectedPath, onCheckedChange, onPathChange)
             InstanceOptionsResetButton(
                 enabled = isOverridden,
                 onClick = onReset
@@ -439,7 +418,6 @@ private fun InstanceMemorySliderRow(
     onCheckedChange: (Boolean) -> Unit,
     onValueChange: (Int) -> Unit,
 ) {
-    val displayValue = value.coerceIn(valueRange)
     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
         AppText(text = stringResource(title) + if (edited) "*" else "", fontWeight = FontWeight.SemiBold)
         AppText(text = stringResource(description), style = Theme[textStyles][label])
@@ -448,22 +426,7 @@ private fun InstanceMemorySliderRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            AppCheckbox(checked = checked, onCheckedChange = onCheckedChange)
-            AppSlider(
-                value = displayValue,
-                onValueChange = onValueChange,
-                valueRange = valueRange,
-                stepSize = stepSize,
-                enabled = checked,
-                modifier = Modifier.weight(1f)
-            )
-            AppNumberField(
-                value = displayValue,
-                onValueChange = onValueChange,
-                valueRange = valueRange,
-                enabled = checked,
-            )
-            AppText(text = stringResource(InstanceRes.string.megabytes), style = Theme[textStyles][label])
+            MemorySliderInputs(checked, value, valueRange, stepSize, onCheckedChange, onValueChange)
             InstanceOptionsResetButton(
                 enabled = isOverridden,
                 onClick = onReset
@@ -472,5 +435,3 @@ private fun InstanceMemorySliderRow(
     }
 }
 
-private fun defaultMaxMemoryMb(totalMemoryMb: Int): Int = (((totalMemoryMb / 4).coerceIn(1024, 4096)) / 128) * 128
-private fun defaultMinMemoryMb(): Int = 512

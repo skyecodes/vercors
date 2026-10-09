@@ -23,4 +23,7 @@
     <string name="mods">Mods</string>
     <string name="resourcePacks">Resource Packs</string>
     <string name="shaderPacks">Shader Packs</string>
+    <string name="megabytes">MB</string>
+    <string name="useDefaultPath">Leave empty to use the default system path</string>
+    <string name="browse">Browse</string>
 </resources>

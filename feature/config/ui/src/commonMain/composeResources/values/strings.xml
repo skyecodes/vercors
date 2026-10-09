@@ -49,15 +49,12 @@
     <string name="minMemoryDesc">The amount of memory allocated to the game on startup (-Xms).</string>
     <string name="extraJvmArgs">Extra JVM arguments</string>
     <string name="extraJvmArgsDesc">Additional arguments passed to the JVM when launching the game.</string>
-    <string name="megabytes">MB</string>
 
     <string name="nativeLibraries">Native libraries</string>
     <string name="useSystemGlfw">Use system GLFW</string>
     <string name="useSystemGlfwDesc">Use the GLFW library installed on this system instead of the bundled one.</string>
     <string name="useSystemOpenAl">Use system OpenAL</string>
     <string name="useSystemOpenAlDesc">Use the OpenAL library installed on this system instead of the bundled one.</string>
-    <string name="useDefaultPath">Leave empty to use the default system path</string>
-    <string name="browse">Browse</string>
 
     <string name="storage">Storage</string>
     <string name="dataDirectory">Data directory</string>

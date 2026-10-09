@@ -8,6 +8,8 @@ import io.ktor.client.*
 import io.ktor.client.plugins.*
 import io.ktor.client.request.*
 
+private const val CURSEFORGE_API_KEY = "CURSEFORGE_API_KEY"
+
 @ContributesTo(AppScope::class)
 @BindingContainer
 object CurseForgeBackendProviders {
@@ -15,7 +17,7 @@ object CurseForgeBackendProviders {
     @Provides
     fun provideCurseForgeApi(
         httpClient: HttpClient,
-        @Named("CURSEFORGE_API_KEY") curseForgeApiKey: String
+        @Named(CURSEFORGE_API_KEY) curseForgeApiKey: String
     ): CurseForgeApi = Ktorfit.Builder()
         .httpClient(httpClient.config {
             defaultRequest {
@@ -28,9 +30,9 @@ object CurseForgeBackendProviders {
         .platformCreateCurseForgeApi()
 
     @Provides
-    @Named("CURSEFORGE_API_KEY")
+    @Named(CURSEFORGE_API_KEY)
     fun provideCurseforgeApiKey(): String =
-        requireNotNull(platformEnv("CURSEFORGE_API_KEY")) { "CURSEFORGE_API_KEY environment variable must be set" }
+        requireNotNull(platformEnv(CURSEFORGE_API_KEY)) { "$CURSEFORGE_API_KEY environment variable must be set" }
 }
 
 expect fun Ktorfit.platformCreateCurseForgeApi(): CurseForgeApi

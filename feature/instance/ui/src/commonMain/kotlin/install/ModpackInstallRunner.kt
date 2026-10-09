@@ -1,6 +1,10 @@
 package app.vercors.feature.instance.ui.install
 
-import app.vercors.feature.instance.domain.model.*
+import app.vercors.core.domain.toFractionOrNull
+import app.vercors.feature.instance.domain.model.InstanceId
+import app.vercors.feature.instance.domain.model.InstanceInstallStage
+import app.vercors.feature.instance.domain.model.InstanceModpackInfo
+import app.vercors.feature.instance.domain.model.InstanceStatus
 import app.vercors.feature.instance.domain.usecase.RecordInstalledContentOriginUseCase
 import app.vercors.feature.instance.domain.usecase.UpdateInstanceStatusUseCase
 import app.vercors.feature.instance.domain.usecase.UpdateInstanceUseCase
@@ -21,7 +25,6 @@ import arrow.core.raise.recover
 import dev.nucleusframework.notification.common.notification
 import dev.zacsweers.metro.Inject
 import io.github.oshai.kotlinlogging.KotlinLogging
-import opensavvy.progress.Progress
 import org.jetbrains.compose.resources.getString
 
 private val logger = KotlinLogging.logger {}
@@ -173,19 +176,6 @@ class ModpackInstallRunner(
         either { updateInstance(instanceId) { it.copy(installStage = stage) } }
             .onLeft { error -> logger.warn { "Failed to persist install stage $stage for $instanceId: $error" } }
     }
-}
-
-fun Progress.toFractionOrNull(): Float? = when (this) {
-    is Progress.Loading.Quantified -> normalized.toFloat()
-    Progress.Done -> 1f
-    Progress.Loading.Unquantified -> null
-}
-
-private fun ModpackFileKind.toContentKindOrNull(): ContentKind? = when (this) {
-    ModpackFileKind.Mod -> ContentKind.Mod
-    ModpackFileKind.ResourcePack -> ContentKind.ResourcePack
-    ModpackFileKind.ShaderPack -> ContentKind.ShaderPack
-    ModpackFileKind.Other -> null
 }
 
 private fun ModpackFileKind.toProjectType(): ProjectType = when (this) {

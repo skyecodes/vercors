@@ -26,9 +26,10 @@ import app.vercors.core.ui.modifier.appCard
 import app.vercors.core.ui.theme.*
 import app.vercors.feature.instance.domain.model.InstanceFolder
 import app.vercors.feature.instance.ui.*
-import app.vercors.feature.instance.ui.details.InstanceDetailsEvent
+import app.vercors.feature.instance.ui.details.ContentSortBy
 import app.vercors.feature.instance.ui.details.InstanceView
-import app.vercors.feature.project.domain.model.ProjectType
+import app.vercors.feature.instance.ui.details.displayName
+import app.vercors.feature.instance.ui.details.filteredAndSorted
 import app.vercors.shared.ui.EventSink
 import app.vercors.shared.ui.SharedRes
 import app.vercors.shared.ui.Store
@@ -42,20 +43,6 @@ import io.github.vinceglb.filekit.path
 import okio.Path.Companion.toPath
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
-import kotlin.time.Instant
-
-private enum class ContentSortBy {
-    Name,
-    LastModified
-}
-
-private val ContentSortBy.displayName: String
-    @Composable get() = stringResource(
-        when (this) {
-            ContentSortBy.Name -> InstanceRes.string.sortByName
-            ContentSortBy.LastModified -> InstanceRes.string.sortByLastModified
-        }
-    )
 
 @Composable
 context(eventSink: EventSink<InstalledContentEvent>)
@@ -103,7 +90,9 @@ private fun InstalledContentFileList(
             onOpenFolder = onOpenFolder,
         )
 
-        val filteredFiles = files?.filteredAndSorted(searchQuery, showOnlyEnabled, sortBy)
+        val filteredFiles = files
+            ?.filter { !showOnlyEnabled || it.enabled }
+            ?.filteredAndSorted(searchQuery, sortBy, name = { it.title }, lastModified = { it.lastModified })
         InstalledContentFileListBody(
             files = files,
             filteredFiles = filteredFiles,
@@ -226,20 +215,6 @@ private fun InstalledContentFileListMenu(
     }
 }
 
-private fun List<InstalledContentFileView>.filteredAndSorted(
-    searchQuery: String,
-    showOnlyEnabled: Boolean,
-    sortBy: ContentSortBy
-): List<InstalledContentFileView> = filter {
-    (searchQuery.isBlank() || it.title.contains(searchQuery, ignoreCase = true)) &&
-            (!showOnlyEnabled || it.enabled)
-}.let { list ->
-    when (sortBy) {
-        ContentSortBy.Name -> list.sortedBy { it.title.lowercase() }
-        ContentSortBy.LastModified -> list.sortedByDescending { it.lastModified ?: Instant.DISTANT_PAST }
-    }
-}
-
 @Composable
 context(eventSink: EventSink<InstalledContentEvent>)
 private fun InstalledContentFileListBody(
@@ -359,11 +334,13 @@ private fun InstalledContentFileRow(
 }
 
 @Composable
-context(eventSink: EventSink<InstanceDetailsEvent>)
 fun InstalledMods(
     instance: InstanceView,
     content: Store<InstalledContentState, InstalledContentEvent>,
-    horizontalTabs: Boolean
+    horizontalTabs: Boolean,
+    onAddClick: () -> Unit,
+    onOpenProject: (platformId: String, projectId: String) -> Unit,
+    onOpenFolder: (InstanceFolder) -> Unit
 ) {
     with(content.eventSink) {
         InstalledContentFileList(
@@ -376,21 +353,21 @@ fun InstalledMods(
             importExtension = "jar",
             openFolderLabel = InstanceRes.string.openModsFolder,
             contentFolder = InstanceFolder.Mods,
-            onAddClick = { eventSink(InstanceDetailsEvent.OnAddContentClick(ProjectType.Mod)) },
-            onOpenProject = { platformId, projectId ->
-                eventSink(InstanceDetailsEvent.OnOpenProjectClick(platformId, projectId))
-            },
-            onOpenFolder = { folder -> eventSink(InstanceDetailsEvent.OnOpenInstanceFolderClick(folder)) },
+            onAddClick = onAddClick,
+            onOpenProject = onOpenProject,
+            onOpenFolder = onOpenFolder,
             horizontalTabs = horizontalTabs
         )
     }
 }
 
 @Composable
-context(eventSink: EventSink<InstanceDetailsEvent>)
 fun InstalledResourcePacks(
     content: Store<InstalledContentState, InstalledContentEvent>,
-    horizontalTabs: Boolean
+    horizontalTabs: Boolean,
+    onAddClick: () -> Unit,
+    onOpenProject: (platformId: String, projectId: String) -> Unit,
+    onOpenFolder: (InstanceFolder) -> Unit
 ) {
     with(content.eventSink) {
         InstalledContentFileList(
@@ -403,21 +380,21 @@ fun InstalledResourcePacks(
             importExtension = "zip",
             openFolderLabel = InstanceRes.string.openResourcePacksFolder,
             contentFolder = InstanceFolder.ResourcePacks,
-            onAddClick = { eventSink(InstanceDetailsEvent.OnAddContentClick(ProjectType.ResourcePack)) },
-            onOpenProject = { platformId, projectId ->
-                eventSink(InstanceDetailsEvent.OnOpenProjectClick(platformId, projectId))
-            },
-            onOpenFolder = { folder -> eventSink(InstanceDetailsEvent.OnOpenInstanceFolderClick(folder)) },
+            onAddClick = onAddClick,
+            onOpenProject = onOpenProject,
+            onOpenFolder = onOpenFolder,
             horizontalTabs = horizontalTabs,
         )
     }
 }
 
 @Composable
-context(eventSink: EventSink<InstanceDetailsEvent>)
 fun InstalledShaderPacks(
     content: Store<InstalledContentState, InstalledContentEvent>,
-    horizontalTabs: Boolean
+    horizontalTabs: Boolean,
+    onAddClick: () -> Unit,
+    onOpenProject: (platformId: String, projectId: String) -> Unit,
+    onOpenFolder: (InstanceFolder) -> Unit
 ) {
     with(content.eventSink) {
         InstalledContentFileList(
@@ -430,11 +407,9 @@ fun InstalledShaderPacks(
             importExtension = "zip",
             openFolderLabel = InstanceRes.string.openShaderPacksFolder,
             contentFolder = InstanceFolder.ShaderPacks,
-            onAddClick = { eventSink(InstanceDetailsEvent.OnAddContentClick(ProjectType.ShaderPack)) },
-            onOpenProject = { platformId, projectId ->
-                eventSink(InstanceDetailsEvent.OnOpenProjectClick(platformId, projectId))
-            },
-            onOpenFolder = { folder -> eventSink(InstanceDetailsEvent.OnOpenInstanceFolderClick(folder)) },
+            onAddClick = onAddClick,
+            onOpenProject = onOpenProject,
+            onOpenFolder = onOpenFolder,
             horizontalTabs = horizontalTabs,
         )
     }

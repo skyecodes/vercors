@@ -35,8 +35,12 @@ import app.vercors.core.ui.modifier.clickableText
 import app.vercors.core.ui.theme.*
 import app.vercors.feature.config.domain.model.HomeCategoryConfig
 import app.vercors.feature.config.domain.model.StartupScreen
+import app.vercors.shared.domain.model.DEFAULT_MIN_MEMORY_MB
 import app.vercors.shared.domain.model.JavaInstallation
+import app.vercors.shared.domain.model.defaultMaxMemoryMb
 import app.vercors.shared.ui.*
+import app.vercors.shared.ui.component.LibraryPathInputs
+import app.vercors.shared.ui.component.MemorySliderInputs
 import app.vercors.shared.ui.overlay.ConfirmDialog
 import app.vercors.shared.ui.overlay.ConfirmDialogButton
 import app.vercors.shared.ui.overlay.ConfirmDialogButtonStyle
@@ -45,9 +49,7 @@ import com.composeunstyled.theme.Theme
 import com.slack.circuit.codegen.annotations.CircuitInject
 import com.slack.circuit.overlay.OverlayEffect
 import dev.zacsweers.metro.AppScope
-import io.github.vinceglb.filekit.dialogs.FileKitType
 import io.github.vinceglb.filekit.dialogs.compose.rememberDirectoryPickerLauncher
-import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
 import io.github.vinceglb.filekit.path
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
@@ -515,10 +517,10 @@ private fun JavaConfigurationTab(
         ConfigurationRow(title = ConfigRes.string.minMemory, description = ConfigRes.string.minMemoryDesc) {
             MemorySliderControl(
                 value = state.jvmMemoryOptions.minMemoryMb,
-                defaultValue = defaultMinMemoryMb(),
+                defaultValue = DEFAULT_MIN_MEMORY_MB,
                 valueRange = 256..(state.jvmMemoryOptions.maxMemoryMb ?: defaultMax),
                 stepSize = 32,
-                onCheckedChange = { checked -> eventSink(ConfigurationEvent.OnMinMemoryMbChange(if (checked) defaultMinMemoryMb() else null)) },
+                onCheckedChange = { checked -> eventSink(ConfigurationEvent.OnMinMemoryMbChange(if (checked) DEFAULT_MIN_MEMORY_MB else null)) },
                 onValueChange = { eventSink(ConfigurationEvent.OnMinMemoryMbChange(it)) },
             )
         }
@@ -628,30 +630,12 @@ private fun RowScope.LibraryOverrideRow(
     onCheckedChange: (Boolean) -> Unit,
     onPathChange: (String) -> Unit,
 ) {
-    val pickerLauncher = rememberFilePickerLauncher(type = FileKitType.File("so")) { file ->
-        file?.let { onPathChange(it.path) }
-    }
     Row(
         modifier = Modifier.weight(1f),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        AppCheckbox(checked = checked, onCheckedChange = onCheckedChange)
-        AppTextField(
-            initialValue = path,
-            onValueChange = onPathChange,
-            debounceMillis = 500,
-            enabled = checked,
-            placeholder = { AppText(text = detectedPath ?: stringResource(ConfigRes.string.useDefaultPath)) },
-            backgroundColor = Theme[colors][surface2],
-            modifier = Modifier.weight(1f)
-        )
-        AppIconTextButton(
-            onClick = pickerLauncher::launch,
-            text = stringResource(ConfigRes.string.browse),
-            imageVector = Lucide.FolderOpen,
-            enabled = checked,
-        )
+        LibraryPathInputs(checked, path, detectedPath, onCheckedChange, onPathChange)
     }
 }
 
@@ -664,29 +648,19 @@ private fun RowScope.MemorySliderControl(
     onCheckedChange: (Boolean) -> Unit,
     onValueChange: (Int) -> Unit,
 ) {
-    val checked = value != null
-    val displayValue = (value ?: defaultValue).coerceIn(valueRange)
     Row(
         modifier = Modifier.weight(1f),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        AppCheckbox(checked = checked, onCheckedChange = onCheckedChange)
-        AppSlider(
-            value = displayValue,
-            onValueChange = onValueChange,
+        MemorySliderInputs(
+            checked = value != null,
+            value = value ?: defaultValue,
             valueRange = valueRange,
             stepSize = stepSize,
-            enabled = checked,
-            modifier = Modifier.weight(1f)
-        )
-        AppNumberField(
-            value = displayValue,
+            onCheckedChange = onCheckedChange,
             onValueChange = onValueChange,
-            valueRange = valueRange,
-            enabled = checked,
         )
-        AppText(text = stringResource(ConfigRes.string.megabytes), style = Theme[textStyles][label])
     }
 }
 
@@ -817,8 +791,6 @@ private fun Long.toHumanReadableSize(): String {
     return "${(value * 10).toInt() / 10.0} ${units[unitIndex]}"
 }
 
-private fun defaultMaxMemoryMb(totalMemoryMb: Int): Int = (((totalMemoryMb / 4).coerceIn(1024, 4096)) / 128) * 128
-private fun defaultMinMemoryMb(): Int = 512
 
 private val ConfigurationTab.icon: ImageVector
     @Stable get() = when (this) {
