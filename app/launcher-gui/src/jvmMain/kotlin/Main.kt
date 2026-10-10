@@ -21,10 +21,7 @@ import coil3.util.Logger
 import com.hashsequence.coilresvg.ResvgDecoder
 import com.slack.circuit.foundation.CircuitCompositionLocals
 import com.slack.circuit.foundation.CircuitContent
-import dev.nucleusframework.application.DecoratedWindow
-import dev.nucleusframework.application.NucleusApplicationScope
-import dev.nucleusframework.application.SingleInstanceRestoreEffect
-import dev.nucleusframework.application.nucleusApplication
+import dev.nucleusframework.application.*
 import dev.nucleusframework.composenativetray.tray.api.Tray
 import dev.nucleusframework.core.runtime.NucleusApp
 import dev.nucleusframework.notification.common.NotificationManager
@@ -64,7 +61,10 @@ fun main(args: Array<String>) {
     val initialResolution = readAppRoot(defaultRoot)?.let { resolveRoot(it, defaultRoot) }
 
     nucleusApplication(args) {
-        var resolution by remember { mutableStateOf(initialResolution) }
+        aotTraining(AOT_TRAINING_DURATION)
+        // Training runs unattended on a fresh profile, so it can't wait on the first-launch setup window
+        val trainingResolution = RootResolution(defaultRoot, unreachable = false).takeIf { isAotTraining }
+        var resolution by remember { mutableStateOf(initialResolution ?: trainingResolution) }
         val current = resolution
         if (current == null) {
             FirstLaunchSetupWindow(

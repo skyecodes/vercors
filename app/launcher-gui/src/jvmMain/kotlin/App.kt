@@ -83,7 +83,7 @@ fun App(
 private fun AppAotTrainingEffect(navigator: Navigator) {
     val nucleusApplicationScope = LocalNucleusApplicationScope.current
     if (nucleusApplicationScope.isAotTraining) {
-        nucleusApplicationScope.runAotTraining(navigator, LocalAppGraph.current)
+        runAotTraining(navigator, LocalAppGraph.current)
     }
 }
 

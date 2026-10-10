@@ -1,3 +1,7 @@
+@file:OptIn(KotlinNativeCacheApi::class)
+
+import org.jetbrains.kotlin.gradle.plugin.mpp.DisableCacheInKotlinVersion
+import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeCacheApi
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 
 plugins {
@@ -45,7 +49,10 @@ kotlin {
             executable {
                 entryPoint = "app.vercors.launcher.cli.main"
                 baseName = "vercors"
-                linkerOpts += "-Wl,--allow-multiple-definition"
+                disableNativeCache(
+                    DisableCacheInKotlinVersion.`2_4_21`,
+                    "clikt and clikt-mordant both define Context.selfAndAncestors, a duplicate symbol across per-klib caches",
+                )
             }
         }
     }

@@ -13,16 +13,14 @@ import app.vercors.feature.project.ui.details.ProjectDetailsScreen
 import app.vercors.feature.project.ui.list.ProjectListScreen
 import arrow.core.raise.context.either
 import com.slack.circuit.runtime.Navigator
-import dev.nucleusframework.application.NucleusApplicationScope
-import dev.nucleusframework.application.aotTraining
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.seconds
 import kotlin.uuid.Uuid
 
+internal val AOT_TRAINING_DURATION = 12.seconds
 
 @Composable
-internal fun NucleusApplicationScope.runAotTraining(navigator: Navigator, appGraph: AppGraph) {
-    aotTraining(12.seconds)
+internal fun runAotTraining(navigator: Navigator, appGraph: AppGraph) {
     val instanceId = remember { Uuid.random().toHexString() }
 
     runAfter(0.seconds) {
