@@ -20,7 +20,7 @@ jobs:
       channel: ${{ steps.version.outputs.channel }}
       release-type: ${{ steps.version.outputs.release-type }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - id: version
         shell: bash
         run: |
@@ -58,7 +58,7 @@ jobs:
     env:
       MICROSOFT_CLIENT_ID: ci-placeholder
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - uses: actions/setup-java@v4
         with:
@@ -102,7 +102,7 @@ jobs:
           - { os: macos-latest,     arch: arm64 }
           - { os: macos-15-intel,   arch: amd64 }
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - uses: NucleusFramework/Nucleus/.github/actions/setup-nucleus@v3.0.0-dev-202610091014
         with:
@@ -160,7 +160,7 @@ jobs:
           - os: macos-latest
             targets: MacosArm64
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - uses: actions/setup-java@v4
         with:
@@ -224,7 +224,7 @@ jobs:
       MICROSOFT_CLIENT_ID: ${{ secrets.MICROSOFT_CLIENT_ID }}
     timeout-minutes: 45
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - uses: actions/setup-java@v4
         with:
