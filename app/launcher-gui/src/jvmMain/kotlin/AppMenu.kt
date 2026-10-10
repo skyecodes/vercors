@@ -12,12 +12,14 @@ import androidx.compose.ui.unit.dp
 import app.vercors.core.ui.animation.AppAnimatedVisibility
 import app.vercors.core.ui.animation.appAnimateColorAsState
 import app.vercors.core.ui.animation.appAnimateDpAsState
+import app.vercors.core.ui.component.AppBadge
 import app.vercors.core.ui.component.AppButton
 import app.vercors.core.ui.component.AppIcon
 import app.vercors.core.ui.component.AppText
 import app.vercors.core.ui.theme.background
 import app.vercors.core.ui.theme.colors
 import app.vercors.core.ui.theme.primary
+import app.vercors.core.ui.theme.warn
 import app.vercors.feature.account.ui.list.AccountListScreen
 import app.vercors.feature.config.ui.ConfigurationScreen
 import app.vercors.feature.home.ui.HomeScreen
@@ -35,6 +37,7 @@ import org.jetbrains.compose.resources.stringResource
 fun AppMenu(
     currentBackStackEntry: Screen?,
     isDrawerOpen: Boolean,
+    updateAvailable: Boolean,
     onToggleDrawerClick: () -> Unit,
     onMenuButtonClick: (Screen) -> Unit
 ) {
@@ -45,6 +48,7 @@ fun AppMenu(
         AppMenuButtonList(
             currentBackStackEntry = currentBackStackEntry,
             isDrawerOpen = isDrawerOpen,
+            updateAvailable = updateAvailable,
             onMenuButtonClick = onMenuButtonClick
         )
         ToggleDrawerButton(
@@ -58,6 +62,7 @@ fun AppMenu(
 private fun AppMenuButtonList(
     currentBackStackEntry: Screen?,
     isDrawerOpen: Boolean,
+    updateAvailable: Boolean,
     onMenuButtonClick: (Screen) -> Unit
 ) {
     Column(
@@ -73,6 +78,7 @@ private fun AppMenuButtonList(
                 topLevelDestination = destination,
                 currentBackStackEntry = currentBackStackEntry,
                 isDrawerOpen = isDrawerOpen,
+                showBadge = updateAvailable && destination == TopLevelDestination.Settings,
                 onMenuButtonClick = onMenuButtonClick
             )
         }
@@ -84,6 +90,7 @@ private fun AppMenuDestination(
     topLevelDestination: TopLevelDestination,
     currentBackStackEntry: Screen?,
     isDrawerOpen: Boolean,
+    showBadge: Boolean,
     onMenuButtonClick: (Screen) -> Unit
 ) {
     val backgroundColor by appAnimateColorAsState(
@@ -101,10 +108,18 @@ private fun AppMenuDestination(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         contentPadding = PaddingValues(horizontal = horizontalPadding, vertical = 8.dp)
     ) {
-        AppIcon(
-            imageVector = topLevelDestination.icon,
-            contentDescription = stringResource(topLevelDestination.text)
-        )
+        Box {
+            AppIcon(
+                imageVector = topLevelDestination.icon,
+                contentDescription = stringResource(topLevelDestination.text)
+            )
+            if (showBadge) {
+                AppBadge(
+                    color = Theme[colors][warn],
+                    modifier = Modifier.align(Alignment.TopEnd).offset(x = 2.dp, y = (-2).dp)
+                )
+            }
+        }
         AppAnimatedVisibility(
             visible = isDrawerOpen,
             modifier = Modifier.weight(1f)

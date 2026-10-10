@@ -3,8 +3,10 @@ package app.vercors.launcher.gui
 import androidx.compose.runtime.*
 import app.vercors.core.domain.AppConstants
 import app.vercors.core.ui.state.collectProgressiveAsState
-import app.vercors.feature.config.domain.model.Configuration
+import app.vercors.feature.config.domain.model.isUpdateAvailable
+import app.vercors.feature.config.domain.usecase.CheckForLauncherUpdateUseCase
 import app.vercors.feature.config.domain.usecase.ObserveConfigurationUseCase
+import app.vercors.feature.config.domain.usecase.ObserveLauncherUpdateStateUseCase
 import app.vercors.feature.config.domain.usecase.UpdateConfigurationUseCase
 import app.vercors.feature.instance.domain.model.InstanceStatus
 import app.vercors.feature.instance.domain.usecase.ObserveInstanceListUseCase
@@ -23,6 +25,8 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
+import opensavvy.state.coroutines.now
+import opensavvy.state.outcome.valueOrNull
 import opensavvy.state.progressive.valueOrNull
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -37,6 +41,8 @@ class AppPresenter(
     private val observeThemes: ObserveThemesUseCase,
     private val observeInstanceList: ObserveInstanceListUseCase,
     private val snackbarService: SnackbarService,
+    private val observeLauncherUpdateState: ObserveLauncherUpdateStateUseCase,
+    private val checkForLauncherUpdate: CheckForLauncherUpdateUseCase,
     @Named(AppConstants.APP_NAME_KEY) private val appName: String
 ) : Presenter<AppState, AppEvent> {
     @Composable
@@ -44,6 +50,12 @@ class AppPresenter(
         val config by observeGuiConfiguration().collectProgressiveAsState()
         val themes by observeThemes().collectProgressiveAsState()
         val instances by observeInstanceList().collectProgressiveAsState()
+        val launcherUpdate by observeLauncherUpdateState().collectAsState()
+        LaunchedEffect(Unit) {
+            if (observeGuiConfiguration().now().valueOrNull?.checkForUpdatesOnStart == true) {
+                backgroundScope.launch { checkForLauncherUpdate() }
+            }
+        }
 
         val (snackbarMessage, setSnackbarMessage) = remember { mutableStateOf<SnackbarMessage?>(null) }
         val dismissRequests = remember { MutableSharedFlow<Unit>(extraBufferCapacity = 1) }
@@ -57,11 +69,8 @@ class AppPresenter(
 
         val cfg = config.valueOrNull
         val themeCatalog = themes.valueOrNull
-        val theme = cfg?.let { c ->
-            themeCatalog?.byId?.get(c.selectedThemeId)
-                ?: themeCatalog?.byId?.get(Configuration.DEFAULT_THEME_ID)
-        }
-        val accent = theme?.accents?.find { it.id == cfg.selectedAccent }?.color?.value
+        val theme = cfg?.let { themeCatalog?.selectedTheme(it) }
+        val accent = cfg?.let { theme?.selectedAccentColor(it) }
 
         val installTaskbarProgress = instances.valueOrNull
             ?.let { list -> computeInstallTaskbarProgress(list.mapNotNull { it.getOrNull()?.status }) }
@@ -80,15 +89,23 @@ class AppPresenter(
             installTaskbarProgress = installTaskbarProgress,
             appName = appName,
             instancesLoaded = instances.valueOrNull != null,
-            lastPlayedInstanceId = lastPlayedInstanceId
-        ) + {
-            when (it) {
-                AppEvent.OnDrawerToggle -> backgroundScope.launch {
-                    updateGuiConfiguration { copy(menuDrawerOpen = !menuDrawerOpen) }
-                }
+            lastPlayedInstanceId = lastPlayedInstanceId,
+            updateAvailable = launcherUpdate.isUpdateAvailable
+        ) + { event ->
+            handleEvent(
+                event = event,
+                dismissRequests = dismissRequests,
+            )
+        }
+    }
 
-                AppEvent.OnSnackbarDismiss -> dismissRequests.tryEmit(Unit)
+    private fun handleEvent(event: AppEvent, dismissRequests: MutableSharedFlow<Unit>) {
+        when (event) {
+            AppEvent.OnDrawerToggle -> backgroundScope.launch {
+                updateGuiConfiguration { copy(menuDrawerOpen = !menuDrawerOpen) }
             }
+
+            AppEvent.OnSnackbarDismiss -> dismissRequests.tryEmit(Unit)
         }
     }
 }

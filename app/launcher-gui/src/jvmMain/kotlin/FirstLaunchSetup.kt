@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.rememberWindowState
@@ -42,7 +43,6 @@ private val SetupThemeColors = ThemeColors(
     surface2 = ThemeColor.Argb(0xFF45475AL),
     surface3 = ThemeColor.Argb(0xFF585B70L),
 )
-private const val SetupAccentColor = 0xFFCBA6F7L
 
 // Shown before the DI graph exists: building it is what first writes to disk
 @Composable
@@ -50,7 +50,7 @@ fun NucleusApplicationScope.FirstLaunchSetupWindow(
     defaultRoot: Path,
     onConfirm: (Path) -> Unit,
 ) {
-    (AppTheme(themeColors = SetupThemeColors, accentColor = SetupAccentColor)) {
+    (AppTheme(themeColors = SetupThemeColors, accentColor = BRAND_ACCENT_COLOR)) {
         var pathText by remember { mutableStateOf(defaultRoot.toString()) }
         var errorMessage by remember { mutableStateOf<String?>(null) }
         val locationUnreachableMessage = stringResource(Res.string.setupLocationUnreachable)
@@ -75,6 +75,7 @@ fun NucleusApplicationScope.FirstLaunchSetupWindow(
         DecoratedWindow(
             onCloseRequest = ::exitApplication,
             title = stringResource(Res.string.setupWindowTitle),
+            icon = rememberLogoPainter(Color(BRAND_ACCENT_COLOR)),
             state = rememberWindowState(size = DpSize(560.dp, 380.dp)),
         ) {
             Column(

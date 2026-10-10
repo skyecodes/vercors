@@ -2,6 +2,7 @@ package app.vercors.feature.config.ui
 
 import app.vercors.feature.config.domain.model.HomeCategoryConfig
 import app.vercors.feature.config.domain.model.StartupScreen
+import app.vercors.feature.config.domain.model.UpdateChannel
 import app.vercors.shared.ui.Event
 
 sealed interface ConfigurationEvent : Event {
@@ -48,4 +49,11 @@ sealed interface ConfigurationEvent : Event {
     data object OnOpenDataDirectoryClick : ConfigurationEvent
     data object OnChangeDataDirectoryClick : ConfigurationEvent
     data object OnChangeDataDirectoryDismiss : ConfigurationEvent
+
+    data object OnCheckForUpdatesOnStartToggle : ConfigurationEvent
+    data class OnUpdateChannelChange(val value: UpdateChannel) : ConfigurationEvent
+    data object OnCheckForUpdatesClick : ConfigurationEvent
+    data object OnUpdateClick : ConfigurationEvent
+    data object OnRestartToUpdateClick : ConfigurationEvent
+    data class OnConfirmRestartForUpdate(val result: Boolean) : ConfigurationEvent
 }

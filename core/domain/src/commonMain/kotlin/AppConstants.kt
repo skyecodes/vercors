@@ -8,4 +8,7 @@ object AppConstants {
     const val META_API_URL_KEY = "metaApiUrl"
     const val NETWORK_TIMEOUT_KEY = "networkTimeout"
     const val PARALLEL_FILESYSTEM_OPERATIONS_KEY = "parallelFilesystemOperations"
+    const val HOMEPAGE_URL = "https://vercors.app"
+    const val REPOSITORY_URL = "https://github.com/skyecodes/vercors"
+    const val ISSUES_URL = "$REPOSITORY_URL/issues"
 }

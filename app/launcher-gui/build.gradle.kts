@@ -52,6 +52,7 @@ dependencies {
     commonMainImplementation(libs.nucleus.notification.linux)
     commonMainImplementation(libs.nucleus.notification.macos)
     commonMainImplementation(libs.nucleus.taskbar.progress.tao)
+    commonMainImplementation(libs.nucleus.updater.runtime)
     commonMainImplementation(libs.nucleus.composenativetray)
     commonMainImplementation(libs.coil.compose)
     commonMainImplementation(libs.coil.network.ktor3)
@@ -78,7 +79,7 @@ nucleus.application {
 
     nativeDistributions {
         targetFormats(*TargetFormat.entries.toTypedArray())
-        modules("jdk.security.auth")
+        modules("jdk.security.auth", "java.net.http")
         appName = property("appName") as String
         packageName = property("appId") as String
         packageVersion = property("appVersion") as String
@@ -88,6 +89,7 @@ nucleus.application {
         enableAotCache = true
 
         linux {
+            iconFile = rootProject.layout.projectDirectory.file("public/logo.png")
             shortcut = true
             appCategory = "Game"
             menuGroup = "Games"
@@ -105,6 +107,14 @@ nucleus.application {
 
             flatpak {
             }
+        }
+
+        windows {
+            iconFile = rootProject.layout.projectDirectory.file("public/logo.ico")
+        }
+
+        macOS {
+            iconFile = rootProject.layout.projectDirectory.file("public/logo.icns")
         }
     }
 }

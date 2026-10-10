@@ -1,6 +1,7 @@
 package app.vercors.launcher.gui
 
 import androidx.compose.runtime.*
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.rememberWindowState
@@ -17,8 +18,6 @@ import coil3.compose.setSingletonImageLoaderFactory
 import coil3.disk.DiskCache
 import coil3.network.ktor3.KtorNetworkFetcherFactory
 import coil3.util.Logger
-import com.composables.icons.lucide.Lucide
-import com.composables.icons.lucide.MountainSnow
 import com.hashsequence.coilresvg.ResvgDecoder
 import com.slack.circuit.foundation.CircuitCompositionLocals
 import com.slack.circuit.foundation.CircuitContent
@@ -37,6 +36,7 @@ import kotlinx.io.files.Path
 import okio.Path.Companion.toPath
 import opensavvy.state.progressive.valueOrNull
 import org.jetbrains.compose.resources.stringResource
+import org.jetbrains.compose.resources.vectorResource
 
 private class Slf4jCoilLogger(override var minLevel: Logger.Level = Logger.Level.Warn) : Logger {
     private val logger = KotlinLogging.logger {}
@@ -147,8 +147,17 @@ private fun NucleusApplicationScope.MainApp(appGraph: AppGraph, rootUnreachable:
 
     var showQuitConfirmation by remember { mutableStateOf(false) }
 
+    val configuration by appGraph.observeConfiguration().collectProgressiveAsState()
+    val themes by appGraph.observeThemes().collectProgressiveAsState()
+    val logoTint = Color(
+        configuration.valueOrNull?.let { config ->
+            themes.valueOrNull?.selectedTheme(config)?.selectedAccentColor(config)
+        } ?: BRAND_ACCENT_COLOR
+    )
+
     Tray(
-        icon = Lucide.MountainSnow,
+        icon = vectorResource(SharedRes.drawable.logo),
+        tint = logoTint,
         tooltip = appGraph.appName,
         primaryAction = { trayHidden = false },
     ) {
@@ -170,6 +179,7 @@ private fun NucleusApplicationScope.MainApp(appGraph: AppGraph, rootUnreachable:
         visible = !trayHidden,
         state = windowState,
         title = appGraph.appName,
+        icon = rememberLogoPainter(logoTint),
         minimumSize = DpSize(960.dp, 540.dp),
     ) {
         CompositionLocalProvider(

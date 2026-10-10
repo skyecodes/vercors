@@ -9,11 +9,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.unit.dp
 import app.vercors.core.ui.animation.appAnimateColorAsState
+import app.vercors.core.ui.component.AppBadge
 import app.vercors.core.ui.component.AppIconTextButtonContent
 import app.vercors.core.ui.modifier.appCard
 import app.vercors.core.ui.modifier.horizontalMouseWheelScroll
@@ -129,7 +131,7 @@ class AppTabScope internal constructor(
 )
 
 @Composable
-fun AppTabScope.AppSidebarTabItem(title: String, icon: ImageVector) {
+fun AppTabScope.AppSidebarTabItem(title: String, icon: ImageVector, badgeColor: Color? = null) {
     val backgroundColor by appAnimateColorAsState(if (selected) Theme[colors][surface2] else Theme[colors][surface])
     Row(
         modifier = Modifier
@@ -145,5 +147,6 @@ fun AppTabScope.AppSidebarTabItem(title: String, icon: ImageVector) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         AppIconTextButtonContent(text = title, imageVector = icon)
+        badgeColor?.let { AppBadge(color = it, size = 8.dp) }
     }
 }

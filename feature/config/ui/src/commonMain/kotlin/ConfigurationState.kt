@@ -3,7 +3,9 @@ package app.vercors.feature.config.ui
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color
 import app.vercors.feature.config.domain.model.HomeCategoryConfig
+import app.vercors.feature.config.domain.model.LauncherUpdateState
 import app.vercors.feature.config.domain.model.StartupScreen
+import app.vercors.feature.config.domain.model.UpdateChannel
 import app.vercors.feature.config.ui.datadirectory.ChangeDataDirectoryDialog
 import app.vercors.feature.project.domain.model.ProjectPlatform
 import app.vercors.shared.domain.model.JavaInstallation
@@ -43,6 +45,12 @@ data class ConfigurationState(
     val canChangeDataDirectory: Boolean,
     val promptChangeDataDirectory: Boolean,
     val changeDataDirectoryDialog: ChangeDataDirectoryDialog,
+    val appName: String,
+    val appVersion: String,
+    val checkForUpdatesOnStart: Boolean?,
+    val updateChannel: UpdateChannel?,
+    val launcherUpdate: LauncherUpdateState,
+    val promptRestartForUpdate: Boolean,
 )
 
 @Immutable

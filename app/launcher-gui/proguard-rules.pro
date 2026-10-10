@@ -50,3 +50,6 @@
 
 # Cryptography
 -keep class * implements dev.whyoleg.cryptography.CryptographyProviderContainer { *; }
+
+# Nucleus updater (kotlinx-serialization DTOs for the GitHub/yml feeds)
+-keep class dev.nucleusframework.updater.** { *; }

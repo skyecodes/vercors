@@ -167,6 +167,7 @@ private fun AppMainContent(
                             AppMenu(
                                 currentBackStackEntry = navStack.currentRecord?.screen as? Screen,
                                 isDrawerOpen = config.menuDrawerOpen,
+                                updateAvailable = state.updateAvailable,
                                 onToggleDrawerClick = { eventSink(AppEvent.OnDrawerToggle) },
                                 onMenuButtonClick = { navigator.goTo(it) }
                             )

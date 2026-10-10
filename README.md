@@ -1,11 +1,14 @@
-<h2 align="center">Vercors</h2>
+<h1 align="center">
+  <img src="public/logo.png" alt="Logo" height="64" align="absmiddle"/>
+  Vercors
+</h1>
+
+<h3 align="center">A modern Minecraft Launcher with mod support and much more!</h3>
 
 <p align="center">
    <img src="public/screenshot1.png" alt="Screenshot 1" width="480"/>
    <img src="public/screenshot2.png" alt="Screenshot 2" width="480"/>
 </p>
-
-<h3 align="center">A modern Minecraft Launcher with mod support and much more!</h3>
 
 ---
 

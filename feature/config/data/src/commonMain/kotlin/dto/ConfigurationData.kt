@@ -3,6 +3,7 @@ package app.vercors.feature.config.data.dto
 import app.vercors.feature.config.domain.model.Configuration
 import app.vercors.feature.config.domain.model.HomeCategoryConfig
 import app.vercors.feature.config.domain.model.StartupScreen
+import app.vercors.feature.config.domain.model.UpdateChannel
 import app.vercors.shared.data.dto.JvmMemoryOptionsData
 import app.vercors.shared.data.dto.NativeLibraryOptionsData
 import app.vercors.shared.data.dto.toData
@@ -30,7 +31,9 @@ data class ConfigurationData(
     val wrapLogLines: Boolean = true,
     val uiScalePercent: Int = 100,
     val networkTimeout: Long = 10_000,
-    val horizontalTabs: Boolean = false
+    val horizontalTabs: Boolean = false,
+    val checkForUpdatesOnStart: Boolean = true,
+    val updateChannel: UpdateChannelData? = null
 )
 
 internal fun ConfigurationData.toDomain(): Configuration = Configuration(
@@ -51,7 +54,9 @@ internal fun ConfigurationData.toDomain(): Configuration = Configuration(
     wrapLogLines = wrapLogLines,
     uiScalePercent = uiScalePercent,
     networkTimeout = networkTimeout.milliseconds,
-    horizontalTabs = horizontalTabs
+    horizontalTabs = horizontalTabs,
+    checkForUpdatesOnStart = checkForUpdatesOnStart,
+    updateChannel = updateChannel?.toDomain()
 )
 
 internal fun Configuration.toData(): ConfigurationData = ConfigurationData(
@@ -72,7 +77,9 @@ internal fun Configuration.toData(): ConfigurationData = ConfigurationData(
     wrapLogLines = wrapLogLines,
     uiScalePercent = uiScalePercent,
     networkTimeout = networkTimeout.inWholeMilliseconds,
-    horizontalTabs = horizontalTabs
+    horizontalTabs = horizontalTabs,
+    checkForUpdatesOnStart = checkForUpdatesOnStart,
+    updateChannel = updateChannel?.toData()
 )
 
 @Serializable
@@ -146,4 +153,28 @@ private fun StartupScreen.toData(): StartupScreenData = when (this) {
     StartupScreen.Settings -> StartupScreenData.Settings
     StartupScreen.Accounts -> StartupScreenData.Accounts
     StartupScreen.LastPlayedInstance -> StartupScreenData.LastPlayedInstance
+}
+
+@Serializable
+enum class UpdateChannelData {
+    @SerialName("stable")
+    Stable,
+
+    @SerialName("beta")
+    Beta,
+
+    @SerialName("alpha")
+    Alpha
+}
+
+private fun UpdateChannelData.toDomain(): UpdateChannel = when (this) {
+    UpdateChannelData.Stable -> UpdateChannel.Stable
+    UpdateChannelData.Beta -> UpdateChannel.Beta
+    UpdateChannelData.Alpha -> UpdateChannel.Alpha
+}
+
+private fun UpdateChannel.toData(): UpdateChannelData = when (this) {
+    UpdateChannel.Stable -> UpdateChannelData.Stable
+    UpdateChannel.Beta -> UpdateChannelData.Beta
+    UpdateChannel.Alpha -> UpdateChannelData.Alpha
 }

@@ -24,7 +24,9 @@ data class Configuration(
     val wrapLogLines: Boolean,
     val uiScalePercent: Int,
     val networkTimeout: Duration,
-    val horizontalTabs: Boolean
+    val horizontalTabs: Boolean,
+    val checkForUpdatesOnStart: Boolean,
+    val updateChannel: UpdateChannel?
 ) {
     companion object {
         const val DEFAULT_THEME_ID = "catppuccin_mocha"
@@ -49,7 +51,9 @@ data class Configuration(
             wrapLogLines = true,
             uiScalePercent = DEFAULT_UI_SCALE_PERCENT,
             networkTimeout = 10.seconds,
-            horizontalTabs = false
+            horizontalTabs = false,
+            checkForUpdatesOnStart = true,
+            updateChannel = null
         )
     }
 }

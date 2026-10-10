@@ -15,7 +15,8 @@ data class AppState(
     val installTaskbarProgress: InstallTaskbarProgress,
     val appName: String,
     val instancesLoaded: Boolean,
-    val lastPlayedInstanceId: InstanceId?
+    val lastPlayedInstanceId: InstanceId?,
+    val updateAvailable: Boolean
 )
 
 @Immutable

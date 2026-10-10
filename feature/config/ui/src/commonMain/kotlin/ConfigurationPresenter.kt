@@ -3,16 +3,15 @@ package app.vercors.feature.config.ui
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.graphics.Color
+import app.vercors.core.domain.AppConstants
 import app.vercors.core.system.OsType
 import app.vercors.core.system.SystemService
 import app.vercors.core.ui.state.collectProgressiveAsState
 import app.vercors.core.ui.state.produceProgressiveState
 import app.vercors.feature.config.domain.model.HomeCategoryConfig
+import app.vercors.feature.config.domain.model.UpdateChannel
 import app.vercors.feature.config.domain.model.withoutJavaInstallations
-import app.vercors.feature.config.domain.usecase.ClearContentCacheUseCase
-import app.vercors.feature.config.domain.usecase.GetContentCacheSizeUseCase
-import app.vercors.feature.config.domain.usecase.ObserveConfigurationUseCase
-import app.vercors.feature.config.domain.usecase.UpdateConfigurationUseCase
+import app.vercors.feature.config.domain.usecase.*
 import app.vercors.feature.config.ui.datadirectory.ChangeDataDirectoryDialog
 import app.vercors.feature.instance.domain.model.InstanceStatus
 import app.vercors.feature.instance.domain.usecase.ObserveInstanceListUseCase
@@ -38,6 +37,7 @@ import com.slack.circuit.codegen.annotations.CircuitInject
 import com.slack.circuit.retained.collectAsRetainedState
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Inject
+import dev.zacsweers.metro.Named
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -68,6 +68,12 @@ class ConfigurationPresenter(
     private val appPaths: AppPaths,
     private val observeInstanceList: ObserveInstanceListUseCase,
     private val changeDataDirectoryDialogFactory: ChangeDataDirectoryDialog.Factory,
+    private val observeLauncherUpdateState: ObserveLauncherUpdateStateUseCase,
+    private val checkForLauncherUpdate: CheckForLauncherUpdateUseCase,
+    private val downloadLauncherUpdate: DownloadLauncherUpdateUseCase,
+    private val installLauncherUpdate: InstallLauncherUpdateUseCase,
+    @Named(AppConstants.APP_NAME_KEY) private val appName: String,
+    @Named(AppConstants.APP_VERSION_KEY) private val appVersion: String,
 ) : Presenter<ConfigurationState, ConfigurationEvent> {
     @Composable
     override fun present(): Store<ConfigurationState, ConfigurationEvent> {
@@ -93,6 +99,8 @@ class ConfigurationPresenter(
         val (promptChangeDataDirectory, setPromptChangeDataDirectory) = remember { mutableStateOf(false) }
         val changeDataDirectoryDialog =
             remember(dataDirectory) { changeDataDirectoryDialogFactory.create(dataDirectory) }
+        val launcherUpdate by observeLauncherUpdateState().collectAsState()
+        val (promptRestartForUpdate, setPromptRestartForUpdate) = remember { mutableStateOf(false) }
         val cfg = configuration.valueOrNull
         val selectedTheme = themeList.find { it.id == cfg?.selectedThemeId }
         val selectedAccent = selectedTheme?.accents?.find { it.id == cfg?.selectedAccent }
@@ -131,6 +139,12 @@ class ConfigurationPresenter(
             canChangeDataDirectory = !hasRunningInstance,
             promptChangeDataDirectory = promptChangeDataDirectory,
             changeDataDirectoryDialog = changeDataDirectoryDialog,
+            appName = appName,
+            appVersion = appVersion,
+            checkForUpdatesOnStart = cfg?.checkForUpdatesOnStart,
+            updateChannel = cfg?.let { it.updateChannel ?: UpdateChannel.fromVersion(appVersion) },
+            launcherUpdate = launcherUpdate,
+            promptRestartForUpdate = promptRestartForUpdate,
         ) + { event ->
             handleEvent(
                 event = event,
@@ -144,6 +158,8 @@ class ConfigurationPresenter(
                 setContentCacheSizeBytes = setContentCacheSizeBytes,
                 dataDirectory = dataDirectory,
                 setPromptChangeDataDirectory = setPromptChangeDataDirectory,
+                hasRunningInstance = hasRunningInstance,
+                setPromptRestartForUpdate = setPromptRestartForUpdate,
             )
         }
     }
@@ -160,6 +176,8 @@ class ConfigurationPresenter(
         setContentCacheSizeBytes: (Long?) -> Unit,
         dataDirectory: String,
         setPromptChangeDataDirectory: (Boolean) -> Unit,
+        hasRunningInstance: Boolean,
+        setPromptRestartForUpdate: (Boolean) -> Unit,
     ) {
         when (event) {
             is ConfigurationEvent.OnTabClick -> setSelectedTab(event.tab)
@@ -274,6 +292,30 @@ class ConfigurationPresenter(
 
             ConfigurationEvent.OnChangeDataDirectoryClick -> setPromptChangeDataDirectory(true)
             ConfigurationEvent.OnChangeDataDirectoryDismiss -> setPromptChangeDataDirectory(false)
+
+            ConfigurationEvent.OnCheckForUpdatesOnStartToggle -> presenterScope.launch {
+                updateConfiguration { copy(checkForUpdatesOnStart = !checkForUpdatesOnStart) }
+            }
+
+            is ConfigurationEvent.OnUpdateChannelChange -> handleUpdateChannelChange(event.value, presenterScope)
+
+            ConfigurationEvent.OnCheckForUpdatesClick -> presenterScope.launch { checkForLauncherUpdate() }
+            ConfigurationEvent.OnUpdateClick -> presenterScope.launch { downloadLauncherUpdate() }
+
+            ConfigurationEvent.OnRestartToUpdateClick ->
+                if (hasRunningInstance) setPromptRestartForUpdate(true) else installLauncherUpdate()
+
+            is ConfigurationEvent.OnConfirmRestartForUpdate -> {
+                setPromptRestartForUpdate(false)
+                if (event.result) installLauncherUpdate()
+            }
+        }
+    }
+
+    private fun handleUpdateChannelChange(channel: UpdateChannel, presenterScope: CoroutineScope) {
+        presenterScope.launch {
+            updateConfiguration { copy(updateChannel = channel) }
+            checkForLauncherUpdate()
         }
     }
 

@@ -6,5 +6,6 @@ enum class ConfigurationTab {
     UI,
     Java,
     NativeLibraries,
-    Storage
+    Storage,
+    About
 }

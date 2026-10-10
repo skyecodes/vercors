@@ -61,4 +61,27 @@
     <string name="clearCache">Clear cache</string>
     <string name="clearCacheConfirmation">Clear the content cache? Already-installed files in your instances won\'t be affected, but future installs of the same files will need to be re-downloaded.</string>
     <string name="contentCacheCleared">Content cache cleared</string>
+    <string name="about">About</string>
+    <string name="launcherVersion">Version %1$s</string>
+    <string name="homepage">Homepage</string>
+    <string name="repository">Source code</string>
+    <string name="issueTracker">Issue tracker</string>
+    <string name="checkForUpdatesOnStart">Check for updates on start</string>
+    <string name="checkForUpdatesOnStartDesc">Look for a new launcher version every time the launcher starts.</string>
+    <string name="updates">Updates</string>
+    <string name="updatesDesc">Check whether a newer launcher version is available.</string>
+    <string name="checkForUpdates">Check for updates</string>
+    <string name="checkingForUpdates">Checking for updates…</string>
+    <string name="upToDate">You\'re using the latest version.</string>
+    <string name="updateFailed">Update failed: %1$s</string>
+    <string name="updateAvailable">Version %1$s is available</string>
+    <string name="viewRelease">View release notes</string>
+    <string name="update">Update</string>
+    <string name="restartToUpdate">Restart to update</string>
+    <string name="restartForUpdateConfirmation">Some instances are still running. The launcher will restart to install the update; running instances will be closed. Continue?</string>
+    <string name="updateChannel">Update channel</string>
+    <string name="updateChannelDesc">Beta and alpha versions get new features sooner but may be unstable.</string>
+    <string name="updateChannelStable">Stable</string>
+    <string name="updateChannelBeta">Beta</string>
+    <string name="updateChannelAlpha">Alpha</string>
 </resources>

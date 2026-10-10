@@ -23,16 +23,14 @@ import app.vercors.core.ui.component.AppButton
 import app.vercors.core.ui.component.AppIcon
 import app.vercors.core.ui.component.AppText
 import app.vercors.core.ui.theme.*
-import app.vercors.shared.ui.SharedRes
-import app.vercors.shared.ui.back
-import app.vercors.shared.ui.close
-import app.vercors.shared.ui.next
+import app.vercors.shared.ui.*
 import com.composables.icons.lucide.*
 import com.composeunstyled.LocalContentColor
 import com.composeunstyled.theme.Theme
 import dev.nucleusframework.application.LocalNucleusWindow
 import dev.nucleusframework.window.windowDragArea
 import org.jetbrains.compose.resources.stringResource
+import org.jetbrains.compose.resources.vectorResource
 
 private const val DisabledContentAlpha = 0.38f
 
@@ -56,8 +54,10 @@ fun AppTopBar(
             verticalAlignment = Alignment.CenterVertically
         ) {
             AppIcon(
-                imageVector = Lucide.MountainSnow,
-                contentDescription = null
+                imageVector = vectorResource(SharedRes.drawable.logo),
+                contentDescription = null,
+                tint = Theme[colors][primary],
+                modifier = Modifier.size(24.dp)
             )
             AppText(
                 text = appName,

@@ -20,12 +20,14 @@ import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
+import app.vercors.core.domain.AppConstants
 import app.vercors.core.domain.toHumanReadableSize
 import app.vercors.core.ui.animation.appAnimateItem
 import app.vercors.core.ui.component.*
@@ -34,8 +36,7 @@ import app.vercors.core.ui.layout.AppTabGroup
 import app.vercors.core.ui.modifier.appCard
 import app.vercors.core.ui.modifier.clickableText
 import app.vercors.core.ui.theme.*
-import app.vercors.feature.config.domain.model.HomeCategoryConfig
-import app.vercors.feature.config.domain.model.StartupScreen
+import app.vercors.feature.config.domain.model.*
 import app.vercors.shared.domain.model.DEFAULT_MIN_MEMORY_MB
 import app.vercors.shared.domain.model.JavaInstallation
 import app.vercors.shared.domain.model.defaultMaxMemoryMb
@@ -54,6 +55,7 @@ import io.github.vinceglb.filekit.dialogs.compose.rememberDirectoryPickerLaunche
 import io.github.vinceglb.filekit.path
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
+import org.jetbrains.compose.resources.vectorResource
 import kotlin.math.roundToInt
 
 @CircuitInject(ConfigurationScreen::class, AppScope::class)
@@ -87,13 +89,37 @@ fun Configuration(
             }
         }
 
+        if (state.promptRestartForUpdate) {
+            OverlayEffect {
+                val result = show(
+                    ConfirmDialog(
+                        messageResource = ConfigRes.string.restartForUpdateConfirmation,
+                        actionButton = ConfirmDialogButton(
+                            ConfigRes.string.restartToUpdate,
+                            Lucide.RefreshCw,
+                            ConfirmDialogButtonStyle.Primary
+                        ),
+                    )
+                )
+                eventSink(ConfigurationEvent.OnConfirmRestartForUpdate(result))
+            }
+        }
+
         AppTabGroup(
             selectedTab = state.selectedTab,
             onSelectedTabChange = { eventSink(ConfigurationEvent.OnTabClick(it)) },
             tabs = ConfigurationTab.entries.filter { it != ConfigurationTab.NativeLibraries || state.showNativeLibraryOptions },
             modifier = modifier.fillMaxSize(),
             orientation = if (state.horizontalTabs == true) Orientation.Horizontal else Orientation.Vertical,
-            tabTitle = { tab -> AppSidebarTabItem(title = tab.title, icon = tab.icon) }
+            tabTitle = { tab ->
+                AppSidebarTabItem(
+                    title = tab.title,
+                    icon = tab.icon,
+                    badgeColor = Theme[colors][warn].takeIf {
+                        tab == ConfigurationTab.About && state.launcherUpdate.isUpdateAvailable
+                    }
+                )
+            }
         ) { tab -> ConfigurationTabContent(tab, state) }
     }
 }
@@ -108,6 +134,7 @@ private fun ConfigurationTabContent(tab: ConfigurationTab, state: ConfigurationS
         ConfigurationTab.Java -> JavaConfigurationTab(state)
         ConfigurationTab.NativeLibraries -> NativeLibraryConfigurationTab(state)
         ConfigurationTab.Storage -> StorageConfigurationTab(state)
+        ConfigurationTab.About -> AboutConfigurationTab(state)
     }
 }
 
@@ -624,6 +651,174 @@ private fun StorageConfigurationTab(
 }
 
 @Composable
+context(eventSink: EventSink<ConfigurationEvent>)
+private fun AboutConfigurationTab(
+    state: ConfigurationState
+) {
+    val uriHandler = LocalUriHandler.current
+    ConfigurationTabScaffold(state.horizontalTabs) {
+        Row(modifier = Modifier.height(IntrinsicSize.Max)) {
+            AppIcon(
+                imageVector = vectorResource(SharedRes.drawable.logo),
+                contentDescription = null,
+                tint = Theme[colors][primary],
+                modifier = Modifier.size(128.dp)
+            )
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically),
+                modifier = Modifier.fillMaxHeight()
+            ) {
+                AppText(
+                    text = "${state.appName} v${state.appVersion}",
+                    style = Theme[textStyles][title]
+                )
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    itemVerticalAlignment = Alignment.CenterVertically
+                ) {
+                    AboutUpdateActions(state.launcherUpdate)
+                    AboutUpdateStatus(state.launcherUpdate) { uriHandler.openUri(it) }
+                }
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    AppIconTextButton(
+                        imageVector = Lucide.House,
+                        text = stringResource(ConfigRes.string.homepage),
+                        onClick = { uriHandler.openUri(AppConstants.HOMEPAGE_URL) }
+                    )
+                    AppIconTextButton(
+                        imageVector = Lucide.Code,
+                        text = stringResource(ConfigRes.string.repository),
+                        onClick = { uriHandler.openUri(AppConstants.REPOSITORY_URL) }
+                    )
+                    AppIconTextButton(
+                        imageVector = Lucide.Bug,
+                        text = stringResource(ConfigRes.string.issueTracker),
+                        onClick = { uriHandler.openUri(AppConstants.ISSUES_URL) }
+                    )
+                }
+            }
+        }
+        if (state.checkForUpdatesOnStart != null) {
+            ConfigurationRow(
+                title = ConfigRes.string.checkForUpdatesOnStart,
+                description = ConfigRes.string.checkForUpdatesOnStartDesc,
+            ) {
+                AppCheckbox(
+                    checked = state.checkForUpdatesOnStart,
+                    onCheckedChange = { eventSink(ConfigurationEvent.OnCheckForUpdatesOnStartToggle) }
+                )
+            }
+        }
+        if (state.updateChannel != null) {
+            ConfigurationRow(
+                title = ConfigRes.string.updateChannel,
+                description = ConfigRes.string.updateChannelDesc,
+            ) {
+                AppSelectField(
+                    value = state.updateChannel,
+                    items = UpdateChannel.entries,
+                    onValueChange = { eventSink(ConfigurationEvent.OnUpdateChannelChange(it)) },
+                    itemRenderer = { channel, _ ->
+                        AppText(text = stringResource(channel.label))
+                    },
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun AboutUpdateStatus(update: LauncherUpdateState, onOpen: (String) -> Unit) {
+    val labelStyle = Theme[textStyles][label]
+    when (update) {
+        LauncherUpdateState.Idle -> AppText(text = stringResource(ConfigRes.string.updatesDesc), style = labelStyle)
+        LauncherUpdateState.Checking ->
+            AppText(text = stringResource(ConfigRes.string.checkingForUpdates), style = labelStyle)
+
+        LauncherUpdateState.UpToDate -> AppText(
+            text = stringResource(ConfigRes.string.upToDate),
+            style = labelStyle,
+            color = Theme[colors][success]
+        )
+
+        is LauncherUpdateState.Failed -> AppText(
+            text = stringResource(ConfigRes.string.updateFailed, update.error.message),
+            style = labelStyle,
+            color = Theme[colors][error]
+        )
+
+        is LauncherUpdateState.Available -> AboutAvailableUpdate(update.version, update.releaseUrl, onOpen)
+        is LauncherUpdateState.Downloading -> AboutAvailableUpdate(update.version, update.releaseUrl, onOpen)
+        is LauncherUpdateState.ReadyToInstall -> AboutAvailableUpdate(update.version, update.releaseUrl, onOpen)
+    }
+}
+
+@Composable
+private fun AboutAvailableUpdate(version: String, releaseUrl: String, onOpen: (String) -> Unit) {
+    AppText(
+        text = stringResource(ConfigRes.string.updateAvailable, version),
+        style = Theme[textStyles][label],
+        color = Theme[colors][warn]
+    )
+    AppText(
+        text = stringResource(ConfigRes.string.viewRelease),
+        style = Theme[textStyles][label],
+        color = Theme[colors][primary],
+        modifier = Modifier.clickableText { onOpen(releaseUrl) }
+    )
+}
+
+@Composable
+context(eventSink: EventSink<ConfigurationEvent>)
+private fun RowScope.AboutUpdateActions(update: LauncherUpdateState) {
+    when (update) {
+        is LauncherUpdateState.Downloading -> {
+            AppProgressIndicator(progress = update.progress ?: 0f, modifier = Modifier.weight(1f))
+            update.progress?.let { AppText(text = "${(it * 100).roundToInt()}%") }
+        }
+
+        is LauncherUpdateState.ReadyToInstall -> AppIconTextButton(
+            onClick = { eventSink(ConfigurationEvent.OnRestartToUpdateClick) },
+            text = stringResource(ConfigRes.string.restartToUpdate),
+            imageVector = Lucide.RefreshCw,
+            backgroundColor = Theme[colors][primary],
+            contentColor = Theme[colors][onPrimary]
+        )
+
+        is LauncherUpdateState.Available -> {
+            AboutCheckForUpdatesButton(enabled = true)
+            if (update.canInstall) {
+                AppIconTextButton(
+                    onClick = { eventSink(ConfigurationEvent.OnUpdateClick) },
+                    text = stringResource(ConfigRes.string.update),
+                    imageVector = Lucide.Download,
+                    backgroundColor = Theme[colors][primary],
+                    contentColor = Theme[colors][onPrimary]
+                )
+            }
+        }
+
+        else -> AboutCheckForUpdatesButton(enabled = update != LauncherUpdateState.Checking)
+    }
+}
+
+@Composable
+context(eventSink: EventSink<ConfigurationEvent>)
+private fun AboutCheckForUpdatesButton(enabled: Boolean) {
+    AppIconTextButton(
+        onClick = { eventSink(ConfigurationEvent.OnCheckForUpdatesClick) },
+        text = stringResource(ConfigRes.string.checkForUpdates),
+        imageVector = Lucide.RefreshCw,
+        enabled = enabled,
+    )
+}
+
+@Composable
 private fun RowScope.LibraryOverrideRow(
     checked: Boolean,
     path: String,
@@ -796,6 +991,7 @@ private val ConfigurationTab.icon: ImageVector
         ConfigurationTab.NativeLibraries -> Lucide.Package
         ConfigurationTab.Storage -> Lucide.HardDrive
         ConfigurationTab.Advanced -> Lucide.Wrench
+        ConfigurationTab.About -> Lucide.Info
     }
 
 private val ConfigurationTab.title: String
@@ -806,6 +1002,7 @@ private val ConfigurationTab.title: String
         ConfigurationTab.NativeLibraries -> stringResource(ConfigRes.string.nativeLibraries)
         ConfigurationTab.Storage -> stringResource(ConfigRes.string.storage)
         ConfigurationTab.Advanced -> stringResource(SharedRes.string.advanced)
+        ConfigurationTab.About -> stringResource(ConfigRes.string.about)
     }
 
 private val StartupScreen.label: StringResource
@@ -816,6 +1013,13 @@ private val StartupScreen.label: StringResource
         StartupScreen.Settings -> SharedRes.string.settings
         StartupScreen.Accounts -> SharedRes.string.account
         StartupScreen.LastPlayedInstance -> ConfigRes.string.startupScreenLastPlayedInstance
+    }
+
+private val UpdateChannel.label: StringResource
+    get() = when (this) {
+        UpdateChannel.Stable -> ConfigRes.string.updateChannelStable
+        UpdateChannel.Beta -> ConfigRes.string.updateChannelBeta
+        UpdateChannel.Alpha -> ConfigRes.string.updateChannelAlpha
     }
 
 private val HomeCategoryConfig.label: StringResource

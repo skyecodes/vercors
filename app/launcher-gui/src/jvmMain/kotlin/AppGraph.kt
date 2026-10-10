@@ -4,9 +4,11 @@ import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.staticCompositionLocalOf
 import app.vercors.core.domain.AppConstants
 import app.vercors.core.network.MetaApiConnectivity
+import app.vercors.feature.config.domain.usecase.ObserveConfigurationUseCase
 import app.vercors.feature.instance.domain.usecase.CreateInstanceUseCase
 import app.vercors.feature.instance.domain.usecase.DeleteInstanceUseCase
 import app.vercors.feature.instance.domain.usecase.ObserveInstanceListUseCase
+import app.vercors.feature.theme.domain.usecase.ObserveThemesUseCase
 import app.vercors.shared.data.AppPaths
 import app.vercors.shared.ui.AppRestartService
 import app.vercors.shared.ui.SnackbarService
@@ -36,6 +38,8 @@ internal interface AppGraph {
     val observeInstanceList: ObserveInstanceListUseCase
     val createInstance: CreateInstanceUseCase
     val deleteInstance: DeleteInstanceUseCase
+    val observeConfiguration: ObserveConfigurationUseCase
+    val observeThemes: ObserveThemesUseCase
 
     @Named(AppConstants.APP_NAME_KEY)
     val appName: String
