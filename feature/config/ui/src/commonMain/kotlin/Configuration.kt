@@ -699,6 +699,7 @@ private fun JavaVersionGroup(majorVersion: Int, installations: List<JavaInstalla
 }
 
 @Composable
+context(eventSink: EventSink<ConfigurationEvent>)
 private fun AppRadioGroupScope.JavaInstallationRow(installation: JavaInstallation, isSelected: Boolean) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -722,6 +723,11 @@ private fun AppRadioGroupScope.JavaInstallationRow(installation: JavaInstallatio
         AppRadioButton(
             value = installation.id,
             label = if (isSelected) stringResource(ConfigRes.string.preferred) else null,
+        )
+        AppIconTextButton(
+            text = stringResource(ConfigRes.string.forget),
+            imageVector = Lucide.X,
+            onClick = { eventSink(ConfigurationEvent.OnForgetInstallation(installation.id)) }
         )
     }
 }

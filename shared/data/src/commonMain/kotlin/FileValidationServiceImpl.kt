@@ -21,6 +21,7 @@ import io.ktor.client.*
 import kotlinx.io.bytestring.toHexString
 import kotlinx.io.files.Path
 import kotlinx.serialization.DeserializationStrategy
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import opensavvy.progress.Progress
 import opensavvy.progress.coroutines.report
@@ -82,7 +83,7 @@ class FileValidationServiceImpl(
         serializer: DeserializationStrategy<T>
     ): T {
         either { submit(listOf(file)) {} }.mapLeft { it.first() }.bind()
-        return file.path.readJson(serializer, json)
+        return file.path.readValidatedJson(serializer)
     }
 
     context(_: Raise<FileValidationFailure>)
@@ -91,7 +92,14 @@ class FileValidationServiceImpl(
         serializer: DeserializationStrategy<T>
     ): T {
         file.validate()
-        return file.path.readJson(serializer, json)
+        return file.path.readValidatedJson(serializer)
+    }
+
+    context(_: Raise<FileValidationFailure>)
+    private suspend fun <T> Path.readValidatedJson(serializer: DeserializationStrategy<T>): T = try {
+        readJson(serializer, json)
+    } catch (e: SerializationException) {
+        raise(FileValidationFailure.InvalidContent(this, e.message))
     }
 
     context(_: Raise<FileValidationFailure>)

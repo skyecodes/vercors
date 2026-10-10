@@ -21,6 +21,12 @@ data class MojangJavaInfo(
         ) : File
 
         @Serializable
+        @SerialName("link")
+        data class Link(
+            val target: String,
+        ) : File
+
+        @Serializable
         data class Downloads(
             val lzma: Download? = null,
             val raw: Download,

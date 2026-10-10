@@ -5,7 +5,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import app.vercors.core.ui.animation.AppAnimatedVisibility
 import app.vercors.core.ui.component.*
 import app.vercors.core.ui.layout.AppDialog
 import app.vercors.core.ui.layout.AppForm
@@ -130,24 +132,32 @@ private fun InstallProjectFileSelector(state: InstallProjectState) {
         items = state.fileList,
         onValueChange = { eventSink(InstallProjectEvent.OnFileSelected(it?.id)) },
         itemRenderer = { value, _ -> AppSelectItem(text = value?.displayName ?: "") },
-        modifier = Modifier.width(300.dp),
+        modifier = Modifier.width(400.dp),
     )
 }
 
 @Composable
 context(eventSink: EventSink<InstallProjectEvent>)
-private fun InstallProjectDependenciesSection(state: InstallProjectState) {
-    if (state.dependencies.isEmpty()) return
-
-    AppText(text = stringResource(ProjectRes.string.requiredDependencies))
-    state.dependencies.forEach { dependency ->
-        AppCheckbox(
-            label = dependency.name,
-            checked = dependency.projectId in state.selectedDependencyIds,
-            onCheckedChange = {
-                eventSink(InstallProjectEvent.OnDependencyToggled(dependency.projectId, it))
+private fun ColumnScope.InstallProjectDependenciesSection(state: InstallProjectState) {
+    AppAnimatedVisibility(visible = state.dependencies.isNotEmpty()) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            AppText(
+                text = stringResource(ProjectRes.string.requiredDependencies),
+                fontWeight = FontWeight.Medium
+            )
+            state.dependencies.forEach { dependency ->
+                AppCheckbox(
+                    label = dependency.name,
+                    checked = dependency.projectId in state.selectedDependencyIds,
+                    onCheckedChange = {
+                        eventSink(InstallProjectEvent.OnDependencyToggled(dependency.projectId, it))
+                    },
+                    invert = true
+                )
             }
-        )
+        }
     }
 }
 

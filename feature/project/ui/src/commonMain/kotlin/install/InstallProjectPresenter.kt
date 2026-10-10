@@ -430,8 +430,11 @@ class InstallProjectPresenter(
         files.value = ProgressiveOutcome.Incomplete()
         if (gameVersion == null) return null
         val outcome = progressive {
-            val list = getProjectFiles(projectId, gameVersion, loader = null).map { it.toView() }
-            if (projectType.requiresLoader && loader != null) list.filter { loader in it.loaders } else list
+            getProjectFiles(
+                projectId,
+                gameVersion,
+                if (projectType.requiresLoader) loader else null
+            ).map { it.toView() }
         }
         files.value = outcome
         return outcome.valueOrNull?.let(::pickRecommendedFile)?.id
@@ -740,4 +743,3 @@ private sealed interface DependencyResolution {
 internal fun pickRecommendedFile(files: List<ProjectFileView>): ProjectFileView? =
     files.filter { it.releaseChannel == ProjectReleaseChannel.Release }.maxByOrNull { it.publishedAt }
         ?: files.maxByOrNull { it.publishedAt }
-

@@ -85,4 +85,5 @@ sealed interface FileValidationFailure {
     data class NotRegularFile(override val path: Path) : FileValidationFailure
     data class SizeMismatch(override val path: Path) : FileValidationFailure
     data class HashMismatch(override val path: Path) : FileValidationFailure
+    data class InvalidContent(override val path: Path, val message: String?) : FileValidationFailure
 }

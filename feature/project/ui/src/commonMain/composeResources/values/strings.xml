@@ -167,6 +167,6 @@
     <string name="close">Close</string>
     <string name="goToInstance">Go to instance</string>
 
-    <string name="manualDownloadsRequired">These files can't be downloaded automatically — their authors have disabled direct downloads.\nDownload them manually and they'll be picked up automatically.</string>
+    <string name="manualDownloadsRequired">These files can't be downloaded automatically, their authors have disabled direct downloads.\nDownload them manually and they'll be picked up automatically.</string>
     <string name="openAll">Open all</string>
 </resources>

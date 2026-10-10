@@ -7,6 +7,7 @@ import app.vercors.core.filesystem.realPath
 import app.vercors.core.system.SystemService
 import app.vercors.feature.config.domain.model.Configuration
 import app.vercors.feature.config.domain.model.ConfigurationError
+import app.vercors.feature.config.domain.model.withoutJavaInstallations
 import app.vercors.feature.config.domain.repository.ConfigurationRepository
 import app.vercors.feature.java.data.probeJavaExecutable
 import app.vercors.feature.java.domain.model.JavaInstallationError
@@ -67,7 +68,9 @@ class JavaRepositoryImpl(
     override suspend fun rescan() {
         scanMutex.withLock {
             logger.debug { "Scanning for Java installations..." }
-            val existingIds = currentConfiguration()?.javaInstallations?.map { it.id }?.toSet().orEmpty()
+            val existingInstallations = currentConfiguration()?.javaInstallations.orEmpty()
+            val existingIds = existingInstallations.map { it.id }.toSet()
+            val missingIds = existingInstallations.filterNot { Path(it.path).exists() }.map { it.id }.toSet()
             val rawCandidatePaths = (
                     platformScanJavaInstallationsWindows(systemService) +
                             platformScanJavaInstallationsLinux(systemService) +
@@ -94,9 +97,11 @@ class JavaRepositoryImpl(
                     }
                 }.awaitAll().filterNotNull()
             }
-            logger.debug { "Java scan found ${newInstallations.size} new installation(s)" }
-            if (newInstallations.isNotEmpty()) {
-                configurationRepository.update { mergeJavaInstallations(newInstallations) }
+            logger.debug { "Java scan found ${newInstallations.size} new installation(s), ${missingIds.size} missing" }
+            if (newInstallations.isNotEmpty() || missingIds.isNotEmpty()) {
+                configurationRepository.update {
+                    withoutJavaInstallations(missingIds).mergeJavaInstallations(newInstallations)
+                }
             }
         }
     }

@@ -8,6 +8,7 @@ import app.vercors.core.system.SystemService
 import app.vercors.core.ui.state.collectProgressiveAsState
 import app.vercors.core.ui.state.produceProgressiveState
 import app.vercors.feature.config.domain.model.HomeCategoryConfig
+import app.vercors.feature.config.domain.model.withoutJavaInstallations
 import app.vercors.feature.config.domain.usecase.ClearContentCacheUseCase
 import app.vercors.feature.config.domain.usecase.GetContentCacheSizeUseCase
 import app.vercors.feature.config.domain.usecase.ObserveConfigurationUseCase
@@ -226,6 +227,8 @@ class ConfigurationPresenter(
                 }
             }
 
+            is ConfigurationEvent.OnForgetInstallation -> handleForgetInstallation(event.installationId, presenterScope)
+
             ConfigurationEvent.OnJavaAddErrorDismiss -> setJavaAddError(null)
 
             is ConfigurationEvent.OnMinMemoryMbChange -> presenterScope.launch {
@@ -327,6 +330,12 @@ class ConfigurationPresenter(
             } finally {
                 setJavaScanInProgress(false)
             }
+        }
+    }
+
+    private fun handleForgetInstallation(installationId: String, presenterScope: CoroutineScope) {
+        presenterScope.launch {
+            updateConfiguration { withoutJavaInstallations(setOf(installationId)) }
         }
     }
 

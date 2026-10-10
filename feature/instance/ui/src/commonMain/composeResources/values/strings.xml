@@ -42,7 +42,7 @@
     <string name="errorManualDownloadIntegrityMismatch">The manually downloaded file doesn't match what was expected</string>
     <string name="finishInstallation">Finish installation</string>
     <string name="manualDownloadsCompleted">Manually downloaded files have been successfully added to the instance.</string>
-    <string name="manualDownloadsRequired">These files can't be downloaded automatically — their authors have disabled direct downloads.\nDownload them manually and they'll be picked up automatically.</string>
+    <string name="manualDownloadsRequired">These files can't be downloaded automatically, their authors have disabled direct downloads.\nDownload them manually and they'll be picked up automatically.</string>
     <string name="openAll">Open all</string>
     <string name="cancelSetup">Cancel setup</string>
     <string name="notificationInstallFinishedMessage">Installation finished</string>
@@ -61,15 +61,15 @@
     <string name="errorNoCompatibleJava">No compatible Java %1$d installation found</string>
     <string name="errorLoginRequired">No account selected, please log in</string>
     <string name="promptInstallJavaTitle">Java %1$d required</string>
-    <string name="promptInstallJavaMessage">This instance requires Java %1$d, but no compatible installation was found. You can either cancel and install one manually or let the app install one automatically.\nIf you choose to install one manually, the Java installation files will be provided by Mojang.</string>
+    <string name="promptInstallJavaMessage">This instance requires Java %1$d, but no compatible installation was found.\nIf you click on "Install Java", the app will install Java automatically.</string>
     <string name="installJava">Install Java</string>
     <string name="javaOverride">Java installation</string>
     <string name="recommendedJavaVersion">(Recommended: Java %1$d)</string>
     <string name="useDefaultJava">Use default</string>
     <string name="useDefaultJavaResolved">Use default (%1$s)</string>
-    <string name="javaInstallStarted">Installing Java %1$d…</string>
+    <string name="javaInstallStarted">Installing Java %1$d...</string>
     <string name="javaInstallFailed">Failed to install Java %1$d: %2$s</string>
-    <string name="javaInstallSucceeded">Java %1$d installed</string>
+    <string name="javaInstallSucceeded">Java %1$d installed successfully!</string>
 
     <string name="maxMemory">Max memory</string>
     <string name="maxMemoryDesc">The maximum amount of memory the game is allowed to use (-Xmx).</string>

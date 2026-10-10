@@ -52,9 +52,10 @@ suspend inline fun Path.createParentDirectories(
 ) = parent?.createDirectories(context)
 
 suspend inline fun Path.delete(
-    context: CoroutineContext = Dispatchers.IO
+    context: CoroutineContext = Dispatchers.IO,
+    mustExist: Boolean = true,
 ) = withContext(context) {
-    SystemFileSystem.delete(this@delete)
+    SystemFileSystem.delete(this@delete, mustExist)
 }
 
 suspend inline fun Path.moveTo(

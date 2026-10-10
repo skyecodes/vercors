@@ -40,6 +40,7 @@
     <string name="javaScanCompleted">Java installation scan completed</string>
     <string name="preferredForMajorVersion">Preferred for Java %1$d</string>
     <string name="preferred">Preferred</string>
+    <string name="forget">Forget</string>
     <string name="javaMajorVersion">Java %1$d</string>
     <string name="javaAddFailed">"%1$s" doesn't look like a valid Java installation</string>
 

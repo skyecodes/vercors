@@ -29,6 +29,7 @@ sealed interface ConfigurationEvent : Event {
     data object OnRescanJavaClick : ConfigurationEvent
 
     data class OnPreferredJavaChange(val majorVersion: Int, val installationId: String) : ConfigurationEvent
+    data class OnForgetInstallation(val installationId: String) : ConfigurationEvent
 
     data object OnJavaAddErrorDismiss : ConfigurationEvent
 

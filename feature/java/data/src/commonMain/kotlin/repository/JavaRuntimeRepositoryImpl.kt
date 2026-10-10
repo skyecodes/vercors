@@ -1,9 +1,7 @@
 package app.vercors.feature.java.data.repository
 
 import app.vercors.core.domain.toFractionOrNull
-import app.vercors.core.filesystem.exists
-import app.vercors.core.filesystem.realPath
-import app.vercors.core.filesystem.setExecutable
+import app.vercors.core.filesystem.*
 import app.vercors.core.system.OsArch
 import app.vercors.core.system.OsType
 import app.vercors.core.system.SystemService
@@ -96,6 +94,12 @@ class JavaRuntimeRepositoryImpl(
             normalFiles.filter { (_, file) -> file.executable }.forEach { (relativePath, _) ->
                 relativePath.toRuntimeFilePath(runtimeDir).setExecutable()
             }
+            runtimeInfo.files.forEach { (relativePath, file) ->
+                if (file is MojangJavaInfo.File.Link) createRuntimeLink(
+                    relativePath.toRuntimeFilePath(runtimeDir),
+                    file
+                )
+            }
 
             val javaBinary = listOf(Path(runtimeDir, "bin", "java"), Path(runtimeDir, "bin", "java.exe"))
                 .firstOrNull { it.exists() } ?: raise(JavaRuntimeError.ProbeFailed)
@@ -118,6 +122,12 @@ class JavaRuntimeRepositoryImpl(
         }
     }
 
+    private suspend fun createRuntimeLink(linkPath: Path, link: MojangJavaInfo.File.Link) {
+        // Re-installs would otherwise hit EEXIST, and copyTo through an existing hardlink would truncate its target
+        linkPath.delete(mustExist = false)
+        Path(linkPath.parent!!, link.target).linkOrCopyTo(linkPath)
+    }
+
     private fun String.toRuntimeFilePath(runtimeDir: Path): Path = Path(runtimeDir, *split("/").toTypedArray())
 }
 
@@ -127,4 +137,3 @@ private fun SystemService.mojangJavaRuntimeKey(): String = when (osType) {
     // macOS is Apple Silicon-only in this project (shared.gradle.kts only declares macosArm64()).
     OsType.MacOs -> "mac-os-arm64"
 }
-
