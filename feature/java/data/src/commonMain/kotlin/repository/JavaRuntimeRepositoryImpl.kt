@@ -16,6 +16,7 @@ import app.vercors.feature.java.domain.model.JavaRuntimeInstallStatus
 import app.vercors.feature.java.domain.repository.JavaRuntimeRepository
 import app.vercors.shared.api.ApiV1
 import app.vercors.shared.data.AppPaths
+import app.vercors.shared.data.FileCompression
 import app.vercors.shared.data.FileValidationRequest
 import app.vercors.shared.data.FileValidationService
 import app.vercors.shared.domain.model.JavaInstallation
@@ -79,11 +80,13 @@ class JavaRuntimeRepositoryImpl(
                 if (file is MojangJavaInfo.File.Normal) relativePath to file else null
             }
             val fileRequests = normalFiles.map { (relativePath, file) ->
+                val lzma = file.downloads.lzma
                 FileValidationRequest.Url(
                     path = relativePath.toRuntimeFilePath(runtimeDir),
-                    url = file.downloads.raw.url,
+                    url = lzma?.url ?: file.downloads.raw.url,
                     sha1 = file.downloads.raw.sha1,
                     size = file.downloads.raw.size,
+                    compression = if (lzma != null) FileCompression.Lzma else null,
                 )
             }
             withError(JavaRuntimeError::DownloadFailed) {

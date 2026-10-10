@@ -18,6 +18,10 @@ import dev.zacsweers.metro.ContributesBinding
 import dev.zacsweers.metro.SingleIn
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
+import kotlinx.coroutines.withContext
+import kotlinx.io.Source
 import kotlinx.io.bytestring.toHexString
 import kotlinx.io.files.Path
 import kotlinx.serialization.DeserializationStrategy
@@ -152,7 +156,10 @@ class FileValidationServiceImpl(
             } else {
                 makeRequest {
                     source.request(httpClient).use {
-                        tempPath.writeFromSource(it)
+                        when (compression) {
+                            FileCompression.Lzma -> tempPath.writeFromLzmaSource(it)
+                            null -> tempPath.writeFromSource(it)
+                        }
                     }
                 }
             }
@@ -160,6 +167,19 @@ class FileValidationServiceImpl(
             tempPath.moveTo(path)
         } finally {
             if (tempPath.exists()) tempPath.deleteRecursively()
+        }
+    }
+
+    context(_: Raise<RemoteError>)
+    private suspend fun Path.writeFromLzmaSource(source: Source) {
+        createParentDirectories()
+        val target = this
+        withContext(Dispatchers.IO) {
+            try {
+                target.sink { decodeLzma(source, it) }
+            } catch (_: LzmaDecodingException) {
+                raise(RemoteError.Serialization)
+            }
         }
     }
 

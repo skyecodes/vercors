@@ -11,4 +11,5 @@ dependencies {
     commonMainApi(projects.shared.domain)
     commonMainImplementation(libs.arrow.resilience)
     commonMainImplementation(libs.kzip)
+    commonMainImplementation(libs.korlibs.compression)
 }

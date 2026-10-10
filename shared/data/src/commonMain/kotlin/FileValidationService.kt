@@ -46,6 +46,9 @@ interface FileValidationRequest {
 
     val cacheKind: ContentCacheKind?
 
+    // size/sha1/md5 always describe the decompressed file
+    val compression: FileCompression? get() = null
+
     open class Url(
         val url: String,
         override val path: Path,
@@ -53,7 +56,8 @@ interface FileValidationRequest {
         override val sha1: String? = null,
         override val md5: String? = null,
         override val alwaysRedownload: Boolean = false,
-        override val cacheKind: ContentCacheKind? = null
+        override val cacheKind: ContentCacheKind? = null,
+        override val compression: FileCompression? = null,
     ) : FileValidationRequest {
         override val source: FileRemoteSource = FileRemoteSource { it.get(url).bodyAsSource() }
         override fun toString(): String = "$url -> $path"
