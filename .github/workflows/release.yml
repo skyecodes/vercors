@@ -1,0 +1,277 @@
+name: Release
+
+on:
+  push:
+    tags: [ 'v*' ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      channel: ${{ steps.version.outputs.channel }}
+      release-type: ${{ steps.version.outputs.release-type }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
+            VERSION="${GITHUB_REF_NAME#v}"
+          else
+            VERSION="$(grep -E '^appVersion=' gradle.properties | cut -d= -f2)"
+          fi
+          case "$VERSION" in
+            *-alpha*) CHANNEL=alpha; TYPE=prerelease ;;
+            *-beta*)  CHANNEL=beta;  TYPE=prerelease ;;
+            *)        CHANNEL=latest; TYPE=release ;;
+          esac
+          {
+            echo "version=$VERSION"
+            echo "channel=$CHANNEL"
+            echo "release-type=$TYPE"
+          } >> "$GITHUB_OUTPUT"
+
+  # Runs on all three host OSes so the macOS and mingw native test targets are covered too
+  test:
+    name: Tests (${{ matrix.os }})
+    needs: version
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, windows-latest, macos-latest ]
+    env:
+      MICROSOFT_CLIENT_ID: ci-placeholder
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+
+      - uses: gradle/actions/setup-gradle@v5
+
+      - uses: actions/cache@v4
+        with:
+          path: ~/.konan
+          key: konan-${{ runner.os }}-${{ hashFiles('gradle/libs.versions.toml') }}
+          restore-keys: konan-${{ runner.os }}-
+
+      - name: Test
+        run: ./gradlew allTests --continue --stacktrace --no-daemon
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: test-reports-${{ runner.os }}
+          path: '**/build/reports/tests/'
+          if-no-files-found: ignore
+
+  gui:
+    name: GUI (${{ matrix.os }} / ${{ matrix.arch }})
+    needs: [ version, test ]
+    runs-on: ${{ matrix.os }}
+    environment: release
+    env:
+      MICROSOFT_CLIENT_ID: ${{ secrets.MICROSOFT_CLIENT_ID }}
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: ubuntu-22.04,     arch: amd64 }
+          - { os: ubuntu-22.04-arm, arch: arm64 }
+          - { os: windows-latest,   arch: amd64 }
+          - { os: windows-11-arm,   arch: arm64 }
+          - { os: macos-latest,     arch: arm64 }
+          - { os: macos-15-intel,   arch: amd64 }
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: NucleusFramework/Nucleus/.github/actions/setup-nucleus@v3.0.0-dev-202610091014
+        with:
+          java-version: '25'
+          flatpak: 'true'
+          snap: 'true'
+
+      - name: Build packages
+        shell: bash
+        run: >
+          ./gradlew :app:launcher-gui:packageReleaseDistributionForCurrentOS
+          -PappVersion=${{ needs.version.outputs.version }}
+          --stacktrace --no-daemon
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-assets-${{ runner.os }}-${{ matrix.arch }}
+          path: |
+            app/launcher-gui/build/compose/binaries/**/*.deb
+            app/launcher-gui/build/compose/binaries/**/*.rpm
+            app/launcher-gui/build/compose/binaries/**/*.asc
+            app/launcher-gui/build/compose/binaries/**/*.pacman
+            app/launcher-gui/build/compose/binaries/**/*.snap
+            app/launcher-gui/build/compose/binaries/**/*.flatpak
+            app/launcher-gui/build/compose/binaries/**/*.AppImage
+            app/launcher-gui/build/compose/binaries/**/*.msi
+            app/launcher-gui/build/compose/binaries/**/*.exe
+            app/launcher-gui/build/compose/binaries/**/*.appx
+            app/launcher-gui/build/compose/binaries/**/*.7z
+            app/launcher-gui/build/compose/binaries/**/*.pkg
+            app/launcher-gui/build/compose/binaries/**/*.dmg
+            app/launcher-gui/build/compose/binaries/**/*.zip
+            app/launcher-gui/build/compose/binaries/**/*.tar
+            app/launcher-gui/build/compose/binaries/**/*.tar.gz
+            app/launcher-gui/build/compose/binaries/**/*.blockmap
+            !app/launcher-gui/build/compose/binaries/**/runtime/**
+            !app/launcher-gui/build/compose/binaries/**/app/**
+          if-no-files-found: error
+
+  # Artifacts here must not be named release-assets-*: generate-update-yml would list them in the GUI update feeds
+  cli:
+    name: CLI (${{ matrix.os }})
+    needs: [ version, test ]
+    runs-on: ${{ matrix.os }}
+    environment: release
+    env:
+      MICROSOFT_CLIENT_ID: ${{ secrets.MICROSOFT_CLIENT_ID }}
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            targets: LinuxX64 LinuxArm64 MingwX64
+          - os: macos-latest
+            targets: MacosArm64
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+
+      - uses: gradle/actions/setup-gradle@v5
+
+      - uses: actions/cache@v4
+        with:
+          path: ~/.konan
+          key: konan-${{ runner.os }}-${{ hashFiles('gradle/libs.versions.toml') }}
+          restore-keys: konan-${{ runner.os }}-
+
+      - name: Link release executables
+        shell: bash
+        run: |
+          set -euo pipefail
+          TASKS=()
+          for t in ${{ matrix.targets }}; do TASKS+=(":app:launcher-cli:linkReleaseExecutable$t"); done
+          ./gradlew "${TASKS[@]}" -PappVersion=${{ needs.version.outputs.version }} --stacktrace --no-daemon
+
+      - name: Archive executables
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="${{ needs.version.outputs.version }}"
+          BIN=app/launcher-cli/build/bin
+          mkdir -p out
+          archive() {
+            local target="$1" name="$2" exe="$3"
+            local dir="$BIN/$target/releaseExecutable"
+            if [[ "$exe" == *.exe ]]; then
+              (cd "$dir" && zip -9 "$OLDPWD/out/vercors-cli-$VERSION-$name.zip" "$exe")
+            else
+              (cd "$dir" && cp "$exe" vercors && tar -czf "$OLDPWD/out/vercors-cli-$VERSION-$name.tar.gz" vercors)
+            fi
+          }
+          for t in ${{ matrix.targets }}; do
+            case "$t" in
+              LinuxX64)   archive linuxX64   linux-x64     vercors.kexe ;;
+              LinuxArm64) archive linuxArm64 linux-arm64   vercors.kexe ;;
+              MingwX64)   archive mingwX64   windows-x64   vercors.exe ;;
+              MacosArm64) archive macosArm64 macos-arm64   vercors.kexe ;;
+            esac
+          done
+          ls -la out
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cli-${{ runner.os }}
+          path: out/*
+          if-no-files-found: error
+
+  meta:
+    name: Meta image
+    needs: [ version, test ]
+    runs-on: ubuntu-latest
+    environment: release
+    env:
+      MICROSOFT_CLIENT_ID: ${{ secrets.MICROSOFT_CLIENT_ID }}
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+
+      - uses: gradle/actions/setup-gradle@v5
+
+      - name: Build image
+        if: github.ref_type != 'tag'
+        run: ./gradlew :app:meta:distribution:buildImage -PappVersion=${{ needs.version.outputs.version }} --stacktrace --no-daemon
+
+      - name: Publish image to Docker Hub
+        if: github.ref_type == 'tag'
+        env:
+          ORG_GRADLE_PROJECT_dockerHubUsername: ${{ secrets.DOCKERHUB_USERNAME }}
+          ORG_GRADLE_PROJECT_dockerHubPassword: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: ./gradlew :app:meta:distribution:publishImage -PappVersion=${{ needs.version.outputs.version }} --stacktrace --no-daemon
+
+  publish:
+    name: Publish release
+    needs: [ version, test, gui, cli, meta ]
+    if: github.ref_type == 'tag'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          pattern: release-assets-*
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: extra
+          pattern: cli-*
+          merge-multiple: true
+
+      - uses: NucleusFramework/Nucleus/.github/actions/generate-update-yml@v3.0.0-dev-202610091014
+        with:
+          artifacts-path: artifacts
+          version: ${{ needs.version.outputs.version }}
+          channel: ${{ needs.version.outputs.channel }}
+
+      - uses: NucleusFramework/Nucleus/.github/actions/publish-release@v3.0.0-dev-202610091014
+        with:
+          artifacts-path: artifacts
+          tag: ${{ github.ref_name }}
+          release-type: ${{ needs.version.outputs.release-type }}
+
+      - name: Upload CLI archives
+        run: gh release upload "${{ github.ref_name }}" extra/* --clobber

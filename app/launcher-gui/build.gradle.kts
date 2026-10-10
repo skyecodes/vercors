@@ -104,7 +104,6 @@ nucleus.application {
             }
 
             flatpak {
-                runtimeVersion = "25.08"
             }
         }
     }

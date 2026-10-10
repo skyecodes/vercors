@@ -15,8 +15,6 @@
 > If you still want to run the project yourself, you can clone the repository and follow the instructions in
 > the [Build](#Build) section.
 
-For a list of planned features, check out the [Roadmap](https://codeberg.org/skyecodes/vercors/issues/1).
-
 ## Build
 
 ### Requirements
@@ -28,7 +26,7 @@ For a list of planned features, check out the [Roadmap](https://codeberg.org/sky
 Clone the repository and navigate to the project directory
 
 ```
-git clone https://codeberg.org/skyecodes/vercors.git && cd vercors/
+git clone https://github.com/skyecodes/vercors.git && cd vercors/
 ```
 
 ### Run the launcher (GUI)

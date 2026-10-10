@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "app.vercors.meta"
-version = "0.1.0"
+version = property("appVersion") as String
 
 application {
     mainClass.set("app.vercors.meta.distribution.MainKt")
