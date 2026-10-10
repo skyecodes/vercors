@@ -1,5 +1,6 @@
 plugins {
     id("app.vercors.backend")
+    alias(libs.plugins.buildconfig)
 }
 
 dependencies {
@@ -22,4 +23,9 @@ dependencies {
     commonTestImplementation(libs.ktor.server.test.host)
 
     jvmMainImplementation(libs.logback)
+}
+
+buildConfig {
+    packageName("app.vercors.meta")
+    buildConfigField("String", "APP_VERSION", "\"${property("appVersion")}\"")
 }

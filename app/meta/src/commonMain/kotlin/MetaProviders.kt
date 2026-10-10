@@ -30,7 +30,7 @@ object MetaBackModule {
         }
         install(HttpCache)
         install(UserAgent) {
-            agent = "skyecodes/vercors-meta/$VERSION (contact@skye.codes)"
+            agent = "skyecodes/vercors-meta/${BuildConfig.APP_VERSION} (contact@skye.codes)"
         }
     }
 

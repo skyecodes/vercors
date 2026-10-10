@@ -3,7 +3,6 @@ name: Release
 on:
   push:
     tags: [ 'v*' ]
-  workflow_dispatch:
 
 permissions:
   contents: write
@@ -21,14 +20,23 @@ jobs:
       release-type: ${{ steps.version.outputs.release-type }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+
+      - name: Validate the tag was cut from main
+        uses: NucleusFramework/Nucleus/.github/actions/validate-release-ref@v3.0.0-dev-202610091014
+        with:
+          prerelease-branch: main
+          prerelease-tag-regex: '^v.*$'
+
       - id: version
         shell: bash
         run: |
           set -euo pipefail
-          if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
-            VERSION="${GITHUB_REF_NAME#v}"
-          else
-            VERSION="$(grep -E '^appVersion=' gradle.properties | cut -d= -f2)"
+          VERSION="${GITHUB_REF_NAME#v}"
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::Tag '$GITHUB_REF_NAME' is not v<major>.<minor>.<patch>[-qualifier]"
+            exit 1
           fi
           case "$VERSION" in
             *-alpha*) CHANNEL=alpha; TYPE=prerelease ;;
@@ -41,48 +49,9 @@ jobs:
             echo "release-type=$TYPE"
           } >> "$GITHUB_OUTPUT"
 
-  # Each host runs JVM tests plus only its own native target: cross-linking another OS's test binaries
-  # (e.g. linuxX64 from Windows) fails on Ktor's bundled libcurl, and they could never run there anyway
   test:
-    name: Tests (${{ matrix.os }})
     needs: version
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 90
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - { os: ubuntu-latest,  tasks: allTests }
-          - { os: windows-latest, tasks: jvmTest mingwX64Test }
-          - { os: macos-latest,   tasks: jvmTest macosArm64Test }
-    env:
-      MICROSOFT_CLIENT_ID: ci-placeholder
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-
-      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6
-        with:
-          distribution: temurin
-          java-version: '25'
-
-      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6
-
-      # Restore only: a tag run's cache writes are invisible to later tags and just evict main's entries
-      - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
-        with:
-          path: ~/.konan
-          key: konan-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('gradle/libs.versions.toml') }}
-          restore-keys: konan-${{ runner.os }}-${{ runner.arch }}-
-
-      - name: Test
-        run: ./gradlew ${{ matrix.tasks }} --continue --stacktrace --no-daemon
-
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
-        if: failure()
-        with:
-          name: test-reports-${{ runner.os }}
-          path: '**/build/reports/tests/'
-          if-no-files-found: ignore
+    uses: ./.github/workflows/build.yml
 
   gui:
     name: GUI (${{ matrix.os }} / ${{ matrix.arch }})
@@ -119,6 +88,13 @@ jobs:
           --stacktrace --no-daemon
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        if: failure()
+        with:
+          name: packaging-logs-${{ runner.os }}-${{ matrix.arch }}
+          path: app/launcher-gui/build/compose/logs/
+          if-no-files-found: ignore
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: release-assets-${{ runner.os }}-${{ matrix.arch }}
           path: |
@@ -132,7 +108,6 @@ jobs:
             app/launcher-gui/build/compose/binaries/**/*.msi
             app/launcher-gui/build/compose/binaries/**/*.exe
             app/launcher-gui/build/compose/binaries/**/*.appx
-            app/launcher-gui/build/compose/binaries/**/*.7z
             app/launcher-gui/build/compose/binaries/**/*.pkg
             app/launcher-gui/build/compose/binaries/**/*.dmg
             app/launcher-gui/build/compose/binaries/**/*.zip
@@ -163,12 +138,10 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6
+      - uses: NucleusFramework/Nucleus/.github/actions/setup-nucleus@v3.0.0-dev-202610091014
         with:
-          distribution: temurin
           java-version: '25'
-
-      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6
+          packaging-tools: 'false'
 
       # Restore only: a tag run's cache writes are invisible to later tags and just evict main's entries
       - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
@@ -217,9 +190,10 @@ jobs:
           path: out/*
           if-no-files-found: error
 
+  # Waits for the GUI and CLI builds so a failed release never leaves a pushed image without a GitHub Release
   meta:
     name: Meta image
-    needs: [ version, test ]
+    needs: [ version, gui, cli ]
     runs-on: ubuntu-latest
     environment: release
     env:
@@ -228,19 +202,12 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6
+      - uses: NucleusFramework/Nucleus/.github/actions/setup-nucleus@v3.0.0-dev-202610091014
         with:
-          distribution: temurin
           java-version: '25'
-
-      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6
-
-      - name: Build image
-        if: github.ref_type != 'tag'
-        run: ./gradlew :app:meta:distribution:buildImage -PappVersion=${{ needs.version.outputs.version }} --stacktrace --no-daemon
+          packaging-tools: 'false'
 
       - name: Publish image to Docker Hub
-        if: github.ref_type == 'tag'
         env:
           ORG_GRADLE_PROJECT_dockerHubUsername: ${{ secrets.DOCKERHUB_USERNAME }}
           ORG_GRADLE_PROJECT_dockerHubPassword: ${{ secrets.DOCKERHUB_TOKEN }}
@@ -248,8 +215,7 @@ jobs:
 
   publish:
     name: Publish release
-    needs: [ version, test, gui, cli, meta ]
-    if: github.ref_type == 'tag'
+    needs: [ version, gui, cli, meta ]
     runs-on: ubuntu-latest
     timeout-minutes: 60
     env:

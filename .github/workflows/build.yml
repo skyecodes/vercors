@@ -5,56 +5,24 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+  workflow_call:
 
 concurrency:
   group: build-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
+  # Each host runs only its own native test target: cross-linking another OS's test binaries (e.g., linuxX64 from
+  # Windows) fails on Ktor's bundled libcurl, and they could never run there anyway. Linux runs the full build.
   build:
-    runs-on: ubuntu-latest
-    timeout-minutes: 90
-    env:
-      MICROSOFT_CLIENT_ID: ci-placeholder
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-
-      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6
-        with:
-          distribution: temurin
-          java-version: '25'
-
-      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6
-        with:
-          cache-read-only: ${{ github.ref != 'refs/heads/main' }}
-
-      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
-        with:
-          path: ~/.konan
-          key: konan-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('gradle/libs.versions.toml') }}
-          restore-keys: konan-${{ runner.os }}-${{ runner.arch }}-
-
-      - name: Build
-        run: ./gradlew build --stacktrace --no-daemon -Dorg.gradle.jvmargs="-Xmx6G -Dfile.encoding=UTF-8"
-
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
-        if: failure()
-        with:
-          name: test-reports
-          path: '**/build/reports/tests/'
-          if-no-files-found: ignore
-
-  # main only: catches host-specific bugs before a release and seeds the main-branch caches that release tag
-  # runs restore (a tag run can read main's caches, but its own writes are only visible to that tag)
-  host-tests:
-    name: Tests (${{ matrix.os }})
-    if: github.event_name == 'push'
+    name: Build (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 90
     strategy:
       fail-fast: false
       matrix:
         include:
+          - { os: ubuntu-latest,  tasks: build }
           - { os: windows-latest, tasks: jvmTest mingwX64Test }
           - { os: macos-latest,   tasks: jvmTest macosArm64Test }
     env:
@@ -62,22 +30,29 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6
+      # Same Gradle cache provider as the release packaging jobs, so main's cache is the one they restore
+      - uses: NucleusFramework/Nucleus/.github/actions/setup-nucleus@v3.0.0-dev-202610091014
         with:
-          distribution: temurin
           java-version: '25'
+          packaging-tools: 'false'
 
-      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6
-
-      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+      - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        id: konan
         with:
           path: ~/.konan
           key: konan-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('gradle/libs.versions.toml') }}
           restore-keys: konan-${{ runner.os }}-${{ runner.arch }}-
 
-      - name: Test
+      - name: Build
         shell: bash
-        run: ./gradlew ${{ matrix.tasks }} --continue --stacktrace --no-daemon
+        run: ./gradlew ${{ matrix.tasks }} --continue --stacktrace --no-daemon -Dorg.gradle.jvmargs="-Xmx6G -Dfile.encoding=UTF-8"
+
+      # Only main's caches are visible to other refs: a PR or tag save would just evict them
+      - uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        if: always() && github.ref == 'refs/heads/main' && steps.konan.outputs.cache-hit != 'true'
+        with:
+          path: ~/.konan
+          key: ${{ steps.konan.outputs.cache-primary-key }}
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         if: failure()

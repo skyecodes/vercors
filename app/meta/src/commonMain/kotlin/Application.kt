@@ -18,8 +18,6 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.serialization.json.Json
 
-const val VERSION = "0.1.0"
-
 fun main() {
     val appGraph = createGraph<AppGraph>()
     embeddedServer(CIO, port = 8080, host = "0.0.0.0", module = { module(appGraph) })

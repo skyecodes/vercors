@@ -78,8 +78,28 @@ nucleus.application {
     }
 
     nativeDistributions {
-        targetFormats(*TargetFormat.entries.toTypedArray())
-        modules("jdk.security.auth", "java.net.http")
+        targetFormats(
+            // Linux
+            TargetFormat.Deb,
+            TargetFormat.Rpm,
+            TargetFormat.AppImage,
+            TargetFormat.Pacman,
+            TargetFormat.Flatpak,
+            TargetFormat.Snap,
+            // macOS
+            TargetFormat.Dmg,
+            TargetFormat.Pkg,
+            // Windows
+            TargetFormat.Msi,
+            TargetFormat.Exe,
+            TargetFormat.Nsis,
+            TargetFormat.Portable,
+            TargetFormat.AppX,
+            // All
+            TargetFormat.Zip,
+            TargetFormat.Tar,
+        )
+        modules("jdk.security.auth")
         appName = property("appName") as String
         packageName = property("appId") as String
         packageVersion = property("appVersion") as String
