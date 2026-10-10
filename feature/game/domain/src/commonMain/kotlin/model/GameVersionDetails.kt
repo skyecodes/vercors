@@ -11,6 +11,8 @@ data class GameVersionDetails(
     val javaVersion: JavaVersion?,
     val gameArgs: List<Argument>?,
     val jvmArgs: List<Argument>?,
+    // Pre-fill for the user-editable JVM arguments, not required launch flags
+    val defaultUserJvmArgs: List<Argument>?,
     val clientLogging: Logging?,
     val mainClass: String,
     val assets: String,
@@ -37,8 +39,15 @@ data class GameVersionDetails(
         data class Os(
             val name: String? = null,
             val arch: String? = null,
-            val version: String? = null
-        )
+            val version: String? = null,
+            val versionRange: VersionRange? = null
+        ) {
+            // min is inclusive, max exclusive: Mojang uses the same bound on both sides of a split
+            data class VersionRange(
+                val min: String? = null,
+                val max: String? = null
+            )
+        }
     }
 
     data class Download(

@@ -19,6 +19,7 @@ private val VANILLA = GameVersionDetails(
         GameVersionDetails.Argument.Basic($$"${auth_player_name}")
     ),
     jvmArgs = null,
+    defaultUserJvmArgs = null,
     clientLogging = null,
     mainClass = "net.minecraft.client.main.Main",
     assets = "1.7.10",

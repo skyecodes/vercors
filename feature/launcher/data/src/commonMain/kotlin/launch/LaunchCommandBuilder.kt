@@ -53,13 +53,17 @@ class LaunchCommandBuilder(
         ).toMap()
         val jvmArgs = version.jvmArgs?.resolve(variables)
         val gameArgs = version.gameArgs?.resolve(variables)
+        // Heap size is owned by JvmMemoryOptions, only the GC/tuning flags are worth keeping
+        val defaultUserJvmArgs = version.defaultUserJvmArgs?.resolve(variables)
+            ?.filterNot { it.startsWith("-Xms") || it.startsWith("-Xmx") }
+            .orEmpty()
         val logConfigArg = version.clientLogging?.argument?.substituteVariables(
             variables = mapOf("path" to dependencyList.logging!!.path.toString())
         )
         return buildList {
             add(javaExecutable)
             logConfigArg?.let { add(it) }
-            addAll(jvmMemoryOptions.toJvmArgs())
+            addAll(jvmMemoryOptions.toJvmArgs(defaultUserJvmArgs))
             addAll(nativeLibraryOptions.toJvmArgs())
             jvmArgs?.let { addAll(it) } ?: run {
                 add("-Djava.library.path=$nativesDir")
@@ -72,10 +76,12 @@ class LaunchCommandBuilder(
     }
 }
 
-private fun JvmMemoryOptions.toJvmArgs(): List<String> = buildList {
+// Extra args replace the version's defaults rather than append: a second GC selection is a JVM startup error
+private fun JvmMemoryOptions.toJvmArgs(defaultExtraArgs: List<String>): List<String> = buildList {
     if (minMemoryEnabled == true) minMemoryMb?.let { add("-Xms${it}M") }
     if (maxMemoryEnabled == true) maxMemoryMb?.let { add("-Xmx${it}M") }
-    addAll(extraArgs.orEmpty().trim().split(Regex("\\s+")).filter(String::isNotBlank))
+    val userExtraArgs = extraArgs.orEmpty().trim().split(Regex("\\s+")).filter(String::isNotBlank)
+    addAll(userExtraArgs.ifEmpty { defaultExtraArgs })
 }
 
 private fun NativeLibraryOptions.toJvmArgs(): List<String> = buildList {

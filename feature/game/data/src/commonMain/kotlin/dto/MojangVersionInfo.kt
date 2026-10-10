@@ -32,7 +32,9 @@ data class MojangVersionInfo(
     @Serializable
     data class Arguments(
         val game: List<Argument> = emptyList(),
-        val jvm: List<Argument> = emptyList()
+        val jvm: List<Argument> = emptyList(),
+        @SerialName("default-user-jvm")
+        val defaultUserJvm: List<Argument> = emptyList()
     )
 
     @Serializable(ArgumentSerializer::class)
@@ -146,8 +148,15 @@ data class MojangVersionInfo(
         data class Os(
             val name: String? = null,
             val version: String? = null,
+            val versionRange: VersionRange? = null,
             val arch: String? = null
-        )
+        ) {
+            @Serializable
+            data class VersionRange(
+                val min: String? = null,
+                val max: String? = null
+            )
+        }
 
         enum class Action {
             @SerialName("allow")
@@ -186,14 +195,13 @@ data class MojangVersionInfo(
                 Argument.Basic(element.content)
             else {
                 val obj = element.jsonObject
-                val rules = jsonDecoder.json.decodeFromJsonElement<List<Rule>>(obj["rules"]!!)
+                val rules = obj["rules"]?.let { jsonDecoder.json.decodeFromJsonElement<List<Rule>>(it) }.orEmpty()
                 val value = when (val v = obj["value"]) {
                     is JsonPrimitive -> listOf(v.jsonPrimitive.content)
                     is JsonArray -> v.jsonArray.map { it.jsonPrimitive.content }
                     else -> error("Unexpected value type: $v")
                 }
                 Argument.Conditional(rules, value)
-
             }
         }
 

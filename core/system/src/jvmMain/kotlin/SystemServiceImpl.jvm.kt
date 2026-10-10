@@ -30,7 +30,17 @@ actual class SystemServiceImpl(
         }
     }
 
-    actual override val osVersion: String = System.getProperty("os.version")
+    // os.version is only "10.0" on Windows, but version-range rules compare against the build number
+    actual override val osVersion: String by lazy {
+        val version = System.getProperty("os.version")
+        if (osType != OsType.Windows) return@lazy version
+        runCatching { SystemInfo().operatingSystem.versionInfo.buildNumber }
+            .onFailure { logger.warn(it) { "Unable to read the Windows build number" } }
+            .getOrNull()
+            ?.takeIf(String::isNotBlank)
+            ?.let { "$version.$it" }
+            ?: version
+    }
 
     actual override val osArch: OsArch =
         if (System.getProperty("os.arch").endsWith("64")) OsArch.X64 else OsArch.X86

@@ -39,6 +39,7 @@ internal fun MojangVersionInfo.toDomain(): GameVersionDetails = GameVersionDetai
     // Pre-1.13 version JSON only has the legacy minecraftArguments string
     gameArgs = arguments?.game?.map { it.toDomain() } ?: minecraftArguments?.toBasicArguments(),
     jvmArgs = arguments?.jvm?.map { it.toDomain() },
+    defaultUserJvmArgs = arguments?.defaultUserJvm?.map { it.toDomain() },
     clientLogging = logging?.client?.toDomain(),
     mainClass = mainClass,
     assets = assets,
@@ -85,8 +86,15 @@ internal fun MojangVersionInfo.Rule.Action.toDomain(): GameVersionDetails.Rule.A
 internal fun MojangVersionInfo.Rule.Os.toDomain(): GameVersionDetails.Rule.Os = GameVersionDetails.Rule.Os(
     name = name,
     arch = arch,
-    version = version
+    version = version,
+    versionRange = versionRange?.toDomain()
 )
+
+internal fun MojangVersionInfo.Rule.Os.VersionRange.toDomain(): GameVersionDetails.Rule.Os.VersionRange =
+    GameVersionDetails.Rule.Os.VersionRange(
+        min = min,
+        max = max
+    )
 
 internal fun MojangVersionInfo.JavaVersion.toDomain(): GameVersionDetails.JavaVersion =
     GameVersionDetails.JavaVersion(
