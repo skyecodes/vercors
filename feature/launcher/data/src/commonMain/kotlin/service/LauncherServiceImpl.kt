@@ -1,6 +1,6 @@
 package app.vercors.feature.launcher.data.service
 
-import app.vercors.core.domain.toFractionOrNull
+import app.vercors.core.domain.toDownloadProgressOrNull
 import app.vercors.core.filesystem.createDirectories
 import app.vercors.feature.account.domain.model.Account
 import app.vercors.feature.game.domain.model.GameAssetIndex
@@ -125,7 +125,7 @@ class LauncherServiceImpl(
         logger.info { "Validating dependencies..." }
         scope.send(InstanceLaunchEvent.Validating(null))
         fileValidationService.submit(allDependencies) { progress ->
-            scope.trySend(InstanceLaunchEvent.Downloading(progress.toFractionOrNull()))
+            scope.trySend(InstanceLaunchEvent.Downloading(progress.toDownloadProgressOrNull()))
         }
         logger.info { "Dependencies validated" }
     }

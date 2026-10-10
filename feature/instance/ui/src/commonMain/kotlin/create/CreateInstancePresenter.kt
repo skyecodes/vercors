@@ -1,6 +1,7 @@
 package app.vercors.feature.instance.ui.create
 
 import androidx.compose.runtime.*
+import app.vercors.core.domain.toDownloadProgressOrNull
 import app.vercors.core.domain.toFractionOrNull
 import app.vercors.feature.game.domain.model.LoaderVersion
 import app.vercors.feature.game.domain.model.ModLoaderType
@@ -304,7 +305,7 @@ class CreateInstancePresenter(
             installModpackFiles(preview.manifest, instanceId, localSourcePath = preview.sourcePath) { progress ->
                 updateInstanceStatus(
                     instanceId,
-                    InstanceStatus.Installing.DownloadingFiles(progress.toFractionOrNull())
+                    InstanceStatus.Installing.DownloadingFiles(progress.toDownloadProgressOrNull())
                 )
             }
             true

@@ -468,7 +468,7 @@ class InstanceDetailsPresenter(
                     observeJavaRuntimeInstallProgress().collect { byVersion ->
                         val status = byVersion[majorVersion]
                         if (status is JavaRuntimeInstallStatus.Downloading) {
-                            javaInstallState.update { copy(progress = status.fraction) }
+                            javaInstallState.update { copy(download = status.download) }
                         }
                     }
                 }

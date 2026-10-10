@@ -122,10 +122,10 @@ private fun InstalledContentFileListHeader(
     onAddClick: () -> Unit,
     onOpenFolder: (InstanceFolder) -> Unit
 ) {
-    Row(
+    FlowRow(
         modifier = Modifier.fillMaxWidth().padding(8.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically
+        verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically)
     ) {
         if (addEnabled) {
             AppIconTextButton(
@@ -140,7 +140,7 @@ private fun InstalledContentFileListHeader(
             initialValue = searchQuery,
             onValueChange = onSearchQueryChange,
             placeholder = stringResource(searchPlaceholder),
-            modifier = Modifier.weight(1f)
+            modifier = Modifier.weight(1f).widthIn(min = 100.dp)
         )
         AppCheckbox(
             label = stringResource(InstanceRes.string.showOnlyEnabled),

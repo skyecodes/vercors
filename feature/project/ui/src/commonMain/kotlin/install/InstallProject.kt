@@ -52,8 +52,12 @@ fun InstallProject(
                 InstallProjectFileSelector(state)
                 InstallProjectDependenciesSection(state)
                 InstallProjectManualDownloadsSection(state)
-                if (state.installing || state.installProgress > 0f) {
-                    AppProgressIndicator(progress = state.installProgress, modifier = Modifier.fillMaxWidth())
+                if (state.installing || state.installProgress.fraction > 0f) {
+                    AppDownloadProgress(
+                        progress = state.installProgress.fraction,
+                        download = state.installProgress.download,
+                        modifier = Modifier.fillMaxWidth()
+                    )
                 }
                 InstallProjectActionButtons(state)
             }

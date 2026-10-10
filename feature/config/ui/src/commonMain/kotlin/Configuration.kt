@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
+import app.vercors.core.domain.toHumanReadableSize
 import app.vercors.core.ui.animation.appAnimateItem
 import app.vercors.core.ui.component.*
 import app.vercors.core.ui.layout.AppSidebarTabItem
@@ -785,17 +786,6 @@ private fun ConfigurationRow(
 private fun <T> List<T>.moved(from: Int, to: Int): List<T> =
     toMutableList().apply { add(to, removeAt(from)) }
 
-private fun Long.toHumanReadableSize(): String {
-    if (this < 1024) return "$this B"
-    val units = listOf("KB", "MB", "GB", "TB")
-    var value = this / 1024.0
-    var unitIndex = 0
-    while (value >= 1024 && unitIndex < units.lastIndex) {
-        value /= 1024
-        unitIndex++
-    }
-    return "${(value * 10).toInt() / 10.0} ${units[unitIndex]}"
-}
 
 
 private val ConfigurationTab.icon: ImageVector

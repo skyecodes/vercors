@@ -8,9 +8,9 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import app.vercors.core.ui.animation.appAnimateFloatAsState
+import app.vercors.core.domain.DownloadProgress
+import app.vercors.core.ui.component.AppDownloadProgress
 import app.vercors.core.ui.component.AppIconTextButton
-import app.vercors.core.ui.component.AppProgressIndicator
 import app.vercors.core.ui.component.AppText
 import app.vercors.core.ui.layout.AppDialog
 import app.vercors.core.ui.layout.AppError
@@ -34,7 +34,7 @@ import org.jetbrains.compose.resources.stringResource
 @Immutable
 data class JavaInstallProgressView(
     val majorVersion: Int = 0,
-    val progress: Float? = null,
+    val download: DownloadProgress? = null,
     val done: Boolean = false,
     val error: (@Composable () -> String)? = null,
 )
@@ -57,9 +57,12 @@ class InstallJavaProgressDialog(
                 )
 
                 if (!view.done) {
-                    view.progress?.let {
-                        val progress by appAnimateFloatAsState(it)
-                        AppProgressIndicator(progress = progress, modifier = Modifier.width(500.dp))
+                    view.download?.let {
+                        AppDownloadProgress(
+                            progress = it.normalized.toFloat(),
+                            download = it,
+                            modifier = Modifier.width(500.dp)
+                        )
                     }
                     AppIconTextButton(
                         onClick = { navigator.finish(Unit) },

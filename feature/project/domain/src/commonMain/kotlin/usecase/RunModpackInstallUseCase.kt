@@ -1,5 +1,6 @@
 package app.vercors.feature.project.domain.usecase
 
+import app.vercors.core.domain.toDownloadProgressOrNull
 import app.vercors.core.domain.toFractionOrNull
 import app.vercors.feature.instance.domain.model.InstanceId
 import app.vercors.feature.instance.domain.model.InstanceInstallStage
@@ -88,7 +89,7 @@ class RunModpackInstallUseCase(
             installModpackFiles(resolvedManifest, instanceId) { progress ->
                 updateInstanceStatus(
                     instanceId,
-                    InstanceStatus.Installing.DownloadingFiles(progress.toFractionOrNull())
+                    InstanceStatus.Installing.DownloadingFiles(progress.toDownloadProgressOrNull())
                 )
             }
         }) { error: ModpackInstallError ->

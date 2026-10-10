@@ -186,6 +186,33 @@ suspend inline fun Path.writeFromSource(
     }
 }
 
+suspend inline fun Path.writeFromSource(
+    source: Source,
+    crossinline onBytesWritten: (Long) -> Unit,
+    context: CoroutineContext = Dispatchers.IO
+): Long {
+    createParentDirectories(context)
+    return sink { sink ->
+        source.use {
+            withContext(context) {
+                val buffer = Buffer()
+                var total = 0L
+                while (true) {
+                    val read = it.readAtMostTo(buffer, WRITE_CHUNK_SIZE)
+                    if (read == -1L) break
+                    sink.write(buffer, read)
+                    total += read
+                    onBytesWritten(read)
+                }
+                total
+            }
+        }
+    }
+}
+
+@PublishedApi
+internal const val WRITE_CHUNK_SIZE = 64L * 1024
+
 suspend inline fun Path.writeText(
     text: String,
     context: CoroutineContext = Dispatchers.IO

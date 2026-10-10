@@ -11,7 +11,7 @@ data class InstallModpackState(
     val selectedFileId: String?,
     val instanceName: String,
     val installing: Boolean,
-    val installProgress: Float? = null,
+    val installProgress: InstallProgressView = InstallProgressView(),
 ) {
     val fileList = files.valueOrNull ?: emptyList()
     val selectedFile = fileList.find { it.id == selectedFileId }

@@ -2,6 +2,7 @@ package app.vercors.feature.instance.ui
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import app.vercors.core.domain.DownloadProgress
 import app.vercors.core.ui.theme.error
 import app.vercors.core.ui.theme.primary
 import app.vercors.core.ui.theme.success
@@ -34,10 +35,17 @@ val InstanceStatus.text: String
 val InstanceStatus.progress: Float?
     get() = when (this) {
         is InstanceStatus.Launching.ValidatingFiles -> progress
-        is InstanceStatus.Launching.DownloadingFiles -> progress
+        is InstanceStatus.Launching.DownloadingFiles -> download?.normalized?.toFloat()
         is InstanceStatus.Installing.ResolvingFiles -> progress
-        is InstanceStatus.Installing.DownloadingFiles -> progress
+        is InstanceStatus.Installing.DownloadingFiles -> download?.normalized?.toFloat()
         is InstanceStatus.Installing.ExtractingFiles -> progress
+        else -> null
+    }
+
+val InstanceStatus.download: DownloadProgress?
+    get() = when (this) {
+        is InstanceStatus.Launching.DownloadingFiles -> download
+        is InstanceStatus.Installing.DownloadingFiles -> download
         else -> null
     }
 

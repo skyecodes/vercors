@@ -1,6 +1,6 @@
 package app.vercors.feature.java.data.repository
 
-import app.vercors.core.domain.toFractionOrNull
+import app.vercors.core.domain.toDownloadProgressOrNull
 import app.vercors.core.filesystem.*
 import app.vercors.core.system.OsArch
 import app.vercors.core.system.OsType
@@ -91,7 +91,7 @@ class JavaRuntimeRepositoryImpl(
             }
             withError(JavaRuntimeError::DownloadFailed) {
                 fileValidationService.submit(fileRequests) { progress ->
-                    _installProgress.update { it + (majorVersion to JavaRuntimeInstallStatus.Downloading(progress.toFractionOrNull())) }
+                    _installProgress.update { it + (majorVersion to JavaRuntimeInstallStatus.Downloading(progress.toDownloadProgressOrNull())) }
                 }
             }
             normalFiles.filter { (_, file) -> file.executable }.forEach { (relativePath, _) ->

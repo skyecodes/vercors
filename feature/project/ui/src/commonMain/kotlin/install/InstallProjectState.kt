@@ -1,6 +1,7 @@
 package app.vercors.feature.project.ui.install
 
 import androidx.compose.runtime.Immutable
+import app.vercors.core.domain.DownloadProgress
 import app.vercors.feature.game.domain.model.LoaderError
 import app.vercors.feature.game.domain.model.LoaderVersion
 import app.vercors.feature.game.domain.model.ModLoaderType
@@ -12,6 +13,12 @@ import app.vercors.feature.project.domain.model.*
 import opensavvy.state.progressive.ProgressiveOutcome
 import opensavvy.state.progressive.valueOrNull
 import kotlin.time.Instant
+
+@Immutable
+data class InstallProgressView(
+    val fraction: Float = 0f,
+    val download: DownloadProgress? = null,
+)
 
 @Immutable
 data class InstallProjectState(
@@ -33,7 +40,7 @@ data class InstallProjectState(
     val selectedDependencyIds: Set<ProjectId>,
     val resolvingDependencies: Boolean,
     val installing: Boolean,
-    val installProgress: Float = 0f,
+    val installProgress: InstallProgressView = InstallProgressView(),
     val manualDownloadItems: List<ManualDownloadItem> = emptyList(),
     val completedInstanceId: InstanceId? = null,
 ) {

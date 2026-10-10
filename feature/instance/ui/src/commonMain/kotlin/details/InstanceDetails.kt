@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -17,7 +16,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.vercors.core.ui.animation.AppAnimatedVisibility
-import app.vercors.core.ui.animation.appAnimateFloatAsState
 import app.vercors.core.ui.component.*
 import app.vercors.core.ui.layout.*
 import app.vercors.core.ui.modifier.appCard
@@ -324,9 +322,9 @@ private fun RowScope.InstanceHeaderInfo(instance: InstanceView) {
             modifier = Modifier.instanceSharedElement(instance.id, "title")
         )
 
-        Row(
+        FlowRow(
             horizontalArrangement = Arrangement.spacedBy(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+            verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically)
         ) {
             InstanceHeaderInfoSection {
                 AppIcon(
@@ -411,7 +409,7 @@ private fun InstanceHeaderStatus(instance: InstanceView) {
     if (instance.status !is InstanceStatus.Launching && instance.status !is InstanceStatus.Installing) return
 
     Column(
-        modifier = Modifier.width(250.dp),
+        modifier = Modifier.width(300.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterVertically)
     ) {
@@ -419,9 +417,9 @@ private fun InstanceHeaderStatus(instance: InstanceView) {
             text = instance.status.text
         )
         instance.status.progress?.let {
-            val progress by appAnimateFloatAsState(it)
-            AppProgressIndicator(
-                progress = progress,
+            AppDownloadProgress(
+                progress = it,
+                download = instance.status.download,
                 modifier = Modifier.fillMaxWidth()
             )
         }

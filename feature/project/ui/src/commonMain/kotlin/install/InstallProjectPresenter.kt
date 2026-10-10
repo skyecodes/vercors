@@ -2,6 +2,7 @@ package app.vercors.feature.project.ui.install
 
 import androidx.compose.runtime.*
 import app.vercors.core.domain.filterIsRight
+import app.vercors.core.domain.toDownloadProgressOrNull
 import app.vercors.core.domain.toFractionOrNull
 import app.vercors.core.ui.state.mutableProgressiveStateOf
 import app.vercors.core.ui.state.produceAndCollectAsProgressiveState
@@ -86,7 +87,7 @@ class InstallProjectPresenter(
             rememberFileSelectionState(effectiveGameVersion, effectiveLoader, instanceSelection.selectedInstanceId)
 
         val (installing, setInstalling) = remember { mutableStateOf(false) }
-        val (installProgress, setInstallProgress) = remember { mutableFloatStateOf(0f) }
+        val (installProgress, setInstallProgress) = remember { mutableStateOf(InstallProgressView()) }
         val (installJob, setInstallJob) = remember { mutableStateOf<Job?>(null) }
         val (manualDownloadItems, setManualDownloadItems) =
             remember { mutableStateOf<List<ManualDownloadItem>>(emptyList()) }
@@ -209,6 +210,12 @@ class InstallProjectPresenter(
             }
         }
 
+        LaunchedEffect(loaderList) {
+            if (selectedLoader == null) {
+                setSelectedLoader(loaderList.firstOrNull())
+            }
+        }
+
         LaunchedEffect(loaderVersionList) {
             if (selectedLoaderVersion == null) {
                 setSelectedLoaderVersion(
@@ -291,7 +298,7 @@ class InstallProjectPresenter(
         installJob: Job?,
         setInstallJob: (Job?) -> Unit,
         setInstalling: (Boolean) -> Unit,
-        setInstallProgress: (Float) -> Unit,
+        setInstallProgress: (InstallProgressView) -> Unit,
         setManualDownloadItems: (List<ManualDownloadItem>) -> Unit,
         completedInstanceId: InstanceId?,
         setCompletedInstanceId: (InstanceId?) -> Unit,
@@ -369,7 +376,7 @@ class InstallProjectPresenter(
         newInstanceForm: NewInstanceFormState,
         fileSelection: FileSelectionState,
         setInstalling: (Boolean) -> Unit,
-        setInstallProgress: (Float) -> Unit,
+        setInstallProgress: (InstallProgressView) -> Unit,
         setInstallJob: (Job?) -> Unit,
         setManualDownloadItems: (List<ManualDownloadItem>) -> Unit,
         setCompletedInstanceId: (InstanceId?) -> Unit,
@@ -381,7 +388,7 @@ class InstallProjectPresenter(
         if (instanceSelection.creatingNewInstance) {
             val selectedGameVersion = newInstanceForm.selectedGameVersion ?: return
             setInstalling(true)
-            setInstallProgress(0f)
+            setInstallProgress(InstallProgressView())
             setInstallJob(
                 confirmCreateAndInstall(
                     newInstanceForm.newInstanceName, selectedGameVersion, newInstanceForm.selectedLoader,
@@ -397,7 +404,7 @@ class InstallProjectPresenter(
         } else {
             val instanceId = instanceSelection.selectedInstanceId ?: return
             setInstalling(true)
-            setInstallProgress(0f)
+            setInstallProgress(InstallProgressView())
             setInstallJob(
                 confirmInstall(
                     instanceId, file, selectedDependencies,
@@ -484,7 +491,7 @@ class InstallProjectPresenter(
         file: ProjectFileView,
         selectedDependencies: List<DependencyFileView>,
         onManualDownloadItemsChanged: (List<ManualDownloadItem>) -> Unit,
-        onProgressChanged: (Float) -> Unit,
+        onProgressChanged: (InstallProgressView) -> Unit,
         onFinished: (success: Boolean) -> Unit
     ): Job {
         val job = globalScope.launch {
@@ -508,7 +515,7 @@ class InstallProjectPresenter(
         file: ProjectFileView,
         selectedDependencies: List<DependencyFileView>,
         onManualDownloadItemsChanged: (List<ManualDownloadItem>) -> Unit,
-        onProgressChanged: (Float) -> Unit,
+        onProgressChanged: (InstallProgressView) -> Unit,
         onFinished: (instanceId: InstanceId?, success: Boolean) -> Unit
     ): Job {
         val job = globalScope.launch {
@@ -565,7 +572,7 @@ class InstallProjectPresenter(
         file: ProjectFileView,
         selectedDependencies: List<DependencyFileView>,
         onManualDownloadItemsChanged: (List<ManualDownloadItem>) -> Unit,
-        onProgressChanged: (Float) -> Unit,
+        onProgressChanged: (InstallProgressView) -> Unit,
     ): Boolean {
         val candidates = buildList {
             add(InstallCandidate(projectId, projectType, file))
@@ -584,7 +591,12 @@ class InstallProjectPresenter(
                     },
                     instanceId
                 ) { progress ->
-                    onProgressChanged((progress.toFractionOrNull() ?: 0f) * autoCandidates.size / totalCount)
+                    onProgressChanged(
+                        InstallProgressView(
+                            fraction = (progress.toFractionOrNull() ?: 0f) * autoCandidates.size / totalCount,
+                            download = progress.toDownloadProgressOrNull(),
+                        )
+                    )
                 }
                 autoCandidates.forEach { candidate ->
                     val kind = requireNotNull(candidate.type.toContentKindOrNull())
@@ -598,7 +610,7 @@ class InstallProjectPresenter(
                     )
                 }
             }
-            onProgressChanged(autoCandidates.size.toFloat() / totalCount)
+            onProgressChanged(InstallProgressView(autoCandidates.size.toFloat() / totalCount))
             true
         }) { error: ProjectFileDownloadError ->
             snackbarService.error { error.message }
@@ -623,7 +635,7 @@ class InstallProjectPresenter(
             onError = { error -> snackbarService.error { error.manualDownloadMessage } },
         ) { items ->
             onManualDownloadItemsChanged(items)
-            onProgressChanged((autoCandidates.size + items.count { it.downloaded }).toFloat() / totalCount)
+            onProgressChanged(InstallProgressView((autoCandidates.size + items.count { it.downloaded }).toFloat() / totalCount))
         }
     }
 
@@ -631,7 +643,7 @@ class InstallProjectPresenter(
         instanceId: InstanceId,
         file: ProjectFileView,
         onManualDownloadItemsChanged: (List<ManualDownloadItem>) -> Unit,
-        onProgressChanged: (Float) -> Unit,
+        onProgressChanged: (InstallProgressView) -> Unit,
     ): Boolean {
         val manualDownloadUrl = file.manualDownloadUrl
         val ok = if (manualDownloadUrl == null) {
@@ -641,7 +653,9 @@ class InstallProjectPresenter(
                         projectId, file.id, file.fileName, projectType, file.size, file.sha1, file.md5
                     )
                 installWorldFile(candidate, instanceId) { progress ->
-                    onProgressChanged(progress.toFractionOrNull() ?: 0f)
+                    onProgressChanged(
+                        InstallProgressView(progress.toFractionOrNull() ?: 0f, progress.toDownloadProgressOrNull())
+                    )
                 }
                 true
             }) { error: ProjectFileDownloadError ->
@@ -667,7 +681,7 @@ class InstallProjectPresenter(
             }
         }
         onManualDownloadItemsChanged(emptyList())
-        onProgressChanged(1f)
+        onProgressChanged(InstallProgressView(1f))
         return ok
     }
 

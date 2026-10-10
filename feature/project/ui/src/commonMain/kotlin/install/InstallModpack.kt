@@ -52,7 +52,11 @@ fun InstallModpack(
             )
 
             if (state.installing) {
-                AppProgressIndicator(progress = state.installProgress ?: 0f, modifier = Modifier.fillMaxWidth())
+                AppDownloadProgress(
+                    progress = state.installProgress.fraction,
+                    download = state.installProgress.download,
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
 
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {

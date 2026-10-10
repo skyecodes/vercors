@@ -7,3 +7,5 @@ fun Progress.toFractionOrNull(): Float? = when (this) {
     Progress.Done -> 1f
     Progress.Loading.Unquantified -> null
 }
+
+fun Progress.toDownloadProgressOrNull(): DownloadProgress? = this as? DownloadProgress

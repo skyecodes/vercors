@@ -31,10 +31,6 @@ import opensavvy.progress.Progress
 import opensavvy.progress.coroutines.report
 import opensavvy.progress.coroutines.reportProgress
 import opensavvy.progress.done
-import opensavvy.progress.loading
-import kotlin.concurrent.atomics.AtomicInt
-import kotlin.concurrent.atomics.ExperimentalAtomicApi
-import kotlin.concurrent.atomics.incrementAndFetch
 
 private const val MAX_ATTEMPTS = 3L
 private const val MAX_PARALLEL_DOWNLOADS = 10
@@ -50,7 +46,7 @@ class FileValidationServiceImpl(
     private val metaApiConnectivity: MetaApiConnectivity,
     private val appPaths: AppPaths,
 ) : FileValidationService {
-    @OptIn(ExperimentalRaiseAccumulateApi::class, ExperimentalAtomicApi::class)
+    @OptIn(ExperimentalRaiseAccumulateApi::class)
     context(_: Raise<NonEmptyList<FileValidationFailure>>)
     override suspend fun submit(
         files: List<FileValidationRequest>,
@@ -62,15 +58,18 @@ class FileValidationServiceImpl(
             return@reportProgress
         }
 
-        report(loading(0.0))
         Schedule.recurs<NonEmptyList<FileValidationFailure>>(n = MAX_ATTEMPTS).retryRaise {
-            val total = remainingFiles.size.toDouble()
-            val progress = AtomicInt(0)
+            val tracker = DownloadProgressTracker(
+                totalBytes = remainingFiles.sumOfKnownSizes(),
+                totalFiles = remainingFiles.size,
+                onProgress = onProgress,
+            )
+            tracker.reportNow()
             val results = remainingFiles.parMap(concurrency = MAX_PARALLEL_DOWNLOADS) { request ->
-                either { request.apply { downloadAndValidate() } }.also {
-                    report(loading(progress.incrementAndFetch() / total))
-                }
+                either { request.apply { downloadAndValidate(tracker::addBytes) } }
+                    .onRight { tracker.completeFile() }
             }
+            tracker.reportNow()
 
             val successes = results.mapNotNull { it.getOrNull() }
             remainingFiles.removeAll(successes)
@@ -130,7 +129,10 @@ class FileValidationServiceImpl(
     }
 
     context(_: Raise<RemoteError>)
-    override suspend fun FileValidationRequest.download() {
+    override suspend fun FileValidationRequest.download() = download(onBytes = {})
+
+    context(_: Raise<RemoteError>)
+    private suspend fun FileValidationRequest.download(onBytes: (Long) -> Unit) {
         // A blank URL means the file is only ever produced locally (e.g. a loader installer's patched jar)
         ensure(this !is FileValidationRequest.Url || url.isNotBlank()) { RemoteError.Network }
         val cacheObject = cacheObjectPath()
@@ -139,6 +141,7 @@ class FileValidationServiceImpl(
             if (path.exists()) path.delete()
             if (cacheObject.linkOrCopyTo(path)) {
                 logger.trace { "Served $path from content cache ($cacheObject)" }
+                size?.let(onBytes)
                 return
             }
             logger.warn { "Content cache hit for $path but linking from $cacheObject failed; falling back to network" }
@@ -150,15 +153,15 @@ class FileValidationServiceImpl(
             if (this is FileValidationRequest.Channel) {
                 metaApiConnectivity.request {
                     source.request(httpClient).use {
-                        tempPath.writeFromSource(it)
+                        tempPath.writeFromSource(it, onBytes)
                     }
                 }
             } else {
                 makeRequest {
                     source.request(httpClient).use {
                         when (compression) {
-                            FileCompression.Lzma -> tempPath.writeFromLzmaSource(it)
-                            null -> tempPath.writeFromSource(it)
+                            FileCompression.Lzma -> tempPath.writeFromLzmaSource(it, onBytes)
+                            null -> tempPath.writeFromSource(it, onBytes)
                         }
                     }
                 }
@@ -171,12 +174,12 @@ class FileValidationServiceImpl(
     }
 
     context(_: Raise<RemoteError>)
-    private suspend fun Path.writeFromLzmaSource(source: Source) {
+    private suspend fun Path.writeFromLzmaSource(source: Source, onBytes: (Long) -> Unit) {
         createParentDirectories()
         val target = this
         withContext(Dispatchers.IO) {
             try {
-                target.sink { decodeLzma(source, it) }
+                target.sink { decodeLzma(source, it, onBytes) }
             } catch (_: LzmaDecodingException) {
                 raise(RemoteError.Serialization)
             }
@@ -190,9 +193,18 @@ class FileValidationServiceImpl(
     }
 
     context(_: Raise<FileValidationFailure>)
-    override suspend fun FileValidationRequest.downloadAndValidate() {
-        either { download() }.mapLeft { FileValidationFailure.DownloadFailed(path, it) }.bind()
+    override suspend fun FileValidationRequest.downloadAndValidate() = downloadAndValidate(onBytes = {})
+
+    context(_: Raise<FileValidationFailure>)
+    private suspend fun FileValidationRequest.downloadAndValidate(onBytes: (Long) -> Unit) {
+        either { download(onBytes) }.mapLeft { FileValidationFailure.DownloadFailed(path, it) }.bind()
         validate()
         populateCache()
     }
+}
+
+private fun List<FileValidationRequest>.sumOfKnownSizes(): Long? {
+    var total = 0L
+    for (request in this) total += request.size ?: return null
+    return total
 }

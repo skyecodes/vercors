@@ -306,7 +306,7 @@ class LaunchInstanceUseCase(
 
             is InstanceLaunchEvent.Downloading -> instanceRepository.updateInstanceStatus(
                 instanceId,
-                InstanceStatus.Launching.DownloadingFiles(event.progress)
+                InstanceStatus.Launching.DownloadingFiles(event.download)
             )
 
             is InstanceLaunchEvent.Running -> instanceRepository.updateInstanceStatus(
