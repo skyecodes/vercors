@@ -11,7 +11,6 @@ import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
 import java.nio.file.Files
 import kotlin.test.Test
-import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import kotlin.io.path.Path as JvmPath
 
@@ -26,7 +25,7 @@ class DataDirectoryRepositoryImplJvmTest {
         parent?.let { SystemFileSystem.createDirectories(it) }
     }
 
-    private fun inodeOf(path: Path) = Files.readAttributes(JvmPath(path.toString()), "unix:ino")["ino"]
+    private fun isSameFile(a: Path, b: Path): Boolean = Files.isSameFile(JvmPath(a.toString()), JvmPath(b.toString()))
 
     @Test
     fun `move re-links cache-backed mod files instead of copying them`() = runTest {
@@ -43,7 +42,7 @@ class DataDirectoryRepositoryImplJvmTest {
         val cacheObject = appPaths.contentCacheObjectFile(ContentCacheKind.Mod, sha1)
         cacheObject.createParentDirectoriesForTest()
         assertTrue(modFile.linkOrCopyTo(cacheObject))
-        assertEquals(inodeOf(modFile), inodeOf(cacheObject), "precondition: source mod and cache object share an inode")
+        assertTrue(isSameFile(modFile, cacheObject), "precondition: source mod and cache object are the same file")
 
         val repository = DataDirectoryRepositoryImpl(appPaths, cryptographyService, appId)
         try {
@@ -59,9 +58,8 @@ class DataDirectoryRepositoryImplJvmTest {
             val newCacheObject = newAppPaths.contentCacheObjectFile(ContentCacheKind.Mod, sha1)
             assertTrue(newModFile.exists())
             assertTrue(newCacheObject.exists())
-            assertEquals(
-                inodeOf(newCacheObject),
-                inodeOf(newModFile),
+            assertTrue(
+                isSameFile(newCacheObject, newModFile),
                 "moved mod file should be re-linked to the moved cache object, not an independent copy"
             )
         } finally {

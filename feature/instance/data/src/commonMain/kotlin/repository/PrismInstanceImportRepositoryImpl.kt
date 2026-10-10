@@ -7,6 +7,7 @@ import app.vercors.feature.instance.domain.model.localimport.LocalImportError
 import app.vercors.feature.instance.domain.model.localimport.PrismInstanceInfo
 import app.vercors.feature.instance.domain.repository.PrismInstanceImportRepository
 import app.vercors.shared.data.AppPaths
+import app.vercors.shared.data.toZipEntryName
 import arrow.core.raise.Raise
 import arrow.core.raise.context.raise
 import de.jonasbroeckmann.kzip.Zip
@@ -78,12 +79,12 @@ class PrismInstanceImportRepositoryImpl(
                 val prefix = detectGameDirPrefix(zip, info.rootPrefix)
                 var total = 0
                 zip.forEachEntry { entry ->
-                    if (!entry.isDirectory && entry.path.toString().startsWith(prefix)) total++
+                    if (!entry.isDirectory && entry.path.toZipEntryName().startsWith(prefix)) total++
                 }
                 var done = 0
                 zip.forEachEntry { entry ->
                     if (entry.isDirectory) return@forEachEntry
-                    val entryPath = entry.path.toString()
+                    val entryPath = entry.path.toZipEntryName()
                     if (!entryPath.startsWith(prefix)) return@forEachEntry
                     val target = Path(gameDir, *entryPath.removePrefix(prefix).pathSegments())
                     target.parent?.let { SystemFileSystem.createDirectories(it) }
@@ -105,7 +106,7 @@ class PrismInstanceImportRepositoryImpl(
         val matched = BooleanArray(fullPrefixes.size)
         zip.forEachEntry { entry ->
             if (!entry.isDirectory) {
-                val path = entry.path.toString()
+                val path = entry.path.toZipEntryName()
                 for (i in fullPrefixes.indices) {
                     if (!matched[i] && path.startsWith(fullPrefixes[i])) matched[i] = true
                 }
@@ -119,7 +120,8 @@ class PrismInstanceImportRepositoryImpl(
         var found: String? = null
         zip.forEachEntry { entry ->
             if (found == null && !entry.isDirectory) {
-                TOP_LEVEL_INSTANCE_CFG_REGEX.matchEntire(entry.path.toString())?.let { found = "${it.groupValues[1]}/" }
+                TOP_LEVEL_INSTANCE_CFG_REGEX.matchEntire(entry.path.toZipEntryName())
+                    ?.let { found = "${it.groupValues[1]}/" }
             }
         }
         return found

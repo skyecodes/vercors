@@ -4,7 +4,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.io.files.Path
 import java.nio.file.Files
 import kotlin.test.Test
-import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 import kotlin.io.path.Path as JvmPath
 
 class FileUtilsLinkJvmTest {
@@ -19,13 +19,9 @@ class FileUtilsLinkJvmTest {
 
         source.linkOrCopyTo(target)
 
-        val sourceAttrs = Files.readAttributes(JvmPath(source.toString()), "unix:ino,nlink")
-        val targetAttrs = Files.readAttributes(JvmPath(target.toString()), "unix:ino,nlink")
-        assertEquals(
-            sourceAttrs["ino"],
-            targetAttrs["ino"],
-            "linked file should share the same inode as the original"
+        assertTrue(
+            Files.isSameFile(JvmPath(source.toString()), JvmPath(target.toString())),
+            "linked file should be the same file as the original"
         )
-        assertEquals(2, targetAttrs["nlink"], "inode's link count should reflect both directory entries")
     }
 }

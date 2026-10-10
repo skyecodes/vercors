@@ -538,7 +538,7 @@ class ProjectRepositoryImpl(
         Zip.open(zipPath).use { zip ->
             zip.forEachEntry { entry ->
                 if (entry.isDirectory) return@forEachEntry
-                val entryPath = entry.path.toString()
+                val entryPath = entry.path.toZipEntryName()
                 val matchingDir = overridesDirs.firstOrNull { entryPath.startsWith("$it/") } ?: return@forEachEntry
                 val relativePath = entryPath.removePrefix("$matchingDir/")
                 val target = Path(gameDir, *relativePath.pathSegments())

@@ -41,7 +41,8 @@ jobs:
             echo "release-type=$TYPE"
           } >> "$GITHUB_OUTPUT"
 
-  # Runs on all three host OSes so the macOS and mingw native test targets are covered too
+  # Each host runs JVM tests plus only its own native target: cross-linking another OS's test binaries
+  # (e.g. linuxX64 from Windows) fails on Ktor's bundled libcurl, and they could never run there anyway
   test:
     name: Tests (${{ matrix.os }})
     needs: version
@@ -50,7 +51,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-latest, windows-latest, macos-latest ]
+        include:
+          - { os: ubuntu-latest,  tasks: allTests }
+          - { os: windows-latest, tasks: jvmTest mingwX64Test }
+          - { os: macos-latest,   tasks: jvmTest macosArm64Test }
     env:
       MICROSOFT_CLIENT_ID: ci-placeholder
     steps:
@@ -70,7 +74,7 @@ jobs:
           restore-keys: konan-${{ runner.os }}-
 
       - name: Test
-        run: ./gradlew allTests --continue --stacktrace --no-daemon
+        run: ./gradlew ${{ matrix.tasks }} --continue --stacktrace --no-daemon
 
       - uses: actions/upload-artifact@v4
         if: failure()

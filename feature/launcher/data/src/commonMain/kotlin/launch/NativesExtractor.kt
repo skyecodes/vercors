@@ -1,5 +1,6 @@
 package app.vercors.feature.launcher.data.launch
 
+import app.vercors.shared.data.toZipEntryName
 import de.jonasbroeckmann.kzip.Zip
 import de.jonasbroeckmann.kzip.extractTo
 import de.jonasbroeckmann.kzip.forEachEntry
@@ -24,7 +25,7 @@ class NativesExtractor {
                 Zip.open(file.path).use { zip ->
                     zip.extractTo(file.extractDest)
                     zip.forEachEntry { entry ->
-                        val entryPath = entry.path.toString()
+                        val entryPath = entry.path.toZipEntryName()
                         if (file.extractExclude?.any { entryPath.startsWith(it) } ?: false) {
                             SystemFileSystem.delete(Path(file.extractDest, entryPath))
                         }

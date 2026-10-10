@@ -4,6 +4,7 @@ import app.vercors.core.filesystem.createParentDirectories
 import app.vercors.core.filesystem.sink
 import app.vercors.feature.game.domain.model.ModLoaderType
 import app.vercors.feature.instance.data.content.contentBaseName
+import app.vercors.shared.data.toZipEntryName
 import com.akuleshov7.ktoml.Toml
 import com.akuleshov7.ktoml.TomlInputConfig
 import de.jonasbroeckmann.kzip.Zip
@@ -36,7 +37,7 @@ private const val MANIFEST_FILENAME = "META-INF/MANIFEST.MF"
 
 internal fun parseModJar(jarPath: Path, json: Json): ParsedModInfo = runCatching {
     Zip.open(jarPath).use { zip ->
-        val entryPaths = buildSet { zip.forEachEntry { add(it.path.toString()) } }
+        val entryPaths = buildSet { zip.forEachEntry { add(it.path.toZipEntryName()) } }
         when {
             FABRIC_METADATA_FILENAME in entryPaths -> zip.parseFabric(json)
             QUILT_METADATA_FILENAME in entryPaths -> zip.parseQuilt(json)

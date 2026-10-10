@@ -1,6 +1,7 @@
 package app.vercors.feature.instance.data.content
 
 import app.vercors.feature.instance.data.dto.PackMcmeta
+import app.vercors.shared.data.toZipEntryName
 import de.jonasbroeckmann.kzip.Zip
 import de.jonasbroeckmann.kzip.forEachEntry
 import de.jonasbroeckmann.kzip.open
@@ -14,7 +15,7 @@ internal class ResourcePackParser(private val json: Json) : ContentFileParser {
         val title = contentBaseName(filePath.name, "zip").replace(Regex("[-_]"), " ").trim()
         return runCatching {
             Zip.open(filePath).use { zip ->
-                val entryPaths = buildSet { zip.forEachEntry { add(it.path.toString()) } }
+                val entryPaths = buildSet { zip.forEachEntry { add(it.path.toZipEntryName()) } }
                 val description = if ("pack.mcmeta" in entryPaths) {
                     val text = zip.entry(Path("pack.mcmeta")) { readToBytes() }.decodeToString()
                     json.decodeFromString(PackMcmeta.serializer(), text).pack.description?.toDisplayText()
