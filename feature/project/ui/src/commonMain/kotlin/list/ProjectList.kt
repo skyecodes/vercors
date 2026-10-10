@@ -40,10 +40,7 @@ import app.vercors.feature.project.ui.*
 import app.vercors.feature.project.ui.details.isInstallable
 import app.vercors.feature.project.ui.install.ProjectInstallButton
 import app.vercors.feature.project.ui.install.ProjectInstallTarget
-import app.vercors.shared.ui.EventSink
-import app.vercors.shared.ui.SharedRes
-import app.vercors.shared.ui.Store
-import app.vercors.shared.ui.sortBy
+import app.vercors.shared.ui.*
 import coil3.compose.rememberAsyncImagePainter
 import com.composables.icons.lucide.*
 import com.composeunstyled.theme.Theme
@@ -553,7 +550,7 @@ private fun LazyItemScope.ProjectListItemCard(
             },
             author = {
                 AppText(
-                    text = "by ${project.author}",
+                    text = stringResource(SharedRes.string.byAuthor, project.author),
                     singleLine = true,
                     overflow = TextOverflow.Ellipsis,
                 )

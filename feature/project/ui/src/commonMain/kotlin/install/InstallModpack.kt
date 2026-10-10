@@ -8,10 +8,14 @@ import app.vercors.core.ui.component.*
 import app.vercors.core.ui.layout.AppDialog
 import app.vercors.core.ui.layout.AppForm
 import app.vercors.core.ui.theme.*
-import app.vercors.feature.project.ui.*
+import app.vercors.feature.project.ui.ProjectRes
+import app.vercors.feature.project.ui.file
+import app.vercors.feature.project.ui.install
+import app.vercors.feature.project.ui.installModpack
 import app.vercors.shared.ui.SharedRes
 import app.vercors.shared.ui.Store
 import app.vercors.shared.ui.cancel
+import app.vercors.shared.ui.instanceName
 import com.composables.icons.lucide.Download
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.X
@@ -45,7 +49,7 @@ fun InstallModpack(
             )
 
             AppTextField(
-                label = stringResource(ProjectRes.string.instanceName),
+                label = stringResource(SharedRes.string.instanceName),
                 initialValue = state.instanceName,
                 onValueChange = { eventSink(InstallModpackEvent.OnInstanceNameChange(it)) },
                 modifier = Modifier.width(300.dp),

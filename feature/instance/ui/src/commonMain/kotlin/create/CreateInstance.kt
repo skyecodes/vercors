@@ -91,7 +91,7 @@ private fun InstanceTypeSelector(
             InstanceTypeButton(
                 selectedInstanceType = selectedInstanceType,
                 value = InstanceType.Modpack,
-                text = stringResource(InstanceRes.string.modpack),
+                text = stringResource(SharedRes.string.modpack),
                 icon = Lucide.PackageOpen,
             )
             InstanceTypeButton(
@@ -128,7 +128,7 @@ private fun InstanceTypeButton(
 context(eventSink: EventSink<CreateInstanceEvent>)
 private fun CustomInstanceForm(state: CreateInstanceState) {
     AppTextField(
-        label = stringResource(InstanceRes.string.instanceName),
+        label = stringResource(SharedRes.string.instanceName),
         initialValue = state.instanceName,
         onValueChange = { eventSink(CreateInstanceEvent.OnInstanceNameChange(it)) },
         modifier = Modifier.width(300.dp),
@@ -211,7 +211,7 @@ private fun ImportInstanceForm(state: CreateInstanceState) {
 
     if (state.importPreview != null) {
         AppTextField(
-            label = stringResource(InstanceRes.string.instanceName),
+            label = stringResource(SharedRes.string.instanceName),
             initialValue = state.importInstanceName,
             onValueChange = { eventSink(CreateInstanceEvent.OnImportInstanceNameChange(it)) },
             modifier = Modifier.width(300.dp),

@@ -26,4 +26,23 @@
     <string name="megabytes">MB</string>
     <string name="useDefaultPath">Leave empty to use the default system path</string>
     <string name="browse">Browse</string>
+
+    <string name="maxMemory">Max memory</string>
+    <string name="maxMemoryDesc">The maximum amount of memory the game is allowed to use (-Xmx).</string>
+    <string name="minMemory">Min memory</string>
+    <string name="minMemoryDesc">The amount of memory allocated to the game on startup (-Xms).</string>
+    <string name="extraJvmArgs">Extra JVM arguments</string>
+    <string name="extraJvmArgsDesc">Additional arguments passed to the JVM when launching the game.</string>
+    <string name="useSystemGlfw">Use system GLFW</string>
+    <string name="useSystemGlfwDesc">Use the GLFW library installed on this system instead of the bundled one.</string>
+    <string name="useSystemOpenAl">Use system OpenAL</string>
+    <string name="useSystemOpenAlDesc">Use the OpenAL library installed on this system instead of the bundled one.</string>
+    <string name="advanced">Advanced</string>
+    <string name="java">Java</string>
+    <string name="close">Close</string>
+    <string name="openAll">Open all</string>
+    <string name="manualDownloadsRequired">These files can't be downloaded automatically, their authors have disabled direct downloads.\nDownload them manually and they'll be picked up automatically.</string>
+    <string name="instanceName">Instance name</string>
+    <string name="modpack">Modpack</string>
+    <string name="byAuthor">by %1$s</string>
 </resources>

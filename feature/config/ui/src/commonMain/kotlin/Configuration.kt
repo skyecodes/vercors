@@ -505,7 +505,7 @@ private fun JavaConfigurationTab(
 
         val defaultMax = defaultMaxMemoryMb(state.totalMemoryMb)
 
-        ConfigurationRow(title = ConfigRes.string.maxMemory, description = ConfigRes.string.maxMemoryDesc) {
+        ConfigurationRow(title = SharedRes.string.maxMemory, description = SharedRes.string.maxMemoryDesc) {
             MemorySliderControl(
                 value = state.jvmMemoryOptions.maxMemoryMb,
                 defaultValue = defaultMax,
@@ -515,7 +515,7 @@ private fun JavaConfigurationTab(
                 onValueChange = { eventSink(ConfigurationEvent.OnMaxMemoryMbChange(it)) },
             )
         }
-        ConfigurationRow(title = ConfigRes.string.minMemory, description = ConfigRes.string.minMemoryDesc) {
+        ConfigurationRow(title = SharedRes.string.minMemory, description = SharedRes.string.minMemoryDesc) {
             MemorySliderControl(
                 value = state.jvmMemoryOptions.minMemoryMb,
                 defaultValue = DEFAULT_MIN_MEMORY_MB,
@@ -525,7 +525,7 @@ private fun JavaConfigurationTab(
                 onValueChange = { eventSink(ConfigurationEvent.OnMinMemoryMbChange(it)) },
             )
         }
-        ConfigurationRow(title = ConfigRes.string.extraJvmArgs, description = ConfigRes.string.extraJvmArgsDesc) {
+        ConfigurationRow(title = SharedRes.string.extraJvmArgs, description = SharedRes.string.extraJvmArgsDesc) {
             AppTextField(
                 initialValue = state.jvmMemoryOptions.extraArgs.orEmpty(),
                 onValueChange = { eventSink(ConfigurationEvent.OnExtraJvmArgsChange(it)) },
@@ -543,7 +543,7 @@ private fun NativeLibraryConfigurationTab(
     state: ConfigurationState
 ) {
     ConfigurationTabScaffold(state.horizontalTabs) {
-        ConfigurationRow(title = ConfigRes.string.useSystemGlfw, description = ConfigRes.string.useSystemGlfwDesc) {
+        ConfigurationRow(title = SharedRes.string.useSystemGlfw, description = SharedRes.string.useSystemGlfwDesc) {
             LibraryOverrideRow(
                 checked = state.nativeLibraryOptions.useSystemGlfw == true,
                 path = state.nativeLibraryOptions.glfwPath.orEmpty(),
@@ -552,7 +552,7 @@ private fun NativeLibraryConfigurationTab(
                 onPathChange = { eventSink(ConfigurationEvent.OnGlfwPathChange(it)) },
             )
         }
-        ConfigurationRow(title = ConfigRes.string.useSystemOpenAl, description = ConfigRes.string.useSystemOpenAlDesc) {
+        ConfigurationRow(title = SharedRes.string.useSystemOpenAl, description = SharedRes.string.useSystemOpenAlDesc) {
             LibraryOverrideRow(
                 checked = state.nativeLibraryOptions.useSystemOpenAl == true,
                 path = state.nativeLibraryOptions.openAlPath.orEmpty(),
@@ -802,10 +802,10 @@ private val ConfigurationTab.title: String
     @Composable get() = when (this) {
         ConfigurationTab.General -> stringResource(ConfigRes.string.general)
         ConfigurationTab.UI -> stringResource(ConfigRes.string.ui)
-        ConfigurationTab.Java -> stringResource(ConfigRes.string.java)
+        ConfigurationTab.Java -> stringResource(SharedRes.string.java)
         ConfigurationTab.NativeLibraries -> stringResource(ConfigRes.string.nativeLibraries)
         ConfigurationTab.Storage -> stringResource(ConfigRes.string.storage)
-        ConfigurationTab.Advanced -> stringResource(ConfigRes.string.advanced)
+        ConfigurationTab.Advanced -> stringResource(SharedRes.string.advanced)
     }
 
 private val StartupScreen.label: StringResource

@@ -1,9 +1,7 @@
 <resources>
     <string name="minimize">Minimize</string>
     <string name="maximize">Maximize</string>
-    <string name="close">Close</string>
 
-    <string name="unexpectedError">An error has occurred, check the logs for more details</string>
     <string name="quitRunningInstancesConfirmation">Quitting will stop any running instances. Are you sure you want to quit?</string>
 
     <string name="setupWindowTitle">Vercors Setup</string>

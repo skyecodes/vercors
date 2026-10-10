@@ -21,8 +21,7 @@ import app.vercors.shared.domain.model.DEFAULT_MIN_MEMORY_MB
 import app.vercors.shared.domain.model.JvmMemoryOptions
 import app.vercors.shared.domain.model.NativeLibraryOptions
 import app.vercors.shared.domain.model.defaultMaxMemoryMb
-import app.vercors.shared.ui.EventSink
-import app.vercors.shared.ui.Store
+import app.vercors.shared.ui.*
 import app.vercors.shared.ui.component.LibraryPathInputs
 import app.vercors.shared.ui.component.MemorySliderInputs
 import com.composables.icons.lucide.Lucide
@@ -100,7 +99,7 @@ private fun InstanceOptionsScaffold(
 context(eventSink: EventSink<InstanceOptionsEvent>)
 private fun ColumnScope.InstanceGeneralOptionsSection(instance: InstanceView, state: InstanceOptionsState) {
     AppTextField(
-        label = stringResource(InstanceRes.string.instanceName) + if (state.isNameEdited) "*" else "",
+        label = stringResource(SharedRes.string.instanceName) + if (state.isNameEdited) "*" else "",
         initialValue = state.editedInstance.name ?: instance.name,
         onValueChange = { eventSink(InstanceOptionsEvent.OnInstanceEditChange { state -> state.copy(name = it) }) },
         modifier = Modifier.widthIn(min = 300.dp)
@@ -250,8 +249,8 @@ private fun InstanceJavaOptionsSection(instance: InstanceView, state: InstanceOp
     }
 
     InstanceMemorySliderRow(
-        title = InstanceRes.string.maxMemory,
-        description = InstanceRes.string.maxMemoryDesc,
+        title = SharedRes.string.maxMemory,
+        description = SharedRes.string.maxMemoryDesc,
         edited = state.isMaxMemoryEdited,
         checked = effectiveOptions.maxMemoryEnabled == true,
         value = effectiveOptions.maxMemoryMb ?: defaultMax,
@@ -276,8 +275,8 @@ private fun InstanceJavaOptionsSection(instance: InstanceView, state: InstanceOp
         },
     )
     InstanceMemorySliderRow(
-        title = InstanceRes.string.minMemory,
-        description = InstanceRes.string.minMemoryDesc,
+        title = SharedRes.string.minMemory,
+        description = SharedRes.string.minMemoryDesc,
         edited = state.isMinMemoryEdited,
         checked = effectiveOptions.minMemoryEnabled == true,
         value = effectiveOptions.minMemoryMb ?: DEFAULT_MIN_MEMORY_MB,
@@ -298,10 +297,10 @@ private fun InstanceJavaOptionsSection(instance: InstanceView, state: InstanceOp
     )
     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
         AppText(
-            text = stringResource(InstanceRes.string.extraJvmArgs) + if (state.isExtraJvmArgsEdited) "*" else "",
+            text = stringResource(SharedRes.string.extraJvmArgs) + if (state.isExtraJvmArgsEdited) "*" else "",
             fontWeight = FontWeight.SemiBold
         )
-        AppText(text = stringResource(InstanceRes.string.extraJvmArgsDesc), style = Theme[textStyles][label])
+        AppText(text = stringResource(SharedRes.string.extraJvmArgsDesc), style = Theme[textStyles][label])
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -343,8 +342,8 @@ private fun InstanceNativeLibraryOptionsSection(instance: InstanceView, state: I
     }
 
     InstanceLibraryOverrideRow(
-        title = InstanceRes.string.useSystemGlfw,
-        description = InstanceRes.string.useSystemGlfwDesc,
+        title = SharedRes.string.useSystemGlfw,
+        description = SharedRes.string.useSystemGlfwDesc,
         edited = state.isGlfwEdited,
         checked = effectiveOptions.useSystemGlfw == true,
         path = effectiveOptions.glfwPath.orEmpty(),
@@ -355,8 +354,8 @@ private fun InstanceNativeLibraryOptionsSection(instance: InstanceView, state: I
         onPathChange = { newValue -> updateOptions { it.copy(glfwPath = newValue) } },
     )
     InstanceLibraryOverrideRow(
-        title = InstanceRes.string.useSystemOpenAl,
-        description = InstanceRes.string.useSystemOpenAlDesc,
+        title = SharedRes.string.useSystemOpenAl,
+        description = SharedRes.string.useSystemOpenAlDesc,
         edited = state.isOpenAlEdited,
         checked = effectiveOptions.useSystemOpenAl == true,
         path = effectiveOptions.openAlPath.orEmpty(),
@@ -434,4 +433,3 @@ private fun InstanceMemorySliderRow(
         }
     }
 }
-

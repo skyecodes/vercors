@@ -5,6 +5,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import app.vercors.feature.project.domain.model.ProjectSortBy
 import app.vercors.feature.project.domain.model.ProjectType
 import app.vercors.feature.project.ui.list.ProjectPlatformView
+import app.vercors.shared.ui.SharedRes
+import app.vercors.shared.ui.modpack
 import com.composables.icons.lucide.*
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.resources.vectorResource
@@ -23,7 +25,7 @@ val ProjectType.displayName: String
     @Composable get() = stringResource(
         when (this) {
             ProjectType.Mod -> ProjectRes.string.mod
-            ProjectType.Modpack -> ProjectRes.string.modpack
+            ProjectType.Modpack -> SharedRes.string.modpack
             ProjectType.ResourcePack -> ProjectRes.string.resourcePack
             ProjectType.ShaderPack -> ProjectRes.string.shaderPack
             ProjectType.DataPack -> ProjectRes.string.dataPack

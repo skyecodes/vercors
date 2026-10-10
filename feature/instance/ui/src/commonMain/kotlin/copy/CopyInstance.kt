@@ -14,11 +14,7 @@ import app.vercors.core.ui.layout.AppForm
 import app.vercors.core.ui.theme.*
 import app.vercors.feature.instance.ui.InstanceRes
 import app.vercors.feature.instance.ui.copyInstance
-import app.vercors.feature.instance.ui.instanceName
-import app.vercors.shared.ui.SharedRes
-import app.vercors.shared.ui.Store
-import app.vercors.shared.ui.cancel
-import app.vercors.shared.ui.copy
+import app.vercors.shared.ui.*
 import com.composables.icons.lucide.Copy
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.X
@@ -43,7 +39,7 @@ fun CopyInstance(
             )
 
             AppTextField(
-                label = stringResource(InstanceRes.string.instanceName),
+                label = stringResource(SharedRes.string.instanceName),
                 initialValue = state.instanceName,
                 onValueChange = { eventSink(CopyInstanceEvent.OnInstanceNameChange(it)) },
                 enabled = !state.isCopying,

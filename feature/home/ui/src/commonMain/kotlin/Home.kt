@@ -350,7 +350,7 @@ private fun HomeProjectCard(
             },
             author = {
                 AppText(
-                    text = "by ${project.author}",
+                    text = stringResource(SharedRes.string.byAuthor, project.author),
                     singleLine = true,
                     overflow = TextOverflow.Ellipsis,
                 )

@@ -95,7 +95,7 @@ private fun InstallProjectNewInstanceForm(state: InstallProjectState) {
     if (!state.creatingNewInstance) return
 
     AppTextField(
-        label = stringResource(ProjectRes.string.instanceName),
+        label = stringResource(SharedRes.string.instanceName),
         initialValue = state.newInstanceName,
         onValueChange = { eventSink(InstallProjectEvent.OnNewInstanceNameChange(it)) },
         modifier = Modifier.width(300.dp),
@@ -171,13 +171,13 @@ private fun InstallProjectManualDownloadsSection(state: InstallProjectState) {
     if (state.manualDownloadItems.isEmpty()) return
 
     val uriHandler = LocalUriHandler.current
-    AppText(text = stringResource(ProjectRes.string.manualDownloadsRequired))
+    AppText(text = stringResource(SharedRes.string.manualDownloadsRequired))
     state.manualDownloadItems.forEach { item ->
         InstallProjectManualDownloadRow(item)
     }
     AppIconTextButton(
         onClick = { state.manualDownloadItems.forEach { uriHandler.openUri(it.downloadUrl) } },
-        text = stringResource(ProjectRes.string.openAll),
+        text = stringResource(SharedRes.string.openAll),
         imageVector = Lucide.ExternalLink,
     )
 }
@@ -214,7 +214,7 @@ private fun InstallProjectActionButtons(state: InstallProjectState) {
         if (state.completedInstanceId != null) {
             AppIconTextButton(
                 onClick = { eventSink(InstallProjectEvent.OnCloseClick) },
-                text = stringResource(ProjectRes.string.close),
+                text = stringResource(SharedRes.string.close),
                 imageVector = Lucide.X,
             )
             AppIconTextButton(

@@ -17,11 +17,10 @@ import app.vercors.core.ui.layout.AppForm
 import app.vercors.core.ui.modifier.clickableText
 import app.vercors.core.ui.theme.*
 import app.vercors.feature.instance.domain.model.ManualDownloadItem
-import app.vercors.feature.instance.ui.*
-import app.vercors.shared.ui.SharedRes
-import app.vercors.shared.ui.cancel
-import app.vercors.shared.ui.copy
-import app.vercors.shared.ui.done
+import app.vercors.feature.instance.ui.InstanceRes
+import app.vercors.feature.instance.ui.finishInstallation
+import app.vercors.feature.instance.ui.manualDownloadsCompleted
+import app.vercors.shared.ui.*
 import app.vercors.shared.ui.overlay.DialogOverlay
 import com.composables.icons.lucide.*
 import com.composeunstyled.theme.Theme
@@ -49,7 +48,7 @@ class FinishInstallationDialog(
                 )
 
                 if (items.isNotEmpty()) {
-                    AppText(text = stringResource(InstanceRes.string.manualDownloadsRequired))
+                    AppText(text = stringResource(SharedRes.string.manualDownloadsRequired))
                     items.forEach { item ->
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -79,7 +78,7 @@ class FinishInstallationDialog(
                             onClick = {
                                 items.filterNot { it.downloaded }.forEach { uriHandler.openUri(it.downloadUrl) }
                             },
-                            text = stringResource(InstanceRes.string.openAll),
+                            text = stringResource(SharedRes.string.openAll),
                             imageVector = Lucide.ExternalLink,
                             backgroundColor = Theme[colors][primary],
                             contentColor = Theme[colors][onPrimary]

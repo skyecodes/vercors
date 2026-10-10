@@ -25,6 +25,7 @@ import app.vercors.core.ui.component.AppText
 import app.vercors.core.ui.theme.*
 import app.vercors.shared.ui.SharedRes
 import app.vercors.shared.ui.back
+import app.vercors.shared.ui.close
 import app.vercors.shared.ui.next
 import com.composables.icons.lucide.*
 import com.composeunstyled.LocalContentColor
@@ -96,7 +97,7 @@ fun AppTopBar(
             AppWindowButton(
                 onClick = { nucleusWindow.close() },
                 imageVector = Lucide.X,
-                contentDescription = stringResource(Res.string.close),
+                contentDescription = stringResource(SharedRes.string.close),
                 tint = if (hovered) Theme[colors][onError] else LocalContentColor.current,
                 modifier = Modifier.hoverable(interactionSource) then if (hovered) Modifier.background(
                     Theme[colors][error]

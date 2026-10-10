@@ -584,8 +584,8 @@ private val InstanceDetailsTab.title: String
     @Composable get() = when (this) {
         InstanceDetailsTab.Logs -> stringResource(InstanceRes.string.logs)
         InstanceDetailsTab.Options -> stringResource(InstanceRes.string.options)
-        InstanceDetailsTab.Java -> stringResource(InstanceRes.string.java)
-        InstanceDetailsTab.Advanced -> stringResource(InstanceRes.string.advanced)
+        InstanceDetailsTab.Java -> stringResource(SharedRes.string.java)
+        InstanceDetailsTab.Advanced -> stringResource(SharedRes.string.advanced)
         InstanceDetailsTab.Mods -> stringResource(SharedRes.string.mods)
         InstanceDetailsTab.ResourcePacks -> stringResource(SharedRes.string.resourcePacks)
         InstanceDetailsTab.ShaderPacks -> stringResource(SharedRes.string.shaderPacks)

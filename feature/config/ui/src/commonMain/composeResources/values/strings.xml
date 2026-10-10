@@ -1,6 +1,5 @@
 <resources>
     <string name="general">General</string>
-    <string name="advanced">Advanced</string>
     <string name="preferredPlatform">Preferred platform</string>
     <string name="preferredPlatformDesc">The mod platform selected by default when browsing or searching for content.</string>
     <string name="metaApiUrl">Meta API URL</string>
@@ -31,31 +30,19 @@
     <string name="horizontalTabs">Horizontal tabs</string>
     <string name="horizontalTabsDesc">Show tabs in a horizontal bar instead of a vertical sidebar.</string>
 
-    <string name="java">Java</string>
     <string name="javaInstallations">Detected installations</string>
     <string name="javaInstallationsDesc">Java installations detected on this computer.</string>
     <string name="addInstallation">Add installation</string>
     <string name="rescan">Rescan</string>
     <string name="rescanning">Scanning…</string>
     <string name="javaScanCompleted">Java installation scan completed</string>
-    <string name="preferredForMajorVersion">Preferred for Java %1$d</string>
     <string name="preferred">Preferred</string>
     <string name="forget">Forget</string>
     <string name="javaMajorVersion">Java %1$d</string>
     <string name="javaAddFailed">"%1$s" doesn't look like a valid Java installation</string>
 
-    <string name="maxMemory">Max memory</string>
-    <string name="maxMemoryDesc">The maximum amount of memory the game is allowed to use (-Xmx).</string>
-    <string name="minMemory">Min memory</string>
-    <string name="minMemoryDesc">The amount of memory allocated to the game on startup (-Xms).</string>
-    <string name="extraJvmArgs">Extra JVM arguments</string>
-    <string name="extraJvmArgsDesc">Additional arguments passed to the JVM when launching the game.</string>
 
     <string name="nativeLibraries">Native libraries</string>
-    <string name="useSystemGlfw">Use system GLFW</string>
-    <string name="useSystemGlfwDesc">Use the GLFW library installed on this system instead of the bundled one.</string>
-    <string name="useSystemOpenAl">Use system OpenAL</string>
-    <string name="useSystemOpenAlDesc">Use the OpenAL library installed on this system instead of the bundled one.</string>
 
     <string name="storage">Storage</string>
     <string name="dataDirectory">Data directory</string>
