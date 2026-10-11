@@ -11,6 +11,10 @@ plugins {
     alias(libs.plugins.buildconfig) apply false
     alias(libs.plugins.metro) apply false
     alias(libs.plugins.mokkery) apply false
+    alias(libs.plugins.kobweb.application) apply false
+    alias(libs.plugins.kobweb.library) apply false
+    alias(libs.plugins.kobweb.worker) apply false
+    alias(libs.plugins.kobwebx.markdown) apply false
 }
 
 group = property("appGroup") as String
