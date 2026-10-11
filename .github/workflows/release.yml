@@ -49,57 +49,56 @@ jobs:
             echo "release-type=$TYPE"
           } >> "$GITHUB_OUTPUT"
 
-  # The tag is on main, so main's own Build run for this commit is reused instead of testing it twice
-  main-build:
+  # The tag is on main, so main's own Build run for this commit is reused instead of testing it twice. Missing or
+  # cancelled runs are replaced by dispatching build.yml rather than a conditional reusable-workflow job: a skipped
+  # job would skip every job downstream of it, even ones that don't list it in `needs`
+  test:
     needs: version
     runs-on: ubuntu-latest
     timeout-minutes: 120
     permissions:
-      actions: read
-    outputs:
-      rerun: ${{ steps.wait.outputs.rerun }}
+      actions: write
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       GH_REPO: ${{ github.repository }}
     steps:
-      - id: wait
-        shell: bash
+      - shell: bash
         run: |
           set -euo pipefail
           find_run() {
-            gh run list --workflow build.yml --branch main --event push --commit "$GITHUB_SHA" \
-              --limit 1 --json databaseId --jq '.[0].databaseId // empty'
+            gh run list --workflow build.yml --event "$1" --commit "$GITHUB_SHA" --limit 20 \
+              --json databaseId,createdAt --jq "[.[] | select(.createdAt >= \"$2\")][0].databaseId // empty"
+          }
+          await_run() {
+            local event="$1" since="${2:-}" id=""
+            for _ in $(seq 12); do
+              id="$(find_run "$event" "$since")"
+              [ -n "$id" ] && break
+              sleep 10
+            done
+            [ -n "$id" ] || return 0
+            echo "Waiting for Build run $id ($event)" >&2
+            gh run watch "$id" --interval 30 > /dev/null || true
+            gh run view "$id" --json conclusion --jq .conclusion
           }
           # A main+tag push starts both workflows at once, so main's run may not be registered yet
-          RUN_ID=""
-          for _ in $(seq 12); do
-            RUN_ID="$(find_run)"
-            [ -n "$RUN_ID" ] && break
-            sleep 10
-          done
-          if [ -z "$RUN_ID" ]; then
-            echo "No main Build run for $GITHUB_SHA; running tests here."
-            echo "rerun=true" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          echo "Waiting for main Build run $RUN_ID"
-          gh run watch "$RUN_ID" --interval 30 > /dev/null || true
-          CONCLUSION="$(gh run view "$RUN_ID" --json conclusion --jq .conclusion)"
+          CONCLUSION="$(await_run push)"
           case "$CONCLUSION" in
-            success) echo "rerun=false" >> "$GITHUB_OUTPUT" ;;
-            failure|timed_out) echo "::error::main Build run $RUN_ID concluded '$CONCLUSION'"; exit 1 ;;
-            *) echo "main Build run $RUN_ID concluded '$CONCLUSION'; running tests here."; echo "rerun=true" >> "$GITHUB_OUTPUT" ;;
+            success) exit 0 ;;
+            failure|timed_out) echo "::error::main Build run for $GITHUB_SHA concluded '$CONCLUSION'"; exit 1 ;;
           esac
-
-  test:
-    needs: main-build
-    if: needs.main-build.outputs.rerun == 'true'
-    uses: ./.github/workflows/build.yml
+          echo "No usable main Build run for $GITHUB_SHA ('${CONCLUSION:-none}'); dispatching one on $GITHUB_REF_NAME"
+          DISPATCHED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          gh workflow run build.yml --ref "$GITHUB_REF_NAME"
+          CONCLUSION="$(await_run workflow_dispatch "$DISPATCHED_AT")"
+          if [ "$CONCLUSION" != success ]; then
+            echo "::error::Dispatched Build run concluded '${CONCLUSION:-not found}'"
+            exit 1
+          fi
 
   gui:
     name: GUI (${{ matrix.os }} / ${{ matrix.arch }})
-    needs: [ version, main-build, test ]
-    if: ${{ !cancelled() && !failure() }}
+    needs: [ version, test ]
     runs-on: ${{ matrix.os }}
     environment: release
     env:
@@ -187,8 +186,7 @@ jobs:
   # Artifacts here must not be named release-assets-*: generate-update-yml would list them in the GUI update feeds
   cli:
     name: CLI (${{ matrix.os }})
-    needs: [ version, main-build, test ]
-    if: ${{ !cancelled() && !failure() }}
+    needs: [ version, test ]
     runs-on: ${{ matrix.os }}
     environment: release
     env:
