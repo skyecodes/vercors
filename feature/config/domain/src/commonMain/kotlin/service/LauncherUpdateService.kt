@@ -8,5 +8,5 @@ interface LauncherUpdateService {
     val state: StateFlow<LauncherUpdateState>
     suspend fun check(channel: UpdateChannel)
     suspend fun download()
-    fun installAndRestart()
+    suspend fun installAndRestart()
 }

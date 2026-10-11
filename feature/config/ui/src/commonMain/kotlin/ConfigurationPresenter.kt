@@ -52,6 +52,7 @@ import kotlin.time.Duration.Companion.seconds
 @CircuitInject(ConfigurationScreen::class, AppScope::class)
 @Inject
 class ConfigurationPresenter(
+    private val globalScope: CoroutineScope,
     private val observeThemes: ObserveThemesUseCase,
     private val observeConfiguration: ObserveConfigurationUseCase,
     private val updateConfiguration: UpdateConfigurationUseCase,
@@ -297,23 +298,24 @@ class ConfigurationPresenter(
                 updateConfiguration { copy(checkForUpdatesOnStart = !checkForUpdatesOnStart) }
             }
 
-            is ConfigurationEvent.OnUpdateChannelChange -> handleUpdateChannelChange(event.value, presenterScope)
+            is ConfigurationEvent.OnUpdateChannelChange -> handleUpdateChannelChange(event.value)
 
-            ConfigurationEvent.OnCheckForUpdatesClick -> presenterScope.launch { checkForLauncherUpdate() }
-            ConfigurationEvent.OnUpdateClick -> presenterScope.launch { downloadLauncherUpdate() }
+            ConfigurationEvent.OnCheckForUpdatesClick -> globalScope.launch { checkForLauncherUpdate() }
+            ConfigurationEvent.OnUpdateClick -> globalScope.launch { downloadLauncherUpdate() }
 
             ConfigurationEvent.OnRestartToUpdateClick ->
-                if (hasRunningInstance) setPromptRestartForUpdate(true) else installLauncherUpdate()
+                if (hasRunningInstance) setPromptRestartForUpdate(true)
+                else globalScope.launch { installLauncherUpdate() }
 
             is ConfigurationEvent.OnConfirmRestartForUpdate -> {
                 setPromptRestartForUpdate(false)
-                if (event.result) installLauncherUpdate()
+                if (event.result) globalScope.launch { installLauncherUpdate() }
             }
         }
     }
 
-    private fun handleUpdateChannelChange(channel: UpdateChannel, presenterScope: CoroutineScope) {
-        presenterScope.launch {
+    private fun handleUpdateChannelChange(channel: UpdateChannel) {
+        globalScope.launch {
             updateConfiguration { copy(updateChannel = channel) }
             checkForLauncherUpdate()
         }

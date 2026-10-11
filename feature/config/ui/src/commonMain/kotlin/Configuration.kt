@@ -755,6 +755,10 @@ private fun AboutUpdateStatus(update: LauncherUpdateState, onOpen: (String) -> U
         is LauncherUpdateState.Available -> AboutAvailableUpdate(update.version, update.releaseUrl, onOpen)
         is LauncherUpdateState.Downloading -> AboutAvailableUpdate(update.version, update.releaseUrl, onOpen)
         is LauncherUpdateState.ReadyToInstall -> AboutAvailableUpdate(update.version, update.releaseUrl, onOpen)
+        is LauncherUpdateState.Restarting -> AppText(
+            text = stringResource(ConfigRes.string.restartingToUpdate, update.version),
+            style = labelStyle
+        )
     }
 }
 
@@ -778,14 +782,21 @@ context(eventSink: EventSink<ConfigurationEvent>)
 private fun RowScope.AboutUpdateActions(update: LauncherUpdateState) {
     when (update) {
         is LauncherUpdateState.Downloading -> {
-            AppProgressIndicator(progress = update.progress ?: 0f, modifier = Modifier.weight(1f))
-            update.progress?.let { AppText(text = "${(it * 100).roundToInt()}%") }
+            AppDownloadProgress(
+                progress = update.download?.normalized?.toFloat() ?: 0f,
+                download = update.download,
+                modifier = Modifier.width(300.dp)
+            )
         }
 
-        is LauncherUpdateState.ReadyToInstall -> AppIconTextButton(
+        is LauncherUpdateState.ReadyToInstall, is LauncherUpdateState.Restarting -> AppIconTextButton(
             onClick = { eventSink(ConfigurationEvent.OnRestartToUpdateClick) },
-            text = stringResource(ConfigRes.string.restartToUpdate),
+            text = stringResource(
+                if (update is LauncherUpdateState.Restarting) ConfigRes.string.restarting
+                else ConfigRes.string.restartToUpdate
+            ),
             imageVector = Lucide.RefreshCw,
+            enabled = update is LauncherUpdateState.ReadyToInstall,
             backgroundColor = Theme[colors][primary],
             contentColor = Theme[colors][onPrimary]
         )
