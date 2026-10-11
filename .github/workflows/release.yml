@@ -65,12 +65,11 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { os: ubuntu-22.04,     arch: amd64 }
-          - { os: ubuntu-22.04-arm, arch: arm64 }
+          - { os: ubuntu-latest,    arch: amd64 }
+          - { os: ubuntu-24.04-arm, arch: arm64 }
           - { os: windows-latest,   arch: amd64 }
           - { os: windows-11-arm,   arch: arm64 }
           - { os: macos-latest,     arch: arm64 }
-          - { os: macos-15-intel,   arch: amd64 }
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
@@ -80,8 +79,23 @@ jobs:
           flatpak: 'true'
           snap: 'true'
 
+      - name: Write Linux signing key
+        if: runner.os == 'Linux'
+        shell: bash
+        env:
+          LINUX_GPG_PRIVATE_KEY: ${{ secrets.LINUX_GPG_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          umask 077
+          printenv LINUX_GPG_PRIVATE_KEY > "$RUNNER_TEMP/linux-signing-key.asc"
+
       - name: Build packages
         shell: bash
+        env:
+          LINUX_ENABLE_SIGNING: ${{ runner.os == 'Linux' }}
+          LINUX_GPG_KEY_FILE: ${{ runner.temp }}/linux-signing-key.asc
+          LINUX_GPG_KEY_ID: ${{ secrets.LINUX_GPG_KEY_ID }}
+          LINUX_GPG_PASSPHRASE: ${{ secrets.LINUX_GPG_PASSPHRASE }}
         run: >
           ./gradlew :app:launcher-gui:packageReleaseDistributionForCurrentOS
           -PappVersion=${{ needs.version.outputs.version }}

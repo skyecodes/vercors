@@ -12,8 +12,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Each host runs only its own native test target: cross-linking another OS's test binaries (e.g., linuxX64 from
-  # Windows) fails on Ktor's bundled libcurl, and they could never run there anyway. Linux runs the full build.
   build:
     name: Build (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
