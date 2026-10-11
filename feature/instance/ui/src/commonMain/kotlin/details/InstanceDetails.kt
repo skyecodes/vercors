@@ -324,7 +324,8 @@ private fun RowScope.InstanceHeaderInfo(instance: InstanceView) {
 
         FlowRow(
             horizontalArrangement = Arrangement.spacedBy(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically)
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            itemVerticalAlignment = Alignment.CenterVertically
         ) {
             InstanceHeaderInfoSection {
                 AppIcon(

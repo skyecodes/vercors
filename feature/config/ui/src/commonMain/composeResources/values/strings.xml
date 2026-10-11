@@ -54,12 +54,12 @@
     <string name="changeDataDirectorySelectFolder">Select Folder</string>
     <string name="changeDataDirectoryReset">Reset</string>
     <string name="changeDataDirectoryConfirm">Move and Restart</string>
-    <string name="changeDataDirectoryUnreachable">Couldn\'t create or write to that location. Choose a different one.</string>
+    <string name="changeDataDirectoryUnreachable">Could not create or write to that location. Choose a different one.</string>
     <string name="changeDataDirectoryCopyFailed">Failed to move the data directory. Nothing was changed.</string>
     <string name="contentCache">Content cache</string>
     <string name="contentCacheDesc">Downloaded mods, resource packs and shader packs are cached here and shared between instances that use the same file.</string>
     <string name="clearCache">Clear cache</string>
-    <string name="clearCacheConfirmation">Clear the content cache? Already-installed files in your instances won\'t be affected, but future installs of the same files will need to be re-downloaded.</string>
+    <string name="clearCacheConfirmation">Clear the content cache? Already-installed files in your instances will not be affected, but future installations of the same files will need to be re-downloaded.</string>
     <string name="contentCacheCleared">Content cache cleared</string>
     <string name="about">About</string>
     <string name="launcherVersion">Version %1$s</string>
@@ -72,7 +72,7 @@
     <string name="updatesDesc">Check whether a newer launcher version is available.</string>
     <string name="checkForUpdates">Check for updates</string>
     <string name="checkingForUpdates">Checking for updates…</string>
-    <string name="upToDate">You\'re using the latest version.</string>
+    <string name="upToDate">You are using the latest version.</string>
     <string name="updateFailed">Update failed: %1$s</string>
     <string name="updateAvailable">Version %1$s is available</string>
     <string name="viewRelease">View release notes</string>
