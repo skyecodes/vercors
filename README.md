@@ -6,17 +6,40 @@
 <h3 align="center">A modern Minecraft Launcher with mod support and much more!</h3>
 
 <p align="center">
-   <img src="public/screenshot1.png" alt="Screenshot 1" width="480"/>
-   <img src="public/screenshot2.png" alt="Screenshot 2" width="480"/>
+   <img src="public/screenshot_home.png" alt="Screenshot Home" width="480"/>
+   <img src="public/screenshot_content.png" alt="Screenshot Content" width="480"/>
+   <img src="public/screenshot_instance.png" alt="Screenshot Instance" width="480"/>
 </p>
 
 ---
 
-> This project is still early in development. No binaries are available for download, as no stable release has been made
-> yet.
->
-> If you still want to run the project yourself, you can clone the repository and follow the instructions in
-> the [Build](#Build) section.
+> [!IMPORTANT]
+> This project is still in development. Please make sure to report any issues you
+find [here](https://github.com/skyecodes/vercors/issues/new)!
+
+Two versions of the launcher are available: a graphical user interface (GUI) and a command-line interface (CLI).
+
+Downloads are available on the [Releases](https://github.com/skyecodes/vercors/releases) page.
+
+## Supported platforms
+
+- Windows: x64, arm64 (CLI for x64 only)
+- Linux: x64, arm64
+- macOS: arm64
+
+## Available distribution formats
+
+For the launcher GUI:
+
+- Windows: EXE, MSI, NSIS, AppX, Portable, ZIP, TAR.GZ
+- Linux: DEB, RPM, Pacman, Flatpak, Snap, AppImage, ZIP, TAR.GZ
+- macOS: DMG, PKG, ZIP, TAR.GZ
+
+For the launcher CLI:
+
+- Windows: ZIP
+- Linux: TAR.GZ
+- macOS: TAR.GZ
 
 ## Build
 
@@ -66,7 +89,7 @@ cd app/launcher-cli/build/bin/linuxArm64/debugExecutable/
 ./vercors.kexe --help
 ```
 
-#### Mac OS (arm64 only, x64 is not supported)
+#### macOS (arm64)
 
 ```
 ./gradlew :app:launcher-cli:runDebugExecutableMacosArm64
@@ -78,7 +101,6 @@ cd app/launcher-cli/build/bin/macosArm64/debugExecutable/
 
 1. Set the `CURSEFORGE_API_KEY` environment variable to your CurseForge API key. You can get
    one [here](https://console.curseforge.com).
-
 2. Run the following command to run the backend
 
 ```
