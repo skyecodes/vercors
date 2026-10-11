@@ -118,16 +118,6 @@ nucleus.application {
             startupWMClass = "vercors"
             compressionLevel = CompressionLevel.Ultra
 
-            signing {
-                if (System.getenv("LINUX_ENABLE_SIGNING").toBoolean()) {
-                    enabled.set(true)
-                    keyId.set(System.getenv("LINUX_GPG_KEY_ID"))
-                    keyFile.set(file(System.getenv("LINUX_GPG_KEY_FILE") ?: "build/signing-key.asc"))
-                    passphrase.set(System.getenv("LINUX_GPG_PASSPHRASE"))
-                    silentUpdate.set(true)
-                }
-            }
-
             appImage {
                 category = AppImageCategory.Game
             }

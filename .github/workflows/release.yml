@@ -24,7 +24,7 @@ jobs:
           fetch-depth: 0
 
       - name: Validate the tag was cut from main
-        uses: NucleusFramework/Nucleus/.github/actions/validate-release-ref@v3.0.0-dev-202610091014
+        uses: NucleusFramework/Nucleus/.github/actions/validate-release-ref@v3.0.0-dev-202610102114
         with:
           prerelease-branch: main
           prerelease-tag-regex: '^v.*$'
@@ -49,13 +49,57 @@ jobs:
             echo "release-type=$TYPE"
           } >> "$GITHUB_OUTPUT"
 
-  test:
+  # The tag is on main, so main's own Build run for this commit is reused instead of testing it twice
+  main-build:
     needs: version
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    permissions:
+      actions: read
+    outputs:
+      rerun: ${{ steps.wait.outputs.rerun }}
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - id: wait
+        shell: bash
+        run: |
+          set -euo pipefail
+          find_run() {
+            gh run list --workflow build.yml --branch main --event push --commit "$GITHUB_SHA" \
+              --limit 1 --json databaseId --jq '.[0].databaseId // empty'
+          }
+          # A main+tag push starts both workflows at once, so main's run may not be registered yet
+          RUN_ID=""
+          for _ in $(seq 12); do
+            RUN_ID="$(find_run)"
+            [ -n "$RUN_ID" ] && break
+            sleep 10
+          done
+          if [ -z "$RUN_ID" ]; then
+            echo "No main Build run for $GITHUB_SHA; running tests here."
+            echo "rerun=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "Waiting for main Build run $RUN_ID"
+          gh run watch "$RUN_ID" --interval 30 > /dev/null || true
+          CONCLUSION="$(gh run view "$RUN_ID" --json conclusion --jq .conclusion)"
+          case "$CONCLUSION" in
+            success) echo "rerun=false" >> "$GITHUB_OUTPUT" ;;
+            failure|timed_out) echo "::error::main Build run $RUN_ID concluded '$CONCLUSION'"; exit 1 ;;
+            *) echo "main Build run $RUN_ID concluded '$CONCLUSION'; running tests here."; echo "rerun=true" >> "$GITHUB_OUTPUT" ;;
+          esac
+
+  test:
+    needs: main-build
+    if: needs.main-build.outputs.rerun == 'true'
     uses: ./.github/workflows/build.yml
 
   gui:
     name: GUI (${{ matrix.os }} / ${{ matrix.arch }})
-    needs: [ version, test ]
+    needs: [ version, main-build, test ]
+    if: ${{ !cancelled() && !failure() }}
     runs-on: ${{ matrix.os }}
     environment: release
     env:
@@ -73,29 +117,37 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      - uses: NucleusFramework/Nucleus/.github/actions/setup-nucleus@v3.0.0-dev-202610091014
+      - uses: NucleusFramework/Nucleus/.github/actions/setup-nucleus@v3.0.0-dev-202610102114
         with:
           java-version: '25'
           flatpak: 'true'
           snap: 'true'
 
-      - name: Write Linux signing key
+      - name: Configure Linux GPG signing
         if: runner.os == 'Linux'
         shell: bash
         env:
           LINUX_GPG_PRIVATE_KEY: ${{ secrets.LINUX_GPG_PRIVATE_KEY }}
+          LINUX_GPG_KEY_ID: ${{ secrets.LINUX_GPG_KEY_ID }}
+          LINUX_GPG_PASSPHRASE: ${{ secrets.LINUX_GPG_PASSPHRASE }}
         run: |
           set -euo pipefail
-          umask 077
-          printenv LINUX_GPG_PRIVATE_KEY > "$RUNNER_TEMP/linux-signing-key.asc"
+          if [ -z "$LINUX_GPG_PRIVATE_KEY" ]; then
+            echo "::warning::No LINUX_GPG_PRIVATE_KEY secret set; Linux packages will be unsigned."
+            exit 0
+          fi
+          KEY_FILE="$RUNNER_TEMP/nucleus-signing-key.asc"
+          (umask 077; printf '%s' "$LINUX_GPG_PRIVATE_KEY" > "$KEY_FILE")
+          {
+            echo "compose.desktop.linux.sign=true"
+            echo "compose.desktop.linux.signing.keyId=$LINUX_GPG_KEY_ID"
+            echo "compose.desktop.linux.signing.keyFile=$KEY_FILE"
+            echo "compose.desktop.linux.signing.passphrase=$LINUX_GPG_PASSPHRASE"
+            echo "compose.desktop.linux.signing.silentUpdate=true"
+          } >> gradle.properties
 
       - name: Build packages
         shell: bash
-        env:
-          LINUX_ENABLE_SIGNING: ${{ runner.os == 'Linux' }}
-          LINUX_GPG_KEY_FILE: ${{ runner.temp }}/linux-signing-key.asc
-          LINUX_GPG_KEY_ID: ${{ secrets.LINUX_GPG_KEY_ID }}
-          LINUX_GPG_PASSPHRASE: ${{ secrets.LINUX_GPG_PASSPHRASE }}
         run: >
           ./gradlew :app:launcher-gui:packageReleaseDistributionForCurrentOS
           -PappVersion=${{ needs.version.outputs.version }}
@@ -135,7 +187,8 @@ jobs:
   # Artifacts here must not be named release-assets-*: generate-update-yml would list them in the GUI update feeds
   cli:
     name: CLI (${{ matrix.os }})
-    needs: [ version, test ]
+    needs: [ version, main-build, test ]
+    if: ${{ !cancelled() && !failure() }}
     runs-on: ${{ matrix.os }}
     environment: release
     env:
@@ -152,7 +205,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      - uses: NucleusFramework/Nucleus/.github/actions/setup-nucleus@v3.0.0-dev-202610091014
+      - uses: NucleusFramework/Nucleus/.github/actions/setup-nucleus@v3.0.0-dev-202610102114
         with:
           java-version: '25'
           packaging-tools: 'false'
@@ -216,7 +269,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      - uses: NucleusFramework/Nucleus/.github/actions/setup-nucleus@v3.0.0-dev-202610091014
+      - uses: NucleusFramework/Nucleus/.github/actions/setup-nucleus@v3.0.0-dev-202610102114
         with:
           java-version: '25'
           packaging-tools: 'false'
@@ -247,13 +300,13 @@ jobs:
           pattern: cli-*
           merge-multiple: true
 
-      - uses: NucleusFramework/Nucleus/.github/actions/generate-update-yml@v3.0.0-dev-202610091014
+      - uses: NucleusFramework/Nucleus/.github/actions/generate-update-yml@v3.0.0-dev-202610102114
         with:
           artifacts-path: artifacts
           version: ${{ needs.version.outputs.version }}
           channel: ${{ needs.version.outputs.channel }}
 
-      - uses: NucleusFramework/Nucleus/.github/actions/publish-release@v3.0.0-dev-202610091014
+      - uses: NucleusFramework/Nucleus/.github/actions/publish-release@v3.0.0-dev-202610102114
         with:
           artifacts-path: artifacts
           tag: ${{ github.ref_name }}

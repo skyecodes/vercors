@@ -29,7 +29,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       # Same Gradle cache provider as the release packaging jobs, so main's cache is the one they restore
-      - uses: NucleusFramework/Nucleus/.github/actions/setup-nucleus@v3.0.0-dev-202610091014
+      - uses: NucleusFramework/Nucleus/.github/actions/setup-nucleus@v3.0.0-dev-202610102114
         with:
           java-version: '25'
           packaging-tools: 'false'
