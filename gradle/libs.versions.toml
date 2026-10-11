@@ -38,7 +38,7 @@ coil = "3.6.3"
 coil-resvg = "1.1.2"
 markdown-renderer = "0.45.0"
 webview = "2.0.3"
-nucleusframework = "3.0.0-dev-202610102114"
+nucleusframework = "3.0.0-dev-202610110853"
 composenativetray = "2.1.7"
 filekit = "0.16.0"
 # CLI
