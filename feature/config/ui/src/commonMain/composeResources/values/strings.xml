@@ -78,6 +78,8 @@
     <string name="viewRelease">View release notes</string>
     <string name="update">Update</string>
     <string name="restartToUpdate">Restart to update</string>
+    <string name="restarting">Restarting…</string>
+    <string name="restartingToUpdate">Installing version %1$s, the launcher will restart shortly…</string>
     <string name="restartForUpdateConfirmation">Some instances are still running. The launcher will restart to install the update; running instances will be closed. Continue?</string>
     <string name="updateChannel">Update channel</string>
     <string name="updateChannelDesc">Beta and alpha versions get new features sooner but may be unstable.</string>

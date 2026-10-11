@@ -7,5 +7,5 @@ import dev.zacsweers.metro.Inject
 class InstallLauncherUpdateUseCase(
     private val launcherUpdateService: LauncherUpdateService
 ) {
-    operator fun invoke(): Unit = launcherUpdateService.installAndRestart()
+    suspend operator fun invoke(): Unit = launcherUpdateService.installAndRestart()
 }

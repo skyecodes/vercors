@@ -10,4 +10,7 @@ sealed interface LauncherUpdateError {
 
     @JvmInline
     value class DownloadFailed(override val message: String) : LauncherUpdateError
+
+    @JvmInline
+    value class InstallFailed(override val message: String) : LauncherUpdateError
 }

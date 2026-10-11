@@ -1,6 +1,7 @@
 package app.vercors.launcher.gui.update
 
 import app.vercors.core.domain.AppConstants
+import app.vercors.core.domain.DownloadProgress
 import app.vercors.core.network.makeRequest
 import app.vercors.feature.config.domain.model.LauncherUpdateError
 import app.vercors.feature.config.domain.model.LauncherUpdateState
@@ -20,10 +21,12 @@ import io.ktor.client.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.withContext
 import java.io.File
 
 private val logger = KotlinLogging.logger {}
@@ -67,13 +70,18 @@ class NucleusLauncherUpdateService(
         if (!mutex.tryLock()) return
         try {
             val releaseUrl = releaseUrlOf(info.version)
-            _state.value = LauncherUpdateState.Downloading(info.version, releaseUrl, progress = null)
+            _state.value = LauncherUpdateState.Downloading(info.version, releaseUrl, download = null)
             var file: File? = null
             updater.downloadUpdate(info).collect { progress ->
                 _state.value = LauncherUpdateState.Downloading(
                     version = info.version,
                     releaseUrl = releaseUrl,
-                    progress = (progress.percent / 100).toFloat().coerceIn(0f, 1f)
+                    download = DownloadProgress(
+                        downloadedBytes = progress.bytesDownloaded,
+                        totalBytes = progress.totalBytes.takeIf { it > 0 },
+                        completedFiles = if (progress.file != null) 1 else 0,
+                        totalFiles = 1,
+                    )
                 )
                 progress.file?.let { file = it }
             }
@@ -91,10 +99,24 @@ class NucleusLauncherUpdateService(
         }
     }
 
-    override fun installAndRestart() {
+    override suspend fun installAndRestart() {
         val (updater, file) = downloadedUpdate ?: return
-        logger.info { "Installing launcher update from $file" }
-        updater.installAndRestart(file)
+        val readyState = _state.value as? LauncherUpdateState.ReadyToInstall ?: return
+        if (!mutex.tryLock()) return
+        try {
+            _state.value = LauncherUpdateState.Restarting(readyState.version, readyState.releaseUrl)
+            logger.info { "Installing launcher update from $file" }
+            // Blocks while the platform installer runs, then exits the process
+            withContext(Dispatchers.IO) { updater.installAndRestart(file) }
+            _state.value = readyState
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            logger.error(e) { "Failed to install launcher update ${readyState.version}" }
+            _state.value = LauncherUpdateState.Failed(LauncherUpdateError.InstallFailed(e.message ?: e.toString()))
+        } finally {
+            mutex.unlock()
+        }
     }
 
     // An updater's config is frozen at construction, so each channel needs its own instance
