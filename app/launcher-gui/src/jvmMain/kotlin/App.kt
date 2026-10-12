@@ -1,23 +1,22 @@
 package app.vercors.launcher.gui
 
-import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.foundation.LocalContextMenuRepresentation
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.*
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
-import androidx.compose.ui.unit.dp
 import app.vercors.core.ui.animation.LocalAnimation
 import app.vercors.core.ui.component.AppContextMenuRepresentation
 import app.vercors.core.ui.component.AppIconTextButton
 import app.vercors.core.ui.layout.AppConfirmDialog
-import app.vercors.core.ui.theme.*
+import app.vercors.core.ui.theme.AppTheme
+import app.vercors.core.ui.theme.colors
+import app.vercors.core.ui.theme.error
+import app.vercors.core.ui.theme.onError
 import app.vercors.feature.account.ui.list.AccountListScreen
 import app.vercors.feature.config.domain.model.Configuration
 import app.vercors.feature.config.domain.model.StartupScreen
@@ -28,6 +27,9 @@ import app.vercors.feature.instance.ui.details.InstanceDetailsScreen
 import app.vercors.feature.instance.ui.list.InstanceListScreen
 import app.vercors.feature.project.ui.list.ProjectListScreen
 import app.vercors.feature.theme.domain.model.ThemeDefinition
+import app.vercors.launcher.shell.AppFrame
+import app.vercors.launcher.shell.AppMenu
+import app.vercors.launcher.shell.AppTopBar
 import app.vercors.shared.ui.*
 import com.composables.icons.lucide.LogOut
 import com.composables.icons.lucide.Lucide
@@ -40,12 +42,12 @@ import com.slack.circuit.foundation.rememberCircuitNavigator
 import com.slack.circuit.overlay.ContentWithOverlays
 import com.slack.circuit.runtime.Navigator
 import com.slack.circuit.runtime.navigation.NavStack
-import com.slack.circuit.sharedelements.SharedElementTransitionLayout
 import dev.nucleusframework.application.LocalNucleusApplicationScope
 import dev.nucleusframework.application.LocalNucleusWindow
 import dev.nucleusframework.taskbarprogress.tao.hideTaskbarProgress
 import dev.nucleusframework.taskbarprogress.tao.showTaskbarIndeterminate
 import dev.nucleusframework.taskbarprogress.tao.showTaskbarProgress
+import dev.nucleusframework.window.windowDragArea
 import dev.zacsweers.metro.AppScope
 import org.jetbrains.compose.resources.stringResource
 
@@ -148,22 +150,15 @@ private fun AppMainContent(
                 modifier = modifier.fillMaxSize()
             ) {
                 ContentWithOverlays(modifier = Modifier.fillMaxSize()) {
-                    Column(
-                        modifier = Modifier.fillMaxSize().background(Theme[colors][backgroundAlt])
-                            .pointerInput(navigator) {
-                                awaitPointerEventScope {
-                                    manageNavigationButtons(navigator)
-                                }
-                            }
-                    ) {
-                        AppTopBar(
-                            canGoBack = navStack.currentRecord != navStack.rootRecord,
-                            canGoNext = navStack.currentRecord != navStack.topRecord,
-                            onNavigateBack = { navigator.backward() },
-                            onNavigateNext = { navigator.forward() },
-                            appName = state.appName
-                        )
-                        Row {
+                    AppFrame(
+                        topBar = {
+                            AppWindowTopBar(
+                                navStack = navStack,
+                                navigator = navigator,
+                                appName = state.appName,
+                            )
+                        },
+                        menu = {
                             AppMenu(
                                 currentBackStackEntry = navStack.currentRecord?.screen as? Screen,
                                 isDrawerOpen = config.menuDrawerOpen,
@@ -171,8 +166,17 @@ private fun AppMainContent(
                                 onToggleDrawerClick = { eventSink(AppEvent.OnDrawerToggle) },
                                 onMenuButtonClick = { navigator.goTo(it) }
                             )
-                            AppContent(navStack, navigator)
-                        }
+                        },
+                        modifier = Modifier.pointerInput(navigator) {
+                            awaitPointerEventScope {
+                                manageNavigationButtons(navigator)
+                            }
+                        },
+                    ) {
+                        NavigableCircuitContent(
+                            navigator = navigator,
+                            navStack = navStack
+                        )
                     }
                     AppQuitConfirmationDialog()
                 }
@@ -226,27 +230,24 @@ private fun AppQuitConfirmationDialog() {
     )
 }
 
-@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
-private fun AppContent(
+private fun AppWindowTopBar(
     navStack: NavStack<out NavStack.Record>,
-    navigator: Navigator
+    navigator: Navigator,
+    appName: String,
 ) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(end = 4.dp, top = 4.dp, bottom = 4.dp)
-            .background(
-                color = Theme[colors][background],
-                shape = RoundedCornerShape(16.dp)
-            )
-            .clip(RoundedCornerShape(16.dp))
-    ) {
-        SharedElementTransitionLayout {
-            NavigableCircuitContent(
-                navigator = navigator,
-                navStack = navStack
-            )
-        }
-    }
+    val nucleusWindow = LocalNucleusWindow.current
+    val isMaximized by nucleusWindow.maximizedFlow.collectAsState()
+    AppTopBar(
+        canGoBack = navStack.currentRecord != navStack.rootRecord,
+        canGoNext = navStack.currentRecord != navStack.topRecord,
+        onNavigateBack = { navigator.backward() },
+        onNavigateNext = { navigator.forward() },
+        appName = appName,
+        isMaximized = isMaximized,
+        onMinimize = { nucleusWindow.setMinimized(true) },
+        onToggleMaximize = { nucleusWindow.setMaximized(!isMaximized) },
+        onClose = { nucleusWindow.close() },
+        modifier = Modifier.windowDragArea(),
+    )
 }

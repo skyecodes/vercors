@@ -1,5 +1,6 @@
 plugins {
     id("app.vercors.feature.ui")
+    id("app.vercors.web")
 }
 
 dependencies {
@@ -14,7 +15,7 @@ dependencies {
     commonMainImplementation(projects.feature.config.domain)
     commonMainImplementation(libs.kotlinx.datetime)
     commonMainImplementation(libs.filekit.dialogs.compose)
-    commonMainImplementation(libs.nucleus.notification.common)
+    jvmMainImplementation(libs.nucleus.notification.common)
     commonMainImplementation(libs.human.readable)
 }
 

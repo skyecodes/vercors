@@ -2,8 +2,8 @@ package app.vercors.website.components.sections
 
 import androidx.compose.runtime.Composable
 import app.vercors.website.*
+import app.vercors.website.components.widgets.LiveDemo
 import app.vercors.website.components.widgets.Logo
-import app.vercors.website.components.widgets.Screenshot
 import app.vercors.website.data.Platform
 import com.varabyte.kobweb.compose.css.TextAlign
 import com.varabyte.kobweb.compose.foundation.layout.Column
@@ -38,7 +38,7 @@ fun HeroSection(platform: Platform) {
             SpanText("Install mods and modpacks from CurseForge and Modrinth, keep all your instances organized, from a fast and modern app.")
         }
         HeroDownloadButton(platform)
-        Screenshot(
+        LiveDemo(
             "home",
             "$SITE_NAME home screen",
             Modifier.margin(top = 1.cssRem).width(100.percent).maxWidth(64.cssRem),

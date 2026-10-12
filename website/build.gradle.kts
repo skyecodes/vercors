@@ -90,6 +90,12 @@ kobweb {
 // They go into a resource source dir, not jsProcessResources: kobweb export only reads public/ from source dirs.
 val syncSharedResources = tasks.register<Sync>("syncSharedResources") {
     into(layout.buildDirectory.dir("generated/sharedResources"))
+    dependsOn(":app:launcher-demo:jsBrowserDistribution")
+    from(rootProject.layout.projectDirectory.dir("app/launcher-demo/build/dist/js/productionExecutable")) {
+        // The standalone dev page, source maps, and skiko's unbundled copies (the bundle loads the hashed .wasm)
+        exclude("index.html", "*.map", "*.mjs", "skiko.wasm")
+        into("public/demo")
+    }
     from(rootProject.file("public/screenshots")) {
         into("public/screenshots")
     }

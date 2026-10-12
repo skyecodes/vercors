@@ -14,11 +14,14 @@ import com.composables.icons.lucide.*
 import org.jetbrains.compose.resources.decodeToSvgPainter
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.resources.vectorResource
-import java.util.Locale.getDefault
 
 val IconView.painter: Painter
     @Composable get() = when (this) {
-        is IconView.Data -> LocalDensity.current.let { remember { svgString.toByteArray().decodeToSvgPainter(it) } }
+        is IconView.Data -> LocalDensity.current.let {
+            remember {
+                svgString.encodeToByteArray().decodeToSvgPainter(it)
+            }
+        }
         is IconView.Named -> rememberVectorPainter(getIconFromName(name))
     }
 
@@ -28,7 +31,7 @@ fun categoryText(category: String): String = when (category) {
     "resolutions" -> stringResource(ProjectRes.string.resolutions)
     "features" -> stringResource(ProjectRes.string.features)
     "performance impact" -> stringResource(ProjectRes.string.performanceImpact)
-    else -> category.replaceFirstChar { if (it.isLowerCase()) it.titlecase(getDefault()) else it.toString() }
+    else -> category.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
 }
 
 @Composable

@@ -27,6 +27,7 @@ import app.vercors.core.ui.theme.onBackground
 import app.vercors.core.ui.theme.primary
 import com.composeunstyled.*
 import com.composeunstyled.theme.Theme
+import kotlin.jvm.JvmInline
 
 @Composable
 fun <T> AppRadioGroup(

@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Vercors demo</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 32px;
+            background: #888;
+        }
+
+        [data-demo] {
+            position: relative;
+            width: 100%;
+            max-width: 1280px;
+            aspect-ratio: 16 / 9;
+        }
+    </style>
+</head>
+<body>
+<div data-demo="home"></div>
+<div data-demo="instance"></div>
+<div data-demo="content"></div>
+<script src="vercors-demo.js"></script>
+</body>
+</html>

@@ -1,9 +1,11 @@
 package app.vercors.feature.home.ui
 
 import androidx.compose.animation.ExperimentalSharedTransitionApi
-import androidx.compose.foundation.*
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.gestures.scrollBy
+import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.*
@@ -451,13 +453,13 @@ private fun HomeProjectCardLayout(
     modifier: Modifier,
     interactionSource: MutableInteractionSource? = null,
     onClick: (() -> Unit)? = null,
-    contextMenuItems: () -> List<ContextMenuItem> = { emptyList() },
+    contextMenuItems: () -> List<AppContextMenuItem> = { emptyList() },
     icon: @Composable context(SharedElementTransitionScope) RowScope.(Modifier) -> Unit,
     title: @Composable context(SharedElementTransitionScope) ColumnScope.() -> Unit,
     author: @Composable context(SharedElementTransitionScope) ColumnScope.() -> Unit,
     image: @Composable context(SharedElementTransitionScope) BoxScope.() -> Unit,
 ) {
-    ContextMenuArea(items = contextMenuItems) {
+    AppContextMenuArea(items = contextMenuItems) {
         Column(
             modifier = modifier
                 .appCard(interactionSource = interactionSource, onClick = onClick)

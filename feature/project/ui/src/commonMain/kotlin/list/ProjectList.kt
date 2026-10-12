@@ -625,7 +625,7 @@ private fun LazyItemScope.ProjectListItemCardLayout(
     modifier: Modifier = Modifier,
     interactionSource: MutableInteractionSource? = null,
     onClick: (() -> Unit)? = null,
-    contextMenuItems: () -> List<ContextMenuItem> = { emptyList() },
+    contextMenuItems: () -> List<AppContextMenuItem> = { emptyList() },
     icon: @Composable context(SharedElementTransitionScope) RowScope.(Modifier) -> Unit,
     title: @Composable context(SharedElementTransitionScope) RowScope.() -> Unit,
     author: @Composable context(SharedElementTransitionScope) RowScope.() -> Unit,
@@ -635,7 +635,7 @@ private fun LazyItemScope.ProjectListItemCardLayout(
     installButton: (@Composable () -> Unit)? = null,
 ) {
     val hovered: Boolean by interactionSource?.collectIsHoveredAsState() ?: remember { mutableStateOf(false) }
-    ContextMenuArea(items = contextMenuItems) {
+    AppContextMenuArea(items = contextMenuItems) {
         Row(
             modifier = modifier.fillMaxWidth()
                 .appCard(interactionSource = interactionSource, onClick = onClick)

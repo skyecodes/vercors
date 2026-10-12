@@ -12,6 +12,7 @@ dependencies {
     commonMainImplementation(projects.shared.domain)
     commonMainImplementation(projects.shared.data)
     commonMainImplementation(projects.shared.ui)
+    commonMainImplementation(projects.app.launcherShell)
     commonMainImplementation(projects.core.cryptography)
     commonMainImplementation(projects.core.domain)
     commonMainImplementation(projects.core.filesystem)

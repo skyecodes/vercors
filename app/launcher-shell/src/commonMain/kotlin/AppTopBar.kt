@@ -1,4 +1,4 @@
-package app.vercors.launcher.gui
+package app.vercors.launcher.shell
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -7,7 +7,6 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -27,8 +26,6 @@ import app.vercors.shared.ui.*
 import com.composables.icons.lucide.*
 import com.composeunstyled.LocalContentColor
 import com.composeunstyled.theme.Theme
-import dev.nucleusframework.application.LocalNucleusWindow
-import dev.nucleusframework.window.windowDragArea
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.resources.vectorResource
 
@@ -40,13 +37,15 @@ fun AppTopBar(
     canGoNext: Boolean,
     onNavigateBack: () -> Unit,
     onNavigateNext: () -> Unit,
-    appName: String
+    appName: String,
+    isMaximized: Boolean,
+    onMinimize: () -> Unit,
+    onToggleMaximize: () -> Unit,
+    onClose: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    val nucleusWindow = LocalNucleusWindow.current
-    val isMaximized by nucleusWindow.maximizedFlow.collectAsState()
-
     Row(
-        modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Max).windowDragArea()
+        modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Max) then modifier
     ) {
         Row(
             modifier = Modifier.weight(1f).padding(8.dp),
@@ -82,20 +81,20 @@ fun AppTopBar(
             modifier = Modifier.fillMaxHeight()
         ) {
             AppWindowButton(
-                onClick = { nucleusWindow.setMinimized(true) },
+                onClick = onMinimize,
                 imageVector = Lucide.Minus,
-                contentDescription = stringResource(Res.string.minimize)
+                contentDescription = stringResource(ShellRes.string.minimize)
             )
             AppWindowButton(
-                onClick = { nucleusWindow.setMaximized(!isMaximized) },
+                onClick = onToggleMaximize,
                 imageVector = if (isMaximized) Lucide.Minimize2 else Lucide.Maximize2,
-                contentDescription = stringResource(Res.string.maximize)
+                contentDescription = stringResource(ShellRes.string.maximize)
             )
 
             val interactionSource = remember { MutableInteractionSource() }
             val hovered by interactionSource.collectIsHoveredAsState()
             AppWindowButton(
-                onClick = { nucleusWindow.close() },
+                onClick = onClose,
                 imageVector = Lucide.X,
                 contentDescription = stringResource(SharedRes.string.close),
                 tint = if (hovered) Theme[colors][onError] else LocalContentColor.current,

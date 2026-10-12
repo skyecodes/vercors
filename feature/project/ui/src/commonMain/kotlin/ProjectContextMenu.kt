@@ -1,6 +1,5 @@
 package app.vercors.feature.project.ui
 
-import androidx.compose.foundation.ContextMenuItem
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalUriHandler
 import app.vercors.core.ui.component.AppContextMenuItem
@@ -23,7 +22,7 @@ fun projectContextMenuItems(
     project: BriefProjectView,
     onInstallClick: (BriefProjectView) -> Unit,
     onProjectClick: (ProjectId) -> Unit,
-): () -> List<ContextMenuItem> {
+): () -> List<AppContextMenuItem> {
     val uriHandler = LocalUriHandler.current
     val installLabel = stringResource(ProjectRes.string.install)
     val openDetailsLabel = stringResource(SharedRes.string.openDetails)

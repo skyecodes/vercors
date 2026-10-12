@@ -1,4 +1,4 @@
-package app.vercors.launcher.gui
+package app.vercors.launcher.shell
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
