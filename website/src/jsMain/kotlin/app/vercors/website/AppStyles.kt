@@ -1,8 +1,7 @@
 package app.vercors.website
 
-import com.varabyte.kobweb.compose.css.FontWeight
-import com.varabyte.kobweb.compose.css.ScrollBehavior
-import com.varabyte.kobweb.compose.css.TextAlign
+import com.varabyte.kobweb.compose.css.*
+import com.varabyte.kobweb.compose.css.Transition
 import com.varabyte.kobweb.compose.ui.Modifier
 import com.varabyte.kobweb.compose.ui.graphics.Colors
 import com.varabyte.kobweb.compose.ui.modifiers.*
@@ -16,6 +15,7 @@ import com.varabyte.kobweb.silk.style.CssStyle
 import com.varabyte.kobweb.silk.style.addVariantBase
 import com.varabyte.kobweb.silk.style.base
 import com.varabyte.kobweb.silk.style.breakpoint.Breakpoint
+import com.varabyte.kobweb.silk.style.common.SmoothColorTransitionDurationVar
 import com.varabyte.kobweb.silk.theme.modifyStyleBase
 import org.jetbrains.compose.web.css.*
 
@@ -105,6 +105,26 @@ val CircleButtonVariant = ButtonStyle.addVariantBase {
 val UncoloredButtonVariant = ButtonStyle.addVariantBase {
     Modifier.setVariable(ButtonVars.BackgroundDefaultColor, Colors.Transparent)
 }
+
+private val SMOOTH_COLOR_PROPERTIES = listOf("background-color", "border-color", "color", "fill")
+
+// Silk's color mode transition timing, extended from the background to every themed color property
+fun Modifier.smoothColorTransition(): Modifier = transition(
+    *SMOOTH_COLOR_PROPERTIES.map { Transition.of(it, SmoothColorTransitionDurationVar.value()) }.toTypedArray()
+)
+
+// Unlike the *OnlyStyles, the hidden variant keeps its layout box so two stacked variants can cross-fade
+val LightModeFadeStyle = CssStyle.base { Modifier.colorModeFade(visible = colorMode.isLight) }
+
+val DarkModeFadeStyle = CssStyle.base { Modifier.colorModeFade(visible = colorMode.isDark) }
+
+private fun Modifier.colorModeFade(visible: Boolean): Modifier = this
+    .opacity(if (visible) 1 else 0)
+    .visibility(if (visible) Visibility.Visible else Visibility.Hidden)
+    .transition(
+        Transition.of("opacity", SmoothColorTransitionDurationVar.value()),
+        Transition.of("visibility", SmoothColorTransitionDurationVar.value()),
+    )
 
 val LightModeOnlyStyle = CssStyle.base {
     if (colorMode.isDark) Modifier.display(DisplayStyle.None) else Modifier

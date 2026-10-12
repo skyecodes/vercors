@@ -13,8 +13,7 @@ import com.varabyte.kobweb.silk.components.layout.Surface
 import com.varabyte.kobweb.silk.init.InitSilk
 import com.varabyte.kobweb.silk.init.InitSilkContext
 import com.varabyte.kobweb.silk.init.registerStyleBase
-import com.varabyte.kobweb.silk.style.common.SmoothColorStyle
-import com.varabyte.kobweb.silk.style.toModifier
+import com.varabyte.kobweb.silk.style.layer.SilkLayer
 import com.varabyte.kobweb.silk.theme.colors.ColorMode
 import com.varabyte.kobweb.silk.theme.colors.loadFromLocalStorage
 import com.varabyte.kobweb.silk.theme.colors.saveToLocalStorage
@@ -34,6 +33,10 @@ fun initColorMode(ctx: InitSilkContext) {
 fun initStyles(ctx: InitSilkContext) {
     ctx.stylesheet.apply {
         registerStyleBase("body") { Modifier.scrollBehavior(ScrollBehavior.Smooth) }
+        // Base layer, so components declaring their own transition keep it
+        layer(SilkLayer.BASE.layerName) {
+            registerStyleBase("*") { Modifier.smoothColorTransition() }
+        }
         // Keeps anchor scroll targets clear of the sticky header
         registerStyleBase("html") { Modifier.scrollPadding(top = 4.5.cssRem) }
     }
@@ -47,7 +50,7 @@ fun AppEntry(content: @Composable () -> Unit) {
         LaunchedEffect(colorMode) {
             colorMode.saveToLocalStorage(COLOR_MODE_KEY)
         }
-        Surface(SmoothColorStyle.toModifier().minHeight(100.vh)) {
+        Surface(Modifier.minHeight(100.vh)) {
             content()
         }
     }

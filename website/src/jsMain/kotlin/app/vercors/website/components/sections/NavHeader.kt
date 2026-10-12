@@ -58,6 +58,8 @@ val NavHeaderStyle = CssStyle {
             .zIndex(-1)
             .backgroundColor(colorMode.toSitePalette().background.toRgb().copyf(alpha = 0.75f))
             .backdropFilter(blur(0.75.cssRem))
+            // The global rule's `*` doesn't match pseudo-elements
+            .smoothColorTransition()
     }
 }
 
