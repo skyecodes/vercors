@@ -48,15 +48,14 @@ fun HeroSection(platform: Platform) {
             Modifier.margin(top = 1.cssRem, bottom = 1.cssRem).width(100.percent)
         )
         Column(
-            Modifier.fillMaxWidth().gap(0.25.cssRem),
+            Modifier.fillMaxWidth().gap(0.25.cssRem).displayIfAtLeast(Breakpoint.MD),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            HeroLiveDemoToggleButton()
             P {
                 if (liveDemosEnabled) {
                     FaWandMagicSparkles(Modifier.margin(right = 0.5.cssRem))
                     SpanText(
-                        "The screenshots can be interacted with. Try hovering over the buttons!",
+                        "The screenshots can be interacted with. Try hovering over the screenshots!",
                         Modifier.color(SiteColors.subtext)
                     )
                 } else {
@@ -66,6 +65,7 @@ fun HeroSection(platform: Platform) {
                     )
                 }
             }
+            HeroLiveDemoToggleButton()
         }
     }
 }
@@ -76,7 +76,7 @@ private fun HeroLiveDemoToggleButton() {
     val enabled = liveDemosEnabled
     Button(
         onClick = { liveDemosEnabled = !enabled },
-        Modifier.padding(leftRight = 1.25.cssRem).displayIfAtLeast(Breakpoint.MD),
+        Modifier.padding(leftRight = 1.25.cssRem),
     ) {
         if (!enabled) FaWandMagicSparkles(Modifier.margin(right = 0.5.cssRem))
         SpanText(if (enabled) "Disable interactions" else "Enable interactions")

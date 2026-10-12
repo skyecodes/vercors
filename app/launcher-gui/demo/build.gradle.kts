@@ -16,7 +16,7 @@ kotlin {
 
     sourceSets {
         jsMain.dependencies {
-            implementation(projects.app.launcherShell)
+            implementation(projects.app.launcherGui.shell)
             implementation(projects.core.ui)
             implementation(projects.shared.ui)
             implementation(projects.feature.account.ui)

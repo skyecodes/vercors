@@ -11,6 +11,8 @@ import com.varabyte.kobweb.compose.ui.Modifier
 import com.varabyte.kobweb.compose.ui.attrsModifier
 import com.varabyte.kobweb.compose.ui.modifiers.*
 import com.varabyte.kobweb.compose.ui.styleModifier
+import com.varabyte.kobweb.core.AppGlobals
+import com.varabyte.kobweb.core.isExporting
 import com.varabyte.kobweb.silk.style.CssStyle
 import com.varabyte.kobweb.silk.style.breakpoint.Breakpoint
 import com.varabyte.kobweb.silk.style.toModifier
@@ -82,7 +84,9 @@ val LiveDemoStyle = CssStyle {
 @Composable
 fun LiveDemo(name: String, description: String, modifier: Modifier = Modifier) {
     val enabled = liveDemosEnabled
-    LaunchedEffect(enabled) { if (enabled) requestDemoScript() }
+    // The export snapshots the DOM after scripts ran: the injected script tag and the demo's mounted viewports would
+    // be baked into the static page, loading the bundle twice and leaving dead viewports the demo never mounts into
+    LaunchedEffect(enabled) { if (enabled && !AppGlobals.isExporting) requestDemoScript() }
     Box(
         LiveDemoStyle.toModifier().then(modifier).attrsModifier {
             attr("data-demo", name)

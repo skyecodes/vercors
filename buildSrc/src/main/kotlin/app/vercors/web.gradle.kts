@@ -6,7 +6,6 @@ plugins {
     id("app.vercors.base")
 }
 
-// js rather than wasmJs: pedestal publishes no wasmJs artifacts
 kotlin {
     js {
         // Browser tests need a headless Chrome in CI; these modules are already tested on JVM and native
