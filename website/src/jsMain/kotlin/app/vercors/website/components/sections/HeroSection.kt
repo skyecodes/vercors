@@ -52,11 +52,16 @@ fun HeroSection(platform: Platform) {
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             HeroLiveDemoToggleButton()
-            if (liveDemosEnabled) {
-                P {
+            P {
+                if (liveDemosEnabled) {
                     FaWandMagicSparkles(Modifier.margin(right = 0.5.cssRem))
                     SpanText(
                         "The screenshots can be interacted with. Try hovering over the buttons!",
+                        Modifier.color(SiteColors.subtext)
+                    )
+                } else {
+                    SpanText(
+                        "If interactions are enabled, the screenshots can be interacted with.",
                         Modifier.color(SiteColors.subtext)
                     )
                 }

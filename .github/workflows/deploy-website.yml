@@ -7,18 +7,6 @@ on:
     paths:
       - 'website/**'
       - '.github/workflows/deploy-website.yml'
-      # The embedded launcher demo and everything it compiles
-      - 'app/launcher-demo/**'
-      - 'app/launcher-shell/**'
-      - 'core/domain/**'
-      - 'core/system/**'
-      - 'core/ui/**'
-      - 'shared/domain/**'
-      - 'shared/ui/**'
-      - 'feature/*/domain/**'
-      - 'feature/*/ui/**'
-      - 'buildSrc/**'
-      - 'gradle/**'
 
 permissions:
   contents: read
