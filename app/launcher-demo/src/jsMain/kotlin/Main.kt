@@ -8,6 +8,8 @@ import kotlinx.coroutines.Dispatchers
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.configureWebResources
 import org.w3c.dom.*
+import org.w3c.dom.events.Event
+import org.w3c.dom.events.MouseEvent
 
 private const val SCRIPT_NAME = "vercors-demo.js"
 private const val DEMO_ATTRIBUTE = "data-demo"
@@ -19,8 +21,10 @@ const val DEMO_WINDOW_WIDTH_PX = 1280.0
 
 private val BLOCKED_EVENTS = listOf(
     "pointerdown", "pointerup", "mousedown", "mouseup", "click", "dblclick", "auxclick", "contextmenu",
-    "wheel", "keydown", "keyup", "touchstart", "touchend",
+    "wheel", "keydown", "keyup", "touchstart", "touchmove", "touchend",
 )
+
+private val MOVE_EVENTS = listOf("pointermove", "mousemove")
 
 @OptIn(ExperimentalResourceApi::class)
 fun main() {
@@ -61,13 +65,21 @@ private fun scriptBaseUrl(): String {
 private fun blockInteractions() {
     BLOCKED_EVENTS.forEach { type ->
         window.addEventListener(type, { event ->
-            val target = event.target as? Element ?: return@addEventListener
-            if (target.closest("[$DEMO_ATTRIBUTE]") == null) return@addEventListener
+            if (!event.isInDemo()) return@addEventListener
             event.stopImmediatePropagation()
             if (type == "contextmenu") event.preventDefault()
         }, true)
     }
+    // Compose reads the pressed buttons off every move, so a move with a button held still clicks (on release)
+    // and drags scrollbars even when the press itself never reached it
+    MOVE_EVENTS.forEach { type ->
+        window.addEventListener(type, { event ->
+            if (event.unsafeCast<MouseEvent>().buttons.toInt() != 0 && event.isInDemo()) event.stopImmediatePropagation()
+        }, true)
+    }
 }
+
+private fun Event.isInDemo(): Boolean = (target as? Element)?.closest("[$DEMO_ATTRIBUTE]") != null
 
 // The demo's own state lives on the viewport it creates, never on the host: the site's Compose HTML owns the host's
 // attributes and drops the ones it didn't set whenever it updates them
