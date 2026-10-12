@@ -32,7 +32,7 @@ jobs:
 
       - name: Query Browser Cache ID
         id: browser-cache-id
-        run: echo "value=$(./gradlew -q :site:kobwebBrowserCacheId)" >> $GITHUB_OUTPUT
+        run: echo "value=$(./gradlew -q :website:kobwebBrowserCacheId)" >> $GITHUB_OUTPUT
 
       - name: Cache Browser Dependencies
         uses: actions/cache@v6
@@ -54,6 +54,8 @@ jobs:
         run: unzip kobweb-${{ env.KOBWEB_CLI_VERSION }}.zip
 
       - name: Run export
+        env:
+          MICROSOFT_CLIENT_ID: ci-placeholder
         run: |
           cd website
           ../kobweb-${{ env.KOBWEB_CLI_VERSION }}/bin/kobweb export --notty --layout static
