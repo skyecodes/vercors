@@ -1,10 +1,7 @@
 package app.vercors.core.ui.theme
 
 import androidx.compose.animation.animateColor
-import androidx.compose.animation.core.LinearOutSlowInEasing
-import androidx.compose.animation.core.Transition
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.core.updateTransition
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.text.selection.TextSelectionColors
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -52,7 +49,7 @@ val subtitle = ThemeToken<TextStyle>("subtitle")
 val label = ThemeToken<TextStyle>("label")
 val console = ThemeToken<TextStyle>("console")
 
-fun AppTheme(themeColors: ThemeColors, accentColor: Long) = buildTheme {
+fun AppTheme(themeColors: ThemeColors, accentColor: Long, animateColors: Boolean = true) = buildTheme {
     val convertedThemeColors = remember(themeColors, accentColor) {
         themeColors.toColor(accentColor)
     }
@@ -60,7 +57,7 @@ fun AppTheme(themeColors: ThemeColors, accentColor: Long) = buildTheme {
     val animatedColors = updateTransition(
         targetState = convertedThemeColors,
         label = "themeTransition"
-    ).animateThemeColors()
+    ).animateThemeColors(animateColors)
 
     val fontFamily = FontFamily(
         Font(CoreRes.font.Inter, weight = FontWeight.Normal),
@@ -145,7 +142,7 @@ private fun ThemeColor.toColor(accentColor: Long): Color = when (this) {
 }
 
 @Composable
-private fun Transition<ConvertedThemeColors>.animateThemeColors(): ConvertedThemeColors {
+private fun Transition<ConvertedThemeColors>.animateThemeColors(animated: Boolean): ConvertedThemeColors {
     @Composable
     fun animate(
         label: String,
@@ -153,7 +150,7 @@ private fun Transition<ConvertedThemeColors>.animateThemeColors(): ConvertedThem
     ): Color {
         val color by animateColor(
             label = label,
-            transitionSpec = { tween(durationMillis = 500, easing = LinearOutSlowInEasing) },
+            transitionSpec = { if (animated) tween(durationMillis = 500, easing = LinearOutSlowInEasing) else snap() },
             targetValueByState = targetValue,
         )
         return color

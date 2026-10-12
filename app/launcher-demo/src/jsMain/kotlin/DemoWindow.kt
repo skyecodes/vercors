@@ -38,9 +38,8 @@ private val READY_DELAY = 500.milliseconds
 
 @OptIn(ExperimentalResourceApi::class)
 @Composable
-fun DemoWindow(screen: DemoScreen, onReady: () -> Unit) {
+fun DemoWindow(screen: DemoScreen, dark: State<Boolean>, onReady: () -> Unit, onThemeApplied: () -> Unit) {
     setSingletonImageLoaderFactory(::demoImageLoader)
-    val dark by rememberSiteDarkMode()
 
     LaunchedEffect(Unit) {
         val environment = getSystemResourceEnvironment()
@@ -51,19 +50,30 @@ fun DemoWindow(screen: DemoScreen, onReady: () -> Unit) {
         onReady()
     }
 
+    ThemeAppliedEffect(dark.value, onThemeApplied)
+
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val density = Density(constraints.maxWidth / DEMO_WINDOW_WIDTH_PX.toFloat() * UI_SCALE, fontScale = 1f)
         CompositionLocalProvider(LocalDensity provides density) {
-            // Rebuilt rather than animated: the demo is hidden while the site's theme transition runs
-            key(dark) {
-                (AppTheme(
-                    themeColors = if (dark) MOCHA_COLORS else LATTE_COLORS,
-                    accentColor = if (dark) MOCHA_MAUVE else LATTE_MAUVE,
-                )) {
-                    DemoFrame(screen)
-                }
+            // Snapped rather than animated: the demo is hidden while the site's theme transition runs
+            (AppTheme(
+                themeColors = if (dark.value) MOCHA_COLORS else LATTE_COLORS,
+                accentColor = if (dark.value) MOCHA_MAUVE else LATTE_MAUVE,
+                animateColors = false,
+            )) {
+                DemoFrame(screen)
             }
         }
+    }
+}
+
+// Signals once a frame with the new colors has been drawn, so the demo is only revealed fully repainted
+@Composable
+private fun ThemeAppliedEffect(dark: Boolean, onThemeApplied: () -> Unit) {
+    LaunchedEffect(dark) {
+        withFrameNanos {}
+        withFrameNanos {}
+        onThemeApplied()
     }
 }
 
