@@ -2,6 +2,20 @@ name: Deploy website
 
 on:
   workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - 'website/**'
+      - '.github/workflows/deploy-website.yml'
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
 
 jobs:
   export_and_upload:
@@ -17,25 +31,22 @@ jobs:
           VERSION=$(curl -sSL https://raw.githubusercontent.com/varabyte/data/refs/heads/main/kobweb/cli-version.txt | xargs)
           echo "KOBWEB_CLI_VERSION=$VERSION" >> $GITHUB_ENV
 
-      - uses: actions/checkout@v7
-      - uses: actions/setup-java@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      # Same Gradle cache provider as the other workflows, so main's cache is the one this restores
+      - uses: NucleusFramework/Nucleus/.github/actions/setup-nucleus@v3.0.0-dev-202610102114
         with:
-          distribution: temurin
-          java-version: 25
-
-      # When projects are created on Windows, the executable bit is sometimes lost. So set it back just in case.
-      - name: Ensure Gradle is executable
-        run: chmod +x gradlew
-
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v6
+          java-version: '25'
+          packaging-tools: 'false'
 
       - name: Query Browser Cache ID
         id: browser-cache-id
+        env:
+          MICROSOFT_CLIENT_ID: ci-placeholder
         run: echo "value=$(./gradlew -q :website:kobwebBrowserCacheId)" >> $GITHUB_OUTPUT
 
       - name: Cache Browser Dependencies
-        uses: actions/cache@v6
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         id: playwright-cache
         with:
           path: ~/.cache/ms-playwright
@@ -61,9 +72,16 @@ jobs:
           ../kobweb-${{ env.KOBWEB_CLI_VERSION }}/bin/kobweb export --notty --layout static
 
       - name: Upload site
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5
         with:
-          name: website
           path: website/.kobweb/site/
-          if-no-files-found: error
-          retention-days: 1
+
+  deploy:
+    needs: export_and_upload
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5
