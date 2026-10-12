@@ -86,13 +86,12 @@ kobweb {
     }
 }
 
-// Screenshots and the logo are copied from the repo's "public" folder of being duplicated in git.
+// Screenshots and the logo are copied from the root public/ folder instead of being duplicated in git.
 // They go into a resource source dir, not jsProcessResources: kobweb export only reads public/ from source dirs.
 val syncSharedResources = tasks.register<Sync>("syncSharedResources") {
     into(layout.buildDirectory.dir("generated/sharedResources"))
-    from(rootProject.file("public")) {
-        include("*.png", "*.svg")
-        into("public/images")
+    from(rootProject.file("public/screenshots")) {
+        into("public/screenshots")
     }
     from(rootProject.file("public/logo.ico")) {
         rename { "favicon.ico" }

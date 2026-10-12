@@ -6,9 +6,9 @@
 <h3 align="center">A modern Minecraft Launcher with mod support and much more!</h3>
 
 <p align="center">
-   <img src="public/screenshot_home.png" alt="Screenshot Home" width="480"/>
-   <img src="public/screenshot_content.png" alt="Screenshot Content" width="480"/>
-   <img src="public/screenshot_instance.png" alt="Screenshot Instance" width="480"/>
+   <img src="public/screenshots/home.webp" alt="Screenshot Home" width="480"/>
+   <img src="public/screenshots/content.webp" alt="Screenshot Content" width="480"/>
+   <img src="public/screenshots/instance.webp" alt="Screenshot Instance" width="480"/>
 </p>
 
 ---

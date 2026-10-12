@@ -17,7 +17,7 @@ import org.jetbrains.compose.web.css.percent
 fun Screenshot(name: String, description: String, modifier: Modifier = Modifier) {
     val image = ScreenshotStyle.toModifier().width(100.percent).attrsModifier { attr("loading", "lazy") }
     Box(modifier) {
-        Image("/images/screenshot_$name.png", description, DarkModeFadeStyle.toModifier().then(image))
-        Image("/images/screenshot_${name}_light.png", description, LightModeFadeStyle.toModifier().then(image))
+        Image("/screenshots/$name.webp", description, DarkModeFadeStyle.toModifier().then(image))
+        Image("/screenshots/${name}_light.webp", description, LightModeFadeStyle.toModifier().then(image))
     }
 }
