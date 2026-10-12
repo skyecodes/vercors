@@ -1,54 +1,50 @@
 package app.vercors.website.components.sections
 
 import androidx.compose.runtime.Composable
+import app.vercors.website.GITHUB_URL
+import app.vercors.website.SITE_NAME
 import app.vercors.website.toSitePalette
+
 import com.varabyte.kobweb.compose.css.TextAlign
-import com.varabyte.kobweb.compose.css.WhiteSpace
-import com.varabyte.kobweb.compose.foundation.layout.Box
+import com.varabyte.kobweb.compose.foundation.layout.Arrangement
+import com.varabyte.kobweb.compose.foundation.layout.Row
 import com.varabyte.kobweb.compose.ui.Alignment
 import com.varabyte.kobweb.compose.ui.Modifier
 import com.varabyte.kobweb.compose.ui.modifiers.*
-import com.varabyte.kobweb.compose.ui.toAttrs
 import com.varabyte.kobweb.silk.components.navigation.Link
-import com.varabyte.kobweb.silk.components.navigation.UncoloredLinkVariant
 import com.varabyte.kobweb.silk.components.text.SpanText
 import com.varabyte.kobweb.silk.style.CssStyle
 import com.varabyte.kobweb.silk.style.base
 import com.varabyte.kobweb.silk.style.toModifier
-import com.varabyte.kobweb.silk.style.vars.color.ColorVar
-import com.varabyte.kobweb.silk.theme.colors.ColorMode
+import org.jetbrains.compose.web.css.FlexWrap
+import org.jetbrains.compose.web.css.LineStyle
 import org.jetbrains.compose.web.css.cssRem
-import org.jetbrains.compose.web.css.percent
-import org.jetbrains.compose.web.dom.Span
+import org.jetbrains.compose.web.css.px
 
 val FooterStyle = CssStyle.base {
+    val palette = colorMode.toSitePalette()
     Modifier
-        .backgroundColor(colorMode.toSitePalette().nearBackground)
-        .padding(topBottom = 1.5.cssRem, leftRight = 10.percent)
+        .backgroundColor(palette.backgroundAlt)
+        .borderTop(1.px, LineStyle.Solid, palette.surface)
+        .color(palette.subtext)
+        .fontSize(0.9.cssRem)
+        .padding(topBottom = 1.5.cssRem, leftRight = 1.5.cssRem)
+        .textAlign(TextAlign.Center)
 }
 
 @Composable
 fun Footer(modifier: Modifier = Modifier) {
-    Box(FooterStyle.toModifier().then(modifier), contentAlignment = Alignment.Center) {
-        Span(Modifier.textAlign(TextAlign.Center).toAttrs()) {
-            val sitePalette = ColorMode.current.toSitePalette()
-            SpanText("Built with ")
-            Link(
-                "https://github.com/varabyte/kobweb",
-                "Kobweb",
-                Modifier.setVariable(ColorVar, sitePalette.brand.primary),
-                variant = UncoloredLinkVariant
-            )
-            SpanText(", template designed by ")
-
-            // Huge thanks to UI Rocket (https://ui-rocket.com) for putting this great template design together for us!
-            // If you like what you see here and want help building your own site, consider checking out their services.
-            Link(
-                "https://ui-rocket.com",
-                "UI Rocket",
-                Modifier.setVariable(ColorVar, sitePalette.brand.accent).whiteSpace(WhiteSpace.NoWrap),
-                variant = UncoloredLinkVariant
-            )
-        }
+    Row(
+        FooterStyle.toModifier().then(modifier).flexWrap(FlexWrap.Wrap).gap(0.5.cssRem),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        SpanText("$SITE_NAME is free and open source software")
+        SpanText("/")
+        Link(GITHUB_URL, "Source code")
+        SpanText("/")
+        Link("$GITHUB_URL/blob/main/LICENSE", "License")
+        SpanText("/")
+        Link("https://kobweb.varabyte.com", "Website built with Kobweb")
     }
 }

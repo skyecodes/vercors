@@ -1,90 +1,72 @@
 package app.vercors.website.components.sections
 
 import androidx.compose.runtime.*
+import app.vercors.website.*
 import app.vercors.website.components.widgets.IconButton
-import app.vercors.website.toSitePalette
-import com.varabyte.kobweb.browser.dom.ElementTarget
+import app.vercors.website.components.widgets.Logo
+import com.varabyte.kobweb.compose.css.FontWeight
+import com.varabyte.kobweb.compose.css.functions.blur
 import com.varabyte.kobweb.compose.css.functions.clamp
+import com.varabyte.kobweb.compose.foundation.layout.Arrangement
 import com.varabyte.kobweb.compose.foundation.layout.Column
 import com.varabyte.kobweb.compose.foundation.layout.Row
-import com.varabyte.kobweb.compose.foundation.layout.Spacer
 import com.varabyte.kobweb.compose.ui.Alignment
 import com.varabyte.kobweb.compose.ui.Modifier
 import com.varabyte.kobweb.compose.ui.graphics.Colors
 import com.varabyte.kobweb.compose.ui.modifiers.*
-import com.varabyte.kobweb.silk.components.graphics.Image
+import com.varabyte.kobweb.core.rememberPageContext
 import com.varabyte.kobweb.silk.components.icons.CloseIcon
 import com.varabyte.kobweb.silk.components.icons.HamburgerIcon
 import com.varabyte.kobweb.silk.components.icons.MoonIcon
 import com.varabyte.kobweb.silk.components.icons.SunIcon
+import com.varabyte.kobweb.silk.components.icons.fa.FaGithub
 import com.varabyte.kobweb.silk.components.navigation.Link
 import com.varabyte.kobweb.silk.components.navigation.UncoloredLinkVariant
 import com.varabyte.kobweb.silk.components.navigation.UndecoratedLinkVariant
 import com.varabyte.kobweb.silk.components.overlay.Overlay
 import com.varabyte.kobweb.silk.components.overlay.OverlayVars
-import com.varabyte.kobweb.silk.components.overlay.PopupPlacement
-import com.varabyte.kobweb.silk.components.overlay.Tooltip
+import com.varabyte.kobweb.silk.components.text.SpanText
 import com.varabyte.kobweb.silk.style.CssStyle
 import com.varabyte.kobweb.silk.style.animation.Keyframes
 import com.varabyte.kobweb.silk.style.animation.toAnimation
-import com.varabyte.kobweb.silk.style.base
 import com.varabyte.kobweb.silk.style.breakpoint.Breakpoint
 import com.varabyte.kobweb.silk.style.breakpoint.displayIfAtLeast
 import com.varabyte.kobweb.silk.style.breakpoint.displayUntil
 import com.varabyte.kobweb.silk.style.toModifier
 import com.varabyte.kobweb.silk.theme.colors.ColorMode
+import kotlinx.browser.window
 import org.jetbrains.compose.web.css.*
 
-val NavHeaderStyle = CssStyle.base {
-    Modifier.fillMaxWidth().padding(1.cssRem)
-}
+private val NAV_ITEMS = listOf("/" to "Home", "/about" to "About", "/blog" to "Blog")
 
-@Composable
-private fun NavLink(path: String, text: String) {
-    Link(path, text, variant = UndecoratedLinkVariant.then(UncoloredLinkVariant))
-}
-
-@Composable
-private fun MenuItems() {
-    NavLink("/", "Home")
-    NavLink("/about", "About")
-}
-
-@Composable
-private fun ColorModeButton() {
-    var colorMode by ColorMode.currentState
-    IconButton(onClick = { colorMode = colorMode.opposite }) {
-        if (colorMode.isLight) MoonIcon() else SunIcon()
+val NavHeaderStyle = CssStyle {
+    base {
+        Modifier
+            .fillMaxWidth()
+            .position(Position.Sticky)
+            .top(0.px)
+            .zIndex(10)
+            .padding(topBottom = 1.cssRem, leftRight = 1.5.cssRem)
+            .borderBottom(1.px, LineStyle.Solid, colorMode.toSitePalette().surface)
     }
-    Tooltip(ElementTarget.PreviousSibling, "Toggle color mode", placement = PopupPlacement.BottomRight)
-}
-
-@Composable
-private fun HamburgerButton(onClick: () -> Unit) {
-    IconButton(onClick) {
-        HamburgerIcon()
-    }
-}
-
-@Composable
-private fun CloseButton(onClick: () -> Unit) {
-    IconButton(onClick) {
-        CloseIcon()
+    // Blurring on a pseudo-element: backdrop-filter on the header itself would trap the side menu's fixed overlay inside it
+    cssRule("::before") {
+        Modifier
+            .content("")
+            .position(Position.Absolute)
+            .top(0.px).bottom(0.px).left(0.px).right(0.px)
+            .zIndex(-1)
+            .backgroundColor(colorMode.toSitePalette().background.toRgb().copyf(alpha = 0.75f))
+            .backdropFilter(blur(0.75.cssRem))
     }
 }
 
 val SideMenuSlideInAnim = Keyframes {
-    from {
-        Modifier.translateX(100.percent)
-    }
-
-    to {
-        Modifier
-    }
+    from { Modifier.translateX(100.percent) }
+    to { Modifier }
 }
 
-// Note: When the user closes the side menu, we don't immediately stop rendering it (at which point it would disappear
-// abruptly). Instead, we start animating it out and only stop rendering it when the animation is complete.
+// The side menu keeps rendering while CLOSING so its slide-out animation can finish
 enum class SideMenuState {
     CLOSED,
     OPEN,
@@ -92,43 +74,54 @@ enum class SideMenuState {
 
     fun close() = when (this) {
         CLOSED -> CLOSED
-        OPEN -> CLOSING
-        CLOSING -> CLOSING
+        OPEN, CLOSING -> CLOSING
     }
 }
 
 @Composable
 fun NavHeader() {
     Row(NavHeaderStyle.toModifier(), verticalAlignment = Alignment.CenterVertically) {
-        Link("https://kobweb.varabyte.com") {
-            // Block display overrides inline display of the <img> tag, so it calculates centering better
-            Image("/kobweb-logo.png", "Kobweb Logo", Modifier.height(2.cssRem).display(DisplayStyle.Block))
+        // Equal flex on both sides keeps the menu centered regardless of the logo and button widths
+        Row(Modifier.flex(1)) {
+            Link("/", variant = UndecoratedLinkVariant.then(UncoloredLinkVariant)) {
+                Row(Modifier.gap(0.6.cssRem), verticalAlignment = Alignment.CenterVertically) {
+                    Logo(Modifier.size(2.cssRem).display(DisplayStyle.Block))
+                    SpanText(
+                        SITE_NAME,
+                        Modifier.fontFamily(*HEADING_FONT).fontWeight(FontWeight.Bold).fontSize(1.4.cssRem)
+                    )
+                }
+            }
         }
 
-        Spacer()
-
         Row(Modifier.gap(1.5.cssRem).displayIfAtLeast(Breakpoint.MD), verticalAlignment = Alignment.CenterVertically) {
-            MenuItems()
-            ColorModeButton()
+            NavHeaderMenuItems()
         }
 
         Row(
-            Modifier
-                .fontSize(1.5.cssRem)
-                .gap(1.cssRem)
-                .displayUntil(Breakpoint.MD),
+            Modifier.flex(1).gap(0.25.cssRem).fontSize(1.25.cssRem).displayIfAtLeast(Breakpoint.MD),
+            horizontalArrangement = Arrangement.End,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            NavHeaderGitHubButton()
+            NavHeaderColorModeButton()
+        }
+
+        Row(
+            Modifier.fontSize(1.5.cssRem).gap(0.5.cssRem).displayUntil(Breakpoint.MD),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            var menuState by remember { mutableStateOf(SideMenuState.CLOSED) }
+            val (menuState, setMenuState) = remember { mutableStateOf(SideMenuState.CLOSED) }
 
-            ColorModeButton()
-            HamburgerButton(onClick = { menuState = SideMenuState.OPEN })
+            NavHeaderGitHubButton()
+            NavHeaderColorModeButton()
+            IconButton(onClick = { setMenuState(SideMenuState.OPEN) }) { HamburgerIcon() }
 
             if (menuState != SideMenuState.CLOSED) {
-                SideMenu(
-                    menuState,
-                    close = { menuState = menuState.close() },
-                    onAnimationEnd = { if (menuState == SideMenuState.CLOSING) menuState = SideMenuState.CLOSED }
+                NavHeaderSideMenu(
+                    menuState = menuState,
+                    close = { setMenuState(menuState.close()) },
+                    onAnimationEnd = { if (menuState == SideMenuState.CLOSING) setMenuState(SideMenuState.CLOSED) },
                 )
             }
         }
@@ -136,23 +129,56 @@ fun NavHeader() {
 }
 
 @Composable
-private fun SideMenu(menuState: SideMenuState, close: () -> Unit, onAnimationEnd: () -> Unit) {
+private fun NavHeaderMenuItems() {
+    val currentPath = rememberPageContext().route.path
+    NAV_ITEMS.forEach { (path, text) ->
+        val isActive = if (path == "/") currentPath == "/" else currentPath.startsWith(path)
+        Link(
+            path,
+            text,
+            Modifier
+                .fontWeight(if (isActive) FontWeight.SemiBold else FontWeight.Normal)
+                .color(if (isActive) SiteColors.primary else SiteColors.onBackground)
+                .padding(bottom = 0.2.cssRem)
+                // Transparent when inactive so switching pages doesn't shift the items
+                .borderBottom(2.px, LineStyle.Solid, if (isActive) SiteColors.primary else Colors.Transparent),
+            variant = UndecoratedLinkVariant.then(UncoloredLinkVariant),
+        )
+    }
+}
+
+@Composable
+private fun NavHeaderGitHubButton() {
+    IconButton(onClick = { window.open(GITHUB_URL, "_blank", "noopener") }) {
+        FaGithub()
+    }
+}
+
+@Composable
+private fun NavHeaderColorModeButton() {
+    var colorMode by ColorMode.currentState
+    IconButton(onClick = { colorMode = colorMode.opposite }) {
+        MoonIcon(LightModeOnlyStyle.toModifier())
+        SunIcon(DarkModeOnlyStyle.toModifier())
+    }
+}
+
+@Composable
+private fun NavHeaderSideMenu(menuState: SideMenuState, close: () -> Unit, onAnimationEnd: () -> Unit) {
     Overlay(
         Modifier
             .setVariable(OverlayVars.BackgroundColor, Colors.Transparent)
             .onClick { close() }
     ) {
-        key(menuState) { // Force recompute animation parameters when close button is clicked
+        key(menuState) {
             Column(
                 Modifier
                     .fillMaxHeight()
                     .width(clamp(8.cssRem, 33.percent, 10.cssRem))
                     .align(Alignment.CenterEnd)
-                    // Close button will appear roughly over the hamburger button, so the user can close
-                    // things without moving their finger / cursor much.
                     .padding(top = 1.cssRem, leftRight = 1.cssRem)
                     .gap(1.5.cssRem)
-                    .backgroundColor(ColorMode.current.toSitePalette().nearBackground)
+                    .backgroundColor(SiteColors.backgroundAlt)
                     .animation(
                         SideMenuSlideInAnim.toAnimation(
                             duration = 200.ms,
@@ -166,12 +192,12 @@ private fun SideMenu(menuState: SideMenuState, close: () -> Unit, onAnimationEnd
                     .onAnimationEnd { onAnimationEnd() },
                 horizontalAlignment = Alignment.End
             ) {
-                CloseButton(onClick = { close() })
+                IconButton(onClick = close) { CloseIcon() }
                 Column(
                     Modifier.padding(right = 0.75.cssRem).gap(1.5.cssRem).fontSize(1.4.cssRem),
                     horizontalAlignment = Alignment.End
                 ) {
-                    MenuItems()
+                    NavHeaderMenuItems()
                 }
             }
         }
