@@ -41,7 +41,7 @@ fun HomePage() {
         setReleaseState(if (release != null) ReleaseState.Loaded(release) else ReleaseState.Unavailable)
     }
 
-    Column(Modifier.fillMaxWidth().gap(6.cssRem)) {
+    Column(Modifier.fillMaxWidth().gap(4.cssRem)) {
         HeroSection(platform)
         FeaturesSection()
         DownloadSection(releaseState, platform)

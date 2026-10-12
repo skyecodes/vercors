@@ -2,8 +2,9 @@ package app.vercors.website.components.sections
 
 import androidx.compose.runtime.Composable
 import app.vercors.website.*
+import app.vercors.website.components.widgets.LiveDemo
 import app.vercors.website.components.widgets.Logo
-import app.vercors.website.components.widgets.Screenshot
+import app.vercors.website.components.widgets.liveDemosEnabled
 import app.vercors.website.data.Platform
 import com.varabyte.kobweb.compose.css.TextAlign
 import com.varabyte.kobweb.compose.foundation.layout.Column
@@ -13,7 +14,10 @@ import com.varabyte.kobweb.compose.ui.modifiers.*
 import com.varabyte.kobweb.compose.ui.toAttrs
 import com.varabyte.kobweb.silk.components.forms.Button
 import com.varabyte.kobweb.silk.components.icons.fa.FaDownload
+import com.varabyte.kobweb.silk.components.icons.fa.FaWandMagicSparkles
 import com.varabyte.kobweb.silk.components.text.SpanText
+import com.varabyte.kobweb.silk.style.breakpoint.Breakpoint
+import com.varabyte.kobweb.silk.style.breakpoint.displayIfAtLeast
 import com.varabyte.kobweb.silk.style.toModifier
 import kotlinx.browser.document
 import org.jetbrains.compose.web.css.cssRem
@@ -38,11 +42,44 @@ fun HeroSection(platform: Platform) {
             SpanText("Install mods and modpacks from CurseForge and Modrinth, keep all your instances organized, from a fast and modern app.")
         }
         HeroDownloadButton(platform)
-        Screenshot(
+        LiveDemo(
             "home",
             "$SITE_NAME home screen",
-            Modifier.margin(top = 1.cssRem).width(100.percent).maxWidth(64.cssRem),
+            Modifier.margin(top = 1.cssRem, bottom = 1.cssRem).width(100.percent)
         )
+        Column(
+            Modifier.fillMaxWidth().gap(0.25.cssRem).displayIfAtLeast(Breakpoint.MD),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            P {
+                if (liveDemosEnabled) {
+                    FaWandMagicSparkles(Modifier.margin(right = 0.5.cssRem))
+                    SpanText(
+                        "The screenshots can be interacted with. Try hovering over the screenshots!",
+                        Modifier.color(SiteColors.subtext)
+                    )
+                } else {
+                    SpanText(
+                        "If interactions are enabled, the screenshots can be interacted with.",
+                        Modifier.color(SiteColors.subtext)
+                    )
+                }
+            }
+            HeroLiveDemoToggleButton()
+        }
+    }
+}
+
+// Demos only run from the MD breakpoint, below it the page always shows screenshots
+@Composable
+private fun HeroLiveDemoToggleButton() {
+    val enabled = liveDemosEnabled
+    Button(
+        onClick = { liveDemosEnabled = !enabled },
+        Modifier.padding(leftRight = 1.25.cssRem),
+    ) {
+        if (!enabled) FaWandMagicSparkles(Modifier.margin(right = 0.5.cssRem))
+        SpanText(if (enabled) "Disable interactions" else "Enable interactions")
     }
 }
 

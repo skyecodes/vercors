@@ -4,8 +4,6 @@ import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.ContextMenuArea
-import androidx.compose.foundation.ContextMenuItem
 import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
@@ -154,7 +152,7 @@ private fun instanceContextMenuItems(
     onOpenProjectClick: (InstanceId, String, String) -> Unit,
     onCopyClick: (InstanceId, String) -> Unit,
     onDeleteClick: (InstanceId) -> Unit,
-): () -> List<ContextMenuItem> {
+): () -> List<AppContextMenuItem> {
     val launchLabel = stringResource(InstanceRes.string.launch)
     val openDetailsLabel = stringResource(SharedRes.string.openDetails)
     val openInstanceFolderLabel = stringResource(InstanceRes.string.openInstanceFolder)
@@ -217,7 +215,7 @@ fun BriefInstanceCardLayout(
     interactionSource: MutableInteractionSource? = null,
     onCardClick: (() -> Unit)? = null,
     forceShowAction: Boolean = false,
-    contextMenuItems: () -> List<ContextMenuItem> = { emptyList() },
+    contextMenuItems: () -> List<AppContextMenuItem> = { emptyList() },
     icon: @Composable context(SharedElementTransitionScope) ColumnScope.() -> Unit,
     title: @Composable context(SharedElementTransitionScope) ColumnScope.() -> Unit,
     type: @Composable context(SharedElementTransitionScope) ColumnScope.() -> Unit,
@@ -225,7 +223,7 @@ fun BriefInstanceCardLayout(
     actionArea: @Composable () -> Unit,
 ) {
     val hovered: Boolean by interactionSource?.collectIsHoveredAsState() ?: remember { mutableStateOf(false) }
-    ContextMenuArea(items = contextMenuItems) {
+    AppContextMenuArea(items = contextMenuItems) {
         Column(
             modifier = modifier.appCard(
                 interactionSource = interactionSource,

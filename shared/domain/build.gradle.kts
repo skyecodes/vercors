@@ -1,5 +1,6 @@
 plugins {
     id("app.vercors.shared")
+    id("app.vercors.web")
     id("app.vercors.di")
 }
 

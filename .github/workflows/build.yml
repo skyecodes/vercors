@@ -44,7 +44,7 @@ jobs:
 
       - name: Build
         shell: bash
-        run: ./gradlew ${{ matrix.tasks }} --continue --stacktrace --no-daemon -Dorg.gradle.jvmargs="-Xmx6G -Dfile.encoding=UTF-8"
+        run: ./gradlew ${{ matrix.tasks }} --continue --stacktrace --no-daemon
 
       # Only main's caches are visible to other refs: a PR or tag save would just evict them
       - uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6

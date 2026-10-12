@@ -89,7 +89,16 @@ kobweb {
 // Screenshots and the logo are copied from the root public/ folder instead of being duplicated in git.
 // They go into a resource source dir, not jsProcessResources: kobweb export only reads public/ from source dirs.
 val syncSharedResources = tasks.register<Sync>("syncSharedResources") {
+    group = "build"
+    description =
+        "Copies the shared screenshots, favicons and the launcher demo bundle into the site's public/ resources."
     into(layout.buildDirectory.dir("generated/sharedResources"))
+    dependsOn(":app:launcher-gui:demo:jsBrowserDistribution")
+    from(rootProject.layout.projectDirectory.dir("app/launcher-gui/demo/build/dist/js/productionExecutable")) {
+        // The standalone dev page, source maps, and skiko's unbundled copies (the bundle loads the hashed .wasm)
+        exclude("index.html", "*.map", "*.mjs", "skiko.wasm")
+        into("public/demo")
+    }
     from(rootProject.file("public/screenshots")) {
         into("public/screenshots")
     }

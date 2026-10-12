@@ -16,6 +16,7 @@ import app.vercors.core.ui.theme.colors
 import app.vercors.core.ui.theme.surface2
 import com.composeunstyled.*
 import com.composeunstyled.theme.Theme
+import kotlin.jvm.JvmInline
 
 @Composable
 fun AppTooltip(

@@ -2,6 +2,7 @@ package app.vercors.feature
 
 plugins {
     id("app.vercors.base")
+    id("app.vercors.web")
 }
 
 kotlin {

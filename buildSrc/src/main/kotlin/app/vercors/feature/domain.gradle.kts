@@ -5,6 +5,7 @@ import org.gradle.accessors.dm.LibrariesForLibs
 plugins {
     id("app.vercors.shared")
     id("app.vercors.di")
+    id("app.vercors.web")
 }
 
 val libs = the<LibrariesForLibs>()

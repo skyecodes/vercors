@@ -4,7 +4,7 @@ import androidx.compose.runtime.Composable
 import app.vercors.website.CardStyle
 import app.vercors.website.SectionTitleStyle
 import app.vercors.website.SiteColors
-import app.vercors.website.components.widgets.Screenshot
+import app.vercors.website.components.widgets.LiveDemo
 import com.varabyte.kobweb.compose.css.FontWeight
 import com.varabyte.kobweb.compose.foundation.layout.Column
 import com.varabyte.kobweb.compose.ui.Alignment
@@ -100,7 +100,7 @@ private fun FeaturesShowcaseRow(showcase: Showcase, reversed: Boolean) {
             H2(Modifier.margin(0.cssRem).fontSize(1.75.cssRem).toAttrs()) { SpanText(showcase.title) }
             SpanText(showcase.description, Modifier.color(SiteColors.subtext))
         }
-        Screenshot(showcase.screenshot, showcase.title, Modifier.flex(2).minWidth(0.cssRem))
+        LiveDemo(showcase.screenshot, showcase.title, Modifier.flex(2).minWidth(0.cssRem))
     }
 }
 

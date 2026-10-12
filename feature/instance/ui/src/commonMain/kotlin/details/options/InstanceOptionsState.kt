@@ -8,6 +8,7 @@ import app.vercors.feature.instance.ui.details.InstanceView
 import app.vercors.shared.domain.model.JavaInstallation
 import app.vercors.shared.domain.model.JvmMemoryOptions
 import app.vercors.shared.domain.model.NativeLibraryOptions
+import kotlin.jvm.JvmInline
 
 @Immutable
 data class InstanceOptionsState(

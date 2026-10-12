@@ -37,6 +37,8 @@ plugins {
 include(":app:launcher-cli")
 include(":app:launcher-cli:graalvm")
 include(":app:launcher-gui")
+include(":app:launcher-gui:demo")
+include(":app:launcher-gui:shell")
 include(":app:meta")
 include(":app:meta:distribution")
 

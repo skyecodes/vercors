@@ -6,16 +6,17 @@ import app.vercors.feature.home.domain.model.HomeSectionType
 import app.vercors.feature.instance.domain.model.InstanceId
 import app.vercors.feature.instance.ui.BriefInstanceView
 import app.vercors.feature.instance.ui.copy.CopyInstanceDialog
-import app.vercors.feature.instance.ui.create.CreateInstanceDialog
+import app.vercors.feature.instance.ui.create.CreateInstanceResult
 import app.vercors.feature.project.ui.BriefProjectView
 import app.vercors.feature.project.ui.install.ProjectInstallTarget
+import app.vercors.shared.ui.overlay.DialogOverlay
 import opensavvy.state.progressive.ProgressiveOutcome
 
 @Immutable
 data class HomeState(
     val sections: List<Section<*>>,
     val promptCreateInstance: Boolean,
-    val createInstanceDialog: CreateInstanceDialog,
+    val createInstanceDialog: DialogOverlay<CreateInstanceResult>,
     val installTarget: ProjectInstallTarget?,
     val pendingDeleteInstanceId: InstanceId?,
     val copyInstanceDialog: CopyInstanceDialog?,

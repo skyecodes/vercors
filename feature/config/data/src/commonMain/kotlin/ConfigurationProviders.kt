@@ -1,4 +1,4 @@
-package app.vercors.feature.config.domain
+package app.vercors.feature.config.data
 
 import app.vercors.core.domain.AppConstants
 import app.vercors.feature.config.domain.model.Configuration
@@ -12,7 +12,7 @@ import kotlin.time.Duration
 
 @ContributesTo(AppScope::class)
 @BindingContainer
-object ConfigurationDomainProviders {
+object ConfigurationProviders {
     @Provides
     fun provideConfiguration(observeConfiguration: ObserveConfigurationUseCase): Configuration =
         runBlocking { observeConfiguration().now().mapFailure { error("Unable to load configuration: $it") }.value }
