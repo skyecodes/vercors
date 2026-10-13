@@ -95,6 +95,11 @@ fun Route.projectRoutes(service: ProjectService, json: Json) {
         respond(result)
     }
 
+    routeWithRaise(PlatformFiles.lookup) {
+        val platformId = idOf(Platforms.PlatformId)
+        respond(service.findFilesByHashes(platformId, body))
+    }
+
     routeWithRaise(ProjectFiles.FileId.download) {
         val platformId = idOf(Platforms.PlatformId)
         val projectId = idOf(Projects.ProjectId)

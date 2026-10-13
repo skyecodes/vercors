@@ -57,6 +57,12 @@ fun InstanceList(
             }
         }
 
+        state.exportInstanceDialog?.let { dialog ->
+            OverlayEffect(dialog) {
+                eventSink(InstanceListEvent.OnExportInstanceResult(show(dialog)))
+            }
+        }
+
         Column(
             modifier = modifier.padding(8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -94,6 +100,9 @@ fun InstanceList(
                                         name
                                     )
                                 )
+                            },
+                            onExportClick = { instanceId, name ->
+                                eventSink(InstanceListEvent.OnExportInstanceClick(instanceId, name))
                             },
                             onDeleteClick = { eventSink(InstanceListEvent.OnDeleteInstanceClick(it)) },
                             modifier = Modifier.fillMaxWidth().height(150.dp).appAnimateItem(),

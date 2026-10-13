@@ -3,6 +3,7 @@ package app.vercors.feature.project.backend.modrinth
 import app.vercors.feature.project.api.dto.*
 import app.vercors.feature.project.backend.PlatformInfo
 import app.vercors.feature.project.backend.PlatformServiceBase
+import app.vercors.feature.project.backend.modrinth.dto.ModrinthVersionFilesRequest
 import app.vercors.shared.api.dto.InvalidParameterData
 import app.vercors.shared.backend.bindResponse
 import arrow.core.raise.context.Raise
@@ -107,6 +108,12 @@ class ModrinthService(
     override suspend fun getFiles(fileIds: List<String>): List<ProjectFileData> =
         api.getVersionsByIds(fileIds.joinToString(",", "[", "]") { "\"$it\"" }).bindResponse()
             .mapNotNull { it.convert() }
+
+    context(_: Raise<PlatformErrorData>)
+    override suspend fun findFilesByHashes(hashes: List<FileHashesData>): List<ProjectFileMatchData> =
+        api.getVersionsByHashes(ModrinthVersionFilesRequest(hashes = hashes.map { it.sha1 }, algorithm = "sha1"))
+            .bindResponse()
+            .mapNotNull { (sha1, version) -> version.convertMatch(sha1) }
 
     private fun noFiles(fileId: String): PlatformErrorData =
         PlatformErrorData("NoFiles", "Version $fileId has no files")

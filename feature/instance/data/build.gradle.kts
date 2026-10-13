@@ -11,4 +11,5 @@ dependencies {
     commonMainImplementation(projects.core.nbt)
     commonMainImplementation(libs.kzip)
     commonMainImplementation(libs.ktoml.core)
+    jvmTestImplementation(libs.cryptography.provider.optimal)
 }

@@ -13,6 +13,8 @@ import app.vercors.feature.instance.ui.copy.CopyInstanceTarget
 import app.vercors.feature.instance.ui.create.CreateInstanceDialog
 import app.vercors.feature.instance.ui.create.CreateInstanceResult
 import app.vercors.feature.instance.ui.details.InstanceDetailsScreen
+import app.vercors.feature.instance.ui.export.ExportInstanceDialog
+import app.vercors.feature.instance.ui.export.ExportInstanceTarget
 import app.vercors.feature.instance.ui.toBriefView
 import app.vercors.feature.project.domain.model.ProjectType
 import app.vercors.feature.project.domain.model.from
@@ -36,6 +38,7 @@ class InstanceListPresenter(
     private val observeInstanceList: ObserveInstanceListUseCase,
     private val createInstanceDialog: CreateInstanceDialog,
     private val copyInstanceDialogFactory: CopyInstanceDialog.Factory,
+    private val exportInstanceDialogFactory: ExportInstanceDialog.Factory,
     private val instanceActions: InstanceActions,
 ) : Presenter<InstanceListState, InstanceListEvent> {
     @Composable
@@ -48,6 +51,7 @@ class InstanceListPresenter(
         val (promptCreateInstance, setPromptCreateInstance) = remember { mutableStateOf(false) }
         val (pendingDeleteInstanceId, setPendingDeleteInstanceId) = remember { mutableStateOf<InstanceId?>(null) }
         val (copyInstanceDialog, setCopyInstanceDialog) = remember { mutableStateOf<CopyInstanceDialog?>(null) }
+        val (exportInstanceDialog, setExportInstanceDialog) = remember { mutableStateOf<ExportInstanceDialog?>(null) }
         return InstanceListState(
             instances = instances,
             nameFilter = nameFilter,
@@ -58,6 +62,7 @@ class InstanceListPresenter(
             createInstanceDialog = createInstanceDialog,
             pendingDeleteInstanceId = pendingDeleteInstanceId,
             copyInstanceDialog = copyInstanceDialog,
+            exportInstanceDialog = exportInstanceDialog,
         ) + { event ->
             handleEvent(
                 event = event,
@@ -69,6 +74,7 @@ class InstanceListPresenter(
                 pendingDeleteInstanceId = pendingDeleteInstanceId,
                 setPendingDeleteInstanceId = setPendingDeleteInstanceId,
                 setCopyInstanceDialog = setCopyInstanceDialog,
+                setExportInstanceDialog = setExportInstanceDialog,
             )
         }
     }
@@ -83,6 +89,7 @@ class InstanceListPresenter(
         pendingDeleteInstanceId: InstanceId?,
         setPendingDeleteInstanceId: (InstanceId?) -> Unit,
         setCopyInstanceDialog: (CopyInstanceDialog?) -> Unit,
+        setExportInstanceDialog: (ExportInstanceDialog?) -> Unit,
     ) {
         when (event) {
             InstanceListEvent.OnCreateInstanceClick -> setPromptCreateInstance(true)
@@ -134,6 +141,18 @@ class InstanceListPresenter(
                 setCopyInstanceDialog(null)
                 if (event.result is CopyInstanceResult.Copied) navigator.goTo(InstanceDetailsScreen(event.result.instanceId))
             }
+
+            is InstanceListEvent.OnExportInstanceClick ->
+                setExportInstanceDialog(
+                    exportInstanceDialogFactory.create(
+                        ExportInstanceTarget(
+                            event.instanceId,
+                            event.name
+                        )
+                    )
+                )
+
+            is InstanceListEvent.OnExportInstanceResult -> setExportInstanceDialog(null)
         }
     }
 

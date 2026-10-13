@@ -1,7 +1,10 @@
 package app.vercors.feature.instance.data.repository
 
-import app.vercors.feature.game.domain.model.ModLoaderType
+import app.vercors.feature.instance.data.PRISM_MINECRAFT_UID
 import app.vercors.feature.instance.data.dto.MmcPack
+import app.vercors.feature.instance.data.parseInstanceCfg
+import app.vercors.feature.instance.data.toManagedPackPlatformIdOrNull
+import app.vercors.feature.instance.data.toPrismModLoaderTypeOrNull
 import app.vercors.feature.instance.domain.model.InstanceModpackInfo
 import app.vercors.feature.instance.domain.model.localimport.LocalImportError
 import app.vercors.feature.instance.domain.model.localimport.PrismInstanceInfo
@@ -50,9 +53,10 @@ class PrismInstanceImportRepositoryImpl(
                     zip.entry(Path("${rootPrefix}mmc-pack.json")) { readToBytes() }.decodeToString()
                 )
                 val components = mmcPack.components.associateBy { it.uid }
-                val gameVersion = components["net.minecraft"]?.version ?: raise(LocalImportError.ParseFailed)
+                val gameVersion = components[PRISM_MINECRAFT_UID]?.version ?: raise(LocalImportError.ParseFailed)
                 val (loaderType, loaderVersion) = components.entries.firstNotNullOfOrNull { (uid, component) ->
-                    uid.toModLoaderTypeOrNull()?.let { type -> component.version?.let { version -> type to version } }
+                    uid.toPrismModLoaderTypeOrNull()
+                        ?.let { type -> component.version?.let { version -> type to version } }
                 } ?: (null to null)
                 val iconEntryPath = cfg["iconKey"]?.let { findIconEntryPath(zip, rootPrefix, it) }
                 val modpackInfo = detectManagedPackInfo(cfg)
@@ -141,29 +145,6 @@ class PrismInstanceImportRepositoryImpl(
             targetPath.toString()
         }
     }
-}
-
-private fun parseInstanceCfg(text: String): Map<String, String> = text.lineSequence()
-    .map { it.trim() }
-    .filter { it.isNotBlank() && !it.startsWith("#") }
-    .mapNotNull { line ->
-        val idx = line.indexOf('=')
-        if (idx < 0) null else line.substring(0, idx).trim() to line.substring(idx + 1).trim()
-    }
-    .toMap()
-
-private fun String.toModLoaderTypeOrNull(): ModLoaderType? = when (this) {
-    "net.minecraftforge" -> ModLoaderType.Forge
-    "net.neoforged" -> ModLoaderType.NeoForge
-    "net.fabricmc.fabric-loader" -> ModLoaderType.Fabric
-    "org.quiltmc.quilt-loader" -> ModLoaderType.Quilt
-    else -> null
-}
-
-private fun String.toManagedPackPlatformIdOrNull(): String? = when (this) {
-    "flame" -> "curseforge"
-    "modrinth" -> "modrinth"
-    else -> null
 }
 
 private fun detectManagedPackInfo(cfg: Map<String, String>): InstanceModpackInfo? {

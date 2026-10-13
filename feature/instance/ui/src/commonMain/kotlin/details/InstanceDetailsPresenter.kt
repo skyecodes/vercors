@@ -24,6 +24,8 @@ import app.vercors.feature.instance.ui.details.logs.InstanceLogsPresenter
 import app.vercors.feature.instance.ui.details.options.InstanceOptionsPresenter
 import app.vercors.feature.instance.ui.details.servers.InstanceServersPresenter
 import app.vercors.feature.instance.ui.details.worlds.InstalledWorldsPresenter
+import app.vercors.feature.instance.ui.export.ExportInstanceDialog
+import app.vercors.feature.instance.ui.export.ExportInstanceTarget
 import app.vercors.feature.instance.ui.install.FinishInstallationDialog
 import app.vercors.feature.instance.ui.install.notifyModpackInstallResult
 import app.vercors.feature.instance.ui.list.InstanceListScreen
@@ -105,6 +107,7 @@ class InstanceDetailsPresenter(
     private val setInstanceIconFromUrl: SetInstanceIconFromUrlUseCase,
     private val openInstanceFolder: OpenInstanceFolderUseCase,
     private val copyInstanceDialogFactory: CopyInstanceDialog.Factory,
+    private val exportInstanceDialogFactory: ExportInstanceDialog.Factory,
 ) : Presenter<InstanceDetailsState, InstanceDetailsEvent> {
     @Composable
     override fun present(): Store<InstanceDetailsState, InstanceDetailsEvent> {
@@ -137,6 +140,7 @@ class InstanceDetailsPresenter(
 
         val (promptDeleteConfirmation, setPromptDeleteConfirmation) = remember { mutableStateOf(false) }
         val (copyInstanceDialog, setCopyInstanceDialog) = remember { mutableStateOf<CopyInstanceDialog?>(null) }
+        val (exportInstanceDialog, setExportInstanceDialog) = remember { mutableStateOf<ExportInstanceDialog?>(null) }
         val (promptFinishInstallation, setPromptFinishInstallation) = remember { mutableStateOf(false) }
         val manualDownloadItems = produceAndCollectAsRetainedState(screen.instanceId, initial = emptyList()) {
             observeManualDownloadItems(screen.instanceId)
@@ -174,6 +178,7 @@ class InstanceDetailsPresenter(
             promptInstallJava = promptInstallJava,
             promptDeleteConfirmation = promptDeleteConfirmation,
             copyInstanceDialog = copyInstanceDialog,
+            exportInstanceDialog = exportInstanceDialog,
             selectedTab = selectedTab,
             horizontalTabs = horizontalTabs,
             optionsContent = optionsContent,
@@ -194,6 +199,7 @@ class InstanceDetailsPresenter(
                 event = event,
                 setPromptDeleteConfirmation = setPromptDeleteConfirmation,
                 setCopyInstanceDialog = setCopyInstanceDialog,
+                setExportInstanceDialog = setExportInstanceDialog,
                 setSelectedTab = setSelectedTab,
                 currentInstance = currentInstance,
                 setPromptFinishInstallation = setPromptFinishInstallation,
@@ -217,6 +223,7 @@ class InstanceDetailsPresenter(
         event: InstanceDetailsEvent,
         setPromptDeleteConfirmation: (Boolean) -> Unit,
         setCopyInstanceDialog: (CopyInstanceDialog?) -> Unit,
+        setExportInstanceDialog: (ExportInstanceDialog?) -> Unit,
         setSelectedTab: (InstanceDetailsTab) -> Unit,
         currentInstance: InstanceView?,
         setPromptFinishInstallation: (Boolean) -> Unit,
@@ -286,6 +293,16 @@ class InstanceDetailsPresenter(
                 setCopyInstanceDialog(null)
                 if (event.result is CopyInstanceResult.Copied) navigator.goTo(InstanceDetailsScreen(event.result.instanceId))
             }
+            InstanceDetailsEvent.OnExportClick -> setExportInstanceDialog(
+                exportInstanceDialogFactory.create(
+                    ExportInstanceTarget(
+                        screen.instanceId,
+                        currentInstance?.name.orEmpty()
+                    )
+                )
+            )
+
+            is InstanceDetailsEvent.OnExportInstanceResult -> setExportInstanceDialog(null)
             InstanceDetailsEvent.OnCancelClick -> cancelInstance(screen.instanceId)
             InstanceDetailsEvent.OnCancelSetupClick -> cancelInstanceSetup(screen.instanceId)
             InstanceDetailsEvent.OnStopClick -> globalScope.launch { stopInstance(screen.instanceId) }

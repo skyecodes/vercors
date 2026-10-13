@@ -195,7 +195,7 @@ private fun ModpackInstanceForm() {
 @Composable
 context(eventSink: EventSink<CreateInstanceEvent>)
 private fun ImportInstanceForm(state: CreateInstanceState) {
-    val importPickerLauncher = rememberFilePickerLauncher(type = FileKitType.File("zip", "mrpack")) { file ->
+    val importPickerLauncher = rememberFilePickerLauncher(type = FileKitType.File("zip", "mrpack", "vcpack")) { file ->
         file?.let { eventSink(CreateInstanceEvent.OnImportFileSelected(it.path)) }
     }
 

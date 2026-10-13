@@ -116,10 +116,20 @@ internal fun ProjectFileData.toDomain(platform: PlatformId): ProjectFile = Proje
     size = size,
     sha1 = sha1,
     md5 = md5,
+    sha512 = sha512,
+    downloadUrl = downloadUrl,
     publishedAt = publishedAt,
     dependencies = dependencies.map { it.projectId from platform },
     manualDownloadUrl = manualDownloadUrl,
     type = type?.toDomain()
+)
+
+internal fun FileHashes.toData(): FileHashesData = FileHashesData(sha1 = sha1, fingerprint = curseForgeFingerprint)
+
+internal fun ProjectFileMatchData.toDomain(platform: PlatformId): ProjectFileMatch = ProjectFileMatch(
+    sha1 = sha1,
+    projectId = projectId from platform,
+    file = file.toDomain(platform)
 )
 
 internal fun ProjectReleaseChannelData.toDomain(): ProjectReleaseChannel = when (this) {

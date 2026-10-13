@@ -19,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.unit.Dp
@@ -44,6 +45,7 @@ fun AppCheckbox(
     checkedBackgroundColor: Color = Theme[colors][primary],
     contentColor: Color = Theme[colors][onPrimary],
     checkboxSize: Dp = 24.dp,
+    labelIcon: ImageVector? = null,
     onCheckedChange: (Boolean) -> Unit
 ) {
     val interactionSource = remember { MutableInteractionSource() }
@@ -59,7 +61,7 @@ fun AppCheckbox(
     ) {
         val backgroundColor by appAnimateColorAsState(if (checked) checkedBackgroundColor else uncheckedBackgroundColor)
 
-        if (label != null && !invert) AppText(label)
+        if (label != null && !invert) AppCheckboxLabel(label, labelIcon)
         UnstyledCheckbox(
             checked = checked,
             onCheckedChange = onCheckedChange,
@@ -76,7 +78,19 @@ fun AppCheckbox(
                 contentColor = contentColor
             )
         }
-        if (label != null && invert) AppText(label)
+        if (label != null && invert) AppCheckboxLabel(label, labelIcon)
+    }
+}
+
+@Composable
+private fun AppCheckboxLabel(label: String, icon: ImageVector?) {
+    if (icon == null) {
+        AppText(label)
+        return
+    }
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        AppIcon(imageVector = icon, contentDescription = null, modifier = Modifier.size(16.dp))
+        AppText(label)
     }
 }
 

@@ -6,14 +6,16 @@ import app.vercors.feature.instance.domain.model.InstanceId
 import app.vercors.feature.instance.domain.model.InstanceInstallStage
 import app.vercors.feature.instance.domain.model.InstanceModpackInfo
 import app.vercors.feature.instance.domain.model.InstanceStatus
-import app.vercors.feature.instance.domain.usecase.RecordInstalledContentOriginUseCase
 import app.vercors.feature.instance.domain.usecase.UpdateInstanceStatusUseCase
 import app.vercors.feature.instance.domain.usecase.UpdateInstanceUseCase
-import app.vercors.feature.project.domain.model.*
+import app.vercors.feature.project.domain.model.ManualDownloadCandidate
+import app.vercors.feature.project.domain.model.ManualDownloadError
+import app.vercors.feature.project.domain.model.ProjectId
 import app.vercors.feature.project.domain.model.modpack.InstalledModpackFile
 import app.vercors.feature.project.domain.model.modpack.ModpackInstallError
 import app.vercors.feature.project.domain.model.modpack.ModpackManifest
 import app.vercors.feature.project.domain.model.modpack.ModpackResolutionError
+import app.vercors.feature.project.domain.model.toProjectType
 import arrow.core.raise.context.either
 import arrow.core.raise.recover
 import dev.zacsweers.metro.Inject
@@ -29,7 +31,7 @@ class RunModpackInstallUseCase(
     private val installModpackFiles: InstallModpackFilesUseCase,
     private val runManualDownloads: RunManualDownloadsUseCase,
     private val trackPendingManualDownloads: TrackPendingManualDownloadsUseCase,
-    private val recordInstalledContentOrigin: RecordInstalledContentOriginUseCase,
+    private val recordModpackFileOrigins: RecordModpackFileOriginsUseCase,
     private val updateInstance: UpdateInstanceUseCase,
     private val updateInstanceStatus: UpdateInstanceStatusUseCase
 ) {
@@ -47,7 +49,7 @@ class RunModpackInstallUseCase(
         val resolvedManifest = resolveManifestFilesOrNull(manifest, instanceId) ?: return false
         persistInstallStage(instanceId, InstanceInstallStage.DownloadingFiles)
         val installedFiles = installFilesOrNull(resolvedManifest, instanceId) ?: return false
-        recordOrigins(instanceId, resolvedManifest.platformId, installedFiles)
+        recordModpackFileOrigins(instanceId, resolvedManifest.platformId, installedFiles)
         persistInstallStage(instanceId, null)
         return awaitManualDownloads(resolvedManifest, instanceId, onManualDownloadError)
     }
@@ -97,26 +99,6 @@ class RunModpackInstallUseCase(
             updateInstanceStatus(instanceId, InstanceStatus.Failed.InstallFailed)
             null
         }
-
-    private suspend fun recordOrigins(
-        instanceId: InstanceId,
-        platformId: String,
-        installedFiles: List<InstalledModpackFile>
-    ) {
-        for (installedFile in installedFiles) {
-            val kind = installedFile.kind.toContentKindOrNull() ?: continue
-            val providerProjectId = installedFile.providerProjectId ?: continue
-            val providerFileId = installedFile.providerFileId ?: continue
-            recordInstalledContentOrigin(
-                kind,
-                instanceId,
-                installedFile.fileName,
-                platformId,
-                providerProjectId,
-                providerFileId
-            )
-        }
-    }
 
     private suspend fun awaitManualDownloads(
         resolvedManifest: ModpackManifest,

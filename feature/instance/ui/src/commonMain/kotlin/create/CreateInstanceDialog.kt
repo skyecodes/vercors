@@ -8,8 +8,7 @@ import app.vercors.feature.game.domain.usecase.ObserveGameVersionListUseCase
 import app.vercors.feature.game.domain.usecase.ObserveLoaderVersionsUseCase
 import app.vercors.feature.instance.domain.model.InstanceId
 import app.vercors.feature.instance.domain.usecase.*
-import app.vercors.feature.project.domain.usecase.InstallModpackFilesUseCase
-import app.vercors.feature.project.domain.usecase.ParseLocalModpackUseCase
+import app.vercors.feature.project.domain.usecase.*
 import app.vercors.shared.ui.SnackbarService
 import app.vercors.shared.ui.overlay.DialogOverlay
 import com.slack.circuit.overlay.OverlayNavigator
@@ -35,6 +34,9 @@ class CreateInstanceDialog(
     private val importPrismInstanceFiles: ImportPrismInstanceFilesUseCase,
     private val parseLocalModpack: ParseLocalModpackUseCase,
     private val installModpackFiles: InstallModpackFilesUseCase,
+    private val parseVercorsPack: ParseVercorsPackUseCase,
+    private val extractVercorsPackIcon: ExtractVercorsPackIconUseCase,
+    private val recordModpackFileOrigins: RecordModpackFileOriginsUseCase,
     private val setInstanceIcon: SetInstanceIconUseCase,
     private val updateInstanceStatus: UpdateInstanceStatusUseCase,
     private val updateInstanceJob: UpdateInstanceJobUseCase,
@@ -60,6 +62,9 @@ class CreateInstanceDialog(
                 importPrismInstanceFiles = importPrismInstanceFiles,
                 parseLocalModpack = parseLocalModpack,
                 installModpackFiles = installModpackFiles,
+                parseVercorsPack = parseVercorsPack,
+                extractVercorsPackIcon = extractVercorsPackIcon,
+                recordModpackFileOrigins = recordModpackFileOrigins,
                 setInstanceIcon = setInstanceIcon,
                 updateInstanceStatus = updateInstanceStatus,
                 updateInstanceJob = updateInstanceJob,

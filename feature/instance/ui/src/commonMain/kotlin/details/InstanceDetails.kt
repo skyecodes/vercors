@@ -85,6 +85,12 @@ fun InstanceDetails(
             }
         }
 
+        state.exportInstanceDialog?.let { dialog ->
+            OverlayEffect(dialog) {
+                eventSink(InstanceDetailsEvent.OnExportInstanceResult(show(dialog)))
+            }
+        }
+
         InstalledContentRemoveConfirmEffect(state.modsContent)
         InstalledContentRemoveConfirmEffect(state.resourcePacksContent)
         InstalledContentRemoveConfirmEffect(state.shaderPacksContent)
@@ -557,6 +563,11 @@ private fun InstanceHeaderMenu(instance: InstanceView) {
                 onClick = { eventSink(InstanceDetailsEvent.OnCopyClick) },
                 text = stringResource(InstanceRes.string.copyInstance),
                 imageVector = Lucide.Copy
+            )
+            AppMenuItem(
+                onClick = { eventSink(InstanceDetailsEvent.OnExportClick) },
+                text = stringResource(InstanceRes.string.exportInstance),
+                imageVector = Lucide.Share
             )
         }
         AppMenuItem(

@@ -48,6 +48,7 @@ fun BriefInstanceCard(
     onOpenInstanceFolderClick: (InstanceId) -> Unit,
     onOpenProjectClick: (InstanceId, String, String) -> Unit,
     onCopyClick: (InstanceId, String) -> Unit,
+    onExportClick: (InstanceId, String) -> Unit,
     onDeleteClick: (InstanceId) -> Unit,
     modifier: Modifier,
     origin: InstanceSharedElementOrigin
@@ -68,6 +69,7 @@ fun BriefInstanceCard(
                 onOpenInstanceFolderClick = onOpenInstanceFolderClick,
                 onOpenProjectClick = onOpenProjectClick,
                 onCopyClick = onCopyClick,
+                onExportClick = onExportClick,
                 onDeleteClick = onDeleteClick,
             ),
             icon = {
@@ -151,6 +153,7 @@ private fun instanceContextMenuItems(
     onOpenInstanceFolderClick: (InstanceId) -> Unit,
     onOpenProjectClick: (InstanceId, String, String) -> Unit,
     onCopyClick: (InstanceId, String) -> Unit,
+    onExportClick: (InstanceId, String) -> Unit,
     onDeleteClick: (InstanceId) -> Unit,
 ): () -> List<AppContextMenuItem> {
     val launchLabel = stringResource(InstanceRes.string.launch)
@@ -160,6 +163,7 @@ private fun instanceContextMenuItems(
         stringResource(InstanceRes.string.openProject, it.platformId.toPlatformDisplayName())
     }
     val copyLabel = stringResource(InstanceRes.string.copyInstance)
+    val exportLabel = stringResource(InstanceRes.string.exportInstance)
     val deleteLabel = stringResource(SharedRes.string.delete)
     val errorColor = Theme[colors][error]
     val successColor = Theme[colors][success]
@@ -196,6 +200,13 @@ private fun instanceContextMenuItems(
                     label = copyLabel,
                     imageVector = Lucide.Copy,
                     onClick = { onCopyClick(instance.id, instance.name) },
+                )
+            } else null,
+            if (instance.status is InstanceStatus.Idle || instance.status is InstanceStatus.Failed) {
+                AppContextMenuItem(
+                    label = exportLabel,
+                    imageVector = Lucide.Share,
+                    onClick = { onExportClick(instance.id, instance.name) },
                 )
             } else null,
             AppContextMenuItem(

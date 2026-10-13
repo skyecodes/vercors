@@ -1,7 +1,6 @@
 package app.vercors.core.ui.layout
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.*
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.Composable
@@ -19,22 +18,33 @@ fun AppDialog(
     onClickOutside: () -> Unit,
     content: @Composable BoxScope.() -> Unit
 ) {
+    val scrollState = rememberScrollState()
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.Black.copy(alpha = 0.5f))
             .pointerInput(onClickOutside) {
                 detectTapGestures(onTap = { onClickOutside() })
-            },
+            }
+            .padding(16.dp),
         contentAlignment = Alignment.Center
     ) {
         Box(
             modifier = modifier
                 .appCard()
-                .padding(16.dp)
                 .clickable(enabled = false) {}
         ) {
-            content()
+            Box(modifier = Modifier.verticalScroll(scrollState).padding(16.dp)) {
+                content()
+            }
+            if (scrollState.canScrollBackward || scrollState.canScrollForward) {
+                Box(modifier = Modifier.matchParentSize()) {
+                    VerticalScrollbar(
+                        adapter = rememberScrollbarAdapter(scrollState),
+                        modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight().padding(vertical = 8.dp)
+                    )
+                }
+            }
         }
     }
 }

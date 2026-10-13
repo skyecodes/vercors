@@ -7,6 +7,7 @@ import app.vercors.feature.instance.domain.model.InstanceId
 import app.vercors.feature.instance.ui.BriefInstanceView
 import app.vercors.feature.instance.ui.copy.CopyInstanceDialog
 import app.vercors.feature.instance.ui.create.CreateInstanceResult
+import app.vercors.feature.instance.ui.export.ExportInstanceDialog
 import app.vercors.feature.project.ui.BriefProjectView
 import app.vercors.feature.project.ui.install.ProjectInstallTarget
 import app.vercors.shared.ui.overlay.DialogOverlay
@@ -20,6 +21,7 @@ data class HomeState(
     val installTarget: ProjectInstallTarget?,
     val pendingDeleteInstanceId: InstanceId?,
     val copyInstanceDialog: CopyInstanceDialog?,
+    val exportInstanceDialog: ExportInstanceDialog?,
 ) {
     @Immutable
     sealed class Section<T>(

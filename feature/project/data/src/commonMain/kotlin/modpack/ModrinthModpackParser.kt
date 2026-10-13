@@ -1,6 +1,5 @@
 package app.vercors.feature.project.data.modpack
 
-import app.vercors.feature.game.domain.model.ModLoaderType
 import app.vercors.feature.project.data.dto.MrpackIndex
 import app.vercors.feature.project.domain.model.ProjectId
 import app.vercors.feature.project.domain.model.modpack.ModpackManifest
@@ -31,9 +30,9 @@ class ModrinthModpackParser(private val json: Json) : ModpackManifestParser {
     context(_: Raise<ModpackResolutionError>)
     override suspend fun parse(zipPath: Path, projectId: ProjectId, fileId: String): ModpackManifest {
         val index = readIndex(zipPath)
-        val gameVersion = index.dependencies["minecraft"] ?: raise(ModpackResolutionError.ParseFailed)
+        val gameVersion = index.dependencies[MRPACK_MINECRAFT_KEY] ?: raise(ModpackResolutionError.ParseFailed)
         val (loaderType, loaderVersion) = index.dependencies.firstNotNullOfOrNull { (key, version) ->
-            key.toModLoaderTypeOrNull()?.let { it to version }
+            key.toMrpackModLoaderTypeOrNull()?.let { it to version }
         } ?: (null to null)
 
         val files = index.files
@@ -89,11 +88,3 @@ class ModrinthModpackParser(private val json: Json) : ModpackManifestParser {
 
 private fun String.toModrinthCdnProviderIds(): Pair<String, String>? =
     MODRINTH_CDN_URL_REGEX.matchEntire(this)?.destructured?.let { (projectId, versionId) -> projectId to versionId }
-
-private fun String.toModLoaderTypeOrNull(): ModLoaderType? = when (this) {
-    "forge" -> ModLoaderType.Forge
-    "neoforge" -> ModLoaderType.NeoForge
-    "fabric-loader" -> ModLoaderType.Fabric
-    "quilt-loader" -> ModLoaderType.Quilt
-    else -> null
-}

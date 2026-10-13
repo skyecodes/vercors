@@ -16,6 +16,7 @@ class ProjectApiContractTest {
             ProjectFiles.FileId.get,
             ProjectFiles.FileId.download,
             PlatformFiles.list,
+            PlatformFiles.lookup,
         ).forEach(::assertNotNull)
     }
 }

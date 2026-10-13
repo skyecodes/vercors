@@ -2,9 +2,7 @@ package app.vercors.feature.project.backend.modrinth
 
 import app.vercors.feature.project.backend.PlatformResponse
 import app.vercors.feature.project.backend.modrinth.dto.*
-import de.jensklingenberg.ktorfit.http.GET
-import de.jensklingenberg.ktorfit.http.Path
-import de.jensklingenberg.ktorfit.http.Query
+import de.jensklingenberg.ktorfit.http.*
 
 interface ModrinthApi {
     @GET("v2/tag/project_type")
@@ -40,4 +38,10 @@ interface ModrinthApi {
 
     @GET("v2/versions")
     suspend fun getVersionsByIds(@Query("ids") ids: String): PlatformResponse<List<ModrinthVersion>>
+
+    @Headers("Content-Type: application/json")
+    @POST("v2/version_files")
+    suspend fun getVersionsByHashes(
+        @Body request: ModrinthVersionFilesRequest
+    ): PlatformResponse<Map<String, ModrinthVersion>>
 }
