@@ -48,6 +48,9 @@ interface PlatformServiceBase {
 
     context(_: Raise<PlatformErrorData>)
     suspend fun getFiles(fileIds: List<String>): List<ProjectFileData>
+
+    context(_: Raise<PlatformErrorData>)
+    suspend fun findFilesByHashes(hashes: List<FileHashesData>): List<ProjectFileMatchData> = emptyList()
 }
 
 data class PlatformInfo(

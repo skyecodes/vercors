@@ -104,4 +104,8 @@ class ProjectService(
     context(_: Raise<PlatformNotFoundData>, _: Raise<PlatformErrorData>)
     suspend fun getFiles(platformId: String, fileIds: List<String>): List<ProjectFileData> =
         getPlatformService(platformId).getFiles(fileIds)
+
+    context(_: Raise<PlatformNotFoundData>, _: Raise<PlatformErrorData>)
+    suspend fun findFilesByHashes(platformId: String, hashes: List<FileHashesData>): List<ProjectFileMatchData> =
+        getPlatformService(platformId).findFilesByHashes(hashes)
 }

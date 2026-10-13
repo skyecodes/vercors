@@ -13,6 +13,8 @@ data class ProjectFile(
     val size: Long,
     val sha1: String?,
     val md5: String? = null,
+    val sha512: String? = null,
+    val downloadUrl: String? = null,
     val publishedAt: Instant,
     val dependencies: List<ProjectId>,
     val manualDownloadUrl: String? = null,

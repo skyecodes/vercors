@@ -46,6 +46,7 @@ fun homeDemoStore(): Store<HomeState, HomeEvent> = Store(
         installTarget = null,
         pendingDeleteInstanceId = null,
         copyInstanceDialog = null,
+        exportInstanceDialog = null,
     ),
     eventSink = {},
 )

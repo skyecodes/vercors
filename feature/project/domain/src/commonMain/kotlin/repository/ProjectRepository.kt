@@ -49,6 +49,9 @@ interface ProjectRepository {
     context(_: Raise<ProjectDetailsError>)
     suspend fun getProjectFilesByIds(platformId: PlatformId, fileIds: List<String>): List<ProjectFile>
 
+    context(_: Raise<ProjectDetailsError>)
+    suspend fun findFilesByHashes(platformId: PlatformId, hashes: List<FileHashes>): List<ProjectFileMatch>
+
     context(_: Raise<ModpackResolutionError>)
     suspend fun getModpackManifest(
         projectId: ProjectId,

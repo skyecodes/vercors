@@ -60,6 +60,13 @@ interface CurseForgeApi {
     ): PlatformResponse<CurseForgeStandardResponse<List<CurseForgeFile>>>
 
     @Headers("Content-Type: application/json")
+    @POST("v1/fingerprints/{gameId}")
+    suspend fun getFingerprintMatches(
+        @Path("gameId") gameId: Int,
+        @Body request: CurseForgeFingerprintsRequest
+    ): PlatformResponse<CurseForgeStandardResponse<CurseForgeFingerprintsMatchesResult>>
+
+    @Headers("Content-Type: application/json")
     @POST("v1/mods")
     suspend fun getProjects(
         @Body request: CurseForgeGetModsRequest

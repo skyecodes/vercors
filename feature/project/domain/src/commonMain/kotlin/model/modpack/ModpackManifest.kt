@@ -27,12 +27,14 @@ data class ModpackManifestFile(
     val size: Long?,
     val providerProjectId: String?,
     val providerFileId: String?,
-    val manualDownloadUrl: String? = null
+    val manualDownloadUrl: String? = null,
+    val platformId: String? = null
 )
 
 data class InstalledModpackFile(
     val fileName: String,
     val kind: ModpackFileKind,
     val providerProjectId: String?,
-    val providerFileId: String?
+    val providerFileId: String?,
+    val platformId: String? = null
 )

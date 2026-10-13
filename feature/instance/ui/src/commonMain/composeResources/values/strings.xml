@@ -16,7 +16,8 @@
     <string name="openModpacksScreen">Search for modpacks</string>
     <string name="importInstanceInfo">Import an instance exported from PrismLauncher (.zip) or the Modrinth App (.mrpack).</string>
     <string name="chooseFile">Choose file</string>
-    <string name="errorImportUnsupportedFormat">This file isn't a recognized PrismLauncher or Modrinth instance export</string>
+    <string name="errorImportUnsupportedFormat">This file isn't a recognized Vercors, PrismLauncher or Modrinth instance export</string>
+    <string name="errorImportUnsupportedPackVersion">This Vercors pack was made by a newer version of Vercors</string>
     <string name="errorImportParseFailed">Failed to read the exported instance file</string>
     <string name="errorImportExtractionFailed">Failed to extract the imported instance's files</string>
     <string name="extractingFiles">Extracting files...</string>
@@ -121,4 +122,20 @@
     <string name="playedFor">Played for %1$s</string>
     <string name="lastPlayed">Last played %1$s</string>
     <string name="neverPlayed">Never played</string>
+    <string name="exportInstance">Export Instance</string>
+    <string name="exportAction">Export</string>
+    <string name="exportFormat">Format</string>
+    <string name="exportFormatVercors">Vercors (.vcpack)</string>
+    <string name="exportFormatPrism">Prism Launcher (.zip)</string>
+    <string name="exportFormatModrinth">Modrinth (.mrpack)</string>
+    <string name="exportFormatVercorsDescription">Keeps every instance setting. Only Vercors can import it.</string>
+    <string name="exportFormatPrismDescription">Import it in Prism Launcher with "Import instance". Every file is bundled.</string>
+    <string name="exportFormatModrinthDescription">Mods found on Modrinth are downloaded on import, everything else is bundled.</string>
+    <string name="exportReferenceKnownFiles">Minimize export (download known mods on import instead of bundling them)</string>
+    <string name="exportVersionId">Version</string>
+    <string name="exportSummary">Summary</string>
+    <string name="exportAdvancedOptions">Advanced options</string>
+    <string name="exportIncludedFiles">Included files (%1$d/%2$d)</string>
+    <string name="exportSucceeded">Exported %1$s</string>
+    <string name="errorExportFailed">Failed to export the instance</string>
 </resources>

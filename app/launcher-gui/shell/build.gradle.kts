@@ -19,3 +19,6 @@ compose.resources {
     nameOfResClass = "ShellRes"
     publicResClass = true
 }
+
+// Compose Multiplatform applies hot reload to every Compose module; this library has no main to run.
+tasks.matching { it.name.startsWith("hotRun") }.configureEach { enabled = false }

@@ -3,6 +3,7 @@ package app.vercors.feature.home.ui
 import app.vercors.feature.instance.domain.model.InstanceId
 import app.vercors.feature.instance.ui.copy.CopyInstanceResult
 import app.vercors.feature.instance.ui.create.CreateInstanceResult
+import app.vercors.feature.instance.ui.export.ExportInstanceResult
 import app.vercors.feature.project.domain.model.ProjectId
 import app.vercors.feature.project.ui.BriefProjectView
 import app.vercors.feature.project.ui.install.InstallModpackResult
@@ -28,6 +29,8 @@ sealed interface HomeEvent : Event {
     data class OnConfirmDeleteInstance(val result: Boolean) : HomeEvent
     data class OnCopyInstanceClick(val instanceId: InstanceId, val name: String) : HomeEvent
     data class OnCopyInstanceResult(val result: CopyInstanceResult) : HomeEvent
+    data class OnExportInstanceClick(val instanceId: InstanceId, val name: String) : HomeEvent
+    data class OnExportInstanceResult(val result: ExportInstanceResult) : HomeEvent
     data class OnInstallProjectClick(val project: BriefProjectView) : HomeEvent
     data class OnInstallResult(val result: InstallProjectResult) : HomeEvent
     data class OnInstallModpackResult(val result: InstallModpackResult) : HomeEvent

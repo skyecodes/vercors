@@ -126,6 +126,7 @@ internal fun CurseForgeFile.convert(loaderFilter: ProjectLoaderData?): ProjectFi
     size = fileLength,
     sha1 = hashes.firstOrNull { it.algo == CurseForgeHashAlgo.Sha1 }?.value,
     md5 = hashes.firstOrNull { it.algo == CurseForgeHashAlgo.Md5 }?.value,
+    downloadUrl = downloadUrl,
     publishedAt = fileDate,
     dependencies = dependencies.filter { it.relationType == CurseForgeFileRelationType.RequiredDependency }
         .map { ProjectFileDependencyData(it.modId.toString()) }

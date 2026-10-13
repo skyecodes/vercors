@@ -5,6 +5,7 @@ import app.vercors.feature.game.domain.model.ModLoaderType
 import app.vercors.feature.instance.domain.model.InstanceModpackInfo
 import app.vercors.feature.instance.domain.model.localimport.PrismInstanceInfo
 import app.vercors.feature.project.domain.model.modpack.ModpackManifest
+import app.vercors.feature.project.domain.model.pack.VercorsPackInfo
 
 @Immutable
 sealed interface LocalImportPreview {
@@ -14,6 +15,17 @@ sealed interface LocalImportPreview {
     val loaderVersion: String?
     val sourcePath: String
     val modpackInfo: InstanceModpackInfo?
+
+    data class Vercors(
+        override val name: String,
+        override val gameVersion: String,
+        override val loaderType: ModLoaderType?,
+        override val loaderVersion: String?,
+        override val sourcePath: String,
+        val info: VercorsPackInfo,
+    ) : LocalImportPreview {
+        override val modpackInfo: InstanceModpackInfo? get() = info.modpackInfo
+    }
 
     data class Prism(
         override val name: String,

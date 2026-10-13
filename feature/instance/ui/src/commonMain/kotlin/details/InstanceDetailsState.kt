@@ -16,6 +16,7 @@ import app.vercors.feature.instance.ui.details.servers.InstanceServersEvent
 import app.vercors.feature.instance.ui.details.servers.InstanceServersState
 import app.vercors.feature.instance.ui.details.worlds.InstalledWorldsEvent
 import app.vercors.feature.instance.ui.details.worlds.InstalledWorldsState
+import app.vercors.feature.instance.ui.export.ExportInstanceDialog
 import app.vercors.feature.instance.ui.install.FinishInstallationDialog
 import app.vercors.shared.domain.model.JvmMemoryOptions
 import app.vercors.shared.domain.model.NativeLibraryOptions
@@ -32,6 +33,7 @@ data class InstanceDetailsState(
     val horizontalTabs: Boolean,
     val promptDeleteConfirmation: Boolean,
     val copyInstanceDialog: CopyInstanceDialog?,
+    val exportInstanceDialog: ExportInstanceDialog?,
     val optionsContent: Store<InstanceOptionsState, InstanceOptionsEvent>,
     val modsContent: Store<InstalledContentState, InstalledContentEvent>,
     val resourcePacksContent: Store<InstalledContentState, InstalledContentEvent>,

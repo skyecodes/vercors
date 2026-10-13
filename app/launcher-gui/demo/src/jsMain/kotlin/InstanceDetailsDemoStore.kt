@@ -55,6 +55,7 @@ fun instanceDetailsDemoStore(): Store<InstanceDetailsState, InstanceDetailsEvent
             horizontalTabs = false,
             promptDeleteConfirmation = false,
             copyInstanceDialog = null,
+            exportInstanceDialog = null,
             optionsContent = Store(optionsState(instance)) {},
             modsContent = contentStore(MONIFACTORY_MODS.map { it.toView() }),
             resourcePacksContent = contentStore(MONIFACTORY_RESOURCE_PACKS),

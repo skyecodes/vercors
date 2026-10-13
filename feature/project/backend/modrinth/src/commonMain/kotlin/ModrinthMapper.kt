@@ -132,21 +132,28 @@ private fun String.convertToLoader(): ProjectLoaderData? = when (this) {
 internal fun ModrinthVersion.primaryFileOrNull(): ModrinthVersionFile? =
     files.firstOrNull { it.primary } ?: files.firstOrNull()
 
-internal fun ModrinthVersion.convert(): ProjectFileData? = primaryFileOrNull()?.let { file ->
-    ProjectFileData(
-        id = id,
-        displayName = name,
-        fileName = file.filename,
-        gameVersions = gameVersions,
-        loaders = loaders.mapNotNull { it.convertToLoader() },
-        releaseChannel = versionType.convert(),
-        size = file.size,
-        sha1 = file.hashes["sha1"],
-        publishedAt = datePublished,
-        dependencies = dependencies.filter { it.dependencyType.value == ModrinthDependencyType.REQUIRED }
-            .mapNotNull { it.projectId?.let(::ProjectFileDependencyData) }
-    )
-}
+internal fun ModrinthVersion.convert(): ProjectFileData? = primaryFileOrNull()?.let(::convert)
+
+internal fun ModrinthVersion.convert(file: ModrinthVersionFile): ProjectFileData = ProjectFileData(
+    id = id,
+    displayName = name,
+    fileName = file.filename,
+    gameVersions = gameVersions,
+    loaders = loaders.mapNotNull { it.convertToLoader() },
+    releaseChannel = versionType.convert(),
+    size = file.size,
+    sha1 = file.hashes["sha1"],
+    sha512 = file.hashes["sha512"],
+    downloadUrl = file.url,
+    publishedAt = datePublished,
+    dependencies = dependencies.filter { it.dependencyType.value == ModrinthDependencyType.REQUIRED }
+        .mapNotNull { it.projectId?.let(::ProjectFileDependencyData) }
+)
+
+internal fun ModrinthVersion.convertMatch(sha1: String): ProjectFileMatchData? =
+    files.firstOrNull { it.hashes["sha1"] == sha1 }?.let { file ->
+        ProjectFileMatchData(sha1 = sha1, projectId = projectId, file = convert(file))
+    }
 
 private fun ModrinthVersionType.convert(): ProjectReleaseChannelData = when (value) {
     ModrinthVersionType.RELEASE -> ProjectReleaseChannelData.Release

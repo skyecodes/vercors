@@ -60,6 +60,8 @@ private val STABLE_POLL_INTERVAL = 500.milliseconds
 
 private const val STABLE_POLL_THRESHOLD = 3
 
+private const val HASH_LOOKUP_CHUNK_SIZE = 500
+
 @SingleIn(AppScope::class)
 @ContributesBinding(AppScope::class)
 class ProjectRepositoryImpl(
@@ -295,6 +297,24 @@ class ProjectRepositoryImpl(
             transform = { list -> list.map { it.toDomain(platformId) } }
         )
 
+    context(_: Raise<ProjectDetailsError>)
+    override suspend fun findFilesByHashes(platformId: PlatformId, hashes: List<FileHashes>): List<ProjectFileMatch> =
+        hashes.chunked(HASH_LOOKUP_CHUNK_SIZE).flatMap { chunk ->
+            withError(RemoteError::toPlatformError) {
+                metaApiConnectivity.request {
+                    httpClient.request(
+                        endpoint = ApiV1 / Platforms / Platforms.PlatformId(platformId) / PlatformFiles / PlatformFiles.lookup,
+                        input = chunk.map { it.toData() },
+                        configure = { expectSuccess = false }
+                    )
+                }
+            }.handle(
+                handle1 = { raise(it.toDomain()) },
+                handle2 = { raise(it.toDomain()) },
+                transform = { list -> list.map { it.toDomain(platformId) } }
+            )
+        }
+
     private fun modpackZipPath(platformId: String, projectId: String, fileId: String): Path =
         Path(appPaths.downloadsTmp, "modpack-$platformId-$projectId-$fileId.zip")
 
@@ -360,7 +380,7 @@ class ProjectRepositoryImpl(
                 val providerProjectId = ensureNotNull(file.providerProjectId) { ModpackInstallError.InvalidFileEntry }
                 val providerFileId = ensureNotNull(file.providerFileId) { ModpackInstallError.InvalidFileEntry }
                 projectFileDownloadRequest(
-                    manifest.platformId,
+                    file.platformId ?: manifest.platformId,
                     providerProjectId,
                     providerFileId,
                     targetPath,
@@ -397,7 +417,8 @@ class ProjectRepositoryImpl(
                     fileName = file.targetPath.substringAfterLast('/'),
                     kind = file.kind,
                     providerProjectId = file.providerProjectId,
-                    providerFileId = file.providerFileId
+                    providerFileId = file.providerFileId,
+                    platformId = file.platformId
                 )
             }
     }

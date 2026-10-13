@@ -92,6 +92,12 @@ fun Home(
             }
         }
 
+        state.exportInstanceDialog?.let { dialog ->
+            OverlayEffect(dialog) {
+                eventSink(HomeEvent.OnExportInstanceResult(show(dialog)))
+            }
+        }
+
         state.pendingDeleteInstanceId?.let {
             OverlayEffect(it) {
                 eventSink(HomeEvent.OnConfirmDeleteInstance(show(deleteInstanceConfirmDialog())))
@@ -212,6 +218,7 @@ private fun <T> LazyListScope.homeCardItem(
                     eventSink(HomeEvent.OnOpenProjectFromInstanceClick(instanceId, platformId, projectId))
                 },
                 onCopyClick = { instanceId, name -> eventSink(HomeEvent.OnCopyInstanceClick(instanceId, name)) },
+                onExportClick = { instanceId, name -> eventSink(HomeEvent.OnExportInstanceClick(instanceId, name)) },
                 onDeleteClick = { eventSink(HomeEvent.OnDeleteInstanceClick(it)) },
                 modifier = modifier.size(width = 150.dp, height = 150.dp),
                 origin = InstanceSharedElementOrigin.Home
@@ -250,6 +257,7 @@ private fun LazyListScope.fakeCardItem(
                 onOpenInstanceFolderClick = {},
                 onOpenProjectClick = { _, _, _ -> },
                 onCopyClick = { _, _ -> },
+                onExportClick = { _, _ -> },
                 onDeleteClick = {},
                 modifier = modifier.size(width = 150.dp, height = 150.dp),
                 origin = InstanceSharedElementOrigin.Home

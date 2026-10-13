@@ -3,10 +3,7 @@ package app.vercors.feature.project.backend.curseforge
 import app.vercors.feature.project.api.dto.*
 import app.vercors.feature.project.backend.PlatformInfo
 import app.vercors.feature.project.backend.PlatformServiceBase
-import app.vercors.feature.project.backend.curseforge.dto.CurseForgeFile
-import app.vercors.feature.project.backend.curseforge.dto.CurseForgeGetFilesRequest
-import app.vercors.feature.project.backend.curseforge.dto.CurseForgeGetModsRequest
-import app.vercors.feature.project.backend.curseforge.dto.CurseForgeProject
+import app.vercors.feature.project.backend.curseforge.dto.*
 import app.vercors.shared.api.dto.InvalidParameterData
 import app.vercors.shared.backend.bindResponse
 import arrow.core.raise.Raise
@@ -105,19 +102,20 @@ class CurseForgeService(
     }
 
     context(_: Raise<PlatformErrorData>)
-    override suspend fun getFiles(fileIds: List<String>): List<ProjectFileData> = coroutineScope {
-        val files = api.getFiles(CurseForgeGetFilesRequest(fileIds.map { it.toInt() })).bindResponse().data
-        val downloadableIds = files.downloadableIds()
+    override suspend fun getFiles(fileIds: List<String>): List<ProjectFileData> =
+        api.getFiles(CurseForgeGetFilesRequest(fileIds.map { it.toInt() })).bindResponse().data
+            .convertWithProjects()
 
-        // Also resolves each file's project type: the file listing never carries classId
-        val projectsByModId = api.getProjects(CurseForgeGetModsRequest(files.map { it.modId }.distinct()))
-            .bindResponse().data.associateBy { it.id }
-
-        files.map { file ->
-            val project = projectsByModId[file.modId]
-            file.convert(loaderFilter = null)
-                .copy(type = project?.classId.convertToType())
-                .withManualDownloadUrl(file, project, downloadableIds)
+    context(_: Raise<PlatformErrorData>)
+    override suspend fun findFilesByHashes(hashes: List<FileHashesData>): List<ProjectFileMatchData> {
+        val sha1ByFingerprint = hashes.mapNotNull { hash -> hash.fingerprint?.let { it to hash.sha1 } }.toMap()
+        if (sha1ByFingerprint.isEmpty()) return emptyList()
+        val request = CurseForgeFingerprintsRequest(sha1ByFingerprint.keys.toList())
+        val files =
+            api.getFingerprintMatches(MINECRAFT_GAME_ID, request).bindResponse().data.exactMatches.map { it.file }
+        return files.zip(files.convertWithProjects()).mapNotNull { (file, converted) ->
+            val sha1 = sha1ByFingerprint[file.fileFingerprint] ?: return@mapNotNull null
+            ProjectFileMatchData(sha1 = sha1, projectId = file.modId.toString(), file = converted)
         }
     }
 
@@ -139,6 +137,21 @@ class CurseForgeService(
         api.getFileDownloadUrl(projectId, fileId).bindResponse()
         true
     }) { _: PlatformErrorData -> false }
+
+    // Also resolves each file's project type: the file listing never carries classId
+    context(_: Raise<PlatformErrorData>)
+    private suspend fun List<CurseForgeFile>.convertWithProjects(): List<ProjectFileData> {
+        if (isEmpty()) return emptyList()
+        val downloadableIds = downloadableIds()
+        val projectsByModId = api.getProjects(CurseForgeGetModsRequest(map { it.modId }.distinct()))
+            .bindResponse().data.associateBy { it.id }
+        return map { file ->
+            val project = projectsByModId[file.modId]
+            file.convert(loaderFilter = null)
+                .copy(type = project?.classId.convertToType())
+                .withManualDownloadUrl(file, project, downloadableIds)
+        }
+    }
 
     private suspend fun List<CurseForgeFile>.downloadableIds(): Set<Int> = coroutineScope {
         filter { it.downloadUrl == null }

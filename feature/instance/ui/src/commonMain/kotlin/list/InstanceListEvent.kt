@@ -3,6 +3,7 @@ package app.vercors.feature.instance.ui.list
 import app.vercors.feature.instance.domain.model.InstanceId
 import app.vercors.feature.instance.ui.copy.CopyInstanceResult
 import app.vercors.feature.instance.ui.create.CreateInstanceResult
+import app.vercors.feature.instance.ui.export.ExportInstanceResult
 import app.vercors.shared.ui.Event
 
 sealed interface InstanceListEvent : Event {
@@ -27,5 +28,7 @@ sealed interface InstanceListEvent : Event {
     data class OnConfirmDeleteInstance(val result: Boolean) : InstanceListEvent
     data class OnCopyInstanceClick(val instanceId: InstanceId, val name: String) : InstanceListEvent
     data class OnCopyInstanceResult(val result: CopyInstanceResult) : InstanceListEvent
+    data class OnExportInstanceClick(val instanceId: InstanceId, val name: String) : InstanceListEvent
+    data class OnExportInstanceResult(val result: ExportInstanceResult) : InstanceListEvent
     data object OnResetFilterClick : InstanceListEvent
 }
