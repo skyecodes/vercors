@@ -21,7 +21,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { os: ubuntu-latest,  tasks: build }
+          - { os: ubuntu-latest, tasks: jvmTest linuxX64Test compileKotlinJs compileKotlinLinuxArm64 }
           - { os: windows-latest, tasks: jvmTest mingwX64Test }
           - { os: macos-latest,   tasks: jvmTest macosArm64Test }
     env:
