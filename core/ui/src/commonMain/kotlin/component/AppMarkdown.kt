@@ -28,6 +28,8 @@ fun AppMarkdown(markdown: String, modifier: Modifier = Modifier) {
             inlineCodeBackground = Theme[colors][surface2],
             dividerColor = Theme[colors][surface2],
             tableBackground = Theme[colors][surface2],
+            highlightText = Theme[colors][onBackground],
+            highlightBackground = Theme[colors][primary].copy(alpha = 0.2f),
         ),
         typography = DefaultMarkdownTypography(
             h1 = Theme[textStyles][title],
