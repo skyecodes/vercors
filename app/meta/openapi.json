@@ -3,7 +3,7 @@
   "info": {
     "title": "Vercors Meta API",
     "description": "Backend service used by the Vercors GUI and CLI launchers to browse mod/modpack platforms, resolve loader install URLs, and fetch Minecraft account skin renders. Built with Ktor and dev.opensavvy.spine.",
-    "version": "1.0.0-alpha.1"
+    "version": "1.0.0-alpha.3"
   },
   "servers": [
     {
