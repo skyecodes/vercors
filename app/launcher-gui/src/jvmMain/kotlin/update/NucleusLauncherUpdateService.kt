@@ -20,8 +20,9 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -89,9 +90,8 @@ class NucleusLauncherUpdateService(
                 downloadedUpdate = updater to it
                 LauncherUpdateState.ReadyToInstall(info.version, releaseUrl)
             } ?: LauncherUpdateState.Failed(LauncherUpdateError.DownloadFailed("No file was downloaded"))
-        } catch (e: CancellationException) {
-            throw e
         } catch (e: Exception) {
+            currentCoroutineContext().ensureActive()
             logger.error(e) { "Failed to download launcher update ${info.version}" }
             _state.value = LauncherUpdateState.Failed(LauncherUpdateError.DownloadFailed(e.message ?: e.toString()))
         } finally {
@@ -109,9 +109,8 @@ class NucleusLauncherUpdateService(
             // Blocks while the platform installer runs, then exits the process
             withContext(Dispatchers.IO) { updater.installAndRestart(file) }
             _state.value = readyState
-        } catch (e: CancellationException) {
-            throw e
         } catch (e: Exception) {
+            currentCoroutineContext().ensureActive()
             logger.error(e) { "Failed to install launcher update ${readyState.version}" }
             _state.value = LauncherUpdateState.Failed(LauncherUpdateError.InstallFailed(e.message ?: e.toString()))
         } finally {

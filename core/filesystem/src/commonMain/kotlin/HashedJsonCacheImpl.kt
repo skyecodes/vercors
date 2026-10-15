@@ -4,7 +4,6 @@ import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
 import dev.zacsweers.metro.SingleIn
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.sync.Mutex
@@ -29,7 +28,6 @@ internal class HashedJsonCacheImpl<T>(
             filePath.readJson(serializer, json)
         } catch (e: Exception) {
             currentCoroutineContext().ensureActive()
-            if (e is CancellationException) throw e
             logger.error(e) { "Failed to read data from $filePath" }
             null
         }

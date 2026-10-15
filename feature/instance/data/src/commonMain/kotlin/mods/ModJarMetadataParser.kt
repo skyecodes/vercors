@@ -10,7 +10,8 @@ import com.akuleshov7.ktoml.TomlInputConfig
 import de.jonasbroeckmann.kzip.Zip
 import de.jonasbroeckmann.kzip.forEachEntry
 import de.jonasbroeckmann.kzip.open
-import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.io.files.Path
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
@@ -137,8 +138,8 @@ internal suspend fun extractIcon(jarPath: Path, iconEntryPath: String, destDir: 
             dest.sink { it.write(bytes) }
             fileName
         }
-    }.getOrElse { e ->
-        if (e is CancellationException) throw e
+    }.getOrElse {
+        currentCoroutineContext().ensureActive()
         null
     }
 

@@ -7,7 +7,8 @@ import app.vercors.core.nbt.getString
 import app.vercors.core.nbt.readNbt
 import app.vercors.feature.instance.domain.model.InstalledServer
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.io.files.Path
 
 private val logger = KotlinLogging.logger {}
@@ -20,9 +21,8 @@ internal suspend fun parseServersDat(path: Path): List<InstalledServer> = try {
         val address = compound.getString("ip") ?: return@mapNotNull null
         InstalledServer(name = name, address = address)
     }
-} catch (e: CancellationException) {
-    throw e
 } catch (e: Exception) {
+    currentCoroutineContext().ensureActive()
     logger.warn(e) { "Failed to parse servers.dat at $path" }
     emptyList()
 }

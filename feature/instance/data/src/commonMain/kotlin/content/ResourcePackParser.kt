@@ -5,7 +5,8 @@ import app.vercors.shared.data.toZipEntryName
 import de.jonasbroeckmann.kzip.Zip
 import de.jonasbroeckmann.kzip.forEachEntry
 import de.jonasbroeckmann.kzip.open
-import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.io.files.Path
 import kotlinx.serialization.json.*
 
@@ -30,8 +31,8 @@ internal class ResourcePackParser(private val json: Json) : ContentFileParser {
                     iconEntryPath = iconEntryPath
                 )
             }
-        }.getOrElse { e ->
-            if (e is CancellationException) throw e
+        }.getOrElse {
+            currentCoroutineContext().ensureActive()
             ParsedContentInfo(title = title, description = null, version = null, loader = null, iconEntryPath = null)
         }
     }

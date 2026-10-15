@@ -17,15 +17,18 @@ import app.vercors.shared.data.AppPaths
 import app.vercors.shared.data.FileValidationRequest
 import app.vercors.shared.data.FileValidationService
 import arrow.core.raise.Raise
+import arrow.core.raise.context.bind
 import arrow.core.raise.context.raise
 import arrow.core.raise.context.withError
+import arrow.core.raise.either
 import de.jonasbroeckmann.kzip.Zip
 import de.jonasbroeckmann.kzip.open
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.io.files.Path
@@ -225,32 +228,34 @@ private suspend fun extractProfiles(
     json: Json
 ): InstallerProfiles = runCatching {
     Zip.open(installerJarPath).use { zip ->
-        val installProfileText = zip.entry(Path("install_profile.json")) { readToBytes() }.decodeToString()
-        val versionText = zip.entryOrNull(Path("version.json")) { readToBytes() }?.decodeToString()
-        if (versionText != null) {
-            InstallerProfiles.Modern(
-                json.decodeFromString(InstallProfileData.serializer(), installProfileText),
-                json.decodeFromString(LoaderVersionProfile.serializer(), versionText)
-            )
-        } else {
-            val legacyProfile = json.decodeFromString(LegacyForgeInstallProfile.serializer(), installProfileText)
-            // The listed URL for this coordinate 404s: extract the bundled universal jar to its library path instead
-            val universalFile = appPaths.libraryFile(mavenCoordinateToPath(legacyProfile.install.path))
-            universalFile.createParentDirectories()
-            zip.entryOrNull(Path(legacyProfile.install.filePath)) { readToPath(universalFile) } ?: raise(
-                ModLoaderInstallError.FetchFailed(
-                    loaderType,
-                    "Universal jar entry not found in installer: ${legacyProfile.install.filePath}"
+        either<ModLoaderInstallError, InstallerProfiles> {
+            val installProfileText = zip.entry(Path("install_profile.json")) { readToBytes() }.decodeToString()
+            val versionText = zip.entryOrNull(Path("version.json")) { readToBytes() }?.decodeToString()
+            if (versionText != null) {
+                InstallerProfiles.Modern(
+                    json.decodeFromString(InstallProfileData.serializer(), installProfileText),
+                    json.decodeFromString(LoaderVersionProfile.serializer(), versionText)
                 )
-            )
-            InstallerProfiles.Legacy(legacyProfile)
+            } else {
+                val legacyProfile = json.decodeFromString(LegacyForgeInstallProfile.serializer(), installProfileText)
+                // The listed URL for this coordinate 404s: extract the bundled universal jar to its library path
+                val universalFile = appPaths.libraryFile(mavenCoordinateToPath(legacyProfile.install.path))
+                universalFile.createParentDirectories()
+                zip.entryOrNull(Path(legacyProfile.install.filePath)) { readToPath(universalFile) } ?: raise(
+                    ModLoaderInstallError.FetchFailed(
+                        loaderType,
+                        "Universal jar entry not found in installer: ${legacyProfile.install.filePath}"
+                    )
+                )
+                InstallerProfiles.Legacy(legacyProfile)
+            }
         }
     }
 }.getOrElse { e ->
-    if (e is CancellationException) throw e
+    currentCoroutineContext().ensureActive()
     logger.error(e) { "Failed to extract $loaderType installer profiles from $installerJarPath" }
     raise(ModLoaderInstallError.FetchFailed(loaderType, e.message ?: "Unable to read the installer jar"))
-}
+}.bind()
 
 context(_: Raise<ModLoaderInstallError>)
 private suspend fun downloadInstallProfileLibraries(
