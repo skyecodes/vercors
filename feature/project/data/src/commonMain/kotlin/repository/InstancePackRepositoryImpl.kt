@@ -31,7 +31,6 @@ import de.jonasbroeckmann.kzip.open
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
 import dev.zacsweers.metro.SingleIn
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.io.files.Path
@@ -124,9 +123,8 @@ class InstancePackRepositoryImpl(
             Zip.open(Path(sourcePath)).use { zip ->
                 zip.entryOrNull(Path(VERCORS_PACK_MANIFEST_ENTRY)) { readToBytes().decodeToString() }
             }
-        } catch (e: CancellationException) {
-            throw e
         } catch (_: Exception) {
+            currentCoroutineContext().ensureActive()
             null
         } ?: raise(VercorsPackError.NotVercorsFormat)
         val manifest = try {
@@ -179,9 +177,8 @@ class InstancePackRepositoryImpl(
                 target.toString()
             }
         }
-    } catch (e: CancellationException) {
-        throw e
     } catch (_: Exception) {
+        currentCoroutineContext().ensureActive()
         null
     }
 }
@@ -195,11 +192,10 @@ private suspend fun ZipWriter.addOverrides(files: List<InstanceExportFile>, onPr
 }
 
 context(_: Raise<InstanceExportError>)
-private inline fun orRaiseWriteFailed(block: () -> Unit) = try {
+private suspend inline fun orRaiseWriteFailed(block: () -> Unit): Unit = try {
     block()
-} catch (e: CancellationException) {
-    throw e
 } catch (_: Exception) {
+    currentCoroutineContext().ensureActive()
     raise(InstanceExportError.WriteFailed)
 }
 

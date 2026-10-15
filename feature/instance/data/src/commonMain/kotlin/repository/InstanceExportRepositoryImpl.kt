@@ -21,7 +21,6 @@ import arrow.core.raise.context.raise
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
 import dev.zacsweers.metro.SingleIn
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.io.bytestring.toHexString
@@ -108,11 +107,10 @@ class InstanceExportRepositoryImpl(
 }
 
 context(_: Raise<InstanceExportError>)
-private inline fun <T> orRaise(error: InstanceExportError, block: () -> T): T = try {
+private suspend inline fun <T> orRaise(error: InstanceExportError, block: () -> T): T = try {
     block()
-} catch (e: CancellationException) {
-    throw e
 } catch (_: Exception) {
+    currentCoroutineContext().ensureActive()
     raise(error)
 }
 

@@ -39,7 +39,6 @@ import dev.zacsweers.metro.ContributesBinding
 import dev.zacsweers.metro.SingleIn
 import io.ktor.client.*
 import io.ktor.client.plugins.*
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
@@ -404,9 +403,8 @@ class ProjectRepositoryImpl(
             localSourcePath?.let(::Path) ?: modpackZipPath(manifest.platformId, manifest.projectId, manifest.fileId)
         val overridePaths = try {
             extractOverrides(zipPath, gameDir, manifest.overridesDirs, preserveUserState)
-        } catch (e: CancellationException) {
-            throw e
         } catch (_: Exception) {
+            currentCoroutineContext().ensureActive()
             raise(ModpackInstallError.OverridesExtractionFailed)
         } finally {
             // Never delete a caller-owned local file, only our own downloaded tmp copy
@@ -469,9 +467,8 @@ class ProjectRepositoryImpl(
             if (targetPath.exists()) targetPath.delete()
             sourcePath.copyTo(targetPath)
             sourcePath.delete()
-        } catch (e: CancellationException) {
-            throw e
         } catch (_: Exception) {
+            currentCoroutineContext().ensureActive()
             raise(ManualDownloadError.DownloadFailed)
         }
         recover({
@@ -529,9 +526,8 @@ class ProjectRepositoryImpl(
         }
         try {
             appPaths.extractWorldZip(zipPath, instanceId, candidate.fileName)
-        } catch (e: CancellationException) {
-            throw e
         } catch (_: Exception) {
+            currentCoroutineContext().ensureActive()
             raise(ProjectFileDownloadFailed)
         } finally {
             if (zipPath.exists()) zipPath.deleteRecursively()
@@ -558,9 +554,8 @@ class ProjectRepositoryImpl(
         try {
             appPaths.extractWorldZip(sourcePath, instanceId, fileName)
             sourcePath.delete()
-        } catch (e: CancellationException) {
-            throw e
         } catch (_: Exception) {
+            currentCoroutineContext().ensureActive()
             raise(ManualDownloadError.DownloadFailed)
         }
     }

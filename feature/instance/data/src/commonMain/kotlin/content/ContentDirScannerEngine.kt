@@ -12,8 +12,9 @@ import arrow.core.raise.Raise
 import arrow.core.raise.context.ensure
 import arrow.core.raise.context.raise
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.update
@@ -224,9 +225,8 @@ internal class ContentDirScannerEngine(
             val dir = instanceDir(instanceId)
             if (!dir.exists()) dir.createDirectories()
             Path(dir, sourcePath.name).also { sourcePath.copyTo(it) }
-        } catch (e: CancellationException) {
-            throw e
         } catch (e: Exception) {
+            currentCoroutineContext().ensureActive()
             logger.error(e) { "Failed to import $sourcePath into $instanceId" }
             raise(ImportError.CopyFailed)
         }

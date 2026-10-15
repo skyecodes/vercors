@@ -13,8 +13,9 @@ import arrow.core.raise.context.raise
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.update
@@ -103,9 +104,8 @@ class InstanceWorldScanner(
         ensure(zipPath.name.endsWith(".zip")) { ImportError.UnsupportedFileType }
         try {
             appPaths.extractWorldZip(zipPath, instanceId, zipPath.name)
-        } catch (e: CancellationException) {
-            throw e
         } catch (_: Exception) {
+            currentCoroutineContext().ensureActive()
             raise(ImportError.CopyFailed)
         }
         reconcile(instanceId, stateFor(instanceId))

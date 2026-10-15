@@ -12,7 +12,8 @@ import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
 import dev.zacsweers.metro.SingleIn
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.io.files.Path
 import kotlinx.serialization.json.Json
 
@@ -29,9 +30,8 @@ class InstalledPackRepositoryImpl(
         if (!file.exists()) return null
         return try {
             file.readJson(InstalledPackData.serializer(), json).toDomain()
-        } catch (e: CancellationException) {
-            throw e
         } catch (e: Exception) {
+            currentCoroutineContext().ensureActive()
             logger.warn(e) { "Couldn't read the installed pack of $instanceId" }
             null
         }
