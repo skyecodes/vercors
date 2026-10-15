@@ -14,4 +14,8 @@ interface InstanceUpdateRepository {
     fun removeContent(instanceId: InstanceId, fileNames: Set<String>)
 
     fun clear(instanceId: InstanceId)
+
+    fun observeChecking(): Flow<Set<InstanceId>>
+
+    fun setChecking(instanceId: InstanceId, checking: Boolean)
 }

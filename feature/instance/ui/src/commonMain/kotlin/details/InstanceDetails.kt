@@ -14,7 +14,6 @@ import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import app.vercors.core.ui.animation.AppAnimatedVisibility
 import app.vercors.core.ui.component.*
 import app.vercors.core.ui.layout.*
@@ -244,12 +243,18 @@ private fun AppTabScope.InstanceDetailsTabTitle(tab: InstanceDetailsTab, state: 
         InstanceDetailsTab.Advanced -> state.optionsContent.state.isNativeLibraryOptionsEdited
         else -> false
     }
+    val hasUpdates = when (tab) {
+        InstanceDetailsTab.Mods -> state.modsContent.state.hasUpdates
+        InstanceDetailsTab.ResourcePacks -> state.resourcePacksContent.state.hasUpdates
+        InstanceDetailsTab.ShaderPacks -> state.shaderPacksContent.state.hasUpdates
+        else -> false
+    }
     val title = buildString {
         append(tab.title)
         if (isEdited) append("*")
         if (badgeCount != null) append(" ($badgeCount)")
     }
-    AppSidebarTabItem(title = title, icon = tab.icon)
+    AppSidebarTabItem(title = title, icon = tab.icon, badgeColor = Theme[colors][primary].takeIf { hasUpdates })
 }
 
 @Composable
@@ -386,7 +391,7 @@ private fun RowScope.InstanceHeaderInfo(instance: InstanceView) {
                 )
                 AppText(
                     text = instance.type,
-                    fontSize = 12.sp,
+                    style = Theme[textStyles][label],
                     modifier = Modifier.instanceSharedElement(instance.id, "type")
                 )
             }
@@ -401,12 +406,12 @@ private fun RowScope.InstanceHeaderInfo(instance: InstanceView) {
                 }
                 AppText(
                     text = instance.loader,
-                    fontSize = 12.sp,
+                    style = Theme[textStyles][label],
                     modifier = Modifier.instanceSharedElement(instance.id, "loader")
                 )
                 AppText(
                     text = instance.gameVersion,
-                    fontSize = 12.sp,
+                    style = Theme[textStyles][label],
                     modifier = Modifier.instanceSharedElement(instance.id, "version")
                 )
             }
@@ -419,7 +424,7 @@ private fun RowScope.InstanceHeaderInfo(instance: InstanceView) {
                 )
                 AppText(
                     text = stringResource(InstanceRes.string.playedFor, HumanReadable.duration(instance.playTime)),
-                    fontSize = 12.sp
+                    style = Theme[textStyles][label],
                 )
             }
 
@@ -436,7 +441,7 @@ private fun RowScope.InstanceHeaderInfo(instance: InstanceView) {
                             HumanReadable.timeAgo(it)
                         )
                     } ?: stringResource(InstanceRes.string.neverPlayed),
-                    fontSize = 12.sp
+                    style = Theme[textStyles][label],
                 )
             }
         }

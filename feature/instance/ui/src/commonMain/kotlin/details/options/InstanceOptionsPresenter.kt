@@ -27,6 +27,7 @@ import app.vercors.feature.java.domain.usecase.ObserveJavaInstallationsUseCase
 import app.vercors.feature.java.domain.usecase.ResolveJavaInstallationUseCase
 import app.vercors.feature.project.domain.model.update.InstanceUpdates
 import app.vercors.feature.project.domain.usecase.CheckInstanceUpdatesUseCase
+import app.vercors.feature.project.domain.usecase.ObserveCheckingInstanceUpdatesUseCase
 import app.vercors.feature.project.domain.usecase.ObserveInstanceUpdatesUseCase
 import app.vercors.shared.domain.model.DetectedNativeLibraries
 import app.vercors.shared.domain.model.JavaInstallation
@@ -67,6 +68,7 @@ class InstanceOptionsPresenter(
     private val getRequiredJavaMajorVersion: GetRequiredJavaMajorVersionUseCase,
     private val checkInstanceUpdates: CheckInstanceUpdatesUseCase,
     private val observeInstanceUpdates: ObserveInstanceUpdatesUseCase,
+    private val observeCheckingInstanceUpdates: ObserveCheckingInstanceUpdatesUseCase,
     private val globalScope: CoroutineScope,
     private val snackbarService: SnackbarService,
 ) : Presenter<InstanceOptionsState, InstanceOptionsEvent> {
@@ -157,10 +159,10 @@ class InstanceOptionsPresenter(
 
     @Composable
     private fun rememberUpdateCheckState(): UpdateCheckState {
-        val (checking, setChecking) = remember { mutableStateOf(false) }
+        val checking by remember { observeCheckingInstanceUpdates(instanceId) }.collectAsState(false)
         val (identifyUnknownFiles, setIdentifyUnknownFiles) = remember { mutableStateOf(false) }
         val updates by remember { observeInstanceUpdates(instanceId) }.collectAsState(null)
-        return UpdateCheckState(checking, setChecking, identifyUnknownFiles, setIdentifyUnknownFiles, updates)
+        return UpdateCheckState(checking, identifyUnknownFiles, setIdentifyUnknownFiles, updates)
     }
 
     private fun handleEvent(
@@ -231,11 +233,9 @@ class InstanceOptionsPresenter(
 
     private fun handleCheckForUpdates(updateCheck: UpdateCheckState) {
         if (updateCheck.checking) return
-        updateCheck.setChecking(true)
         globalScope.launch {
             either { checkInstanceUpdates(instanceId, updateCheck.identifyUnknownFiles) }
                 .onLeft { error -> snackbarService.error { error.message } }
-            updateCheck.setChecking(false)
         }
     }
 
@@ -298,7 +298,6 @@ class InstanceOptionsPresenter(
 
     private data class UpdateCheckState(
         val checking: Boolean,
-        val setChecking: (Boolean) -> Unit,
         val identifyUnknownFiles: Boolean,
         val setIdentifyUnknownFiles: (Boolean) -> Unit,
         val updates: InstanceUpdates?,

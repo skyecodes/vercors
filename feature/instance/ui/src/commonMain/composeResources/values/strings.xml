@@ -154,7 +154,7 @@
     <string name="importAsNewInstance">Create a new instance</string>
     <string name="importUpdateInstance">Update %1$s</string>
     <string name="importTarget">Import into</string>
-    <string name="installedModpackVersion">Installed version: %1$s</string>
+    <string name="installedModpackVersion">Installed modpack version: %1$s</string>
     <string name="checkForUpdatesNow">Check for updates</string>
     <string name="checkingForUpdates">Checking for updates...</string>
     <string name="identifyUnknownFiles">Also identify files with an unknown origin by their hash</string>

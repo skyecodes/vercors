@@ -15,16 +15,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import app.vercors.core.ui.component.AppIcon
 import app.vercors.core.ui.component.AppIconTextButton
 import app.vercors.core.ui.component.AppText
 import app.vercors.core.ui.layout.AppLoading
 import app.vercors.core.ui.modifier.appCard
-import app.vercors.core.ui.theme.colors
-import app.vercors.core.ui.theme.onSuccess
-import app.vercors.core.ui.theme.success
-import app.vercors.core.ui.theme.surface2
+import app.vercors.core.ui.theme.*
 import app.vercors.feature.instance.domain.model.InstanceStatus
 import app.vercors.feature.instance.ui.InstanceRes
 import app.vercors.feature.instance.ui.details.InstanceView
@@ -111,7 +107,12 @@ private fun InstalledServerRow(server: InstalledServerView, canQuickJoin: Boolea
                 singleLine = true,
                 overflow = TextOverflow.Ellipsis
             )
-            AppText(text = server.address, fontSize = 12.sp, singleLine = true, overflow = TextOverflow.Ellipsis)
+            AppText(
+                text = server.address,
+                style = Theme[textStyles][label],
+                singleLine = true,
+                overflow = TextOverflow.Ellipsis
+            )
         }
 
         AppIconTextButton(

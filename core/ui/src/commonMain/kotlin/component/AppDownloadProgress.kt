@@ -54,7 +54,7 @@ private fun AppDownloadProgressCaption(download: DownloadProgress) {
 
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         AppText(
-            text = listOfNotNull(bytesText, filesText).joinToString(" / "),
+            text = listOfNotNull(bytesText, filesText).joinToString(", "),
             style = style,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,

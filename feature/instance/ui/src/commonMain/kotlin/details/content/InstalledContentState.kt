@@ -9,7 +9,9 @@ import kotlin.time.Instant
 data class InstalledContentState(
     val files: List<InstalledContentFileView>?,
     val promptRemoveConfirmation: PendingContentRemoval?,
-)
+) {
+    val hasUpdates: Boolean get() = files?.any { it.update != null } == true
+}
 
 @Immutable
 data class PendingContentRemoval(

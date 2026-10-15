@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.update
 @ContributesBinding(AppScope::class)
 class InstanceUpdateRepositoryImpl : InstanceUpdateRepository {
     private val updates = MutableStateFlow<Map<InstanceId, InstanceUpdates>>(emptyMap())
+    private val checking = MutableStateFlow<Set<InstanceId>>(emptySet())
 
     override fun observeAll(): Flow<Map<InstanceId, InstanceUpdates>> = updates.asStateFlow()
 
@@ -33,5 +34,11 @@ class InstanceUpdateRepositoryImpl : InstanceUpdateRepository {
 
     override fun clear(instanceId: InstanceId) {
         updates.update { it - instanceId }
+    }
+
+    override fun observeChecking(): Flow<Set<InstanceId>> = checking.asStateFlow()
+
+    override fun setChecking(instanceId: InstanceId, checking: Boolean) {
+        this.checking.update { if (checking) it + instanceId else it - instanceId }
     }
 }

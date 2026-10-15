@@ -9,6 +9,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import app.vercors.core.ui.animation.AppAnimatedVisibility
@@ -25,9 +27,8 @@ import app.vercors.shared.domain.model.defaultMaxMemoryMb
 import app.vercors.shared.ui.*
 import app.vercors.shared.ui.component.LibraryPathInputs
 import app.vercors.shared.ui.component.MemorySliderInputs
-import com.composables.icons.lucide.Lucide
-import com.composables.icons.lucide.RefreshCw
-import com.composables.icons.lucide.RotateCcw
+import com.composables.icons.lucide.*
+import com.composeunstyled.ProvideContentColor
 import com.composeunstyled.theme.Theme
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.pluralStringResource
@@ -174,6 +175,7 @@ private fun InstanceUpdatesOptionsSection(state: InstanceOptionsState) {
                 label = stringResource(InstanceRes.string.checkForUpdatesAutomatically),
                 checked = state.checkForUpdatesOverride ?: state.globalCheckForUpdates,
                 onCheckedChange = { eventSink(InstanceOptionsEvent.OnCheckForUpdatesToggle(it)) },
+                invert = true,
                 modifier = Modifier.weight(1f)
             )
             InstanceOptionsResetButton(state.checkForUpdatesOverride != null) {
@@ -185,7 +187,7 @@ private fun InstanceUpdatesOptionsSection(state: InstanceOptionsState) {
         AppText(text = stringResource(InstanceRes.string.installedModpackVersion, it))
     }
     Row(
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         AppIconTextButton(
@@ -200,12 +202,29 @@ private fun InstanceUpdatesOptionsSection(state: InstanceOptionsState) {
             AppCheckbox(
                 label = stringResource(InstanceRes.string.identifyUnknownFiles),
                 checked = updateCheck.identifyUnknownFiles,
-                onCheckedChange = { eventSink(InstanceOptionsEvent.OnIdentifyUnknownFilesToggle) }
+                onCheckedChange = { eventSink(InstanceOptionsEvent.OnIdentifyUnknownFilesToggle) },
+                invert = true,
             )
         }
     }
     if (updateCheck.checked && !updateCheck.checking) {
-        AppText(text = updateCheck.summary, style = Theme[textStyles][label])
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            ProvideContentColor(updateCheck.color) {
+                AppIcon(
+                    imageVector = updateCheck.icon,
+                    modifier = Modifier.size(14.dp),
+                    contentDescription = null,
+                )
+                AppText(
+                    text = updateCheck.summary,
+                    style = Theme[textStyles][label],
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+        }
     }
 }
 
@@ -221,12 +240,20 @@ private val UpdateCheckView.summary: String
         else -> stringResource(InstanceRes.string.upToDate)
     }
 
+private val UpdateCheckView.icon: ImageVector
+    get() = if (modpackUpdateName != null || contentUpdateCount > 0) Lucide.CircleArrowUp
+    else Lucide.Check
+
+private val UpdateCheckView.color: Color
+    @Composable get() = if (modpackUpdateName != null || contentUpdateCount > 0) Theme[colors][primary]
+    else Theme[colors][onBackground]
+
 @Composable
 private fun InstanceOptionsUnlockRow(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         AppCheckbox(
             label = stringResource(InstanceRes.string.unlockAdvancedOptions),
             invert = true,

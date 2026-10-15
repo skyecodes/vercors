@@ -36,6 +36,16 @@ class CheckInstanceUpdatesUseCase(
 ) {
     context(_: Raise<InstanceUpdateError>)
     suspend operator fun invoke(instanceId: InstanceId, identifyUnknown: Boolean): InstanceUpdates {
+        instanceUpdateRepository.setChecking(instanceId, true)
+        try {
+            return check(instanceId, identifyUnknown)
+        } finally {
+            instanceUpdateRepository.setChecking(instanceId, false)
+        }
+    }
+
+    context(_: Raise<InstanceUpdateError>)
+    private suspend fun check(instanceId: InstanceId, identifyUnknown: Boolean): InstanceUpdates {
         val instance = withError({ _: InstanceError -> InstanceUpdateError.InstanceNotFound }) {
             instanceRepository.findInstance(instanceId)
         }
