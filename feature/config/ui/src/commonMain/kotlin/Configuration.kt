@@ -13,6 +13,7 @@ import app.vercors.core.ui.theme.warn
 import app.vercors.feature.config.ui.about.AboutConfiguration
 import app.vercors.feature.config.ui.advanced.AdvancedConfiguration
 import app.vercors.feature.config.ui.appearance.AppearanceConfiguration
+import app.vercors.feature.config.ui.gameoptions.GameOptionsConfiguration
 import app.vercors.feature.config.ui.general.GeneralConfiguration
 import app.vercors.feature.config.ui.java.JavaConfiguration
 import app.vercors.feature.config.ui.nativelibraries.NativeLibraryConfiguration
@@ -57,6 +58,7 @@ private fun ConfigurationTabContent(tab: ConfigurationTab, state: ConfigurationS
         ConfigurationTab.Advanced -> AdvancedConfiguration(state.advancedContent, state.horizontalTabs)
         ConfigurationTab.Appearance -> AppearanceConfiguration(state.appearanceContent, state.horizontalTabs)
         ConfigurationTab.Java -> JavaConfiguration(state.javaContent, state.horizontalTabs)
+        ConfigurationTab.GameOptions -> GameOptionsConfiguration(state.gameOptionsContent, state.horizontalTabs)
         ConfigurationTab.NativeLibraries ->
             NativeLibraryConfiguration(state.nativeLibrariesContent, state.horizontalTabs)
 
@@ -70,6 +72,7 @@ private val ConfigurationTab.icon: ImageVector
         ConfigurationTab.General -> Lucide.Settings
         ConfigurationTab.Appearance -> Lucide.Eye
         ConfigurationTab.Java -> Lucide.Coffee
+        ConfigurationTab.GameOptions -> Lucide.Keyboard
         ConfigurationTab.NativeLibraries -> Lucide.Package
         ConfigurationTab.Storage -> Lucide.HardDrive
         ConfigurationTab.Advanced -> Lucide.Wrench
@@ -81,6 +84,7 @@ private val ConfigurationTab.title: String
         ConfigurationTab.General -> stringResource(ConfigRes.string.general)
         ConfigurationTab.Appearance -> stringResource(ConfigRes.string.appearance)
         ConfigurationTab.Java -> stringResource(SharedRes.string.java)
+        ConfigurationTab.GameOptions -> stringResource(ConfigRes.string.gameOptions)
         ConfigurationTab.NativeLibraries -> stringResource(ConfigRes.string.nativeLibraries)
         ConfigurationTab.Storage -> stringResource(ConfigRes.string.storage)
         ConfigurationTab.Advanced -> stringResource(SharedRes.string.advanced)

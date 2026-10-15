@@ -20,6 +20,7 @@ data class Instance(
     val jvmMemoryOptions: JvmMemoryOptions = JvmMemoryOptions(),
     val nativeLibraryOptions: NativeLibraryOptions = NativeLibraryOptions(),
     val checkForUpdates: Boolean? = null,
+    val defaultOptionsApplied: Boolean = false,
     val createdAt: Instant = Clock.System.now(),
     val updatedAt: Instant = Clock.System.now(),
     val lastPlayedAt: Instant? = null,

@@ -88,4 +88,12 @@
     <string name="updateChannelStable">Stable</string>
     <string name="updateChannelBeta">Beta</string>
     <string name="updateChannelAlpha">Alpha</string>
+    <string name="gameOptions">Game options</string>
+    <string name="defaultOptions">Default options</string>
+    <string name="defaultOptionsNotSetDesc">Not set yet. Open an instance whose keybinds and settings you like, then use "Save Options as Default" in its menu.</string>
+    <string name="defaultOptionsSetDesc">Saved from %1$s (Minecraft %2$s), %3$s. Includes: %4$s.</string>
+    <string name="applyDefaultOptions">Apply to new instances</string>
+    <string name="applyDefaultOptionsDesc">Copy the default options into every new instance on its first launch, on top of the options a modpack ships.</string>
+    <string name="clearDefaultOptions">Clear</string>
+    <string name="clearDefaultOptionsConfirmation">Clear the default options? Instances that already received them keep their current options.</string>
 </resources>

@@ -1,5 +1,7 @@
 package app.vercors.feature.game.domain.model
 
+import kotlin.time.Instant
+
 data class GameVersionList(
     val latestRelease: String,
     val latestSnapshot: String,
@@ -9,6 +11,7 @@ data class GameVersionList(
         val id: String,
         val type: GameVersionType,
         val url: String,
-        val sha1: String
+        val sha1: String,
+        val releaseTime: Instant
     )
 }
