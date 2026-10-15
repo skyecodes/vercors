@@ -298,7 +298,7 @@ class LaunchInstanceUseCase(
                 if (result?.skippedCategories?.isNotEmpty() == true) {
                     instanceRepository.addInstanceLog(
                         instance.id,
-                        InstanceLogEvent.Launcher("Default keybinds skipped: incompatible with this game version")
+                        InstanceLogEvent.Launcher("Default keybinds skipped: unknown keybind format for this game version")
                     )
                 }
             }
