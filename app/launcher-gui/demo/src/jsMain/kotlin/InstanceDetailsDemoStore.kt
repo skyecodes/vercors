@@ -10,11 +10,15 @@ import app.vercors.feature.instance.ui.details.*
 import app.vercors.feature.instance.ui.details.content.InstalledContentEvent
 import app.vercors.feature.instance.ui.details.content.InstalledContentFileView
 import app.vercors.feature.instance.ui.details.content.InstalledContentState
+import app.vercors.feature.instance.ui.details.header.InstanceHeaderState
+import app.vercors.feature.instance.ui.details.installation.InstanceInstallationState
+import app.vercors.feature.instance.ui.details.launch.InstanceLaunchState
 import app.vercors.feature.instance.ui.details.logs.InstanceLogsState
 import app.vercors.feature.instance.ui.details.options.InstanceEditState
 import app.vercors.feature.instance.ui.details.options.InstanceOptionsState
 import app.vercors.feature.instance.ui.details.options.UpdateCheckView
 import app.vercors.feature.instance.ui.details.servers.InstanceServersState
+import app.vercors.feature.instance.ui.details.update.InstanceUpdateState
 import app.vercors.feature.instance.ui.details.worlds.InstalledWorldsState
 import app.vercors.feature.instance.ui.install.FinishInstallationDialog
 import app.vercors.launcher.demo.data.CURSEFORGE_PLATFORM_ID
@@ -51,14 +55,35 @@ fun instanceDetailsDemoStore(): Store<InstanceDetailsState, InstanceDetailsEvent
     return Store(
         state = InstanceDetailsState(
             instance = ProgressiveOutcome.Success(instance),
-            promptInstallJava = null,
             selectedTab = InstanceDetailsTab.Mods,
             horizontalTabs = false,
-            promptDeleteConfirmation = false,
-            copyInstanceDialog = null,
-            copyOptionsDialog = null,
-            saveDefaultOptionsDialog = null,
-            exportInstanceDialog = null,
+            launch = Store(
+                InstanceLaunchState(
+                    promptInstallJava = null,
+                    promptLogin = false,
+                    loginDialog = LoginDialog(mutableStateOf(LoginStateView())) {},
+                    promptJavaInstallProgress = false,
+                    installJavaProgressDialog = InstallJavaProgressDialog(mutableStateOf(JavaInstallProgressView())),
+                )
+            ) {},
+            header = Store(
+                InstanceHeaderState(
+                    promptDeleteConfirmation = false,
+                    copyInstanceDialog = null,
+                    exportInstanceDialog = null,
+                    copyOptionsDialog = null,
+                    saveDefaultOptionsDialog = null,
+                )
+            ) {},
+            installation = Store(
+                InstanceInstallationState(
+                    promptFinishInstallation = false,
+                    finishInstallationDialog = FinishInstallationDialog(mutableStateOf(emptyList())) {},
+                )
+            ) {},
+            update = Store(
+                InstanceUpdateState(modpackUpdate = null, promptModpackUpdate = false, localPackUpdatePrompt = null)
+            ) {},
             optionsContent = Store(optionsState(instance)) {},
             modsContent = contentStore(MONIFACTORY_MODS.map { it.toView() }),
             resourcePacksContent = contentStore(MONIFACTORY_RESOURCE_PACKS),
@@ -66,12 +91,6 @@ fun instanceDetailsDemoStore(): Store<InstanceDetailsState, InstanceDetailsEvent
             worldsContent = Store(InstalledWorldsState(worlds = emptyList(), promptRemoveConfirmation = null)) {},
             serversContent = Store(InstanceServersState(servers = emptyList())) {},
             logsContent = Store(InstanceLogsState(logs = emptyList())) {},
-            promptFinishInstallation = false,
-            finishInstallationDialog = FinishInstallationDialog(mutableStateOf(emptyList())) {},
-            loginDialog = LoginDialog(mutableStateOf(LoginStateView())) {},
-            installJavaProgressDialog = InstallJavaProgressDialog(mutableStateOf(JavaInstallProgressView())),
-            modpackUpdate = null,
-            promptModpackUpdate = false,
         ),
         eventSink = {},
     )

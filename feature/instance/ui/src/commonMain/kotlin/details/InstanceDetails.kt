@@ -24,20 +24,26 @@ import app.vercors.feature.instance.domain.model.InstanceFolder
 import app.vercors.feature.instance.domain.model.InstanceStatus
 import app.vercors.feature.instance.ui.*
 import app.vercors.feature.instance.ui.details.content.*
+import app.vercors.feature.instance.ui.details.header.InstanceHeaderEvent
+import app.vercors.feature.instance.ui.details.header.InstanceHeaderOverlays
+import app.vercors.feature.instance.ui.details.installation.InstanceInstallationEvent
+import app.vercors.feature.instance.ui.details.installation.InstanceInstallationOverlays
+import app.vercors.feature.instance.ui.details.launch.InstanceLaunchEvent
+import app.vercors.feature.instance.ui.details.launch.InstanceLaunchOverlays
 import app.vercors.feature.instance.ui.details.logs.InstanceLogs
 import app.vercors.feature.instance.ui.details.options.InstanceAdvancedOptions
 import app.vercors.feature.instance.ui.details.options.InstanceJavaOptions
 import app.vercors.feature.instance.ui.details.options.InstanceOptions
 import app.vercors.feature.instance.ui.details.options.InstanceOptionsEvent
 import app.vercors.feature.instance.ui.details.servers.InstanceServers
+import app.vercors.feature.instance.ui.details.update.InstanceUpdateEvent
+import app.vercors.feature.instance.ui.details.update.InstanceUpdateOverlays
+import app.vercors.feature.instance.ui.details.update.InstanceUpdateState
 import app.vercors.feature.instance.ui.details.worlds.InstalledWorlds
 import app.vercors.feature.instance.ui.details.worlds.InstalledWorldsEvent
 import app.vercors.feature.launcher.domain.model.QuickPlayTarget
 import app.vercors.feature.project.domain.model.ProjectType
 import app.vercors.shared.ui.*
-import app.vercors.shared.ui.overlay.ConfirmDialog
-import app.vercors.shared.ui.overlay.ConfirmDialogButton
-import app.vercors.shared.ui.overlay.ConfirmDialogButtonStyle
 import com.composables.icons.lucide.*
 import com.composeunstyled.theme.Theme
 import com.slack.circuit.codegen.annotations.CircuitInject
@@ -51,7 +57,6 @@ import nl.jacobras.humanreadable.HumanReadable
 import opensavvy.state.progressive.onFailure
 import opensavvy.state.progressive.onIncomplete
 import opensavvy.state.progressive.onSuccess
-import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 
 @CircuitInject(InstanceDetailsScreen::class, AppScope::class)
@@ -73,35 +78,10 @@ fun InstanceDetails(
             AppLoading()
         }
 
-        if (state.promptDeleteConfirmation) {
-            OverlayEffect {
-                eventSink(InstanceDetailsEvent.OnConfirmDelete(show(deleteInstanceConfirmDialog())))
-            }
-        }
-
-        state.copyInstanceDialog?.let { dialog ->
-            OverlayEffect(dialog) {
-                eventSink(InstanceDetailsEvent.OnCopyInstanceResult(show(dialog)))
-            }
-        }
-
-        state.exportInstanceDialog?.let { dialog ->
-            OverlayEffect(dialog) {
-                eventSink(InstanceDetailsEvent.OnExportInstanceResult(show(dialog)))
-            }
-        }
-
-        state.copyOptionsDialog?.let { dialog ->
-            OverlayEffect(dialog) {
-                eventSink(InstanceDetailsEvent.OnCopyOptionsResult(show(dialog)))
-            }
-        }
-
-        state.saveDefaultOptionsDialog?.let { dialog ->
-            OverlayEffect(dialog) {
-                eventSink(InstanceDetailsEvent.OnSaveDefaultOptionsResult(show(dialog)))
-            }
-        }
+        InstanceLaunchOverlays(state.launch)
+        InstanceHeaderOverlays(state.header)
+        InstanceInstallationOverlays(state.installation)
+        InstanceUpdateOverlays(state.update)
 
         InstalledContentRemoveConfirmEffect(state.modsContent)
         InstalledContentRemoveConfirmEffect(state.resourcePacksContent)
@@ -110,83 +90,6 @@ fun InstanceDetails(
             OverlayEffect(pending) {
                 val result = show(removeContentConfirmDialog(pending.folderName.stripMinecraftFormattingForDisplay()))
                 state.worldsContent.eventSink(InstalledWorldsEvent.OnConfirmRemove(result))
-            }
-        }
-
-        if (state.promptFinishInstallation) {
-            OverlayEffect {
-                show(state.finishInstallationDialog)
-                eventSink(InstanceDetailsEvent.OnFinishInstallationDismiss)
-            }
-        }
-
-        state.promptInstallJava?.let { majorVersion ->
-            OverlayEffect(majorVersion) {
-                val result = show(
-                    ConfirmDialog(
-                        messageResource = InstanceRes.string.promptInstallJavaMessage,
-                        messageArgs = listOf(majorVersion),
-                        actionButton = ConfirmDialogButton(
-                            textResource = InstanceRes.string.installJava,
-                            icon = Lucide.Download,
-                            style = ConfirmDialogButtonStyle.Primary,
-                        ),
-                    )
-                )
-                if (result) eventSink(InstanceDetailsEvent.OnInstallJavaConfirm)
-                else eventSink(InstanceDetailsEvent.OnInstallJavaDismiss)
-            }
-        }
-
-        state.modpackUpdate?.takeIf { state.promptModpackUpdate }?.let { update ->
-            OverlayEffect(update) {
-                val result = show(
-                    ConfirmDialog(
-                        messageResource = if (update.newGameVersion != null) {
-                            InstanceRes.string.promptModpackUpdateWithGameVersion
-                        } else {
-                            InstanceRes.string.promptModpackUpdate
-                        },
-                        messageArgs = listOfNotNull(update.currentVersion, update.latestVersion, update.newGameVersion),
-                        actionButton = ConfirmDialogButton(
-                            textResource = InstanceRes.string.updateModpack,
-                            icon = Lucide.Download,
-                            style = ConfirmDialogButtonStyle.Primary,
-                        ),
-                    )
-                )
-                eventSink(InstanceDetailsEvent.OnConfirmModpackUpdate(result))
-            }
-        }
-
-        state.localPackUpdatePrompt?.let { prompt ->
-            OverlayEffect(prompt) {
-                val result = show(
-                    ConfirmDialog(
-                        messageResource = prompt.kind.messageResource,
-                        messageArgs = listOf(prompt.currentLabel, prompt.newLabel, prompt.gameVersion),
-                        actionButton = ConfirmDialogButton(
-                            textResource = InstanceRes.string.updateModpack,
-                            icon = Lucide.Download,
-                            style = ConfirmDialogButtonStyle.Primary,
-                        ),
-                    )
-                )
-                eventSink(InstanceDetailsEvent.OnConfirmLocalPackUpdate(result))
-            }
-        }
-
-        if (state.promptJavaInstallProgress) {
-            OverlayEffect {
-                show(state.installJavaProgressDialog)
-                eventSink(InstanceDetailsEvent.OnJavaInstallProgressDismiss)
-            }
-        }
-
-        if (state.promptLogin) {
-            OverlayEffect {
-                show(state.loginDialog)
-                eventSink(InstanceDetailsEvent.OnLoginDismiss)
             }
         }
     }
@@ -213,7 +116,7 @@ private fun InstanceDetails(
     ) {
         InstanceHeader(
             instance = instance,
-            modpackUpdate = state.modpackUpdate,
+            state = state,
             isInstanceEdited = state.optionsContent.state.isInstanceEdited,
             onCancelEdit = { state.optionsContent.eventSink(InstanceOptionsEvent.OnCancelEditClick) },
             onSaveInstance = { state.optionsContent.eventSink(InstanceOptionsEvent.OnSaveClick) },
@@ -275,7 +178,9 @@ private fun InstanceDetailsTabContent(tab: InstanceDetailsTab, instance: Instanc
     val onOpenProject: (String, String) -> Unit = { platformId, projectId ->
         eventSink(InstanceDetailsEvent.OnOpenProjectClick(platformId, projectId))
     }
-    val onOpenFolder: (InstanceFolder) -> Unit = { eventSink(InstanceDetailsEvent.OnOpenInstanceFolderClick(it)) }
+    val onOpenFolder: (InstanceFolder) -> Unit = {
+        state.header.eventSink(InstanceHeaderEvent.OnOpenInstanceFolderClick(it))
+    }
     when (tab) {
         InstanceDetailsTab.Options -> InstanceOptions(instance, state.optionsContent, state.horizontalTabs)
         InstanceDetailsTab.Java -> InstanceJavaOptions(instance, state.optionsContent, state.horizontalTabs)
@@ -310,15 +215,19 @@ private fun InstanceDetailsTabContent(tab: InstanceDetailsTab, instance: Instanc
             content = state.worldsContent,
             horizontalTabs = state.horizontalTabs,
             onAddClick = { eventSink(InstanceDetailsEvent.OnAddContentClick(ProjectType.World)) },
-            onOpenFolder = { eventSink(InstanceDetailsEvent.OnOpenInstanceFolderClick(InstanceFolder.Saves)) },
-            onQuickJoinClick = { eventSink(InstanceDetailsEvent.OnQuickJoinClick(QuickPlayTarget.Singleplayer(it))) },
+            onOpenFolder = { onOpenFolder(InstanceFolder.Saves) },
+            onQuickJoinClick = {
+                state.launch.eventSink(InstanceLaunchEvent.OnQuickJoinClick(QuickPlayTarget.Singleplayer(it)))
+            },
         )
 
         InstanceDetailsTab.Servers -> InstanceServers(
             instance = instance,
             content = state.serversContent,
             horizontalTabs = state.horizontalTabs,
-            onQuickJoinClick = { eventSink(InstanceDetailsEvent.OnQuickJoinClick(QuickPlayTarget.Multiplayer(it))) },
+            onQuickJoinClick = {
+                state.launch.eventSink(InstanceLaunchEvent.OnQuickJoinClick(QuickPlayTarget.Multiplayer(it)))
+            },
         )
 
         InstanceDetailsTab.Logs -> InstanceLogs(state.logsContent, state.horizontalTabs)
@@ -330,7 +239,7 @@ private fun InstanceDetailsTabContent(tab: InstanceDetailsTab, instance: Instanc
 context(eventSink: EventSink<InstanceDetailsEvent>)
 private fun InstanceHeader(
     instance: InstanceView,
-    modpackUpdate: ModpackUpdateView?,
+    state: InstanceDetailsState,
     isInstanceEdited: Boolean,
     onCancelEdit: () -> Unit,
     onSaveInstance: () -> Unit,
@@ -345,21 +254,21 @@ private fun InstanceHeader(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        InstanceHeaderIcon(instance)
+        InstanceHeaderIcon(instance, state.header.eventSink)
         InstanceHeaderInfo(instance)
         InstanceHeaderStatus(instance)
         InstanceHeaderEditActions(isInstanceEdited, onCancelEdit, onSaveInstance)
-        InstanceHeaderUpdateButton(instance, modpackUpdate, isInstanceEdited)
-        InstanceHeaderActionButton(instance, isInstanceEdited)
-        InstanceHeaderMenu(instance)
+        InstanceHeaderUpdateButton(instance, state.update, isInstanceEdited)
+        InstanceHeaderActionButton(instance, state.launch.eventSink, state.installation.eventSink, isInstanceEdited)
+        InstanceHeaderMenu(instance, state)
     }
 }
 
 @Composable
-context(_: SharedElementTransitionScope, eventSink: EventSink<InstanceDetailsEvent>)
-private fun InstanceHeaderIcon(instance: InstanceView) {
+context(_: SharedElementTransitionScope)
+private fun InstanceHeaderIcon(instance: InstanceView, headerSink: EventSink<InstanceHeaderEvent>) {
     val pickerLauncher = rememberFilePickerLauncher(type = FileKitType.Image) { file ->
-        file?.let { eventSink(InstanceDetailsEvent.OnIconSelected(it.path)) }
+        file?.let { headerSink(InstanceHeaderEvent.OnIconSelected(it.path)) }
     }
     InstanceIcon(
         instanceId = instance.id,
@@ -526,16 +435,15 @@ private fun InstanceHeaderEditActions(
 }
 
 @Composable
-context(eventSink: EventSink<InstanceDetailsEvent>)
 private fun InstanceHeaderUpdateButton(
     instance: InstanceView,
-    modpackUpdate: ModpackUpdateView?,
+    update: Store<InstanceUpdateState, InstanceUpdateEvent>,
     isInstanceEdited: Boolean
 ) {
     val canUpdate = instance.status is InstanceStatus.Idle || instance.status is InstanceStatus.Failed
-    AppAnimatedVisibility(modpackUpdate != null && canUpdate && !isInstanceEdited) {
+    AppAnimatedVisibility(update.state.modpackUpdate != null && canUpdate && !isInstanceEdited) {
         AppIconTextButton(
-            onClick = { eventSink(InstanceDetailsEvent.OnUpdateModpackClick) },
+            onClick = { update.eventSink(InstanceUpdateEvent.OnUpdateModpackClick) },
             text = stringResource(InstanceRes.string.updateModpack),
             backgroundColor = Theme[colors][primary],
             contentColor = Theme[colors][onPrimary],
@@ -545,12 +453,16 @@ private fun InstanceHeaderUpdateButton(
 }
 
 @Composable
-context(eventSink: EventSink<InstanceDetailsEvent>)
-private fun InstanceHeaderActionButton(instance: InstanceView, isInstanceEdited: Boolean) {
+private fun InstanceHeaderActionButton(
+    instance: InstanceView,
+    launchSink: EventSink<InstanceLaunchEvent>,
+    installationSink: EventSink<InstanceInstallationEvent>,
+    isInstanceEdited: Boolean,
+) {
     AppAnimatedVisibility(!isInstanceEdited) {
         when (instance.status) {
             is InstanceStatus.Installing.AwaitingManualDownloads -> AppIconTextButton(
-                onClick = { eventSink(InstanceDetailsEvent.OnFinishInstallationClick) },
+                onClick = { installationSink(InstanceInstallationEvent.OnFinishInstallationClick) },
                 text = stringResource(InstanceRes.string.finishInstallation),
                 backgroundColor = Theme[colors][primary],
                 contentColor = Theme[colors][onPrimary],
@@ -558,7 +470,7 @@ private fun InstanceHeaderActionButton(instance: InstanceView, isInstanceEdited:
             )
 
             is InstanceStatus.Installing.Interrupted -> AppIconTextButton(
-                onClick = { eventSink(InstanceDetailsEvent.OnResumeInstallationClick) },
+                onClick = { installationSink(InstanceInstallationEvent.OnResumeInstallationClick) },
                 text = stringResource(InstanceRes.string.resumeInstallation),
                 backgroundColor = Theme[colors][primary],
                 contentColor = Theme[colors][onPrimary],
@@ -566,10 +478,10 @@ private fun InstanceHeaderActionButton(instance: InstanceView, isInstanceEdited:
             )
 
             is InstanceStatus.Idle, is InstanceStatus.Failed ->
-                InstanceLaunchButton(onClick = { eventSink(InstanceDetailsEvent.OnLaunchClick) })
+                InstanceLaunchButton(onClick = { launchSink(InstanceLaunchEvent.OnLaunchClick) })
 
             is InstanceStatus.Launching -> AppIconTextButton(
-                onClick = { eventSink(InstanceDetailsEvent.OnCancelClick) },
+                onClick = { launchSink(InstanceLaunchEvent.OnCancelClick) },
                 text = stringResource(SharedRes.string.cancel),
                 backgroundColor = Theme[colors][error],
                 contentColor = Theme[colors][onError],
@@ -585,30 +497,31 @@ private fun InstanceHeaderActionButton(instance: InstanceView, isInstanceEdited:
                 enabled = false,
             )
 
-            is InstanceStatus.Running -> InstanceStopButton(onClick = { eventSink(InstanceDetailsEvent.OnStopClick) })
+            is InstanceStatus.Running -> InstanceStopButton(onClick = { launchSink(InstanceLaunchEvent.OnStopClick) })
 
-            is InstanceStatus.Stopping -> InstanceKillButton(onClick = { eventSink(InstanceDetailsEvent.OnKillClick) })
+            is InstanceStatus.Stopping -> InstanceKillButton(onClick = { launchSink(InstanceLaunchEvent.OnKillClick) })
         }
     }
 }
 
 @Composable
 context(eventSink: EventSink<InstanceDetailsEvent>)
-private fun InstanceHeaderMenu(instance: InstanceView) {
+private fun InstanceHeaderMenu(instance: InstanceView, state: InstanceDetailsState) {
+    val headerSink = state.header.eventSink
     val packPickerLauncher = rememberFilePickerLauncher(type = FileKitType.File("zip", "mrpack", "vcpack")) { file ->
-        file?.let { eventSink(InstanceDetailsEvent.OnUpdateFromFileSelected(it.path)) }
+        file?.let { state.update.eventSink(InstanceUpdateEvent.OnUpdateFromFileSelected(it.path)) }
     }
     AppMenuButton {
         if (instance.status is InstanceStatus.Installing) {
             AppMenuItem(
-                onClick = { eventSink(InstanceDetailsEvent.OnCancelSetupClick) },
+                onClick = { state.launch.eventSink(InstanceLaunchEvent.OnCancelClick) },
                 text = stringResource(InstanceRes.string.cancelSetup),
                 imageVector = Lucide.X,
                 contentColor = Theme[colors][error]
             )
         }
         AppMenuItem(
-            onClick = { eventSink(InstanceDetailsEvent.OnOpenInstanceFolderClick(InstanceFolder.Root)) },
+            onClick = { headerSink(InstanceHeaderEvent.OnOpenInstanceFolderClick(InstanceFolder.Root)) },
             text = stringResource(InstanceRes.string.openInstanceFolder),
             imageVector = Lucide.FolderOpen
         )
@@ -628,25 +541,25 @@ private fun InstanceHeaderMenu(instance: InstanceView) {
         }
         if (instance.iconFilePath != null) {
             AppMenuItem(
-                onClick = { eventSink(InstanceDetailsEvent.OnRemoveIconClick) },
+                onClick = { headerSink(InstanceHeaderEvent.OnRemoveIconClick) },
                 text = stringResource(InstanceRes.string.removeIcon),
                 imageVector = Lucide.ImageOff
             )
         } else if (instance.modpackInfo != null) {
             AppMenuItem(
-                onClick = { eventSink(InstanceDetailsEvent.OnRestoreIconClick) },
+                onClick = { headerSink(InstanceHeaderEvent.OnRestoreIconClick) },
                 text = stringResource(InstanceRes.string.restoreIcon),
                 imageVector = Lucide.Image
             )
         }
         if (instance.status is InstanceStatus.Idle || instance.status is InstanceStatus.Failed) {
             AppMenuItem(
-                onClick = { eventSink(InstanceDetailsEvent.OnCopyClick) },
+                onClick = { headerSink(InstanceHeaderEvent.OnCopyClick(instance.name)) },
                 text = stringResource(InstanceRes.string.copyInstance),
                 imageVector = Lucide.Copy
             )
             AppMenuItem(
-                onClick = { eventSink(InstanceDetailsEvent.OnExportClick) },
+                onClick = { headerSink(InstanceHeaderEvent.OnExportClick(instance.name)) },
                 text = stringResource(InstanceRes.string.exportInstance),
                 imageVector = Lucide.Share
             )
@@ -656,18 +569,18 @@ private fun InstanceHeaderMenu(instance: InstanceView) {
                 imageVector = Lucide.FileUp
             )
             AppMenuItem(
-                onClick = { eventSink(InstanceDetailsEvent.OnCopyOptionsClick) },
+                onClick = { headerSink(InstanceHeaderEvent.OnCopyOptionsClick(instance.gameVersion)) },
                 text = stringResource(InstanceRes.string.copyOptionsFrom),
                 imageVector = Lucide.Keyboard
             )
             AppMenuItem(
-                onClick = { eventSink(InstanceDetailsEvent.OnSaveDefaultOptionsClick) },
+                onClick = { headerSink(InstanceHeaderEvent.OnSaveDefaultOptionsClick) },
                 text = stringResource(InstanceRes.string.saveOptionsAsDefault),
                 imageVector = Lucide.BookmarkCheck
             )
         }
         AppMenuItem(
-            onClick = { eventSink(InstanceDetailsEvent.OnDeleteClick) },
+            onClick = { headerSink(InstanceHeaderEvent.OnDeleteClick) },
             text = stringResource(SharedRes.string.delete),
             imageVector = Lucide.Trash,
             contentColor = Theme[colors][error]
@@ -699,11 +612,4 @@ private val InstanceDetailsTab.title: String
         InstanceDetailsTab.ShaderPacks -> stringResource(SharedRes.string.shaderPacks)
         InstanceDetailsTab.Worlds -> stringResource(InstanceRes.string.worlds)
         InstanceDetailsTab.Servers -> stringResource(InstanceRes.string.servers)
-    }
-
-private val LocalPackUpdateKind.messageResource: StringResource
-    get() = when (this) {
-        LocalPackUpdateKind.SamePack -> InstanceRes.string.promptLocalPackUpdate
-        LocalPackUpdateKind.NoRecord -> InstanceRes.string.promptLocalPackUpdateNoRecord
-        LocalPackUpdateKind.OtherPack -> InstanceRes.string.promptLocalPackUpdateOtherPack
     }

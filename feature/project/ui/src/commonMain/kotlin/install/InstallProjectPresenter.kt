@@ -2,8 +2,6 @@ package app.vercors.feature.project.ui.install
 
 import androidx.compose.runtime.*
 import app.vercors.core.domain.filterIsRight
-import app.vercors.core.domain.toDownloadProgressOrNull
-import app.vercors.core.domain.toFractionOrNull
 import app.vercors.core.ui.state.mutableProgressiveStateOf
 import app.vercors.core.ui.state.produceAndCollectAsProgressiveState
 import app.vercors.feature.game.domain.model.LoaderError
@@ -14,12 +12,17 @@ import app.vercors.feature.game.domain.usecase.ObserveGameVersionListUseCase
 import app.vercors.feature.game.domain.usecase.ObserveLoaderVersionsUseCase
 import app.vercors.feature.game.ui.GameVersionView
 import app.vercors.feature.instance.domain.model.*
-import app.vercors.feature.instance.domain.usecase.*
+import app.vercors.feature.instance.domain.usecase.CreateInstanceUseCase
+import app.vercors.feature.instance.domain.usecase.ObserveInstalledContentUseCase
+import app.vercors.feature.instance.domain.usecase.ObserveInstanceListUseCase
 import app.vercors.feature.instance.ui.observeAvailableLoadersView
 import app.vercors.feature.instance.ui.observeGameVersionListView
 import app.vercors.feature.instance.ui.observeLoaderVersionsView
 import app.vercors.feature.project.domain.model.*
-import app.vercors.feature.project.domain.usecase.*
+import app.vercors.feature.project.domain.usecase.ApplyProjectIconUseCase
+import app.vercors.feature.project.domain.usecase.GetProjectFilesUseCase
+import app.vercors.feature.project.domain.usecase.GetProjectUseCase
+import app.vercors.feature.project.domain.usecase.InstallProjectFilesUseCase
 import app.vercors.feature.project.ui.message
 import app.vercors.shared.domain.usecase.CopyToClipboardUseCase
 import app.vercors.shared.ui.Presenter
@@ -31,7 +34,6 @@ import com.slack.circuit.overlay.OverlayNavigator
 import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedFactory
 import dev.zacsweers.metro.AssistedInject
-import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
@@ -40,10 +42,7 @@ import opensavvy.state.arrow.progressive
 import opensavvy.state.progressive.ProgressiveOutcome
 import opensavvy.state.progressive.map
 import opensavvy.state.progressive.valueOrNull
-import app.vercors.feature.instance.ui.message as instanceMessage
 import app.vercors.feature.instance.ui.message as manualDownloadMessage
-
-private val logger = KotlinLogging.logger {}
 
 @AssistedInject
 class InstallProjectPresenter(
@@ -61,12 +60,8 @@ class InstallProjectPresenter(
     private val getProject: GetProjectUseCase,
     private val getProjectFiles: GetProjectFilesUseCase,
     private val createInstance: CreateInstanceUseCase,
-    private val setInstanceIconFromUrl: SetInstanceIconFromUrlUseCase,
-    private val downloadProjectFiles: DownloadProjectFilesUseCase,
-    private val runManualDownloads: RunManualDownloadsUseCase,
-    private val installWorldFile: InstallWorldFileUseCase,
-    private val awaitManualWorldDownload: AwaitManualWorldDownloadUseCase,
-    private val recordInstalledContentOrigin: RecordInstalledContentOriginUseCase,
+    private val applyProjectIcon: ApplyProjectIconUseCase,
+    private val installProjectFiles: InstallProjectFilesUseCase,
     private val copyToClipboard: CopyToClipboardUseCase,
     private val snackbarService: SnackbarService
 ) : Presenter<InstallProjectState, InstallProjectEvent> {
@@ -499,11 +494,8 @@ class InstallProjectPresenter(
         onFinished: (success: Boolean) -> Unit
     ): Job {
         val job = globalScope.launch {
-            val ok = if (projectType == ProjectType.World) {
-                installWorldFileFor(instanceId, file, onManualDownloadItemsChanged, onProgressChanged)
-            } else {
+            val ok =
                 installFiles(instanceId, file, selectedDependencies, onManualDownloadItemsChanged, onProgressChanged)
-            }
             onFinished(ok)
         }
         job.invokeOnCompletion { error -> if (error != null) onFinished(false) }
@@ -538,13 +530,10 @@ class InstallProjectPresenter(
             }
 
             // Child of `job`, not `globalScope`, so a best-effort icon fetch never outlives a cancelled install.
-            launch { fetchAndApplyProjectIcon(instance) }
+            launch { applyProjectIcon(instance, projectId) }
 
-            val ok = if (projectType == ProjectType.World) {
-                installWorldFileFor(instance.id, file, onManualDownloadItemsChanged, onProgressChanged)
-            } else {
+            val ok =
                 installFiles(instance.id, file, selectedDependencies, onManualDownloadItemsChanged, onProgressChanged)
-            }
             onFinished(instance.id, ok)
         }
         job.invokeOnCompletion { error -> if (error != null) onFinished(null, false) }
@@ -557,137 +546,21 @@ class InstallProjectPresenter(
             null
         }
 
-    // Best-effort: a missing logo must never fail the install
-    private suspend fun fetchAndApplyProjectIcon(instance: Instance) {
-        recover({
-            val logoUrl = getProject(projectId).logoUrl
-            if (logoUrl != null) {
-                recover({ setInstanceIconFromUrl(instance, logoUrl) }) { _: InstanceIconError ->
-                    logger.warn { "Failed to set instance icon for ${instance.id} from $logoUrl" }
-                }
-            }
-        }) { error: ProjectDetailsError ->
-            logger.warn { "Failed to fetch project details for instance icon (${instance.id}): $error" }
-        }
-    }
-
     private suspend fun installFiles(
         instanceId: InstanceId,
         file: ProjectFileView,
         selectedDependencies: List<DependencyFileView>,
         onManualDownloadItemsChanged: (List<ManualDownloadItem>) -> Unit,
         onProgressChanged: (InstallProgressView) -> Unit,
-    ): Boolean {
-        val candidates = buildList {
-            add(InstallCandidate(projectId, projectType, file))
-            selectedDependencies.forEach { add(InstallCandidate(it.projectId, it.type, it.file)) }
-        }
-        val (autoCandidates, manualCandidates) = candidates.partition { it.file.manualDownloadUrl == null }
-        val totalCount = candidates.size
-
-        val autoOk = recover({
-            if (autoCandidates.isNotEmpty()) {
-                downloadProjectFiles(
-                    autoCandidates.map {
-                        ProjectFileDownloadCandidate(
-                            it.projectId, it.file.id, it.file.fileName, it.type, it.file.size, it.file.sha1, it.file.md5
-                        )
-                    },
-                    instanceId
-                ) { progress ->
-                    onProgressChanged(
-                        InstallProgressView(
-                            fraction = (progress.toFractionOrNull() ?: 0f) * autoCandidates.size / totalCount,
-                            download = progress.toDownloadProgressOrNull(),
-                        )
-                    )
-                }
-                autoCandidates.forEach { candidate ->
-                    val kind = requireNotNull(candidate.type.toContentKindOrNull())
-                    recordInstalledContentOrigin(
-                        kind,
-                        instanceId,
-                        candidate.file.fileName,
-                        candidate.projectId.platform,
-                        candidate.projectId.id,
-                        candidate.file.id
-                    )
-                }
-            }
-            onProgressChanged(InstallProgressView(autoCandidates.size.toFloat() / totalCount))
-            true
-        }) { error: ProjectFileDownloadError ->
-            snackbarService.error { error.message }
-            false
-        }
-
-        return autoOk && runManualDownloads(
-            manualCandidates.map { candidate ->
-                ManualDownloadCandidate(
-                    fileName = candidate.file.fileName,
-                    downloadUrl = requireNotNull(candidate.file.manualDownloadUrl),
-                    instanceId = instanceId,
-                    projectType = candidate.type,
-                    size = candidate.file.size,
-                    sha1 = candidate.file.sha1,
-                    md5 = candidate.file.md5,
-                    platformId = candidate.projectId.platform,
-                    providerProjectId = candidate.projectId.id,
-                    providerFileId = candidate.file.id,
-                )
-            },
-            onError = { error -> snackbarService.error { error.manualDownloadMessage } },
-        ) { items ->
-            onManualDownloadItemsChanged(items)
-            onProgressChanged(InstallProgressView((autoCandidates.size + items.count { it.downloaded }).toFloat() / totalCount))
-        }
-    }
-
-    private suspend fun installWorldFileFor(
-        instanceId: InstanceId,
-        file: ProjectFileView,
-        onManualDownloadItemsChanged: (List<ManualDownloadItem>) -> Unit,
-        onProgressChanged: (InstallProgressView) -> Unit,
-    ): Boolean {
-        val manualDownloadUrl = file.manualDownloadUrl
-        val ok = if (manualDownloadUrl == null) {
-            recover({
-                val candidate =
-                    ProjectFileDownloadCandidate(
-                        projectId, file.id, file.fileName, projectType, file.size, file.sha1, file.md5
-                    )
-                installWorldFile(candidate, instanceId) { progress ->
-                    onProgressChanged(
-                        InstallProgressView(progress.toFractionOrNull() ?: 0f, progress.toDownloadProgressOrNull())
-                    )
-                }
-                true
-            }) { error: ProjectFileDownloadError ->
-                snackbarService.error { error.message }
-                false
-            }
-        } else {
-            onManualDownloadItemsChanged(
-                listOf(
-                    ManualDownloadItem(
-                        file.fileName,
-                        manualDownloadUrl,
-                        downloaded = false
-                    )
-                )
-            )
-            recover({
-                awaitManualWorldDownload(file.fileName, instanceId, file.size, file.sha1, file.md5)
-                true
-            }) { error: ManualDownloadError ->
-                snackbarService.error { error.instanceMessage }
-                false
-            }
-        }
-        onManualDownloadItemsChanged(emptyList())
-        onProgressChanged(InstallProgressView(1f))
-        return ok
-    }
+    ): Boolean = installProjectFiles(
+        instanceId = instanceId,
+        project = file.toInstallCandidate(projectId, projectType),
+        dependencies = selectedDependencies.map { it.file.toInstallCandidate(it.projectId, it.type) },
+        onDownloadError = { error -> snackbarService.error { error.message } },
+        onManualDownloadError = { error -> snackbarService.error { error.manualDownloadMessage } },
+        onManualDownloadItemsChanged = onManualDownloadItemsChanged,
+        onProgress = { onProgressChanged(InstallProgressView(it.fraction, it.download)) },
+    )
 
     @Composable
     private fun observeInstanceListView(): State<ProgressiveOutcome<Nothing, List<InstallableInstanceView>>> =
@@ -761,7 +634,8 @@ private data class FileSelectionState(
     val resolvingDependencies: Boolean,
 )
 
-private data class InstallCandidate(val projectId: ProjectId, val type: ProjectType, val file: ProjectFileView)
+private fun ProjectFileView.toInstallCandidate(projectId: ProjectId, type: ProjectType): ProjectInstallCandidate =
+    ProjectInstallCandidate(projectId, type, id, fileName, size, sha1, md5, manualDownloadUrl)
 
 private sealed interface DependencyResolution {
     data object NotApplicable : DependencyResolution

@@ -5,15 +5,18 @@ import app.vercors.core.domain.toDownloadProgressOrNull
 import app.vercors.core.domain.toFractionOrNull
 import app.vercors.core.ui.state.mutableProgressiveStateOf
 import app.vercors.feature.instance.domain.model.*
-import app.vercors.feature.instance.domain.usecase.*
+import app.vercors.feature.instance.domain.usecase.CreateInstanceUseCase
+import app.vercors.feature.instance.domain.usecase.DeleteInstanceUseCase
+import app.vercors.feature.instance.domain.usecase.UpdateInstanceJobUseCase
+import app.vercors.feature.instance.domain.usecase.UpdateInstanceStatusUseCase
 import app.vercors.feature.instance.ui.install.notifyModpackInstallResult
 import app.vercors.feature.project.domain.model.ProjectDetailsError
 import app.vercors.feature.project.domain.model.ProjectId
 import app.vercors.feature.project.domain.model.modpack.ModpackManifest
 import app.vercors.feature.project.domain.model.modpack.ModpackResolutionError
+import app.vercors.feature.project.domain.usecase.ApplyProjectIconUseCase
 import app.vercors.feature.project.domain.usecase.GetModpackManifestUseCase
 import app.vercors.feature.project.domain.usecase.GetProjectFilesUseCase
-import app.vercors.feature.project.domain.usecase.GetProjectUseCase
 import app.vercors.feature.project.domain.usecase.RunModpackInstallUseCase
 import app.vercors.feature.project.ui.message
 import app.vercors.shared.ui.Presenter
@@ -25,7 +28,6 @@ import com.slack.circuit.overlay.OverlayNavigator
 import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedFactory
 import dev.zacsweers.metro.AssistedInject
-import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -35,8 +37,6 @@ import opensavvy.state.progressive.ProgressiveOutcome
 import opensavvy.state.progressive.valueOrNull
 import app.vercors.feature.instance.ui.message as manualDownloadMessage
 
-private val logger = KotlinLogging.logger {}
-
 @AssistedInject
 class InstallModpackPresenter(
     @Assisted private val navigator: OverlayNavigator<InstallModpackResult>,
@@ -44,10 +44,9 @@ class InstallModpackPresenter(
     @Assisted private val projectName: String,
     private val globalScope: CoroutineScope,
     private val getProjectFiles: GetProjectFilesUseCase,
-    private val getProject: GetProjectUseCase,
     private val getModpackManifest: GetModpackManifestUseCase,
     private val createInstance: CreateInstanceUseCase,
-    private val setInstanceIconFromUrl: SetInstanceIconFromUrlUseCase,
+    private val applyProjectIcon: ApplyProjectIconUseCase,
     private val deleteInstance: DeleteInstanceUseCase,
     private val updateInstanceStatus: UpdateInstanceStatusUseCase,
     private val updateInstanceJob: UpdateInstanceJobUseCase,
@@ -175,7 +174,7 @@ class InstallModpackPresenter(
             onInstanceCreated(instance.id)
 
             // Child of `job`, not `globalScope`, so it's cancelled automatically if the install is rolled back.
-            launch { fetchAndApplyProjectIcon(instance) }
+            launch { applyProjectIcon(instance, projectId) }
 
             val ok = runModpackInstall(
                 instanceId = instance.id,
@@ -232,19 +231,6 @@ class InstallModpackPresenter(
             null
         }
 
-    // Best-effort: a missing logo must never fail the install
-    private suspend fun fetchAndApplyProjectIcon(instance: Instance) {
-        recover({
-            val logoUrl = getProject(projectId).logoUrl
-            if (logoUrl != null) {
-                recover({ setInstanceIconFromUrl(instance, logoUrl) }) { _: InstanceIconError ->
-                    logger.warn { "Failed to set instance icon for ${instance.id} from $logoUrl" }
-                }
-            }
-        }) { error: ProjectDetailsError ->
-            logger.warn { "Failed to fetch modpack project details for instance icon (${instance.id}): $error" }
-        }
-    }
 
     private suspend fun rollback(instanceId: InstanceId) {
         recover({ deleteInstance(instanceId) }) { _: InstanceError -> null }

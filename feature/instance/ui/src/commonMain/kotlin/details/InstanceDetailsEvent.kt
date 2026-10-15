@@ -1,47 +1,10 @@
 package app.vercors.feature.instance.ui.details
 
-import app.vercors.feature.instance.domain.model.InstanceFolder
-import app.vercors.feature.instance.ui.copy.CopyInstanceResult
-import app.vercors.feature.instance.ui.export.ExportInstanceResult
-import app.vercors.feature.instance.ui.options.copy.CopyOptionsResult
-import app.vercors.feature.instance.ui.options.savedefault.SaveDefaultOptionsResult
-import app.vercors.feature.launcher.domain.model.QuickPlayTarget
 import app.vercors.feature.project.domain.model.ProjectType
 import app.vercors.shared.ui.Event
 
 sealed interface InstanceDetailsEvent : Event {
-    data object OnLaunchClick : InstanceDetailsEvent
-    data class OnQuickJoinClick(val target: QuickPlayTarget) : InstanceDetailsEvent
-    data object OnCancelClick : InstanceDetailsEvent
-    data object OnCancelSetupClick : InstanceDetailsEvent
-    data object OnStopClick : InstanceDetailsEvent
-    data object OnKillClick : InstanceDetailsEvent
-    data object OnDeleteClick : InstanceDetailsEvent
-    data class OnConfirmDelete(val result: Boolean) : InstanceDetailsEvent
-    data object OnCopyClick : InstanceDetailsEvent
-    data class OnCopyInstanceResult(val result: CopyInstanceResult) : InstanceDetailsEvent
-    data object OnExportClick : InstanceDetailsEvent
-    data class OnExportInstanceResult(val result: ExportInstanceResult) : InstanceDetailsEvent
-    data object OnCopyOptionsClick : InstanceDetailsEvent
-    data class OnCopyOptionsResult(val result: CopyOptionsResult) : InstanceDetailsEvent
-    data object OnSaveDefaultOptionsClick : InstanceDetailsEvent
-    data class OnSaveDefaultOptionsResult(val result: SaveDefaultOptionsResult) : InstanceDetailsEvent
     data class OnTabClick(val tab: InstanceDetailsTab) : InstanceDetailsEvent
-    data object OnInstallJavaConfirm : InstanceDetailsEvent
-    data object OnInstallJavaDismiss : InstanceDetailsEvent
     data class OnOpenProjectClick(val platformId: String, val projectId: String) : InstanceDetailsEvent
     data class OnAddContentClick(val type: ProjectType) : InstanceDetailsEvent
-    data class OnIconSelected(val path: String) : InstanceDetailsEvent
-    data object OnRemoveIconClick : InstanceDetailsEvent
-    data object OnRestoreIconClick : InstanceDetailsEvent
-    data class OnOpenInstanceFolderClick(val folder: InstanceFolder) : InstanceDetailsEvent
-    data object OnFinishInstallationClick : InstanceDetailsEvent
-    data object OnFinishInstallationDismiss : InstanceDetailsEvent
-    data object OnResumeInstallationClick : InstanceDetailsEvent
-    data object OnUpdateModpackClick : InstanceDetailsEvent
-    data class OnConfirmModpackUpdate(val result: Boolean) : InstanceDetailsEvent
-    data class OnUpdateFromFileSelected(val sourcePath: String) : InstanceDetailsEvent
-    data class OnConfirmLocalPackUpdate(val result: Boolean) : InstanceDetailsEvent
-    data object OnLoginDismiss : InstanceDetailsEvent
-    data object OnJavaInstallProgressDismiss : InstanceDetailsEvent
 }

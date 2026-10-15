@@ -38,8 +38,7 @@ private const val RESOLVE_BATCH_SIZE = 50
 @StringKey(CURSEFORGE_PLATFORM_ID)
 class CurseForgeModpackParser(
     private val json: Json,
-    // Lazy to break the dependency cycle: ProjectRepositoryImpl injects the parser map this contributes into.
-    private val projectRepository: Lazy<ProjectRepository>
+    private val projectRepository: ProjectRepository
 ) : ModpackManifestParser {
     context(_: Raise<ModpackResolutionError>)
     override suspend fun parse(zipPath: Path, projectId: ProjectId, fileId: String): ModpackManifest {
@@ -80,7 +79,7 @@ class CurseForgeModpackParser(
         val chunks = entries.chunked(RESOLVE_BATCH_SIZE)
         val chunkResolutions = chunks.parMap(concurrency = RESOLVE_CONCURRENCY) { chunk ->
             either {
-                projectRepository.value.getProjectFilesByIds(
+                projectRepository.getProjectFilesByIds(
                     CURSEFORGE_PLATFORM_ID,
                     chunk.map { it.fileID.toString() }
                 )
