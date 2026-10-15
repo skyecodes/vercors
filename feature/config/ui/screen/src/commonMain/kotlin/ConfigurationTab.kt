@@ -3,7 +3,7 @@ package app.vercors.feature.config.ui
 enum class ConfigurationTab {
     General,
     Advanced,
-    UI,
+    Appearance,
     Java,
     NativeLibraries,
     Storage,

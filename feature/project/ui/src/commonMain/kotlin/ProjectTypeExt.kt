@@ -2,6 +2,7 @@ package app.vercors.feature.project.ui
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.vector.ImageVector
+import app.vercors.feature.project.domain.model.ProjectPlatform
 import app.vercors.feature.project.domain.model.ProjectSortBy
 import app.vercors.feature.project.domain.model.ProjectType
 import app.vercors.feature.project.ui.list.ProjectPlatformView
@@ -44,8 +45,14 @@ val ProjectType.icon: ImageVector
     }
 
 val ProjectPlatformView?.icon: ImageVector
-    @Composable get() = when (this?.id) {
-        "modrinth" -> vectorResource(ProjectRes.drawable.modrinth)
-        "curseforge" -> vectorResource(ProjectRes.drawable.curseforge)
-        else -> Lucide.CircleQuestionMark
-    }
+    @Composable get() = platformIcon(this?.id)
+
+val ProjectPlatform.icon: ImageVector
+    @Composable get() = platformIcon(id)
+
+@Composable
+private fun platformIcon(platformId: String?): ImageVector = when (platformId) {
+    "modrinth" -> vectorResource(ProjectRes.drawable.modrinth)
+    "curseforge" -> vectorResource(ProjectRes.drawable.curseforge)
+    else -> Lucide.CircleQuestionMark
+}
