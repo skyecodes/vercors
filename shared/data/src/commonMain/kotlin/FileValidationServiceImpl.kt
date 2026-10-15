@@ -133,8 +133,6 @@ class FileValidationServiceImpl(
 
     context(_: Raise<RemoteError>)
     private suspend fun FileValidationRequest.download(onBytes: (Long) -> Unit) {
-        // A blank URL means the file is only ever produced locally (e.g. a loader installer's patched jar)
-        ensure(this !is FileValidationRequest.Url || url.isNotBlank()) { RemoteError.Network }
         val cacheObject = cacheObjectPath()
         if (cacheObject != null && cacheObject.exists()) {
             // createLink fails on an existing target and would silently fall back to a copy, so delete first
@@ -146,6 +144,8 @@ class FileValidationServiceImpl(
             }
             logger.warn { "Content cache hit for $path but linking from $cacheObject failed; falling back to network" }
         }
+        // A blank URL means the file is only ever produced locally (e.g. a loader installer's patched jar)
+        ensure(this !is FileValidationRequest.Url || url.isNotBlank()) { RemoteError.Network }
         logger.trace { "Downloading file $this" }
         // Download to a temp sibling so a failed request never destroys a valid cached copy
         val tempPath = Path("$path.tmp")

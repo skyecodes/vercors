@@ -69,6 +69,10 @@ class CurseForgeModpackParser(
         manifest: ModpackManifest,
         onProgress: (Progress) -> Unit
     ): ModpackManifest {
+        if (manifest.files.isNotEmpty()) {
+            onProgress(done())
+            return manifest
+        }
         val entries = readManifest(zipPath).files
         onProgress(loading(0.0))
         val total = entries.size.toDouble()

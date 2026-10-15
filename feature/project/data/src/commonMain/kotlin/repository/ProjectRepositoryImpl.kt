@@ -26,6 +26,7 @@ import app.vercors.shared.api.ApiV1
 import app.vercors.shared.data.*
 import arrow.core.NonEmptyList
 import arrow.core.raise.Raise
+import arrow.core.raise.context.either
 import arrow.core.raise.context.ensureNotNull
 import arrow.core.raise.context.raise
 import arrow.core.raise.context.withError
@@ -426,6 +427,32 @@ class ProjectRepositoryImpl(
         return ModpackInstallResult(installedFiles, overridePaths)
     }
 
+    // An unchanged file from a previous pack version, or one another instance already downloaded manually
+    override suspend fun installManualDownloadLocally(
+        fileName: String,
+        instanceId: String,
+        type: ProjectType,
+        size: Long?,
+        sha1: String?,
+        md5: String?
+    ): Boolean = with(fileValidationService) {
+        val request = FileValidationRequest.Url(
+            url = "",
+            path = Path(type.targetDir(instanceId), fileName),
+            size = size,
+            sha1 = sha1,
+            md5 = md5,
+            cacheKind = type.toContentCacheKind()
+        )
+        if (either { request.validate() }.isRight()) {
+            request.populateCache()
+            return true
+        }
+        val served = either { request.downloadAndValidate() }.isRight()
+        if (!served && request.path.exists()) request.path.delete()
+        served
+    }
+
     context(_: Raise<ManualDownloadError>)
     override suspend fun awaitManualDownload(
         fileName: String,
@@ -438,6 +465,8 @@ class ProjectRepositoryImpl(
         val sourcePath = awaitStableDownloadInDownloadsFolder(fileName, size)
         val targetPath = Path(type.targetDir(instanceId), fileName)
         try {
+            // The target may be a hardlink into the content cache: copying over it would rewrite the cached object
+            if (targetPath.exists()) targetPath.delete()
             sourcePath.copyTo(targetPath)
             sourcePath.delete()
         } catch (e: CancellationException) {

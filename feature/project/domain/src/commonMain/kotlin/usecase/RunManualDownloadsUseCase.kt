@@ -16,6 +16,7 @@ import kotlinx.coroutines.sync.withLock
 @Inject
 class RunManualDownloadsUseCase(
     private val awaitManualDownload: AwaitManualDownloadUseCase,
+    private val installManualDownloadLocally: InstallManualDownloadLocallyUseCase,
     private val recordInstalledContentOrigin: RecordInstalledContentOriginUseCase
 ) {
     suspend operator fun invoke(
@@ -24,13 +25,18 @@ class RunManualDownloadsUseCase(
         onItemsChanged: suspend (List<ManualDownloadItem>) -> Unit
     ): Boolean {
         if (candidates.isEmpty()) return true
+        val pending = candidates.filterNot { installLocally(it) }
+        if (pending.isEmpty()) {
+            onItemsChanged(emptyList())
+            return true
+        }
 
         val mutex = Mutex()
-        var items = candidates.map { ManualDownloadItem(it.fileName, it.downloadUrl, downloaded = false) }
+        var items = pending.map { ManualDownloadItem(it.fileName, it.downloadUrl, downloaded = false) }
         onItemsChanged(items)
 
         val results = coroutineScope {
-            candidates.map { candidate ->
+            pending.map { candidate ->
                 async {
                     val ok = awaitAndRecord(candidate, onError)
                     if (ok) {
@@ -50,6 +56,19 @@ class RunManualDownloadsUseCase(
         return results.all { it }
     }
 
+    private suspend fun installLocally(candidate: ManualDownloadCandidate): Boolean {
+        val installed = installManualDownloadLocally(
+            candidate.fileName,
+            candidate.instanceId,
+            candidate.projectType,
+            candidate.size,
+            candidate.sha1,
+            candidate.md5
+        )
+        if (installed) recordOrigin(candidate)
+        return installed
+    }
+
     private suspend fun awaitAndRecord(
         candidate: ManualDownloadCandidate,
         onError: suspend (ManualDownloadError) -> Unit
@@ -62,17 +81,19 @@ class RunManualDownloadsUseCase(
             candidate.sha1,
             candidate.md5
         )
-        recordInstalledContentOrigin(
-            candidate.contentKind,
-            candidate.instanceId,
-            candidate.fileName,
-            candidate.platformId,
-            candidate.providerProjectId,
-            candidate.providerFileId
-        )
+        recordOrigin(candidate)
         true
     }) { error: ManualDownloadError ->
         onError(error)
         false
     }
+
+    private suspend fun recordOrigin(candidate: ManualDownloadCandidate): Unit = recordInstalledContentOrigin(
+        candidate.contentKind,
+        candidate.instanceId,
+        candidate.fileName,
+        candidate.platformId,
+        candidate.providerProjectId,
+        candidate.providerFileId
+    )
 }

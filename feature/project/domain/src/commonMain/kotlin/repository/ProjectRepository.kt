@@ -77,6 +77,15 @@ interface ProjectRepository {
         onProgress: (Progress) -> Unit = {}
     ): ModpackInstallResult
 
+    suspend fun installManualDownloadLocally(
+        fileName: String,
+        instanceId: String,
+        type: ProjectType,
+        size: Long?,
+        sha1: String?,
+        md5: String?
+    ): Boolean
+
     context(_: Raise<ManualDownloadError>)
     suspend fun awaitManualDownload(
         fileName: String,
