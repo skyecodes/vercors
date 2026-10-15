@@ -48,6 +48,7 @@ data class ConfigurationState(
     val appName: String,
     val appVersion: String,
     val checkForUpdatesOnStart: Boolean?,
+    val checkForInstanceUpdates: Boolean?,
     val updateChannel: UpdateChannel?,
     val launcherUpdate: LauncherUpdateState,
     val promptRestartForUpdate: Boolean,

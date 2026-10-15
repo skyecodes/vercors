@@ -26,6 +26,7 @@ data class Configuration(
     val networkTimeout: Duration,
     val horizontalTabs: Boolean,
     val checkForUpdatesOnStart: Boolean,
+    val checkForInstanceUpdates: Boolean,
     val updateChannel: UpdateChannel?
 ) {
     companion object {
@@ -53,6 +54,7 @@ data class Configuration(
             networkTimeout = 10.seconds,
             horizontalTabs = false,
             checkForUpdatesOnStart = true,
+            checkForInstanceUpdates = true,
             updateChannel = null
         )
     }

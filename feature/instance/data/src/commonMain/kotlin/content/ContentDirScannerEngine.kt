@@ -184,7 +184,7 @@ internal class ContentDirScannerEngine(
         projectId: String,
         fileId: String
     ) {
-        val filePath = Path(instanceDir(instanceId), fileName)
+        val filePath = existingFile(instanceId, fileName) ?: return
         val size = filePath.metadataOrNull()?.size ?: return
         val sha1 = hashOf(filePath, size)
 

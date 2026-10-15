@@ -18,6 +18,7 @@ import app.vercors.feature.instance.ui.details.worlds.InstalledWorldsEvent
 import app.vercors.feature.instance.ui.details.worlds.InstalledWorldsState
 import app.vercors.feature.instance.ui.export.ExportInstanceDialog
 import app.vercors.feature.instance.ui.install.FinishInstallationDialog
+import app.vercors.feature.project.domain.model.update.ModpackUpdate
 import app.vercors.shared.domain.model.JvmMemoryOptions
 import app.vercors.shared.domain.model.NativeLibraryOptions
 import app.vercors.shared.ui.Store
@@ -47,6 +48,21 @@ data class InstanceDetailsState(
     val loginDialog: LoginDialog,
     val promptJavaInstallProgress: Boolean = false,
     val installJavaProgressDialog: InstallJavaProgressDialog,
+    val modpackUpdate: ModpackUpdateView?,
+    val promptModpackUpdate: Boolean,
+)
+
+@Immutable
+data class ModpackUpdateView(
+    val currentVersion: String,
+    val latestVersion: String,
+    val newGameVersion: String?,
+)
+
+fun ModpackUpdate.toView(gameVersion: String): ModpackUpdateView = ModpackUpdateView(
+    currentVersion = current.displayName,
+    latestVersion = latest.displayName,
+    newGameVersion = latest.gameVersions.takeIf { it.isNotEmpty() && gameVersion !in it }?.first(),
 )
 
 @Immutable
@@ -65,6 +81,7 @@ data class InstanceView(
     val javaInstallationId: String?,
     val jvmMemoryOptions: JvmMemoryOptions,
     val nativeLibraryOptions: NativeLibraryOptions,
+    val checkForUpdates: Boolean?,
     val updatedAt: Instant,
     val playTime: Duration,
     val lastPlayedAt: Instant? = null
@@ -85,6 +102,7 @@ fun InstanceAndStatus.toView(): InstanceView = InstanceView(
     javaInstallationId = instance.javaInstallationId,
     jvmMemoryOptions = instance.jvmMemoryOptions,
     nativeLibraryOptions = instance.nativeLibraryOptions,
+    checkForUpdates = instance.checkForUpdates,
     updatedAt = instance.updatedAt,
     playTime = instance.playTime,
     lastPlayedAt = instance.lastPlayedAt

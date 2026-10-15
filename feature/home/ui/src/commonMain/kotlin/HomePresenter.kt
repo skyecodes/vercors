@@ -16,6 +16,7 @@ import app.vercors.feature.instance.ui.export.ExportInstanceTarget
 import app.vercors.feature.instance.ui.toBriefView
 import app.vercors.feature.project.domain.model.ProjectType
 import app.vercors.feature.project.domain.model.from
+import app.vercors.feature.project.domain.usecase.ObserveInstanceUpdatesUseCase
 import app.vercors.feature.project.ui.details.ProjectDetailsScreen
 import app.vercors.feature.project.ui.install.*
 import app.vercors.feature.project.ui.list.ProjectListScreen
@@ -32,14 +33,15 @@ import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedFactory
 import dev.zacsweers.metro.AssistedInject
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.map
 import opensavvy.state.progressive.map
 
 @AssistedInject
 class HomePresenter(
     @Assisted private val navigator: Navigator,
     private val observeHomeSectionList: ObserveHomeSectionListUseCase,
+    private val observeInstanceUpdates: ObserveInstanceUpdatesUseCase,
     private val createInstanceDialog: CreateInstanceDialog,
     private val snackbarService: SnackbarService,
     private val installProjectDialogFactory: InstallProjectDialog.Factory,
@@ -179,12 +181,16 @@ class HomePresenter(
                     flowOf(emptyList())
                 },
                 ifRight = { flow ->
-                    flow.map { list ->
+                    combine(flow, observeInstanceUpdates()) { list, updates ->
                         list.map { section ->
                             when (section) {
                                 is HomeSection.InstanceListSection -> HomeState.Section.InstanceList(
                                     type = section.type,
-                                    data = section.data.map { list -> list.map { it.toBriefView() } }
+                                    data = section.data.map { list ->
+                                        list.map {
+                                            it.toBriefView(updateAvailable = updates[it.instance.id]?.hasUpdates == true)
+                                        }
+                                    }
                                 )
 
                                 is HomeSection.ProjectListSection -> HomeState.Section.ProjectList(

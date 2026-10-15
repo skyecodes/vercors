@@ -27,9 +27,16 @@ data class InstalledContentFileView(
     val enabled: Boolean,
     val providers: List<ModProvider>,
     val lastModified: Instant?,
+    val update: ContentUpdateView? = null,
 )
 
-fun InstalledContentFile.toView(): InstalledContentFileView = InstalledContentFileView(
+@Immutable
+data class ContentUpdateView(
+    val latestVersion: String,
+    val inProgress: Boolean,
+)
+
+fun InstalledContentFile.toView(update: ContentUpdateView? = null): InstalledContentFileView = InstalledContentFileView(
     fileName = fileName,
     title = title,
     description = description,
@@ -37,5 +44,6 @@ fun InstalledContentFile.toView(): InstalledContentFileView = InstalledContentFi
     iconFilePath = iconFilePath,
     enabled = enabled,
     providers = providers,
-    lastModified = lastModified
+    lastModified = lastModified,
+    update = update,
 )

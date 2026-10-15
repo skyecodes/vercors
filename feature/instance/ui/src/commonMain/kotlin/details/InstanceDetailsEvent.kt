@@ -32,6 +32,8 @@ sealed interface InstanceDetailsEvent : Event {
     data object OnFinishInstallationClick : InstanceDetailsEvent
     data object OnFinishInstallationDismiss : InstanceDetailsEvent
     data object OnResumeInstallationClick : InstanceDetailsEvent
+    data object OnUpdateModpackClick : InstanceDetailsEvent
+    data class OnConfirmModpackUpdate(val result: Boolean) : InstanceDetailsEvent
     data object OnLoginDismiss : InstanceDetailsEvent
     data object OnJavaInstallProgressDismiss : InstanceDetailsEvent
 }

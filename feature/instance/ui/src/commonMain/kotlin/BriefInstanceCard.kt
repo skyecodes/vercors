@@ -26,6 +26,7 @@ import app.vercors.core.ui.component.*
 import app.vercors.core.ui.modifier.appCard
 import app.vercors.core.ui.theme.colors
 import app.vercors.core.ui.theme.error
+import app.vercors.core.ui.theme.primary
 import app.vercors.core.ui.theme.success
 import app.vercors.feature.instance.domain.model.InstanceId
 import app.vercors.feature.instance.domain.model.InstanceStatus
@@ -96,11 +97,21 @@ fun BriefInstanceCard(
                 )
             },
             type = {
-                AppText(
-                    text = instance.type,
-                    fontSize = 12.sp,
-                    modifier = Modifier.instanceSharedElement(instance.id, "type", origin),
-                )
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    AppText(
+                        text = instance.type,
+                        fontSize = 12.sp,
+                        modifier = Modifier.instanceSharedElement(instance.id, "type", origin),
+                    )
+                    if (instance.updateAvailable) {
+                        AppText(
+                            text = stringResource(InstanceRes.string.updateAvailableBadge),
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Theme[colors][primary],
+                        )
+                    }
+                }
             },
             loaderVersion = {
                 Row(

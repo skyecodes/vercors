@@ -126,6 +126,27 @@ fun InstanceDetails(
             }
         }
 
+        state.modpackUpdate?.takeIf { state.promptModpackUpdate }?.let { update ->
+            OverlayEffect(update) {
+                val result = show(
+                    ConfirmDialog(
+                        messageResource = if (update.newGameVersion != null) {
+                            InstanceRes.string.promptModpackUpdateWithGameVersion
+                        } else {
+                            InstanceRes.string.promptModpackUpdate
+                        },
+                        messageArgs = listOfNotNull(update.currentVersion, update.latestVersion, update.newGameVersion),
+                        actionButton = ConfirmDialogButton(
+                            textResource = InstanceRes.string.updateModpack,
+                            icon = Lucide.Download,
+                            style = ConfirmDialogButtonStyle.Primary,
+                        ),
+                    )
+                )
+                eventSink(InstanceDetailsEvent.OnConfirmModpackUpdate(result))
+            }
+        }
+
         if (state.promptJavaInstallProgress) {
             OverlayEffect {
                 show(state.installJavaProgressDialog)
@@ -163,6 +184,7 @@ private fun InstanceDetails(
     ) {
         InstanceHeader(
             instance = instance,
+            modpackUpdate = state.modpackUpdate,
             isInstanceEdited = state.optionsContent.state.isInstanceEdited,
             onCancelEdit = { state.optionsContent.eventSink(InstanceOptionsEvent.OnCancelEditClick) },
             onSaveInstance = { state.optionsContent.eventSink(InstanceOptionsEvent.OnSaveClick) },
@@ -194,7 +216,7 @@ private fun AppTabScope.InstanceDetailsTabTitle(tab: InstanceDetailsTab, state: 
     }
     val isEdited = when (tab) {
         InstanceDetailsTab.Options -> state.optionsContent.state.let {
-            it.isNameEdited || it.isGameVersionEdited || it.isModLoaderEdited
+            it.isNameEdited || it.isGameVersionEdited || it.isModLoaderEdited || it.isCheckForUpdatesEdited
         }
 
         InstanceDetailsTab.Java -> state.optionsContent.state.let {
@@ -273,6 +295,7 @@ private fun InstanceDetailsTabContent(tab: InstanceDetailsTab, instance: Instanc
 context(eventSink: EventSink<InstanceDetailsEvent>)
 private fun InstanceHeader(
     instance: InstanceView,
+    modpackUpdate: ModpackUpdateView?,
     isInstanceEdited: Boolean,
     onCancelEdit: () -> Unit,
     onSaveInstance: () -> Unit,
@@ -291,6 +314,7 @@ private fun InstanceHeader(
         InstanceHeaderInfo(instance)
         InstanceHeaderStatus(instance)
         InstanceHeaderEditActions(isInstanceEdited, onCancelEdit, onSaveInstance)
+        InstanceHeaderUpdateButton(instance, modpackUpdate, isInstanceEdited)
         InstanceHeaderActionButton(instance, isInstanceEdited)
         InstanceHeaderMenu(instance)
     }
@@ -463,6 +487,25 @@ private fun InstanceHeaderEditActions(
                 imageVector = Lucide.Save,
             )
         }
+    }
+}
+
+@Composable
+context(eventSink: EventSink<InstanceDetailsEvent>)
+private fun InstanceHeaderUpdateButton(
+    instance: InstanceView,
+    modpackUpdate: ModpackUpdateView?,
+    isInstanceEdited: Boolean
+) {
+    val canUpdate = instance.status is InstanceStatus.Idle || instance.status is InstanceStatus.Failed
+    AppAnimatedVisibility(modpackUpdate != null && canUpdate && !isInstanceEdited) {
+        AppIconTextButton(
+            onClick = { eventSink(InstanceDetailsEvent.OnUpdateModpackClick) },
+            text = stringResource(InstanceRes.string.updateModpack),
+            backgroundColor = Theme[colors][primary],
+            contentColor = Theme[colors][onPrimary],
+            imageVector = Lucide.Download,
+        )
     }
 }
 

@@ -176,6 +176,17 @@ private fun GeneralConfigurationTab(
                 )
             }
         }
+        if (state.checkForInstanceUpdates != null) {
+            ConfigurationRow(
+                title = ConfigRes.string.checkForInstanceUpdates,
+                description = ConfigRes.string.checkForInstanceUpdatesDesc,
+            ) {
+                AppCheckbox(
+                    checked = state.checkForInstanceUpdates,
+                    onCheckedChange = { eventSink(ConfigurationEvent.OnCheckForInstanceUpdatesToggle) }
+                )
+            }
+        }
         Column(
             modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(8.dp)

@@ -51,6 +51,10 @@
     <string name="errorAccountLoading">Failed to log into account: %1$s</string>
     <string name="errorGameVersion">Failed to load game version: %1$s</string>
     <string name="errorModLoaderInstall">Failed to install mod loader: %1$s</string>
+    <string name="errorUpdateLookupFailed">Couldn't look up the latest versions</string>
+    <string name="errorUpdateInstanceNotFound">Couldn't find this instance to update it</string>
+    <string name="errorUpdateSaveFailed">Couldn't save the instance's new version</string>
+    <string name="errorUpdateDownloadFailed">Couldn't download the updated files</string>
     <string name="errorNotFound">Instance with ID "%1$s" not found</string>
     <string name="errorLoading">Instance with ID "%1$s" failed to load: %2$s</string>
     <string name="errorImportFailed">Failed to import file</string>
@@ -138,4 +142,24 @@
     <string name="exportIncludedFiles">Included files (%1$d/%2$d)</string>
     <string name="exportSucceeded">Exported %1$s</string>
     <string name="errorExportFailed">Failed to export the instance</string>
+    <string name="checkForUpdates">Updates</string>
+    <string name="checkForModpackUpdatesDesc">Look for a newer version of this modpack.</string>
+    <string name="checkForContentUpdatesDesc">Look for newer versions of the mods, resource packs and shader packs installed in this instance.</string>
+    <string name="checkForUpdatesAutomatically">Check automatically when opening this instance</string>
+    <string name="checkForUpdatesNow">Check for updates</string>
+    <string name="checkingForUpdates">Checking for updates...</string>
+    <string name="identifyUnknownFiles">Also identify files with an unknown origin by their hash</string>
+    <string name="modpackUpdateAvailable">Update available: %1$s</string>
+    <plurals name="contentUpdatesAvailable">
+        <item quantity="one">%1$d update available</item>
+        <item quantity="other">%1$d updates available</item>
+    </plurals>
+    <string name="updateModpack">Update</string>
+    <string name="promptModpackUpdate">Update this modpack from %1$s to %2$s? Files from the previous version are replaced, files you added yourself are kept.</string>
+    <string name="promptModpackUpdateWithGameVersion">Update this modpack from %1$s to %2$s? This version runs on Minecraft %3$s. Files from the previous version are replaced, files you added yourself are kept.</string>
+    <string name="updateAll">Update all (%1$d)</string>
+    <string name="updateContent">Update to %1$s</string>
+    <string name="updatingContent">Updating to %1$s...</string>
+    <string name="updateAvailableBadge">Update</string>
+    <string name="upToDate">Everything is up to date</string>
 </resources>

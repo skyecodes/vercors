@@ -41,10 +41,8 @@ import app.vercors.feature.launcher.domain.usecase.StopInstanceUseCase
 import app.vercors.feature.project.domain.model.ProjectDetailsError
 import app.vercors.feature.project.domain.model.from
 import app.vercors.feature.project.domain.model.toManualDownloadCandidate
-import app.vercors.feature.project.domain.usecase.GetProjectUseCase
-import app.vercors.feature.project.domain.usecase.RunManualDownloadsUseCase
-import app.vercors.feature.project.domain.usecase.RunModpackInstallUseCase
-import app.vercors.feature.project.domain.usecase.TrackPendingManualDownloadsUseCase
+import app.vercors.feature.project.domain.model.update.ModpackUpdate
+import app.vercors.feature.project.domain.usecase.*
 import app.vercors.feature.project.ui.details.ProjectDetailsScreen
 import app.vercors.feature.project.ui.list.ProjectListScreen
 import app.vercors.shared.domain.usecase.CopyToClipboardUseCase
@@ -61,6 +59,7 @@ import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedFactory
 import dev.zacsweers.metro.AssistedInject
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -68,6 +67,8 @@ import opensavvy.state.progressive.ProgressiveOutcome
 import opensavvy.state.progressive.map
 import opensavvy.state.progressive.valueOrNull
 import org.jetbrains.compose.resources.stringResource
+
+private val logger = KotlinLogging.logger {}
 
 @AssistedInject
 class InstanceDetailsPresenter(
@@ -108,6 +109,10 @@ class InstanceDetailsPresenter(
     private val openInstanceFolder: OpenInstanceFolderUseCase,
     private val copyInstanceDialogFactory: CopyInstanceDialog.Factory,
     private val exportInstanceDialogFactory: ExportInstanceDialog.Factory,
+    private val observeInstanceUpdates: ObserveInstanceUpdatesUseCase,
+    private val checkInstanceUpdates: CheckInstanceUpdatesUseCase,
+    private val shouldAutoCheckInstanceUpdates: ShouldAutoCheckInstanceUpdatesUseCase,
+    private val updateModpack: UpdateModpackUseCase,
 ) : Presenter<InstanceDetailsState, InstanceDetailsEvent> {
     @Composable
     override fun present(): Store<InstanceDetailsState, InstanceDetailsEvent> {
@@ -163,6 +168,11 @@ class InstanceDetailsPresenter(
             mutableStateOf(screen.initialTab ?: InstanceDetailsTab.Options)
         }
         val currentInstance = instance.valueOrNull
+        val modpackUpdate by remember(screen.instanceId) {
+            observeInstanceUpdates(screen.instanceId).map { it?.modpack }
+        }.collectAsState(null)
+        val (promptModpackUpdate, setPromptModpackUpdate) = remember { mutableStateOf(false) }
+        AutoCheckUpdatesEffect(currentInstance, configuration.valueOrNull?.checkForInstanceUpdates)
 
         LaunchedEffect(screen.instanceId, screen.autoLaunch) {
             if (screen.autoLaunch) {
@@ -193,7 +203,9 @@ class InstanceDetailsPresenter(
             promptLogin = promptLogin,
             loginDialog = loginDialog,
             promptJavaInstallProgress = promptJavaInstallProgress,
-            installJavaProgressDialog = installJavaProgressDialog
+            installJavaProgressDialog = installJavaProgressDialog,
+            modpackUpdate = currentInstance?.let { modpackUpdate?.toView(it.gameVersion) },
+            promptModpackUpdate = promptModpackUpdate,
         ) + { event ->
             handleEvent(
                 event = event,
@@ -214,8 +226,27 @@ class InstanceDetailsPresenter(
                 javaInstallJob = javaInstallJob,
                 setJavaInstallJob = setJavaInstallJob,
                 pendingQuickPlayTarget = pendingQuickPlayTarget,
-                setPendingQuickPlayTarget = setPendingQuickPlayTarget
+                setPendingQuickPlayTarget = setPendingQuickPlayTarget,
+                modpackUpdate = modpackUpdate,
+                setPromptModpackUpdate = setPromptModpackUpdate,
             )
+        }
+    }
+
+    // Automatic checks fail silently: they run on every open and a snackbar each time would be noise
+    @Composable
+    private fun AutoCheckUpdatesEffect(instance: InstanceView?, globalCheckForUpdates: Boolean?) {
+        val ready = instance != null && globalCheckForUpdates != null
+        LaunchedEffect(screen.instanceId, ready) {
+            if (instance == null || globalCheckForUpdates == null) return@LaunchedEffect
+            if (instance.status is InstanceStatus.Installing) return@LaunchedEffect
+            if (!shouldAutoCheckInstanceUpdates(screen.instanceId, instance.checkForUpdates, globalCheckForUpdates)) {
+                return@LaunchedEffect
+            }
+            globalScope.launch {
+                either { checkInstanceUpdates(screen.instanceId, identifyUnknown = false) }
+                    .onLeft { error -> logger.warn { "Automatic update check of ${screen.instanceId} failed: $error" } }
+            }
         }
     }
 
@@ -238,7 +269,9 @@ class InstanceDetailsPresenter(
         javaInstallJob: Job?,
         setJavaInstallJob: (Job?) -> Unit,
         pendingQuickPlayTarget: QuickPlayTarget?,
-        setPendingQuickPlayTarget: (QuickPlayTarget?) -> Unit
+        setPendingQuickPlayTarget: (QuickPlayTarget?) -> Unit,
+        modpackUpdate: ModpackUpdate?,
+        setPromptModpackUpdate: (Boolean) -> Unit,
     ) {
         when (event) {
             InstanceDetailsEvent.OnLaunchClick -> handleLaunch(
@@ -337,7 +370,40 @@ class InstanceDetailsPresenter(
 
             InstanceDetailsEvent.OnFinishInstallationDismiss -> setPromptFinishInstallation(false)
             InstanceDetailsEvent.OnResumeInstallationClick -> currentInstance?.let(::resumeInstallationIfNeeded)
+            InstanceDetailsEvent.OnUpdateModpackClick -> setPromptModpackUpdate(true)
+            is InstanceDetailsEvent.OnConfirmModpackUpdate -> handleConfirmModpackUpdate(
+                event = event,
+                currentInstance = currentInstance,
+                modpackUpdate = modpackUpdate,
+                setPromptModpackUpdate = setPromptModpackUpdate,
+            )
         }
+    }
+
+    private fun handleConfirmModpackUpdate(
+        event: InstanceDetailsEvent.OnConfirmModpackUpdate,
+        currentInstance: InstanceView?,
+        modpackUpdate: ModpackUpdate?,
+        setPromptModpackUpdate: (Boolean) -> Unit,
+    ) {
+        setPromptModpackUpdate(false)
+        if (!event.result || currentInstance == null || modpackUpdate == null) return
+        if (hasActiveInstanceJob(screen.instanceId)) return
+
+        val instanceId = screen.instanceId
+        val job = globalScope.launch {
+            val ok = either {
+                updateModpack(
+                    instanceId = instanceId,
+                    update = modpackUpdate,
+                    onManualDownloadError = { error -> snackbarService.error { error.message } },
+                )
+            }.onLeft { error -> snackbarService.error { error.message } }.getOrNull() ?: return@launch
+            updateInstanceStatus(instanceId, if (ok) InstanceStatus.Idle else InstanceStatus.Failed.InstallFailed)
+            notifyModpackInstallResult(currentInstance.name, ok)
+        }
+        updateInstanceJob(instanceId, job)
+        job.invokeOnCompletion { updateInstanceJob(instanceId, null) }
     }
 
     private fun handleIconSelected(event: InstanceDetailsEvent.OnIconSelected) {

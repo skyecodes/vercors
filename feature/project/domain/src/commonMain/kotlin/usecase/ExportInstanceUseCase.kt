@@ -13,6 +13,7 @@ import app.vercors.feature.instance.domain.repository.InstanceExportRepository
 import app.vercors.feature.instance.domain.repository.InstanceRepository
 import app.vercors.feature.project.domain.model.FileHashes
 import app.vercors.feature.project.domain.model.ProjectDetailsError
+import app.vercors.feature.project.domain.model.folderName
 import app.vercors.feature.project.domain.model.pack.InstanceExportOptions
 import app.vercors.feature.project.domain.model.pack.InstanceExportSummary
 import app.vercors.feature.project.domain.model.pack.PackFileReference
@@ -151,13 +152,6 @@ class ExportInstanceUseCase(
         return selectHashMatchReferences(platformId, files, matches, requireMrpackHost)
     }
 }
-
-private val ContentKind.folderName: String
-    get() = when (this) {
-        ContentKind.Mod -> "mods"
-        ContentKind.ResourcePack -> "resourcepacks"
-        ContentKind.ShaderPack -> "shaderpacks"
-    }
 
 private fun ((Progress) -> Unit).inInterval(start: Double, end: Double): (Progress) -> Unit = { progress ->
     this(loading(start + (progress.toFractionOrNull() ?: 0f) * (end - start)))

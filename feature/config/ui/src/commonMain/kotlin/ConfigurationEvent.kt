@@ -51,6 +51,7 @@ sealed interface ConfigurationEvent : Event {
     data object OnChangeDataDirectoryDismiss : ConfigurationEvent
 
     data object OnCheckForUpdatesOnStartToggle : ConfigurationEvent
+    data object OnCheckForInstanceUpdatesToggle : ConfigurationEvent
     data class OnUpdateChannelChange(val value: UpdateChannel) : ConfigurationEvent
     data object OnCheckForUpdatesClick : ConfigurationEvent
     data object OnUpdateClick : ConfigurationEvent
