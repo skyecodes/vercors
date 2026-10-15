@@ -54,7 +54,7 @@ kotlin-logging = "8.0.4"
 mokkery = "3.5.1"
 turbine = "1.2.1"
 # Website
-compose-html = "1.12.1"
+compose-html = "1.12.2"
 kobweb = "0.25.1"
 
 [libraries]
