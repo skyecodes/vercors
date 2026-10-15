@@ -17,6 +17,7 @@ import app.vercors.feature.project.domain.model.update.InstanceUpdateError
 import app.vercors.feature.project.domain.model.update.ModpackUpdate
 import app.vercors.feature.project.domain.repository.InstalledPackRepository
 import app.vercors.feature.project.domain.repository.InstanceUpdateRepository
+import app.vercors.feature.project.domain.repository.ModpackRepository
 import arrow.core.raise.Raise
 import arrow.core.raise.context.either
 import arrow.core.raise.context.raise
@@ -34,7 +35,7 @@ private val logger = KotlinLogging.logger {}
 class UpdateModpackUseCase(
     private val instanceRepository: InstanceRepository,
     private val getModpackManifest: GetModpackManifestUseCase,
-    private val resolveModpackManifestFiles: ResolveModpackManifestFilesUseCase,
+    private val modpackRepository: ModpackRepository,
     private val runModpackInstall: RunModpackInstallUseCase,
     private val updateInstance: UpdateInstanceUseCase,
     private val updateInstanceStatus: UpdateInstanceStatusUseCase,
@@ -55,7 +56,12 @@ class UpdateModpackUseCase(
         val modpackInfo = instance.modpackInfo ?: raise(InstanceUpdateError.InstanceNotFound)
         updateInstanceStatus(instance.id, InstanceStatus.Installing.ResolvingFiles(progress = null))
         val newManifest = recover({
-            resolveModpackManifestFiles(getModpackManifest(update.projectId, update.latest.id)) { progress ->
+            modpackRepository.resolveModpackManifestFiles(
+                getModpackManifest(
+                    update.projectId,
+                    update.latest.id
+                )
+            ) { progress ->
                 updateInstanceStatus(instance.id, InstanceStatus.Installing.ResolvingFiles(progress.toFractionOrNull()))
             }
         }) { error: ModpackResolutionError ->
@@ -63,7 +69,7 @@ class UpdateModpackUseCase(
             raise(InstanceUpdateError.ManifestFailed(error))
         }
         val oldManifest = recover({
-            resolveModpackManifestFiles(getModpackManifest(update.projectId, modpackInfo.fileId))
+            modpackRepository.resolveModpackManifestFiles(getModpackManifest(update.projectId, modpackInfo.fileId))
         }) { error: ModpackResolutionError ->
             logger.warn { "Couldn't fetch the previous manifest of ${instance.id}, keeping its old files: $error" }
             null

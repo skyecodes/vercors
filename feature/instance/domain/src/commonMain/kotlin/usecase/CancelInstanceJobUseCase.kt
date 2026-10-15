@@ -8,11 +8,11 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 private val logger = KotlinLogging.logger {}
 
 @Inject
-class CancelInstanceSetupUseCase(
+class CancelInstanceJobUseCase(
     private val instanceRepository: InstanceRepository
 ) {
     operator fun invoke(instanceId: InstanceId) {
-        logger.info { "Cancelling setup for instance $instanceId" }
+        logger.info { "Cancelling job for instance $instanceId" }
         instanceRepository.cancelInstanceJob(instanceId)
     }
 }

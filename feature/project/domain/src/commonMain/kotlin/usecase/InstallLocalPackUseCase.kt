@@ -14,6 +14,7 @@ import app.vercors.feature.project.domain.model.modpack.ModpackInstallError
 import app.vercors.feature.project.domain.model.modpack.ModpackManifest
 import app.vercors.feature.project.domain.model.pack.*
 import app.vercors.feature.project.domain.repository.InstalledPackRepository
+import app.vercors.feature.project.domain.repository.ModpackRepository
 import arrow.core.raise.Raise
 import arrow.core.raise.context.raise
 import arrow.core.raise.recover
@@ -25,7 +26,7 @@ private val logger = KotlinLogging.logger {}
 // An update keeps the receiver's worlds, settings and icon
 @Inject
 class InstallLocalPackUseCase(
-    private val installModpackFiles: InstallModpackFilesUseCase,
+    private val modpackRepository: ModpackRepository,
     private val importPrismInstanceFiles: ImportPrismInstanceFilesUseCase,
     private val extractVercorsPackIcon: ExtractVercorsPackIconUseCase,
     private val recordModpackFileOrigins: RecordModpackFileOriginsUseCase,
@@ -64,7 +65,7 @@ class InstallLocalPackUseCase(
         isUpdate: Boolean
     ): InstalledPack {
         val result = recover({
-            installModpackFiles(
+            modpackRepository.installModpackFiles(
                 manifest,
                 instanceId,
                 localSourcePath = pack.sourcePath,

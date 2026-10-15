@@ -4,6 +4,7 @@ import app.vercors.feature.instance.domain.model.ManualDownloadItem
 import app.vercors.feature.instance.domain.usecase.RecordInstalledContentOriginUseCase
 import app.vercors.feature.project.domain.model.ManualDownloadCandidate
 import app.vercors.feature.project.domain.model.ManualDownloadError
+import app.vercors.feature.project.domain.repository.ManualDownloadRepository
 import arrow.core.raise.recover
 import dev.zacsweers.metro.Inject
 import kotlinx.coroutines.async
@@ -15,8 +16,7 @@ import kotlinx.coroutines.sync.withLock
 // Parallel: opening a browser tab per file is pointless if they're then awaited one at a time
 @Inject
 class RunManualDownloadsUseCase(
-    private val awaitManualDownload: AwaitManualDownloadUseCase,
-    private val installManualDownloadLocally: InstallManualDownloadLocallyUseCase,
+    private val manualDownloadRepository: ManualDownloadRepository,
     private val recordInstalledContentOrigin: RecordInstalledContentOriginUseCase
 ) {
     suspend operator fun invoke(
@@ -57,7 +57,7 @@ class RunManualDownloadsUseCase(
     }
 
     private suspend fun installLocally(candidate: ManualDownloadCandidate): Boolean {
-        val installed = installManualDownloadLocally(
+        val installed = manualDownloadRepository.installManualDownloadLocally(
             candidate.fileName,
             candidate.instanceId,
             candidate.projectType,
@@ -73,7 +73,7 @@ class RunManualDownloadsUseCase(
         candidate: ManualDownloadCandidate,
         onError: suspend (ManualDownloadError) -> Unit
     ): Boolean = recover({
-        awaitManualDownload(
+        manualDownloadRepository.awaitManualDownload(
             candidate.fileName,
             candidate.instanceId,
             candidate.projectType,

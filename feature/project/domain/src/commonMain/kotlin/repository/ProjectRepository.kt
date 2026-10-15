@@ -3,10 +3,6 @@ package app.vercors.feature.project.domain.repository
 import app.vercors.core.domain.Page
 import app.vercors.feature.game.domain.model.ModLoaderType
 import app.vercors.feature.project.domain.model.*
-import app.vercors.feature.project.domain.model.modpack.ModpackInstallError
-import app.vercors.feature.project.domain.model.modpack.ModpackInstallResult
-import app.vercors.feature.project.domain.model.modpack.ModpackManifest
-import app.vercors.feature.project.domain.model.modpack.ModpackResolutionError
 import arrow.core.raise.Raise
 import opensavvy.progress.Progress
 
@@ -52,63 +48,10 @@ interface ProjectRepository {
     context(_: Raise<ProjectDetailsError>)
     suspend fun findFilesByHashes(platformId: PlatformId, hashes: List<FileHashes>): List<ProjectFileMatch>
 
-    context(_: Raise<ModpackResolutionError>)
-    suspend fun getModpackManifest(
-        projectId: ProjectId,
-        fileId: String,
-        onProgress: (Progress) -> Unit = {}
-    ): ModpackManifest
-
-    context(_: Raise<ModpackResolutionError>)
-    suspend fun resolveModpackManifestFiles(
-        manifest: ModpackManifest,
-        onProgress: (Progress) -> Unit = {}
-    ): ModpackManifest
-
-    context(_: Raise<ModpackResolutionError>)
-    suspend fun parseLocalModpack(sourcePath: String, platformId: String): ModpackManifest
-
-    context(_: Raise<ModpackInstallError>)
-    suspend fun installModpackFiles(
-        manifest: ModpackManifest,
-        instanceId: String,
-        localSourcePath: String? = null,
-        preserveUserState: Boolean = false,
-        onProgress: (Progress) -> Unit = {}
-    ): ModpackInstallResult
-
-    suspend fun installManualDownloadLocally(
-        fileName: String,
-        instanceId: String,
-        type: ProjectType,
-        size: Long?,
-        sha1: String?,
-        md5: String?
-    ): Boolean
-
-    context(_: Raise<ManualDownloadError>)
-    suspend fun awaitManualDownload(
-        fileName: String,
-        instanceId: String,
-        type: ProjectType,
-        size: Long?,
-        sha1: String?,
-        md5: String?
-    )
-
     context(_: Raise<ProjectFileDownloadError>)
     suspend fun installWorldFile(
         candidate: ProjectFileDownloadCandidate,
         instanceId: String,
         onProgress: (Progress) -> Unit = {}
-    )
-
-    context(_: Raise<ManualDownloadError>)
-    suspend fun awaitManualWorldDownload(
-        fileName: String,
-        instanceId: String,
-        size: Long?,
-        sha1: String?,
-        md5: String?
     )
 }

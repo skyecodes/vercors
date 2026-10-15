@@ -18,6 +18,7 @@ import app.vercors.feature.project.domain.model.modpack.ModpackResolutionError
 import app.vercors.feature.project.domain.model.pack.toInstalledPack
 import app.vercors.feature.project.domain.model.toProjectType
 import app.vercors.feature.project.domain.repository.InstalledPackRepository
+import app.vercors.feature.project.domain.repository.ModpackRepository
 import arrow.core.raise.context.either
 import arrow.core.raise.recover
 import dev.zacsweers.metro.Inject
@@ -29,8 +30,7 @@ private val logger = KotlinLogging.logger {}
 @Inject
 class RunModpackInstallUseCase(
     private val getModpackManifest: GetModpackManifestUseCase,
-    private val resolveModpackManifestFiles: ResolveModpackManifestFilesUseCase,
-    private val installModpackFiles: InstallModpackFilesUseCase,
+    private val modpackRepository: ModpackRepository,
     private val runManualDownloads: RunManualDownloadsUseCase,
     private val trackPendingManualDownloads: TrackPendingManualDownloadsUseCase,
     private val recordModpackFileOrigins: RecordModpackFileOriginsUseCase,
@@ -81,7 +81,7 @@ class RunModpackInstallUseCase(
         instanceId: InstanceId
     ): ModpackManifest? =
         recover({
-            resolveModpackManifestFiles(manifest) { progress ->
+            modpackRepository.resolveModpackManifestFiles(manifest) { progress ->
                 updateInstanceStatus(instanceId, InstanceStatus.Installing.ResolvingFiles(progress.toFractionOrNull()))
             }
         }) { error: ModpackResolutionError ->
@@ -95,7 +95,7 @@ class RunModpackInstallUseCase(
         instanceId: InstanceId
     ): ModpackInstallResult? =
         recover({
-            installModpackFiles(resolvedManifest, instanceId) { progress ->
+            modpackRepository.installModpackFiles(resolvedManifest, instanceId) { progress ->
                 updateInstanceStatus(
                     instanceId,
                     InstanceStatus.Installing.DownloadingFiles(progress.toDownloadProgressOrNull())

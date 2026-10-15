@@ -1,25 +1,27 @@
 package app.vercors.feature.instance.ui.details
 
 import androidx.compose.runtime.Immutable
-import app.vercors.feature.account.ui.list.LoginDialog
 import app.vercors.feature.game.domain.model.ModLoaderType
 import app.vercors.feature.game.ui.displayName
 import app.vercors.feature.instance.domain.model.*
-import app.vercors.feature.instance.ui.copy.CopyInstanceDialog
 import app.vercors.feature.instance.ui.details.content.InstalledContentEvent
 import app.vercors.feature.instance.ui.details.content.InstalledContentState
+import app.vercors.feature.instance.ui.details.header.InstanceHeaderEvent
+import app.vercors.feature.instance.ui.details.header.InstanceHeaderState
+import app.vercors.feature.instance.ui.details.installation.InstanceInstallationEvent
+import app.vercors.feature.instance.ui.details.installation.InstanceInstallationState
+import app.vercors.feature.instance.ui.details.launch.InstanceLaunchEvent
+import app.vercors.feature.instance.ui.details.launch.InstanceLaunchState
 import app.vercors.feature.instance.ui.details.logs.InstanceLogsEvent
 import app.vercors.feature.instance.ui.details.logs.InstanceLogsState
 import app.vercors.feature.instance.ui.details.options.InstanceOptionsEvent
 import app.vercors.feature.instance.ui.details.options.InstanceOptionsState
 import app.vercors.feature.instance.ui.details.servers.InstanceServersEvent
 import app.vercors.feature.instance.ui.details.servers.InstanceServersState
+import app.vercors.feature.instance.ui.details.update.InstanceUpdateEvent
+import app.vercors.feature.instance.ui.details.update.InstanceUpdateState
 import app.vercors.feature.instance.ui.details.worlds.InstalledWorldsEvent
 import app.vercors.feature.instance.ui.details.worlds.InstalledWorldsState
-import app.vercors.feature.instance.ui.export.ExportInstanceDialog
-import app.vercors.feature.instance.ui.install.FinishInstallationDialog
-import app.vercors.feature.instance.ui.options.copy.CopyOptionsDialog
-import app.vercors.feature.instance.ui.options.savedefault.SaveDefaultOptionsDialog
 import app.vercors.feature.project.domain.model.pack.InstalledPack
 import app.vercors.feature.project.domain.model.pack.LocalPack
 import app.vercors.feature.project.domain.model.pack.matches
@@ -34,14 +36,12 @@ import kotlin.time.Instant
 @Immutable
 data class InstanceDetailsState(
     val instance: ProgressiveOutcome<InstanceError, InstanceView>,
-    val promptInstallJava: Int?,
     val selectedTab: InstanceDetailsTab,
     val horizontalTabs: Boolean,
-    val promptDeleteConfirmation: Boolean,
-    val copyInstanceDialog: CopyInstanceDialog?,
-    val exportInstanceDialog: ExportInstanceDialog?,
-    val copyOptionsDialog: CopyOptionsDialog?,
-    val saveDefaultOptionsDialog: SaveDefaultOptionsDialog?,
+    val launch: Store<InstanceLaunchState, InstanceLaunchEvent>,
+    val header: Store<InstanceHeaderState, InstanceHeaderEvent>,
+    val installation: Store<InstanceInstallationState, InstanceInstallationEvent>,
+    val update: Store<InstanceUpdateState, InstanceUpdateEvent>,
     val optionsContent: Store<InstanceOptionsState, InstanceOptionsEvent>,
     val modsContent: Store<InstalledContentState, InstalledContentEvent>,
     val resourcePacksContent: Store<InstalledContentState, InstalledContentEvent>,
@@ -49,15 +49,6 @@ data class InstanceDetailsState(
     val worldsContent: Store<InstalledWorldsState, InstalledWorldsEvent>,
     val serversContent: Store<InstanceServersState, InstanceServersEvent>,
     val logsContent: Store<InstanceLogsState, InstanceLogsEvent>,
-    val promptFinishInstallation: Boolean,
-    val finishInstallationDialog: FinishInstallationDialog,
-    val promptLogin: Boolean = false,
-    val loginDialog: LoginDialog,
-    val promptJavaInstallProgress: Boolean = false,
-    val installJavaProgressDialog: InstallJavaProgressDialog,
-    val modpackUpdate: ModpackUpdateView?,
-    val promptModpackUpdate: Boolean,
-    val localPackUpdatePrompt: LocalPackUpdatePrompt? = null,
 )
 
 @Immutable

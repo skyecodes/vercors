@@ -6,6 +6,8 @@ import app.vercors.feature.project.domain.model.modpack.ModpackResolutionError
 import app.vercors.feature.project.domain.model.pack.LocalPack
 import app.vercors.feature.project.domain.model.pack.LocalPackError
 import app.vercors.feature.project.domain.model.pack.VercorsPackError
+import app.vercors.feature.project.domain.repository.InstancePackRepository
+import app.vercors.feature.project.domain.repository.ModpackRepository
 import arrow.core.raise.Raise
 import arrow.core.raise.context.raise
 import arrow.core.raise.recover
@@ -14,13 +16,15 @@ import dev.zacsweers.metro.Inject
 // Vercors first since its own format is unambiguous, then Prism before .mrpack, matching PrismLauncher's order
 @Inject
 class ParseLocalPackUseCase(
-    private val parseVercorsPack: ParseVercorsPackUseCase,
+    private val instancePackRepository: InstancePackRepository,
     private val parsePrismInstance: ParsePrismInstanceUseCase,
-    private val parseLocalModpack: ParseLocalModpackUseCase,
+    private val modpackRepository: ModpackRepository,
 ) {
     context(_: Raise<LocalPackError>)
     suspend operator fun invoke(sourcePath: String): LocalPack =
-        recover({ LocalPack.Vercors(sourcePath, parseVercorsPack(sourcePath)) }) { error: VercorsPackError ->
+        recover({
+            LocalPack.Vercors(sourcePath, instancePackRepository.parseVercorsPack(sourcePath))
+        }) { error: VercorsPackError ->
             when (error) {
                 VercorsPackError.NotVercorsFormat -> parseAsPrism(sourcePath)
                 VercorsPackError.ParseFailed -> raise(LocalPackError.ParseFailed)
@@ -38,7 +42,7 @@ class ParseLocalPackUseCase(
     context(_: Raise<LocalPackError>)
     private suspend fun parseAsMrpack(sourcePath: String): LocalPack =
         recover({
-            LocalPack.Mrpack(sourcePath, parseLocalModpack(sourcePath, MODRINTH_PLATFORM_ID))
+            LocalPack.Mrpack(sourcePath, modpackRepository.parseLocalModpack(sourcePath, MODRINTH_PLATFORM_ID))
         }) { _: ModpackResolutionError ->
             raise(LocalPackError.UnsupportedFormat)
         }
