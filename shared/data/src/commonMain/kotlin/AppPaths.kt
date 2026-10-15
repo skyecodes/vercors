@@ -14,6 +14,7 @@ class AppPaths(val root: Path) {
     val privateKeyFile = Path(root, "key.priv")
     val instanceStore = Path(root, "instances")
     val themes = Path(root, "themes")
+    val defaultOptions = Path(root, "default-options")
     val logs = Path(root, "logs")
 
     val data = Path(root, "data")

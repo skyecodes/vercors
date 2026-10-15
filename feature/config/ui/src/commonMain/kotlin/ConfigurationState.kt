@@ -7,6 +7,8 @@ import app.vercors.feature.config.ui.advanced.AdvancedConfigurationEvent
 import app.vercors.feature.config.ui.advanced.AdvancedConfigurationState
 import app.vercors.feature.config.ui.appearance.AppearanceConfigurationEvent
 import app.vercors.feature.config.ui.appearance.AppearanceConfigurationState
+import app.vercors.feature.config.ui.gameoptions.GameOptionsConfigurationEvent
+import app.vercors.feature.config.ui.gameoptions.GameOptionsConfigurationState
 import app.vercors.feature.config.ui.general.GeneralConfigurationEvent
 import app.vercors.feature.config.ui.general.GeneralConfigurationState
 import app.vercors.feature.config.ui.java.JavaConfigurationEvent
@@ -27,6 +29,7 @@ data class ConfigurationState(
     val advancedContent: Store<AdvancedConfigurationState, AdvancedConfigurationEvent>,
     val appearanceContent: Store<AppearanceConfigurationState, AppearanceConfigurationEvent>,
     val javaContent: Store<JavaConfigurationState, JavaConfigurationEvent>,
+    val gameOptionsContent: Store<GameOptionsConfigurationState, GameOptionsConfigurationEvent>,
     val nativeLibrariesContent: Store<NativeLibraryConfigurationState, NativeLibraryConfigurationEvent>,
     val storageContent: Store<StorageConfigurationState, StorageConfigurationEvent>,
     val aboutContent: Store<AboutConfigurationState, AboutConfigurationEvent>,

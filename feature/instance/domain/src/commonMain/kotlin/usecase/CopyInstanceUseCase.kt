@@ -26,6 +26,7 @@ class CopyInstanceUseCase(
             id = instanceRepository.uniqueInstanceId(newName.toSlug()),
             pendingManualDownloads = emptyList(),
             installStage = null,
+            defaultOptionsApplied = true,
             createdAt = Clock.System.now(),
             updatedAt = Clock.System.now(),
             lastPlayedAt = null,

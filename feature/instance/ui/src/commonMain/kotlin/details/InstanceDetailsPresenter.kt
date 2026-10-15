@@ -30,6 +30,10 @@ import app.vercors.feature.instance.ui.install.FinishInstallationDialog
 import app.vercors.feature.instance.ui.install.LocalPackUpdateLauncher
 import app.vercors.feature.instance.ui.install.notifyModpackInstallResult
 import app.vercors.feature.instance.ui.list.InstanceListScreen
+import app.vercors.feature.instance.ui.options.copy.CopyOptionsDialog
+import app.vercors.feature.instance.ui.options.copy.CopyOptionsTarget
+import app.vercors.feature.instance.ui.options.savedefault.SaveDefaultOptionsDialog
+import app.vercors.feature.instance.ui.options.savedefault.SaveDefaultOptionsTarget
 import app.vercors.feature.java.domain.model.JavaRuntimeInstallStatus
 import app.vercors.feature.java.domain.usecase.InstallJavaRuntimeUseCase
 import app.vercors.feature.java.domain.usecase.ObserveJavaRuntimeInstallProgressUseCase
@@ -110,6 +114,8 @@ class InstanceDetailsPresenter(
     private val openInstanceFolder: OpenInstanceFolderUseCase,
     private val copyInstanceDialogFactory: CopyInstanceDialog.Factory,
     private val exportInstanceDialogFactory: ExportInstanceDialog.Factory,
+    private val copyOptionsDialogFactory: CopyOptionsDialog.Factory,
+    private val saveDefaultOptionsDialogFactory: SaveDefaultOptionsDialog.Factory,
     private val observeInstanceUpdates: ObserveInstanceUpdatesUseCase,
     private val checkInstanceUpdates: CheckInstanceUpdatesUseCase,
     private val shouldAutoCheckInstanceUpdates: ShouldAutoCheckInstanceUpdatesUseCase,
@@ -150,6 +156,9 @@ class InstanceDetailsPresenter(
         val (promptDeleteConfirmation, setPromptDeleteConfirmation) = remember { mutableStateOf(false) }
         val (copyInstanceDialog, setCopyInstanceDialog) = remember { mutableStateOf<CopyInstanceDialog?>(null) }
         val (exportInstanceDialog, setExportInstanceDialog) = remember { mutableStateOf<ExportInstanceDialog?>(null) }
+        val (copyOptionsDialog, setCopyOptionsDialog) = remember { mutableStateOf<CopyOptionsDialog?>(null) }
+        val (saveDefaultOptionsDialog, setSaveDefaultOptionsDialog) =
+            remember { mutableStateOf<SaveDefaultOptionsDialog?>(null) }
         val (promptFinishInstallation, setPromptFinishInstallation) = remember { mutableStateOf(false) }
         val manualDownloadItems = produceAndCollectAsRetainedState(screen.instanceId, initial = emptyList()) {
             observeManualDownloadItems(screen.instanceId)
@@ -196,6 +205,8 @@ class InstanceDetailsPresenter(
             promptDeleteConfirmation = promptDeleteConfirmation,
             copyInstanceDialog = copyInstanceDialog,
             exportInstanceDialog = exportInstanceDialog,
+            copyOptionsDialog = copyOptionsDialog,
+            saveDefaultOptionsDialog = saveDefaultOptionsDialog,
             selectedTab = selectedTab,
             horizontalTabs = horizontalTabs,
             optionsContent = optionsContent,
@@ -220,6 +231,8 @@ class InstanceDetailsPresenter(
                 setPromptDeleteConfirmation = setPromptDeleteConfirmation,
                 setCopyInstanceDialog = setCopyInstanceDialog,
                 setExportInstanceDialog = setExportInstanceDialog,
+                setCopyOptionsDialog = setCopyOptionsDialog,
+                setSaveDefaultOptionsDialog = setSaveDefaultOptionsDialog,
                 setSelectedTab = setSelectedTab,
                 currentInstance = currentInstance,
                 setPromptFinishInstallation = setPromptFinishInstallation,
@@ -265,6 +278,8 @@ class InstanceDetailsPresenter(
         setPromptDeleteConfirmation: (Boolean) -> Unit,
         setCopyInstanceDialog: (CopyInstanceDialog?) -> Unit,
         setExportInstanceDialog: (ExportInstanceDialog?) -> Unit,
+        setCopyOptionsDialog: (CopyOptionsDialog?) -> Unit,
+        setSaveDefaultOptionsDialog: (SaveDefaultOptionsDialog?) -> Unit,
         setSelectedTab: (InstanceDetailsTab) -> Unit,
         currentInstance: InstanceView?,
         setPromptFinishInstallation: (Boolean) -> Unit,
@@ -348,6 +363,23 @@ class InstanceDetailsPresenter(
             )
 
             is InstanceDetailsEvent.OnExportInstanceResult -> setExportInstanceDialog(null)
+            InstanceDetailsEvent.OnCopyOptionsClick -> currentInstance?.let {
+                setCopyOptionsDialog(
+                    copyOptionsDialogFactory.create(
+                        CopyOptionsTarget(
+                            screen.instanceId,
+                            it.gameVersion
+                        )
+                    )
+                )
+            }
+
+            is InstanceDetailsEvent.OnCopyOptionsResult -> setCopyOptionsDialog(null)
+            InstanceDetailsEvent.OnSaveDefaultOptionsClick -> setSaveDefaultOptionsDialog(
+                saveDefaultOptionsDialogFactory.create(SaveDefaultOptionsTarget(screen.instanceId))
+            )
+
+            is InstanceDetailsEvent.OnSaveDefaultOptionsResult -> setSaveDefaultOptionsDialog(null)
             InstanceDetailsEvent.OnCancelClick -> cancelInstance(screen.instanceId)
             InstanceDetailsEvent.OnCancelSetupClick -> cancelInstanceSetup(screen.instanceId)
             InstanceDetailsEvent.OnStopClick -> globalScope.launch { stopInstance(screen.instanceId) }

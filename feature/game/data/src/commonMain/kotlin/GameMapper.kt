@@ -17,7 +17,8 @@ internal fun MojangVersionManifest.toDomain(): GameVersionList = GameVersionList
             id = it.id,
             type = it.type.toDomain(),
             url = it.url,
-            sha1 = it.sha1
+            sha1 = it.sha1,
+            releaseTime = it.releaseTime
         )
     }
 )

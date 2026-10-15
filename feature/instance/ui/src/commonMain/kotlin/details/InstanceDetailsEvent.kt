@@ -3,6 +3,8 @@ package app.vercors.feature.instance.ui.details
 import app.vercors.feature.instance.domain.model.InstanceFolder
 import app.vercors.feature.instance.ui.copy.CopyInstanceResult
 import app.vercors.feature.instance.ui.export.ExportInstanceResult
+import app.vercors.feature.instance.ui.options.copy.CopyOptionsResult
+import app.vercors.feature.instance.ui.options.savedefault.SaveDefaultOptionsResult
 import app.vercors.feature.launcher.domain.model.QuickPlayTarget
 import app.vercors.feature.project.domain.model.ProjectType
 import app.vercors.shared.ui.Event
@@ -20,6 +22,10 @@ sealed interface InstanceDetailsEvent : Event {
     data class OnCopyInstanceResult(val result: CopyInstanceResult) : InstanceDetailsEvent
     data object OnExportClick : InstanceDetailsEvent
     data class OnExportInstanceResult(val result: ExportInstanceResult) : InstanceDetailsEvent
+    data object OnCopyOptionsClick : InstanceDetailsEvent
+    data class OnCopyOptionsResult(val result: CopyOptionsResult) : InstanceDetailsEvent
+    data object OnSaveDefaultOptionsClick : InstanceDetailsEvent
+    data class OnSaveDefaultOptionsResult(val result: SaveDefaultOptionsResult) : InstanceDetailsEvent
     data class OnTabClick(val tab: InstanceDetailsTab) : InstanceDetailsEvent
     data object OnInstallJavaConfirm : InstanceDetailsEvent
     data object OnInstallJavaDismiss : InstanceDetailsEvent

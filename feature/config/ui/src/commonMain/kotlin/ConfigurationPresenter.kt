@@ -10,6 +10,7 @@ import app.vercors.feature.config.domain.usecase.ObserveConfigurationUseCase
 import app.vercors.feature.config.ui.about.AboutConfigurationPresenter
 import app.vercors.feature.config.ui.advanced.AdvancedConfigurationPresenter
 import app.vercors.feature.config.ui.appearance.AppearanceConfigurationPresenter
+import app.vercors.feature.config.ui.gameoptions.GameOptionsConfigurationPresenter
 import app.vercors.feature.config.ui.general.GeneralConfigurationPresenter
 import app.vercors.feature.config.ui.java.JavaConfigurationPresenter
 import app.vercors.feature.config.ui.nativelibraries.NativeLibraryConfigurationPresenter
@@ -29,6 +30,7 @@ class ConfigurationPresenter(
     private val advancedPresenter: AdvancedConfigurationPresenter,
     private val appearancePresenter: AppearanceConfigurationPresenter,
     private val javaPresenter: JavaConfigurationPresenter,
+    private val gameOptionsPresenter: GameOptionsConfigurationPresenter,
     private val nativeLibraryPresenter: NativeLibraryConfigurationPresenter,
     private val storagePresenter: StorageConfigurationPresenter,
     private val aboutPresenter: AboutConfigurationPresenter,
@@ -49,6 +51,7 @@ class ConfigurationPresenter(
             advancedContent = advancedPresenter.present(),
             appearanceContent = appearancePresenter.present(),
             javaContent = javaPresenter.present(),
+            gameOptionsContent = gameOptionsPresenter.present(),
             nativeLibrariesContent = nativeLibrariesContent,
             storageContent = storagePresenter.present(),
             aboutContent = aboutContent,
