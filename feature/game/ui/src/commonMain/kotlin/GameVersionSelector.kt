@@ -70,6 +70,7 @@ fun GameVersionSelector(
         AppCheckbox(
             modifier = Modifier.padding(bottom = 4.dp),
             label = stringResource(GameRes.string.showSnapshots),
+            invert = true,
             checked = showSnapshot,
             onCheckedChange = { showSnapshot = it },
             uncheckedBackgroundColor = backgroundColor,

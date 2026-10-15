@@ -66,6 +66,8 @@
     <string name="homepage">Homepage</string>
     <string name="repository">Source code</string>
     <string name="issueTracker">Issue tracker</string>
+    <string name="checkForInstanceUpdates">Check for instance updates</string>
+    <string name="checkForInstanceUpdatesDesc">Look for new modpack and content versions when opening an instance. Each instance can override this in its options.</string>
     <string name="checkForUpdatesOnStart">Check for updates on start</string>
     <string name="checkForUpdatesOnStartDesc">Look for a new launcher version every time the launcher starts.</string>
     <string name="updates">Updates</string>

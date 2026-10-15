@@ -28,3 +28,10 @@ fun ModpackFileKind.toProjectType(): ProjectType = when (this) {
     ModpackFileKind.ResourcePack -> ProjectType.ResourcePack
     ModpackFileKind.ShaderPack -> ProjectType.ShaderPack
 }
+
+val ContentKind.folderName: String
+    get() = when (this) {
+        ContentKind.Mod -> "mods"
+        ContentKind.ResourcePack -> "resourcepacks"
+        ContentKind.ShaderPack -> "shaderpacks"
+    }

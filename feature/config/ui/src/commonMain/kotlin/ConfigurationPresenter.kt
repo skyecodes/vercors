@@ -143,6 +143,7 @@ class ConfigurationPresenter(
             appName = appName,
             appVersion = appVersion,
             checkForUpdatesOnStart = cfg?.checkForUpdatesOnStart,
+            checkForInstanceUpdates = cfg?.checkForInstanceUpdates,
             updateChannel = cfg?.let { it.updateChannel ?: UpdateChannel.fromVersion(appVersion) },
             launcherUpdate = launcherUpdate,
             promptRestartForUpdate = promptRestartForUpdate,
@@ -296,6 +297,10 @@ class ConfigurationPresenter(
 
             ConfigurationEvent.OnCheckForUpdatesOnStartToggle -> presenterScope.launch {
                 updateConfiguration { copy(checkForUpdatesOnStart = !checkForUpdatesOnStart) }
+            }
+
+            ConfigurationEvent.OnCheckForInstanceUpdatesToggle -> presenterScope.launch {
+                updateConfiguration { copy(checkForInstanceUpdates = !checkForInstanceUpdates) }
             }
 
             is ConfigurationEvent.OnUpdateChannelChange -> handleUpdateChannelChange(event.value)

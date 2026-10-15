@@ -6,6 +6,7 @@ import app.vercors.core.network.MetaApiConnectivity
 import app.vercors.core.network.RemoteError
 import app.vercors.core.system.SystemService
 import app.vercors.feature.game.domain.model.ModLoaderType
+import app.vercors.feature.instance.domain.model.localimport.isUserStatePath
 import app.vercors.feature.project.api.PlatformFiles
 import app.vercors.feature.project.api.Platforms
 import app.vercors.feature.project.api.ProjectFiles
@@ -25,6 +26,7 @@ import app.vercors.shared.api.ApiV1
 import app.vercors.shared.data.*
 import arrow.core.NonEmptyList
 import arrow.core.raise.Raise
+import arrow.core.raise.context.either
 import arrow.core.raise.context.ensureNotNull
 import arrow.core.raise.context.raise
 import arrow.core.raise.context.withError
@@ -359,8 +361,9 @@ class ProjectRepositoryImpl(
         manifest: ModpackManifest,
         instanceId: String,
         localSourcePath: String?,
+        preserveUserState: Boolean,
         onProgress: (Progress) -> Unit
-    ): List<InstalledModpackFile> {
+    ): ModpackInstallResult {
         val gameDir = appPaths.gameDir(instanceId)
         val autoFiles = manifest.files.filter { it.manualDownloadUrl == null }
         val requests = autoFiles.map { file ->
@@ -399,8 +402,8 @@ class ProjectRepositoryImpl(
 
         val zipPath =
             localSourcePath?.let(::Path) ?: modpackZipPath(manifest.platformId, manifest.projectId, manifest.fileId)
-        try {
-            extractOverrides(zipPath, gameDir, manifest.overridesDirs)
+        val overridePaths = try {
+            extractOverrides(zipPath, gameDir, manifest.overridesDirs, preserveUserState)
         } catch (e: CancellationException) {
             throw e
         } catch (_: Exception) {
@@ -410,7 +413,7 @@ class ProjectRepositoryImpl(
             if (localSourcePath == null && zipPath.exists()) zipPath.deleteRecursively()
         }
 
-        return autoFiles
+        val installedFiles = autoFiles
             .filter { it.kind != ModpackFileKind.Other }
             .map { file ->
                 InstalledModpackFile(
@@ -421,6 +424,33 @@ class ProjectRepositoryImpl(
                     platformId = file.platformId
                 )
             }
+        return ModpackInstallResult(installedFiles, overridePaths)
+    }
+
+    // An unchanged file from a previous pack version, or one another instance already downloaded manually
+    override suspend fun installManualDownloadLocally(
+        fileName: String,
+        instanceId: String,
+        type: ProjectType,
+        size: Long?,
+        sha1: String?,
+        md5: String?
+    ): Boolean = with(fileValidationService) {
+        val request = FileValidationRequest.Url(
+            url = "",
+            path = Path(type.targetDir(instanceId), fileName),
+            size = size,
+            sha1 = sha1,
+            md5 = md5,
+            cacheKind = type.toContentCacheKind()
+        )
+        if (either { request.validate() }.isRight()) {
+            request.populateCache()
+            return true
+        }
+        val served = either { request.downloadAndValidate() }.isRight()
+        if (!served && request.path.exists()) request.path.delete()
+        served
     }
 
     context(_: Raise<ManualDownloadError>)
@@ -435,6 +465,8 @@ class ProjectRepositoryImpl(
         val sourcePath = awaitStableDownloadInDownloadsFolder(fileName, size)
         val targetPath = Path(type.targetDir(instanceId), fileName)
         try {
+            // The target may be a hardlink into the content cache: copying over it would rewrite the cached object
+            if (targetPath.exists()) targetPath.delete()
             sourcePath.copyTo(targetPath)
             sourcePath.delete()
         } catch (e: CancellationException) {
@@ -555,18 +587,29 @@ class ProjectRepositoryImpl(
         }
     }
 
-    private fun extractOverrides(zipPath: Path, gameDir: Path, overridesDirs: List<String>) {
+    private fun extractOverrides(
+        zipPath: Path,
+        gameDir: Path,
+        overridesDirs: List<String>,
+        preserveUserState: Boolean
+    ): List<String> {
+        val extractedPaths = mutableListOf<String>()
         Zip.open(zipPath).use { zip ->
             zip.forEachEntry { entry ->
                 if (entry.isDirectory) return@forEachEntry
                 val entryPath = entry.path.toZipEntryName()
                 val matchingDir = overridesDirs.firstOrNull { entryPath.startsWith("$it/") } ?: return@forEachEntry
-                val relativePath = entryPath.removePrefix("$matchingDir/")
+                val relativePath = entryPath.removePrefix("$matchingDir/").pathSegments().joinToString("/")
                 val target = Path(gameDir, *relativePath.pathSegments())
-                target.parent?.let { SystemFileSystem.createDirectories(it) }
-                entry.readToPath(target)
+                val userState = isUserStatePath(relativePath)
+                if (!(preserveUserState && userState && SystemFileSystem.exists(target))) {
+                    target.parent?.let { SystemFileSystem.createDirectories(it) }
+                    entry.readToPath(target)
+                }
+                if (!userState) extractedPaths += relativePath
             }
         }
+        return extractedPaths
     }
 }
 

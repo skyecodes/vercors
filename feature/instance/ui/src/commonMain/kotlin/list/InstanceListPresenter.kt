@@ -18,6 +18,7 @@ import app.vercors.feature.instance.ui.export.ExportInstanceTarget
 import app.vercors.feature.instance.ui.toBriefView
 import app.vercors.feature.project.domain.model.ProjectType
 import app.vercors.feature.project.domain.model.from
+import app.vercors.feature.project.domain.usecase.ObserveInstanceUpdatesUseCase
 import app.vercors.feature.project.ui.details.ProjectDetailsScreen
 import app.vercors.feature.project.ui.list.ProjectListScreen
 import app.vercors.shared.ui.Presenter
@@ -28,7 +29,7 @@ import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedFactory
 import dev.zacsweers.metro.AssistedInject
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.combine
 import opensavvy.state.progressive.ProgressiveOutcome
 import opensavvy.state.progressive.map
 
@@ -36,6 +37,7 @@ import opensavvy.state.progressive.map
 class InstanceListPresenter(
     @Assisted private val navigator: Navigator,
     private val observeInstanceList: ObserveInstanceListUseCase,
+    private val observeInstanceUpdates: ObserveInstanceUpdatesUseCase,
     private val createInstanceDialog: CreateInstanceDialog,
     private val copyInstanceDialogFactory: CopyInstanceDialog.Factory,
     private val exportInstanceDialogFactory: ExportInstanceDialog.Factory,
@@ -95,9 +97,14 @@ class InstanceListPresenter(
             InstanceListEvent.OnCreateInstanceClick -> setPromptCreateInstance(true)
             is InstanceListEvent.OnCreateInstanceResult -> {
                 setPromptCreateInstance(false)
-                val result = event.result
-                if (result is CreateInstanceResult.Created) navigator.goTo(InstanceDetailsScreen(result.instanceId))
-                else if (result == CreateInstanceResult.SearchModpacks) navigator.goTo(ProjectListScreen(initialType = ProjectType.Modpack))
+                when (val result = event.result) {
+                    is CreateInstanceResult.Created -> navigator.goTo(InstanceDetailsScreen(result.instanceId))
+                    is CreateInstanceResult.Updated -> navigator.goTo(InstanceDetailsScreen(result.instanceId))
+                    CreateInstanceResult.SearchModpacks ->
+                        navigator.goTo(ProjectListScreen(initialType = ProjectType.Modpack))
+
+                    CreateInstanceResult.Cancelled -> Unit
+                }
             }
 
             is InstanceListEvent.OnInstanceClick -> navigator.goTo(InstanceDetailsScreen(event.instanceId))
@@ -169,9 +176,11 @@ class InstanceListPresenter(
     @Composable
     private fun observeInstanceListView(): State<ProgressiveOutcome<Nothing, List<BriefInstanceView>>> =
         produceAndCollectAsProgressiveState {
-            observeInstanceList().map { res ->
+            combine(observeInstanceList(), observeInstanceUpdates()) { res, updates ->
                 res.map { list ->
-                    list.filterIsRight().sortedByDescending { it.instance.lastPlayedAt }.map { it.toBriefView() }
+                    list.filterIsRight().sortedByDescending { it.instance.lastPlayedAt }.map {
+                        it.toBriefView(updateAvailable = updates[it.instance.id]?.hasUpdates == true)
+                    }
                 }
             }
         }

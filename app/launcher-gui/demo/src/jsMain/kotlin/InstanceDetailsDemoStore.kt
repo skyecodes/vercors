@@ -13,6 +13,7 @@ import app.vercors.feature.instance.ui.details.content.InstalledContentState
 import app.vercors.feature.instance.ui.details.logs.InstanceLogsState
 import app.vercors.feature.instance.ui.details.options.InstanceEditState
 import app.vercors.feature.instance.ui.details.options.InstanceOptionsState
+import app.vercors.feature.instance.ui.details.options.UpdateCheckView
 import app.vercors.feature.instance.ui.details.servers.InstanceServersState
 import app.vercors.feature.instance.ui.details.worlds.InstalledWorldsState
 import app.vercors.feature.instance.ui.install.FinishInstallationDialog
@@ -67,6 +68,8 @@ fun instanceDetailsDemoStore(): Store<InstanceDetailsState, InstanceDetailsEvent
             finishInstallationDialog = FinishInstallationDialog(mutableStateOf(emptyList())) {},
             loginDialog = LoginDialog(mutableStateOf(LoginStateView())) {},
             installJavaProgressDialog = InstallJavaProgressDialog(mutableStateOf(JavaInstallProgressView())),
+            modpackUpdate = null,
+            promptModpackUpdate = false,
         ),
         eventSink = {},
     )
@@ -88,11 +91,13 @@ private fun monifactoryView(): InstanceView {
             projectId = MONIFACTORY_ID,
             fileId = MONIFACTORY_ID
         ),
+        modpackVersion = null,
         pendingManualDownloads = emptyList(),
         iconFilePath = "/icons/$MONIFACTORY_ID.webp",
         javaInstallationId = null,
         jvmMemoryOptions = JvmMemoryOptions(),
         nativeLibraryOptions = NativeLibraryOptions(),
+        checkForUpdates = null,
         updatedAt = now,
         playTime = 37.hours + 42.minutes,
         lastPlayedAt = now - 1.days,
@@ -113,6 +118,16 @@ private fun optionsState(instance: InstanceView): InstanceOptionsState = Instanc
     globalNativeLibraryOptions = NativeLibraryOptions(),
     inheritedJavaInstallation = null,
     requiredJavaMajorVersion = REQUIRED_JAVA_MAJOR_VERSION,
+    globalCheckForUpdates = true,
+    updateCheck = UpdateCheckView(
+        isModpack = true,
+        installedModpackVersion = null,
+        checking = false,
+        identifyUnknownFiles = false,
+        checked = false,
+        modpackUpdateName = null,
+        contentUpdateCount = 0,
+    ),
     persistedInstance = instance,
 )
 

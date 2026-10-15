@@ -18,6 +18,10 @@ import app.vercors.feature.instance.ui.details.worlds.InstalledWorldsEvent
 import app.vercors.feature.instance.ui.details.worlds.InstalledWorldsState
 import app.vercors.feature.instance.ui.export.ExportInstanceDialog
 import app.vercors.feature.instance.ui.install.FinishInstallationDialog
+import app.vercors.feature.project.domain.model.pack.InstalledPack
+import app.vercors.feature.project.domain.model.pack.LocalPack
+import app.vercors.feature.project.domain.model.pack.matches
+import app.vercors.feature.project.domain.model.update.ModpackUpdate
 import app.vercors.shared.domain.model.JvmMemoryOptions
 import app.vercors.shared.domain.model.NativeLibraryOptions
 import app.vercors.shared.ui.Store
@@ -47,6 +51,57 @@ data class InstanceDetailsState(
     val loginDialog: LoginDialog,
     val promptJavaInstallProgress: Boolean = false,
     val installJavaProgressDialog: InstallJavaProgressDialog,
+    val modpackUpdate: ModpackUpdateView?,
+    val promptModpackUpdate: Boolean,
+    val localPackUpdatePrompt: LocalPackUpdatePrompt? = null,
+)
+
+@Immutable
+enum class LocalPackUpdateKind {
+    SamePack,
+    NoRecord,
+    OtherPack,
+}
+
+@Immutable
+data class LocalPackUpdatePrompt(
+    val pack: LocalPack,
+    val currentLabel: String,
+    val newLabel: String,
+    val gameVersion: String,
+    val kind: LocalPackUpdateKind,
+)
+
+fun LocalPack.toUpdatePrompt(installedPack: InstalledPack?): LocalPackUpdatePrompt = LocalPackUpdatePrompt(
+    pack = this,
+    currentLabel = installedPack?.let { packLabel(it.name, it.versionName) }.orEmpty(),
+    newLabel = packLabel(name, versionName),
+    gameVersion = gameVersion,
+    kind = when {
+        installedPack == null -> LocalPackUpdateKind.NoRecord
+        installedPack.matches(this) -> LocalPackUpdateKind.SamePack
+        else -> LocalPackUpdateKind.OtherPack
+    }
+)
+
+// A platform version name often already contains the pack name ("Fabulously Optimized 6.4.0")
+private fun packLabel(name: String, versionName: String?): String = when {
+    versionName == null -> name
+    versionName.contains(name, ignoreCase = true) -> versionName
+    else -> "$name $versionName"
+}
+
+@Immutable
+data class ModpackUpdateView(
+    val currentVersion: String,
+    val latestVersion: String,
+    val newGameVersion: String?,
+)
+
+fun ModpackUpdate.toView(gameVersion: String): ModpackUpdateView = ModpackUpdateView(
+    currentVersion = current.displayName,
+    latestVersion = latest.displayName,
+    newGameVersion = latest.gameVersions.takeIf { it.isNotEmpty() && gameVersion !in it }?.first(),
 )
 
 @Immutable
@@ -60,11 +115,13 @@ data class InstanceView(
     val type: String,
     val status: InstanceStatus,
     val modpackInfo: InstanceModpackInfo?,
+    val modpackVersion: String?,
     val pendingManualDownloads: List<PendingManualDownload>,
     val iconFilePath: String?,
     val javaInstallationId: String?,
     val jvmMemoryOptions: JvmMemoryOptions,
     val nativeLibraryOptions: NativeLibraryOptions,
+    val checkForUpdates: Boolean?,
     val updatedAt: Instant,
     val playTime: Duration,
     val lastPlayedAt: Instant? = null
@@ -80,11 +137,13 @@ fun InstanceAndStatus.toView(): InstanceView = InstanceView(
     type = instance.displayType,
     status = status,
     modpackInfo = instance.modpackInfo,
+    modpackVersion = instance.modpackInfo?.versionName,
     pendingManualDownloads = instance.pendingManualDownloads,
     iconFilePath = instance.iconFilePath,
     javaInstallationId = instance.javaInstallationId,
     jvmMemoryOptions = instance.jvmMemoryOptions,
     nativeLibraryOptions = instance.nativeLibraryOptions,
+    checkForUpdates = instance.checkForUpdates,
     updatedAt = instance.updatedAt,
     playTime = instance.playTime,
     lastPlayedAt = instance.lastPlayedAt

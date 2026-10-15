@@ -22,7 +22,12 @@ internal data class VercorsPackManifest(
 internal data class VercorsPackModLoader(val type: String, val version: String)
 
 @Serializable
-internal data class VercorsPackModpackInfo(val platformId: String, val projectId: String, val fileId: String)
+internal data class VercorsPackModpackInfo(
+    val platformId: String,
+    val projectId: String,
+    val fileId: String,
+    val versionName: String? = null
+)
 
 @Serializable
 internal data class VercorsPackFile(

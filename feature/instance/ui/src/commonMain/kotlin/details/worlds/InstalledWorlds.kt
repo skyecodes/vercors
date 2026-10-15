@@ -17,7 +17,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import app.vercors.core.ui.component.*
 import app.vercors.core.ui.layout.AppLoading
 import app.vercors.core.ui.modifier.appCard
@@ -214,7 +213,7 @@ private fun InstalledWorldRow(world: InstalledWorldView, canQuickJoin: Boolean, 
                         )
                         AppText(
                             text = lastModifiedReadable,
-                            fontSize = 12.sp,
+                            style = Theme[textStyles][label],
                         )
                     }
                 }
@@ -231,4 +230,3 @@ private fun InstalledWorldRow(world: InstalledWorldView, canQuickJoin: Boolean, 
         )
     }
 }
-

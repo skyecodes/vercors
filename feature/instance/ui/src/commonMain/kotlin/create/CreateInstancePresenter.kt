@@ -1,8 +1,6 @@
 package app.vercors.feature.instance.ui.create
 
 import androidx.compose.runtime.*
-import app.vercors.core.domain.toDownloadProgressOrNull
-import app.vercors.core.domain.toFractionOrNull
 import app.vercors.feature.game.domain.model.LoaderVersion
 import app.vercors.feature.game.domain.model.ModLoaderType
 import app.vercors.feature.game.domain.usecase.ObserveAvailableLoadersUseCase
@@ -10,19 +8,23 @@ import app.vercors.feature.game.domain.usecase.ObserveGameVersionListUseCase
 import app.vercors.feature.game.domain.usecase.ObserveLoaderVersionsUseCase
 import app.vercors.feature.game.ui.GameVersionView
 import app.vercors.feature.instance.domain.model.*
-import app.vercors.feature.instance.domain.model.localimport.LocalImportError
 import app.vercors.feature.instance.domain.usecase.*
-import app.vercors.feature.instance.ui.*
-import app.vercors.feature.project.domain.model.modpack.ModpackInstallError
-import app.vercors.feature.project.domain.model.modpack.ModpackResolutionError
-import app.vercors.feature.project.domain.model.pack.VercorsPackError
-import app.vercors.feature.project.domain.usecase.*
+import app.vercors.feature.instance.ui.install.LocalPackUpdateLauncher
+import app.vercors.feature.instance.ui.message
+import app.vercors.feature.instance.ui.observeAvailableLoadersView
+import app.vercors.feature.instance.ui.observeGameVersionListView
+import app.vercors.feature.instance.ui.observeLoaderVersionsView
+import app.vercors.feature.project.domain.model.pack.LocalPack
+import app.vercors.feature.project.domain.usecase.FindLocalPackTargetsUseCase
+import app.vercors.feature.project.domain.usecase.InstallLocalPackUseCase
+import app.vercors.feature.project.domain.usecase.ParseLocalPackUseCase
 import app.vercors.shared.domain.model.JvmMemoryOptions
 import app.vercors.shared.domain.model.NativeLibraryOptions
 import app.vercors.shared.ui.Presenter
 import app.vercors.shared.ui.SnackbarService
 import app.vercors.shared.ui.Store
 import app.vercors.shared.ui.error
+import arrow.core.raise.context.either
 import arrow.core.raise.recover
 import com.slack.circuit.overlay.OverlayNavigator
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -30,7 +32,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import opensavvy.state.progressive.valueOrNull
-import org.jetbrains.compose.resources.stringResource
 
 private val logger = KotlinLogging.logger {}
 
@@ -42,19 +43,14 @@ class CreateInstancePresenter(
     private val observeLoaderVersions: ObserveLoaderVersionsUseCase,
     private val createInstance: CreateInstanceUseCase,
     private val snackbarService: SnackbarService,
-    private val parsePrismInstance: ParsePrismInstanceUseCase,
-    private val importPrismInstanceFiles: ImportPrismInstanceFilesUseCase,
-    private val parseLocalModpack: ParseLocalModpackUseCase,
-    private val installModpackFiles: InstallModpackFilesUseCase,
-    private val parseVercorsPack: ParseVercorsPackUseCase,
-    private val extractVercorsPackIcon: ExtractVercorsPackIconUseCase,
-    private val recordModpackFileOrigins: RecordModpackFileOriginsUseCase,
+    private val parseLocalPack: ParseLocalPackUseCase,
+    private val findLocalPackTargets: FindLocalPackTargetsUseCase,
+    private val installLocalPack: InstallLocalPackUseCase,
+    private val localPackUpdateLauncher: LocalPackUpdateLauncher,
     private val setInstanceIcon: SetInstanceIconUseCase,
     private val updateInstanceStatus: UpdateInstanceStatusUseCase,
     private val updateInstanceJob: UpdateInstanceJobUseCase,
     private val deleteInstance: DeleteInstanceUseCase,
-    private val refreshInstalledContent: RefreshInstalledContentUseCase,
-    private val refreshInstalledWorlds: RefreshInstalledWorldsUseCase,
 ) : Presenter<CreateInstanceState, CreateInstanceEvent> {
     @Composable
     override fun present(): Store<CreateInstanceState, CreateInstanceEvent> {
@@ -71,9 +67,7 @@ class CreateInstancePresenter(
             selectedLoader
         )
         val (importParsing, setImportParsing) = remember { mutableStateOf(false) }
-        val (importPreview, setImportPreview) = remember { mutableStateOf<LocalImportPreview?>(null) }
-        val (importInstanceName, setImportInstanceName) = remember { mutableStateOf("") }
-        val (importing, setImporting) = remember { mutableStateOf(false) }
+        val importState = rememberImportState()
 
         LaunchedEffect(loaderVersionList) {
             if (selectedLoaderVersion == null) {
@@ -95,9 +89,11 @@ class CreateInstancePresenter(
             loaderVersionList = loaderVersionList,
             selectedInstanceType = selectedInstanceType,
             importParsing = importParsing,
-            importPreview = importPreview,
-            importInstanceName = importInstanceName,
-            importing = importing,
+            importPreview = importState.preview,
+            importTargets = importState.targets,
+            selectedImportTargetId = importState.selectedTargetId,
+            importInstanceName = importState.instanceName,
+            importing = importState.importing,
         ) + { event ->
             handleEvent(
                 event = event,
@@ -111,13 +107,30 @@ class CreateInstancePresenter(
                 selectedLoaderVersion = selectedLoaderVersion,
                 setSelectedLoaderVersion = setSelectedLoaderVersion,
                 setImportParsing = setImportParsing,
-                setImportPreview = setImportPreview,
-                importInstanceName = importInstanceName,
-                setImportInstanceName = setImportInstanceName,
-                importPreview = importPreview,
-                setImporting = setImporting,
+                importState = importState,
             )
         }
+    }
+
+    @Composable
+    private fun rememberImportState(): ImportState {
+        val (preview, setPreview) = remember { mutableStateOf<LocalPack?>(null) }
+        val (targets, setTargets) = remember { mutableStateOf(emptyList<ImportTargetView>()) }
+        val (selectedTargetId, setSelectedTargetId) = remember { mutableStateOf<InstanceId?>(null) }
+        val (instanceName, setInstanceName) = remember { mutableStateOf("") }
+        val (importing, setImporting) = remember { mutableStateOf(false) }
+        return ImportState(
+            preview,
+            setPreview,
+            targets,
+            setTargets,
+            selectedTargetId,
+            setSelectedTargetId,
+            instanceName,
+            setInstanceName,
+            importing,
+            setImporting
+        )
     }
 
     private fun handleEvent(
@@ -132,11 +145,7 @@ class CreateInstancePresenter(
         selectedLoaderVersion: LoaderVersion?,
         setSelectedLoaderVersion: (LoaderVersion?) -> Unit,
         setImportParsing: (Boolean) -> Unit,
-        setImportPreview: (LocalImportPreview?) -> Unit,
-        importInstanceName: String,
-        setImportInstanceName: (String) -> Unit,
-        importPreview: LocalImportPreview?,
-        setImporting: (Boolean) -> Unit,
+        importState: ImportState,
     ) {
         when (event) {
             is CreateInstanceEvent.OnInstanceTypeChange -> setSelectedInstanceType(event.type)
@@ -159,14 +168,11 @@ class CreateInstancePresenter(
 
             CreateInstanceEvent.OnOpenModpacksScreen -> navigator.finish(CreateInstanceResult.SearchModpacks)
             is CreateInstanceEvent.OnImportFileSelected ->
-                handleImportFileSelected(event.sourcePath, setImportPreview, setImportInstanceName, setImportParsing)
+                handleImportFileSelected(event.sourcePath, importState, setImportParsing)
 
-            is CreateInstanceEvent.OnImportInstanceNameChange -> setImportInstanceName(event.name)
-            CreateInstanceEvent.OnConfirmImportClick -> handleConfirmImport(
-                importPreview,
-                importInstanceName,
-                setImporting
-            )
+            is CreateInstanceEvent.OnImportInstanceNameChange -> importState.setInstanceName(event.name)
+            is CreateInstanceEvent.OnImportTargetSelected -> importState.setSelectedTargetId(event.instanceId)
+            CreateInstanceEvent.OnConfirmImportClick -> handleConfirmImport(importState)
         }
     }
 
@@ -189,94 +195,49 @@ class CreateInstancePresenter(
         }
     }
 
-    // Vercors first since its own format is unambiguous, then Prism before .mrpack, matching PrismLauncher's order
     private fun handleImportFileSelected(
         sourcePath: String,
-        setImportPreview: (LocalImportPreview?) -> Unit,
-        setImportInstanceName: (String) -> Unit,
+        importState: ImportState,
         setImportParsing: (Boolean) -> Unit,
     ) {
-        setImportPreview(null)
+        importState.setPreview(null)
+        importState.setTargets(emptyList())
+        importState.setSelectedTargetId(null)
         setImportParsing(true)
         globalScope.launch {
-            val preview = tryParseAsVercorsPack(sourcePath)
-            setImportPreview(preview)
-            setImportInstanceName(preview?.name.orEmpty())
+            val pack = either { parseLocalPack(sourcePath) }
+                .onLeft { error -> snackbarService.error { error.message } }
+                .getOrNull()
+            importState.setPreview(pack)
+            importState.setInstanceName(pack?.name.orEmpty())
+            importState.setTargets(
+                pack?.let { findLocalPackTargets(it) }.orEmpty().map { ImportTargetView(it.id, it.name) }
+            )
             setImportParsing(false)
         }
     }
 
-    private suspend fun tryParseAsVercorsPack(sourcePath: String): LocalImportPreview? =
-        recover({
-            val info = parseVercorsPack(sourcePath)
-            LocalImportPreview.Vercors(
-                info.name,
-                info.gameVersion,
-                info.modLoader?.type,
-                info.modLoader?.version,
-                sourcePath,
-                info
-            )
-        }) { error: VercorsPackError ->
-            when (error) {
-                VercorsPackError.NotVercorsFormat -> tryParseAsPrism(sourcePath)
-                VercorsPackError.ParseFailed -> {
-                    snackbarService.error { stringResource(InstanceRes.string.errorImportParseFailed) }
-                    null
-                }
-
-                VercorsPackError.UnsupportedFormatVersion -> {
-                    snackbarService.error { stringResource(InstanceRes.string.errorImportUnsupportedPackVersion) }
-                    null
-                }
-            }
+    private fun handleConfirmImport(importState: ImportState) {
+        val pack = importState.preview ?: return
+        val target = importState.targets.find { it.id == importState.selectedTargetId }
+        if (target != null) {
+            localPackUpdateLauncher.launch(target.id, target.name, pack)
+            navigator.finish(CreateInstanceResult.Updated(target.id))
+        } else {
+            importAsNewInstance(pack, importState.instanceName, importState.setImporting)
         }
-
-    private suspend fun tryParseAsPrism(sourcePath: String): LocalImportPreview? =
-        recover({
-            val info = parsePrismInstance(sourcePath)
-            LocalImportPreview.Prism(
-                info.name,
-                info.gameVersion,
-                info.loaderType,
-                info.loaderVersion,
-                sourcePath,
-                info
-            )
-        }) { error: LocalImportError ->
-            if (error == LocalImportError.NotPrismFormat) tryParseAsMrpack(sourcePath) else null
-        }
-
-    private suspend fun tryParseAsMrpack(sourcePath: String): LocalImportPreview.Mrpack? =
-        recover({
-            val manifest = parseLocalModpack(sourcePath, platformId = "modrinth")
-            LocalImportPreview.Mrpack(
-                manifest.name,
-                manifest.gameVersion,
-                manifest.loaderType,
-                manifest.loaderVersion,
-                sourcePath,
-                manifest
-            )
-        }) { _: ModpackResolutionError ->
-            snackbarService.error { stringResource(InstanceRes.string.errorImportUnsupportedFormat) }
-            null
-        }
+    }
 
     // Rolled back only on cancellation: an install failure leaves the instance visible as InstallFailed
-    private fun handleConfirmImport(
-        preview: LocalImportPreview?,
-        instanceName: String,
-        setImporting: (Boolean) -> Unit
-    ) {
-        if (preview == null || instanceName.length < 3) return
+    private fun importAsNewInstance(pack: LocalPack, instanceName: String, setImporting: (Boolean) -> Unit) {
+        if (instanceName.length < 3) return
         setImporting(true)
-        val vercorsInfo = (preview as? LocalImportPreview.Vercors)?.info
+        val vercorsInfo = (pack as? LocalPack.Vercors)?.info
         val instance = Instance(
             name = instanceName,
-            gameVersion = preview.gameVersion,
-            modLoader = preview.loaderType?.let { InstanceModLoader(type = it, version = preview.loaderVersion!!) },
-            modpackInfo = preview.modpackInfo,
+            gameVersion = pack.gameVersion,
+            modLoader = pack.loaderType?.let { InstanceModLoader(type = it, version = pack.loaderVersion!!) },
+            modpackInfo = pack.modpackInfo,
             jvmMemoryOptions = vercorsInfo?.jvmMemoryOptions ?: JvmMemoryOptions(),
             nativeLibraryOptions = vercorsInfo?.nativeLibraryOptions ?: NativeLibraryOptions(),
         )
@@ -296,12 +257,14 @@ class CreateInstancePresenter(
             setImporting(false)
             navigator.finish(CreateInstanceResult.Created(created.id))
 
-            val ok = when (preview) {
-                is LocalImportPreview.Vercors -> runVercorsImport(preview, created.id)
-                is LocalImportPreview.Prism -> runPrismImport(preview, created.id)
-                is LocalImportPreview.Mrpack -> runMrpackImport(preview, created.id)
-            }
-            updateInstanceStatus(created.id, if (ok) InstanceStatus.Idle else InstanceStatus.Failed.InstallFailed)
+            val result = either { installLocalPack(pack, created.id, isUpdate = false) }
+                .onLeft { error -> logger.error { "Local pack import failed for ${created.id}: $error" } }
+                .getOrNull()
+            result?.iconPath?.let { setImportedIcon(created.id, it) }
+            updateInstanceStatus(
+                created.id,
+                if (result != null) InstanceStatus.Idle else InstanceStatus.Failed.InstallFailed
+            )
         }
         job.invokeOnCompletion { error ->
             createdInstanceId?.let { updateInstanceJob(it, null) }
@@ -311,66 +274,22 @@ class CreateInstancePresenter(
         }
     }
 
-    private suspend fun runPrismImport(preview: LocalImportPreview.Prism, instanceId: InstanceId): Boolean {
-        var iconPath: String? = null
-        val ok = recover({
-            iconPath = importPrismInstanceFiles(preview.sourcePath, instanceId, preview.info) { progress ->
-                updateInstanceStatus(instanceId, InstanceStatus.Installing.ExtractingFiles(progress.toFractionOrNull()))
-            }
-            true
-        }) { error: LocalImportError ->
-            logger.error { "Prism import failed for $instanceId: $error" }
-            false
-        }
-        if (ok) finishBulkImport(instanceId, iconPath)
-        return ok
-    }
-
-    private suspend fun runVercorsImport(preview: LocalImportPreview.Vercors, instanceId: InstanceId): Boolean {
-        val installedFiles = recover({
-            installModpackFiles(preview.info.manifest, instanceId, localSourcePath = preview.sourcePath) { progress ->
-                updateInstanceStatus(
-                    instanceId,
-                    InstanceStatus.Installing.DownloadingFiles(progress.toDownloadProgressOrNull())
-                )
-            }
-        }) { error: ModpackInstallError ->
-            logger.error { "Vercors pack import failed for $instanceId: $error" }
-            return false
-        }
-        recordModpackFileOrigins(instanceId, preview.info.manifest.platformId, installedFiles)
-        val iconPath = preview.info.iconExtension?.let { extractVercorsPackIcon(preview.sourcePath, it) }
-        finishBulkImport(instanceId, iconPath)
-        return true
-    }
-
-    // Bulk write outside the scanners' APIs: refresh explicitly rather than relying on the watcher
-    private suspend fun finishBulkImport(instanceId: InstanceId, iconPath: String?) {
-        refreshInstalledContent(ContentKind.Mod, instanceId)
-        refreshInstalledContent(ContentKind.ResourcePack, instanceId)
-        refreshInstalledContent(ContentKind.ShaderPack, instanceId)
-        refreshInstalledWorlds(instanceId)
-        iconPath?.let { path ->
-            recover({ setInstanceIcon(instanceId, path) }) { error: InstanceError ->
-                logger.warn { "Failed to set imported instance icon for $instanceId: $error" }
-            }
+    private suspend fun setImportedIcon(instanceId: InstanceId, iconPath: String) {
+        recover({ setInstanceIcon(instanceId, iconPath) }) { error: InstanceError ->
+            logger.warn { "Failed to set imported instance icon for $instanceId: $error" }
         }
     }
 
-    // Local mrpack files always have a download URL, so there's never a manual download to await
-    private suspend fun runMrpackImport(preview: LocalImportPreview.Mrpack, instanceId: InstanceId): Boolean {
-        val installedFiles = recover({
-            installModpackFiles(preview.manifest, instanceId, localSourcePath = preview.sourcePath) { progress ->
-                updateInstanceStatus(
-                    instanceId,
-                    InstanceStatus.Installing.DownloadingFiles(progress.toDownloadProgressOrNull())
-                )
-            }
-        }) { error: ModpackInstallError ->
-            logger.error { "Local modpack import failed for $instanceId: $error" }
-            return false
-        }
-        recordModpackFileOrigins(instanceId, preview.manifest.platformId, installedFiles)
-        return true
-    }
+    private data class ImportState(
+        val preview: LocalPack?,
+        val setPreview: (LocalPack?) -> Unit,
+        val targets: List<ImportTargetView>,
+        val setTargets: (List<ImportTargetView>) -> Unit,
+        val selectedTargetId: InstanceId?,
+        val setSelectedTargetId: (InstanceId?) -> Unit,
+        val instanceName: String,
+        val setInstanceName: (String) -> Unit,
+        val importing: Boolean,
+        val setImporting: (Boolean) -> Unit,
+    )
 }

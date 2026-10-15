@@ -20,9 +20,10 @@ data class BriefInstanceView(
     val status: InstanceStatus,
     val updatedAt: Instant,
     val modpackInfo: InstanceModpackInfo?,
+    val updateAvailable: Boolean = false,
 )
 
-fun InstanceAndStatus.toBriefView(): BriefInstanceView = BriefInstanceView(
+fun InstanceAndStatus.toBriefView(updateAvailable: Boolean = false): BriefInstanceView = BriefInstanceView(
     id = instance.id,
     name = instance.name,
     version = instance.gameVersion,
@@ -32,6 +33,7 @@ fun InstanceAndStatus.toBriefView(): BriefInstanceView = BriefInstanceView(
     status = status,
     updatedAt = instance.updatedAt,
     modpackInfo = instance.modpackInfo,
+    updateAvailable = updateAvailable,
 )
 
 // Platform names aren't translated

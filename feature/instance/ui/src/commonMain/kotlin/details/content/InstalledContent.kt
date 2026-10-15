@@ -19,7 +19,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import app.vercors.core.ui.component.*
 import app.vercors.core.ui.layout.AppLoading
 import app.vercors.core.ui.modifier.appCard
@@ -73,6 +72,7 @@ private fun InstalledContentFileList(
     Column(modifier = Modifier.fillMaxSize().let { if (!horizontalTabs) it.padding(vertical = 8.dp) else it }
         .appCard()) {
         InstalledContentFileListHeader(
+            files = files,
             searchQuery = searchQuery,
             searchPlaceholder = searchPlaceholder,
             onSearchQueryChange = { searchQuery = it },
@@ -106,6 +106,7 @@ private fun InstalledContentFileList(
 @Composable
 context(eventSink: EventSink<InstalledContentEvent>)
 private fun InstalledContentFileListHeader(
+    files: List<InstalledContentFileView>?,
     searchQuery: String,
     searchPlaceholder: StringResource,
     onSearchQueryChange: (String) -> Unit,
@@ -133,6 +134,17 @@ private fun InstalledContentFileListHeader(
                 onClick = onAddClick,
                 text = stringResource(addLabel),
                 imageVector = Lucide.Plus,
+                backgroundColor = Theme[colors][primary],
+                contentColor = Theme[colors][onPrimary],
+            )
+        }
+        val updates = files.orEmpty().mapNotNull { it.update }
+        if (updates.isNotEmpty()) {
+            AppIconTextButton(
+                onClick = { eventSink(InstalledContentEvent.OnUpdateAllClick) },
+                text = stringResource(InstanceRes.string.updateAll, updates.size),
+                imageVector = Lucide.Download,
+                enabled = updates.any { !it.inProgress },
                 backgroundColor = Theme[colors][primary],
                 contentColor = Theme[colors][onPrimary],
             )
@@ -296,12 +308,36 @@ private fun InstalledContentFileRow(
                     overflow = TextOverflow.Ellipsis
                 )
                 file.version?.let {
-                    AppText(text = it, fontSize = 12.sp, color = Theme[colors][onBackground].copy(alpha = 0.6f))
+                    AppText(
+                        text = it,
+                        style = Theme[textStyles][label],
+                        color = Theme[colors][onBackground].copy(alpha = 0.6f),
+                        singleLine = true,
+                        overflow = TextOverflow.Ellipsis
+                    )
                 }
             }
             file.description?.let {
-                AppText(text = it, fontSize = 12.sp, singleLine = true, overflow = TextOverflow.Ellipsis)
+                AppText(
+                    text = it,
+                    style = Theme[textStyles][label],
+                    singleLine = true,
+                    overflow = TextOverflow.Ellipsis
+                )
             }
+        }
+
+        file.update?.let { update ->
+            AppIconTextButton(
+                onClick = { eventSink(InstalledContentEvent.OnUpdateClick(file.fileName)) },
+                text = stringResource(
+                    if (update.inProgress) InstanceRes.string.updatingContent else InstanceRes.string.updateContent,
+                    update.latestVersion
+                ),
+                imageVector = Lucide.Download,
+                enabled = !update.inProgress,
+                modifier = Modifier.widthIn(max = 400.dp)
+            )
         }
 
         AppMenuButton {

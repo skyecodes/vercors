@@ -7,7 +7,9 @@ import app.vercors.feature.instance.data.toManagedPackPlatformIdOrNull
 import app.vercors.feature.instance.data.toPrismModLoaderTypeOrNull
 import app.vercors.feature.instance.domain.model.InstanceModpackInfo
 import app.vercors.feature.instance.domain.model.localimport.LocalImportError
+import app.vercors.feature.instance.domain.model.localimport.PrismImportResult
 import app.vercors.feature.instance.domain.model.localimport.PrismInstanceInfo
+import app.vercors.feature.instance.domain.model.localimport.isUserStatePath
 import app.vercors.feature.instance.domain.repository.PrismInstanceImportRepository
 import app.vercors.shared.data.AppPaths
 import app.vercors.shared.data.toZipEntryName
@@ -74,35 +76,58 @@ class PrismInstanceImportRepositoryImpl(
         sourcePath: String,
         instanceId: String,
         info: PrismInstanceInfo,
+        preserveUserState: Boolean,
         onProgress: (Progress) -> Unit
-    ): String? {
+    ): PrismImportResult {
         val zipPath = Path(sourcePath)
         val gameDir = appPaths.gameDir(instanceId)
         return try {
             Zip.open(zipPath).use { zip ->
                 val prefix = detectGameDirPrefix(zip, info.rootPrefix)
-                var total = 0
-                zip.forEachEntry { entry ->
-                    if (!entry.isDirectory && entry.path.toZipEntryName().startsWith(prefix)) total++
-                }
-                var done = 0
-                zip.forEachEntry { entry ->
-                    if (entry.isDirectory) return@forEachEntry
-                    val entryPath = entry.path.toZipEntryName()
-                    if (!entryPath.startsWith(prefix)) return@forEachEntry
-                    val target = Path(gameDir, *entryPath.removePrefix(prefix).pathSegments())
-                    target.parent?.let { SystemFileSystem.createDirectories(it) }
-                    entry.readToPath(target)
-                    done++
-                    onProgress(if (total > 0) loading(done.toDouble() / total) else loading())
-                }
-                info.iconEntryPath?.let { iconEntryPath -> extractIconOrNull(zip, iconEntryPath) }
+                val extractedPaths = extractGameEntries(zip, prefix, gameDir, preserveUserState, onProgress)
+                val iconPath = info.iconEntryPath?.let { iconEntryPath -> extractIconOrNull(zip, iconEntryPath) }
+                PrismImportResult(iconPath, extractedPaths)
             }
         } catch (e: CancellationException) {
             throw e
         } catch (_: Exception) {
             raise(LocalImportError.ExtractionFailed)
         }
+    }
+
+    private fun extractGameEntries(
+        zip: Zip,
+        prefix: String,
+        gameDir: Path,
+        preserveUserState: Boolean,
+        onProgress: (Progress) -> Unit
+    ): List<String> {
+        var total = 0
+        zip.forEachEntry { entry -> if (entry.gameRelativePathOrNull(prefix) != null) total++ }
+        var done = 0
+        val extractedPaths = mutableListOf<String>()
+        zip.forEachEntry { entry ->
+            val relativePath = entry.gameRelativePathOrNull(prefix) ?: return@forEachEntry
+            extractGameEntry(entry, relativePath, gameDir, preserveUserState)
+            if (!isUserStatePath(relativePath)) extractedPaths += relativePath
+            done++
+            onProgress(if (total > 0) loading(done.toDouble() / total) else loading())
+        }
+        return extractedPaths
+    }
+
+    private fun extractGameEntry(entry: Zip.Entry, relativePath: String, gameDir: Path, preserveUserState: Boolean) {
+        val target = Path(gameDir, *relativePath.pathSegments())
+        if (preserveUserState && isUserStatePath(relativePath) && SystemFileSystem.exists(target)) return
+        target.parent?.let { SystemFileSystem.createDirectories(it) }
+        entry.readToPath(target)
+    }
+
+    private fun Zip.Entry.gameRelativePathOrNull(prefix: String): String? {
+        if (isDirectory) return null
+        val entryPath = path.toZipEntryName()
+        if (!entryPath.startsWith(prefix)) return null
+        return entryPath.removePrefix(prefix).pathSegments().joinToString("/")
     }
 
     private fun detectGameDirPrefix(zip: Zip, rootPrefix: String): String {
@@ -152,7 +177,8 @@ private fun detectManagedPackInfo(cfg: Map<String, String>): InstanceModpackInfo
     val platformId = cfg["ManagedPackType"]?.toManagedPackPlatformIdOrNull() ?: return null
     val projectId = cfg["ManagedPackID"]?.takeIf { it.isNotBlank() } ?: return null
     val fileId = cfg["ManagedPackVersionID"]?.takeIf { it.isNotBlank() } ?: return null
-    return InstanceModpackInfo(platformId, projectId, fileId)
+    val versionName = cfg["ManagedPackVersionName"]?.takeIf { it.isNotBlank() }
+    return InstanceModpackInfo(platformId, projectId, fileId, versionName)
 }
 
 private fun String.pathSegments(): Array<String> = split('/').filter { it.isNotBlank() }.toTypedArray()

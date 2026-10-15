@@ -19,20 +19,18 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import app.vercors.core.ui.animation.AppAnimatedContent
 import app.vercors.core.ui.animation.appSharedElement
 import app.vercors.core.ui.component.*
 import app.vercors.core.ui.modifier.appCard
-import app.vercors.core.ui.theme.colors
-import app.vercors.core.ui.theme.error
-import app.vercors.core.ui.theme.success
+import app.vercors.core.ui.theme.*
 import app.vercors.feature.instance.domain.model.InstanceId
 import app.vercors.feature.instance.domain.model.InstanceStatus
 import app.vercors.shared.ui.SharedRes
 import app.vercors.shared.ui.delete
 import app.vercors.shared.ui.openDetails
 import com.composables.icons.lucide.*
+import com.composeunstyled.ProvideContentColor
 import com.composeunstyled.theme.Theme
 import com.slack.circuit.sharedelements.SharedElementTransitionScope
 import org.jetbrains.compose.resources.stringResource
@@ -96,11 +94,30 @@ fun BriefInstanceCard(
                 )
             },
             type = {
-                AppText(
-                    text = instance.type,
-                    fontSize = 12.sp,
-                    modifier = Modifier.instanceSharedElement(instance.id, "type", origin),
-                )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    AppText(
+                        text = instance.type,
+                        style = Theme[textStyles][label],
+                        modifier = Modifier.instanceSharedElement(instance.id, "type", origin),
+                    )
+                    if (instance.updateAvailable) {
+                        ProvideContentColor(Theme[colors][primary]) {
+                            AppIcon(
+                                imageVector = Lucide.CircleArrowUp,
+                                modifier = Modifier.size(14.dp),
+                                contentDescription = stringResource(InstanceRes.string.updateAvailableBadge),
+                            )
+                            AppText(
+                                text = stringResource(InstanceRes.string.updateAvailableBadge),
+                                style = Theme[textStyles][label],
+                                fontWeight = FontWeight.SemiBold,
+                            )
+                        }
+                    }
+                }
             },
             loaderVersion = {
                 Row(
@@ -108,12 +125,12 @@ fun BriefInstanceCard(
                 ) {
                     AppText(
                         text = instance.loader,
-                        fontSize = 12.sp,
+                        style = Theme[textStyles][label],
                         modifier = Modifier.instanceSharedElement(instance.id, "loader", origin),
                     )
                     AppText(
                         text = instance.version,
-                        fontSize = 12.sp,
+                        style = Theme[textStyles][label],
                         modifier = Modifier.instanceSharedElement(instance.id, "version", origin),
                     )
                 }

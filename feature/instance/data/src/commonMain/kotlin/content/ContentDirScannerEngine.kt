@@ -45,6 +45,9 @@ internal class ContentDirScannerEngine(
     private val states = mutableMapOf<InstanceId, MutableProgressiveStateFlow<Nothing, Map<String, ContentEntry>>>()
     private val watchStartedFor = mutableSetOf<InstanceId>()
 
+    // A reconcile resolving a snapshot of the directory must not overwrite a concurrent removal with that snapshot
+    private val mutationLocks = mutableMapOf<InstanceId, Mutex>()
+
     private val hashMemoLock = Mutex()
     private val hashMemo = mutableMapOf<Path, HashMemo>()
 
@@ -59,6 +62,9 @@ internal class ContentDirScannerEngine(
 
     // For bulk writes outside the APIs below: never rely on the watcher alone
     suspend fun refresh(instanceId: InstanceId) = reconcile(instanceId, stateFor(instanceId))
+
+    private suspend fun <T> withMutationLock(instanceId: InstanceId, block: suspend () -> T): T =
+        statesLock.withLock { mutationLocks.getOrPut(instanceId) { Mutex() } }.withLock { block() }
 
     private fun stateFor(instanceId: InstanceId): MutableProgressiveStateFlow<Nothing, Map<String, ContentEntry>> =
         states.getOrPut(instanceId) { MutableProgressiveStateFlow() }
@@ -82,12 +88,12 @@ internal class ContentDirScannerEngine(
     private suspend fun reconcile(
         instanceId: InstanceId,
         state: MutableProgressiveStateFlow<Nothing, Map<String, ContentEntry>>
-    ) {
+    ): Unit = withMutationLock(instanceId) {
         val dir = instanceDir(instanceId)
         if (!dir.exists()) {
             dir.createDirectories()
             state.update { emptyMap<String, ContentEntry>().successfulWithProgress() }
-            return
+            return@withMutationLock
         }
         val resolved = dir.list()
             .filter { isContentFile(it.name, extension) }
@@ -100,8 +106,8 @@ internal class ContentDirScannerEngine(
         instanceId: InstanceId,
         state: MutableProgressiveStateFlow<Nothing, Map<String, ContentEntry>>,
         event: FileEvent
-    ) {
-        if (!isContentFile(event.path.name, extension)) return
+    ): Unit = withMutationLock(instanceId) {
+        if (!isContentFile(event.path.name, extension)) return@withMutationLock
         val logicalName = contentLogicalFileName(event.path.name)
         if (event.type == FileEvent.Type.DELETE) {
             // A DELETE also fires for the old name of an enable/disable rename
@@ -184,7 +190,7 @@ internal class ContentDirScannerEngine(
         projectId: String,
         fileId: String
     ) {
-        val filePath = Path(instanceDir(instanceId), fileName)
+        val filePath = existingFile(instanceId, fileName) ?: return
         val size = filePath.metadataOrNull()?.size ?: return
         val sha1 = hashOf(filePath, size)
 
@@ -195,20 +201,21 @@ internal class ContentDirScannerEngine(
             metadataCache.put(sha1, existing.copy(providers = updatedProviders))
         }
 
-        updateEntry(stateFor(instanceId), filePath)
+        withMutationLock(instanceId) { updateEntry(stateFor(instanceId), filePath) }
     }
 
-    suspend fun setEnabled(instanceId: InstanceId, fileName: String, enabled: Boolean) {
-        val dir = instanceDir(instanceId)
-        val enabledPath = Path(dir, fileName)
-        val disabledPath = Path(dir, "$fileName.disabled")
-        val from = if (enabled) disabledPath else enabledPath
-        val to = if (enabled) enabledPath else disabledPath
-        if (!from.exists()) return
-        from.moveTo(to)
+    suspend fun setEnabled(instanceId: InstanceId, fileName: String, enabled: Boolean): Unit =
+        withMutationLock(instanceId) {
+            val dir = instanceDir(instanceId)
+            val enabledPath = Path(dir, fileName)
+            val disabledPath = Path(dir, "$fileName.disabled")
+            val from = if (enabled) disabledPath else enabledPath
+            val to = if (enabled) enabledPath else disabledPath
+            if (!from.exists()) return@withMutationLock
+            from.moveTo(to)
 
-        updateEntry(stateFor(instanceId), to)
-    }
+            updateEntry(stateFor(instanceId), to)
+        }
 
     context(_: Raise<ImportError>)
     suspend fun importFile(instanceId: InstanceId, sourcePath: Path) {
@@ -223,11 +230,11 @@ internal class ContentDirScannerEngine(
             logger.error(e) { "Failed to import $sourcePath into $instanceId" }
             raise(ImportError.CopyFailed)
         }
-        updateEntry(stateFor(instanceId), targetPath)
+        withMutationLock(instanceId) { updateEntry(stateFor(instanceId), targetPath) }
     }
 
-    suspend fun removeFile(instanceId: InstanceId, fileName: String) {
-        val target = existingFile(instanceId, fileName) ?: return
+    suspend fun removeFile(instanceId: InstanceId, fileName: String): Unit = withMutationLock(instanceId) {
+        val target = existingFile(instanceId, fileName) ?: return@withMutationLock
         target.delete()
         stateFor(instanceId).update { it.map { map -> map - fileName } }
     }

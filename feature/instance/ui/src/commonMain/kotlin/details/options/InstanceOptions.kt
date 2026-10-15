@@ -4,10 +4,13 @@ import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import app.vercors.core.ui.animation.AppAnimatedVisibility
@@ -24,10 +27,11 @@ import app.vercors.shared.domain.model.defaultMaxMemoryMb
 import app.vercors.shared.ui.*
 import app.vercors.shared.ui.component.LibraryPathInputs
 import app.vercors.shared.ui.component.MemorySliderInputs
-import com.composables.icons.lucide.Lucide
-import com.composables.icons.lucide.RotateCcw
+import com.composables.icons.lucide.*
+import com.composeunstyled.ProvideContentColor
 import com.composeunstyled.theme.Theme
 import org.jetbrains.compose.resources.StringResource
+import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
@@ -37,9 +41,11 @@ fun InstanceOptions(
     horizontalTabs: Boolean
 ) {
     with(content.eventSink) {
-        InstanceOptionsScaffold(horizontalTabs) {
-            InstanceGeneralOptionsSection(instance, content.state)
-        }
+        InstanceOptionsScaffold(
+            horizontalTabs,
+            { InstanceGeneralOptionsSection(instance, content.state) },
+            { InstanceUpdatesOptionsSection(content.state) },
+        )
     }
 }
 
@@ -50,9 +56,7 @@ fun InstanceJavaOptions(
     horizontalTabs: Boolean
 ) {
     with(content.eventSink) {
-        InstanceOptionsScaffold(horizontalTabs) {
-            InstanceJavaOptionsSection(instance, content.state)
-        }
+        InstanceOptionsScaffold(horizontalTabs, { InstanceJavaOptionsSection(instance, content.state) })
     }
 }
 
@@ -63,16 +67,14 @@ fun InstanceAdvancedOptions(
     horizontalTabs: Boolean
 ) {
     with(content.eventSink) {
-        InstanceOptionsScaffold(horizontalTabs) {
-            InstanceNativeLibraryOptionsSection(instance, content.state)
-        }
+        InstanceOptionsScaffold(horizontalTabs, { InstanceNativeLibraryOptionsSection(instance, content.state) })
     }
 }
 
 @Composable
 private fun InstanceOptionsScaffold(
     horizontalTabs: Boolean,
-    content: @Composable ColumnScope.() -> Unit
+    vararg sections: @Composable ColumnScope.() -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -81,14 +83,14 @@ private fun InstanceOptionsScaffold(
             .scrollable(state = rememberScrollState(), orientation = Orientation.Horizontal),
     ) {
         LazyColumn(
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            item {
+            items(sections) { section ->
                 Column(
                     modifier = Modifier.appCard().padding(8.dp).fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    content()
+                    section(this)
                 }
             }
         }
@@ -149,11 +151,109 @@ private fun ColumnScope.InstanceGeneralOptionsSection(instance: InstanceView, st
 }
 
 @Composable
+context(eventSink: EventSink<InstanceOptionsEvent>)
+private fun InstanceUpdatesOptionsSection(state: InstanceOptionsState) {
+    val updateCheck = state.updateCheck
+    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        AppText(
+            text = stringResource(InstanceRes.string.checkForUpdates) + if (state.isCheckForUpdatesEdited) "*" else "",
+            fontWeight = FontWeight.SemiBold
+        )
+        AppText(
+            text = stringResource(
+                if (updateCheck.isModpack) InstanceRes.string.checkForModpackUpdatesDesc
+                else InstanceRes.string.checkForContentUpdatesDesc
+            ),
+            style = Theme[textStyles][label]
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            AppCheckbox(
+                label = stringResource(InstanceRes.string.checkForUpdatesAutomatically),
+                checked = state.checkForUpdatesOverride ?: state.globalCheckForUpdates,
+                onCheckedChange = { eventSink(InstanceOptionsEvent.OnCheckForUpdatesToggle(it)) },
+                invert = true,
+                modifier = Modifier.weight(1f)
+            )
+            InstanceOptionsResetButton(state.checkForUpdatesOverride != null) {
+                eventSink(InstanceOptionsEvent.OnCheckForUpdatesReset)
+            }
+        }
+    }
+    updateCheck.installedModpackVersion?.let {
+        AppText(text = stringResource(InstanceRes.string.installedModpackVersion, it))
+    }
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        AppIconTextButton(
+            onClick = { eventSink(InstanceOptionsEvent.OnCheckForUpdatesClick) },
+            text = stringResource(
+                if (updateCheck.checking) InstanceRes.string.checkingForUpdates else InstanceRes.string.checkForUpdatesNow
+            ),
+            imageVector = Lucide.RefreshCw,
+            enabled = !updateCheck.checking,
+        )
+        if (!updateCheck.isModpack) {
+            AppCheckbox(
+                label = stringResource(InstanceRes.string.identifyUnknownFiles),
+                checked = updateCheck.identifyUnknownFiles,
+                onCheckedChange = { eventSink(InstanceOptionsEvent.OnIdentifyUnknownFilesToggle) },
+                invert = true,
+            )
+        }
+    }
+    if (updateCheck.checked && !updateCheck.checking) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            ProvideContentColor(updateCheck.color) {
+                AppIcon(
+                    imageVector = updateCheck.icon,
+                    modifier = Modifier.size(14.dp),
+                    contentDescription = null,
+                )
+                AppText(
+                    text = updateCheck.summary,
+                    style = Theme[textStyles][label],
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+        }
+    }
+}
+
+private val UpdateCheckView.summary: String
+    @Composable get() = when {
+        modpackUpdateName != null -> stringResource(InstanceRes.string.modpackUpdateAvailable, modpackUpdateName)
+        contentUpdateCount > 0 -> pluralStringResource(
+            InstanceRes.plurals.contentUpdatesAvailable,
+            contentUpdateCount,
+            contentUpdateCount
+        )
+
+        else -> stringResource(InstanceRes.string.upToDate)
+    }
+
+private val UpdateCheckView.icon: ImageVector
+    get() = if (modpackUpdateName != null || contentUpdateCount > 0) Lucide.CircleArrowUp
+    else Lucide.Check
+
+private val UpdateCheckView.color: Color
+    @Composable get() = if (modpackUpdateName != null || contentUpdateCount > 0) Theme[colors][primary]
+    else Theme[colors][onBackground]
+
+@Composable
 private fun InstanceOptionsUnlockRow(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         AppCheckbox(
             label = stringResource(InstanceRes.string.unlockAdvancedOptions),
             invert = true,

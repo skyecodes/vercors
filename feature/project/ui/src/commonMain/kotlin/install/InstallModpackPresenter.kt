@@ -160,7 +160,9 @@ class InstallModpackPresenter(
                 return@launch
             }
 
-            val instance = tryCreateInstance(buildInstance(manifest, instanceName)) ?: run {
+            val modpackInfo =
+                InstanceModpackInfo(manifest.platformId, manifest.projectId, manifest.fileId, file.displayName)
+            val instance = tryCreateInstance(buildInstance(manifest, modpackInfo, instanceName)) ?: run {
                 onFinished()
                 return@launch
             }
@@ -173,7 +175,7 @@ class InstallModpackPresenter(
 
             val ok = runModpackInstall(
                 instanceId = instance.id,
-                modpackInfo = InstanceModpackInfo(manifest.platformId, manifest.projectId, manifest.fileId),
+                modpackInfo = modpackInfo,
                 initialManifest = manifest,
                 onManualDownloadError = { error -> snackbarService.error { error.manualDownloadMessage } },
             )
@@ -203,7 +205,11 @@ class InstallModpackPresenter(
             null
         }
 
-    private fun buildInstance(manifest: ModpackManifest, instanceName: String) = Instance(
+    private fun buildInstance(
+        manifest: ModpackManifest,
+        modpackInfo: InstanceModpackInfo,
+        instanceName: String
+    ) = Instance(
         name = instanceName,
         gameVersion = manifest.gameVersion,
         modLoader = manifest.loaderType?.let {
@@ -212,7 +218,7 @@ class InstallModpackPresenter(
                 version = manifest.loaderVersion!!
             )
         },
-        modpackInfo = InstanceModpackInfo(manifest.platformId, manifest.projectId, manifest.fileId),
+        modpackInfo = modpackInfo,
         installStage = InstanceInstallStage.ResolvingFiles,
     )
 

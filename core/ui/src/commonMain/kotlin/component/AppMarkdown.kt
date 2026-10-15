@@ -17,7 +17,7 @@ import com.mikepenz.markdown.model.markdownPadding
 
 @Composable
 fun AppMarkdown(markdown: String, modifier: Modifier = Modifier) {
-    val body = Theme[textStyles][default].copy(fontSize = 12.sp)
+    val body = Theme[textStyles][label]
     val heading = Theme[textStyles][subtitle]
 
     Markdown(

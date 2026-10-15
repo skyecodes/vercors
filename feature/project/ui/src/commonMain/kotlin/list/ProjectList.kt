@@ -19,7 +19,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import app.vercors.core.domain.Page
 import app.vercors.core.ui.animation.AppAnimatedContent
 import app.vercors.core.ui.animation.AppAnimatedVisibility
@@ -30,7 +29,9 @@ import app.vercors.core.ui.layout.AppPaginator
 import app.vercors.core.ui.modifier.appCard
 import app.vercors.core.ui.modifier.scrollGradient
 import app.vercors.core.ui.theme.colors
+import app.vercors.core.ui.theme.label
 import app.vercors.core.ui.theme.surface2
+import app.vercors.core.ui.theme.textStyles
 import app.vercors.feature.game.domain.model.ModLoaderType
 import app.vercors.feature.game.ui.*
 import app.vercors.feature.project.domain.model.ProjectSearchError
@@ -558,9 +559,9 @@ private fun LazyItemScope.ProjectListItemCard(
             description = {
                 AppText(
                     text = project.description,
-                    overflow = TextOverflow.Ellipsis,
+                    style = Theme[textStyles][label],
                     maxLines = 2,
-                    fontSize = 12.sp,
+                    overflow = TextOverflow.Ellipsis,
                     modifier = Modifier
                         .projectSharedElement(project.id, "description", ProjectSharedElementOrigin.ProjectList),
                 )
@@ -594,7 +595,7 @@ private fun LazyItemScope.ProjectListItemCard(
                     )
                     AppText(
                         text = stringResource(ProjectRes.string.lastUpdated, project.lastUpdatedReadable),
-                        fontSize = 12.sp,
+                        style = Theme[textStyles][label],
                         singleLine = true,
                         overflow = TextOverflow.Ellipsis,
                     )

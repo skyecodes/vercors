@@ -12,7 +12,10 @@ import de.jonasbroeckmann.kzip.Zip
 import de.jonasbroeckmann.kzip.open
 import kotlinx.coroutines.test.runTest
 import kotlinx.io.Buffer
+import kotlinx.io.buffered
 import kotlinx.io.files.Path
+import kotlinx.io.files.SystemFileSystem
+import kotlinx.io.readString
 import kotlinx.io.writeString
 import kotlinx.serialization.json.Json
 import kotlin.test.Test
@@ -104,13 +107,47 @@ class PrismInstanceImportRepositoryImplTest {
         val gameDir = appPaths.gameDir(instanceId)
         if (gameDir.exists()) gameDir.deleteRecursively()
 
-        val iconPath = (either { repository.importGameFiles(path.toString(), instanceId, info) } as Either.Right).value
-        assertNull(iconPath)
+        val result = (either { repository.importGameFiles(path.toString(), instanceId, info) } as Either.Right).value
+        assertNull(result.iconPath)
+        assertEquals(listOf("mods/foo.jar"), result.extractedPaths)
 
         assertTrue(Path(gameDir, "mods", "foo.jar").exists())
         assertTrue(!Path(gameDir, "patches").exists())
         assertTrue(!Path(gameDir, "libraries").exists())
     }
+
+    @Test
+    fun `importGameFiles keeps existing user state when asked to`() = runTest {
+        val path = Path("build/diag-prism-user-state.zip")
+        Zip.open(path, mode = Zip.Mode.Write).use { zip ->
+            zip.writeText("instance.cfg", "name=User State Instance\n")
+            zip.writeText("mmc-pack.json", forgeMmcPack)
+            zip.writeText(".minecraft/mods/foo.jar", "new-jar")
+            zip.writeText(".minecraft/options.txt", "sender-options")
+            zip.writeText(".minecraft/saves/World/level.dat", "sender-world")
+            zip.writeText(".minecraft/saves/Other/level.dat", "new-world")
+        }
+        val info = (either { repository.parse(path.toString()) } as Either.Right).value
+        val instanceId = "user-state-instance-test"
+        val gameDir = appPaths.gameDir(instanceId)
+        if (gameDir.exists()) gameDir.deleteRecursively()
+        SystemFileSystem.createDirectories(Path(gameDir, "saves", "World"))
+        SystemFileSystem.sink(Path(gameDir, "options.txt")).buffered().use { it.writeString("my-options") }
+        SystemFileSystem.sink(Path(gameDir, "saves", "World", "level.dat")).buffered()
+            .use { it.writeString("my-world") }
+
+        val result = (either {
+            repository.importGameFiles(path.toString(), instanceId, info, preserveUserState = true)
+        } as Either.Right).value
+
+        assertEquals(listOf("mods/foo.jar"), result.extractedPaths)
+        assertEquals("my-options", Path(gameDir, "options.txt").readText())
+        assertEquals("my-world", Path(gameDir, "saves", "World", "level.dat").readText())
+        assertEquals("new-world", Path(gameDir, "saves", "Other", "level.dat").readText())
+        assertEquals("new-jar", Path(gameDir, "mods", "foo.jar").readText())
+    }
+
+    private fun Path.readText(): String = SystemFileSystem.source(this).buffered().use { it.readString() }
 
     @Test
     fun `importGameFiles extracts an undotted minecraft folder`() = runTest {
@@ -127,8 +164,8 @@ class PrismInstanceImportRepositoryImplTest {
         val gameDir = appPaths.gameDir(instanceId)
         if (gameDir.exists()) gameDir.deleteRecursively()
 
-        val iconPath = (either { repository.importGameFiles(path.toString(), instanceId, info) } as Either.Right).value
-        assertNull(iconPath)
+        val result = (either { repository.importGameFiles(path.toString(), instanceId, info) } as Either.Right).value
+        assertNull(result.iconPath)
 
         assertTrue(Path(gameDir, "mods", "foo.jar").exists())
         assertTrue(!Path(gameDir, "patches").exists())
@@ -153,7 +190,7 @@ class PrismInstanceImportRepositoryImplTest {
             zip.writeText("mmc-pack.json", forgeMmcPack)
         }
         val info = (either { repository.parse(path.toString()) } as Either.Right).value
-        assertEquals(InstanceModpackInfo("curseforge", "925200", "7121777"), info.modpackInfo)
+        assertEquals(InstanceModpackInfo("curseforge", "925200", "7121777", "4.14"), info.modpackInfo)
     }
 
     @Test

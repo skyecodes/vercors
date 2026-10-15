@@ -8,16 +8,19 @@ data class InstanceModpackInfoData(
     val platformId: String,
     val projectId: String,
     val fileId: String,
+    val versionName: String? = null,
 )
 
 fun InstanceModpackInfoData.toDomain(): InstanceModpackInfo = InstanceModpackInfo(
     platformId = platformId,
     projectId = projectId,
     fileId = fileId,
+    versionName = versionName,
 )
 
 fun InstanceModpackInfo.toData(): InstanceModpackInfoData = InstanceModpackInfoData(
     platformId = platformId,
     projectId = projectId,
     fileId = fileId,
+    versionName = versionName,
 )

@@ -25,7 +25,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import app.vercors.core.domain.AppConstants
 import app.vercors.core.domain.toHumanReadableSize
@@ -173,6 +172,17 @@ private fun GeneralConfigurationTab(
                         AppText(text = stringResource(startupScreen.label))
                     },
                     modifier = Modifier.weight(1f)
+                )
+            }
+        }
+        if (state.checkForInstanceUpdates != null) {
+            ConfigurationRow(
+                title = ConfigRes.string.checkForInstanceUpdates,
+                description = ConfigRes.string.checkForInstanceUpdatesDesc,
+            ) {
+                AppCheckbox(
+                    checked = state.checkForInstanceUpdates,
+                    onCheckedChange = { eventSink(ConfigurationEvent.OnCheckForInstanceUpdatesToggle) }
                 )
             }
         }
@@ -919,7 +929,7 @@ private fun AppRadioGroupScope.JavaInstallationRow(installation: JavaInstallatio
         ) {
             AppText(
                 text = "${installation.versionString} (${installation.vendor}, ${installation.arch})",
-                fontSize = 12.sp
+                style = Theme[textStyles][label],
             )
             AppText(
                 text = installation.path,

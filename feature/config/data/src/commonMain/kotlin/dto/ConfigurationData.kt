@@ -33,6 +33,7 @@ data class ConfigurationData(
     val networkTimeout: Long = 10_000,
     val horizontalTabs: Boolean = false,
     val checkForUpdatesOnStart: Boolean = true,
+    val checkForInstanceUpdates: Boolean = true,
     val updateChannel: UpdateChannelData? = null
 )
 
@@ -56,6 +57,7 @@ internal fun ConfigurationData.toDomain(): Configuration = Configuration(
     networkTimeout = networkTimeout.milliseconds,
     horizontalTabs = horizontalTabs,
     checkForUpdatesOnStart = checkForUpdatesOnStart,
+    checkForInstanceUpdates = checkForInstanceUpdates,
     updateChannel = updateChannel?.toDomain()
 )
 
@@ -79,6 +81,7 @@ internal fun Configuration.toData(): ConfigurationData = ConfigurationData(
     networkTimeout = networkTimeout.inWholeMilliseconds,
     horizontalTabs = horizontalTabs,
     checkForUpdatesOnStart = checkForUpdatesOnStart,
+    checkForInstanceUpdates = checkForInstanceUpdates,
     updateChannel = updateChannel?.toData()
 )
 

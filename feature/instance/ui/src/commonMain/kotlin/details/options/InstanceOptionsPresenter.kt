@@ -19,11 +19,16 @@ import app.vercors.feature.instance.domain.usecase.ObserveInstanceUseCase
 import app.vercors.feature.instance.domain.usecase.UpdateInstanceUseCase
 import app.vercors.feature.instance.ui.details.InstanceView
 import app.vercors.feature.instance.ui.details.toView
+import app.vercors.feature.instance.ui.message
 import app.vercors.feature.instance.ui.observeAvailableLoadersView
 import app.vercors.feature.instance.ui.observeGameVersionListView
 import app.vercors.feature.instance.ui.observeLoaderVersionsView
 import app.vercors.feature.java.domain.usecase.ObserveJavaInstallationsUseCase
 import app.vercors.feature.java.domain.usecase.ResolveJavaInstallationUseCase
+import app.vercors.feature.project.domain.model.update.InstanceUpdates
+import app.vercors.feature.project.domain.usecase.CheckInstanceUpdatesUseCase
+import app.vercors.feature.project.domain.usecase.ObserveCheckingInstanceUpdatesUseCase
+import app.vercors.feature.project.domain.usecase.ObserveInstanceUpdatesUseCase
 import app.vercors.shared.domain.model.DetectedNativeLibraries
 import app.vercors.shared.domain.model.JavaInstallation
 import app.vercors.shared.domain.model.JvmMemoryOptions
@@ -61,6 +66,9 @@ class InstanceOptionsPresenter(
     private val observeConfiguration: ObserveConfigurationUseCase,
     private val resolveJavaInstallation: ResolveJavaInstallationUseCase,
     private val getRequiredJavaMajorVersion: GetRequiredJavaMajorVersionUseCase,
+    private val checkInstanceUpdates: CheckInstanceUpdatesUseCase,
+    private val observeInstanceUpdates: ObserveInstanceUpdatesUseCase,
+    private val observeCheckingInstanceUpdates: ObserveCheckingInstanceUpdatesUseCase,
     private val globalScope: CoroutineScope,
     private val snackbarService: SnackbarService,
 ) : Presenter<InstanceOptionsState, InstanceOptionsEvent> {
@@ -114,6 +122,9 @@ class InstanceOptionsPresenter(
             }
         }
 
+        val updateCheck = rememberUpdateCheckState()
+        val globalCheckForUpdates = configuration.valueOrNull?.checkForInstanceUpdates ?: true
+
         return InstanceOptionsState(
             editedInstance = editedInstance,
             gameVersionList = gameVersionList.valueOrNull ?: emptyList(),
@@ -128,20 +139,39 @@ class InstanceOptionsPresenter(
             globalNativeLibraryOptions = configuration.valueOrNull?.nativeLibraryOptions ?: NativeLibraryOptions(),
             inheritedJavaInstallation = inheritedJavaInstallation,
             requiredJavaMajorVersion = requiredJavaMajorVersion,
+            globalCheckForUpdates = globalCheckForUpdates,
+            updateCheck = updateCheck.toView(
+                isModpack = currentInstance?.modpackInfo != null,
+                installedModpackVersion = currentInstance?.modpackVersion,
+            ),
             persistedInstance = currentInstance,
         ) + { event ->
             handleEvent(
                 event = event,
                 editedInstance = editedInstance,
                 setEditedInstance = setEditedInstance,
+                persistedCheckForUpdates = currentInstance?.checkForUpdates,
+                globalCheckForUpdates = globalCheckForUpdates,
+                updateCheck = updateCheck,
             )
         }
+    }
+
+    @Composable
+    private fun rememberUpdateCheckState(): UpdateCheckState {
+        val checking by remember { observeCheckingInstanceUpdates(instanceId) }.collectAsState(false)
+        val (identifyUnknownFiles, setIdentifyUnknownFiles) = remember { mutableStateOf(false) }
+        val updates by remember { observeInstanceUpdates(instanceId) }.collectAsState(null)
+        return UpdateCheckState(checking, identifyUnknownFiles, setIdentifyUnknownFiles, updates)
     }
 
     private fun handleEvent(
         event: InstanceOptionsEvent,
         editedInstance: InstanceEditState,
-        setEditedInstance: (InstanceEditState) -> Unit
+        setEditedInstance: (InstanceEditState) -> Unit,
+        persistedCheckForUpdates: Boolean?,
+        globalCheckForUpdates: Boolean,
+        updateCheck: UpdateCheckState,
     ) {
         when (event) {
             is InstanceOptionsEvent.OnInstanceEditChange -> setEditedInstance(event.update(editedInstance))
@@ -155,6 +185,21 @@ class InstanceOptionsPresenter(
                         ?: JavaOverrideEdit.UseDefault
                 )
             )
+
+            is InstanceOptionsEvent.OnCheckForUpdatesToggle -> handleCheckForUpdatesToggle(
+                event = event,
+                editedInstance = editedInstance,
+                setEditedInstance = setEditedInstance,
+                persistedCheckForUpdates = persistedCheckForUpdates,
+                globalCheckForUpdates = globalCheckForUpdates,
+            )
+
+            InstanceOptionsEvent.OnCheckForUpdatesReset ->
+                setEditedInstance(editedInstance.copy(checkForUpdatesEdit = CheckForUpdatesEdit(null)))
+
+            InstanceOptionsEvent.OnCheckForUpdatesClick -> handleCheckForUpdates(updateCheck)
+            InstanceOptionsEvent.OnIdentifyUnknownFilesToggle ->
+                updateCheck.setIdentifyUnknownFiles(!updateCheck.identifyUnknownFiles)
 
             InstanceOptionsEvent.OnCancelEditClick -> setEditedInstance(InstanceEditState())
             InstanceOptionsEvent.OnSaveClick -> handleSaveInstance(editedInstance, setEditedInstance)
@@ -172,6 +217,27 @@ class InstanceOptionsPresenter(
             modLoaderVersion = null
         )
     )
+
+    // Toggling back to the inherited value restores inheritance, so the field doesn't stay edited forever
+    private fun handleCheckForUpdatesToggle(
+        event: InstanceOptionsEvent.OnCheckForUpdatesToggle,
+        editedInstance: InstanceEditState,
+        setEditedInstance: (InstanceEditState) -> Unit,
+        persistedCheckForUpdates: Boolean?,
+        globalCheckForUpdates: Boolean,
+    ) {
+        val inherits = persistedCheckForUpdates == null && event.checked == globalCheckForUpdates
+        val enabled = if (inherits) null else event.checked
+        setEditedInstance(editedInstance.copy(checkForUpdatesEdit = CheckForUpdatesEdit(enabled)))
+    }
+
+    private fun handleCheckForUpdates(updateCheck: UpdateCheckState) {
+        if (updateCheck.checking) return
+        globalScope.launch {
+            either { checkInstanceUpdates(instanceId, updateCheck.identifyUnknownFiles) }
+                .onLeft { error -> snackbarService.error { error.message } }
+        }
+    }
 
     private fun handleSaveInstance(editedInstance: InstanceEditState, setEditedInstance: (InstanceEditState) -> Unit) =
         globalScope.launch {
@@ -213,6 +279,10 @@ class InstanceOptionsPresenter(
             updated.copy(nativeLibraryOptions = edit)
         } ?: updated
 
+        updated = editedInstance.checkForUpdatesEdit?.let { edit ->
+            updated.copy(checkForUpdates = edit.enabled)
+        } ?: updated
+
         return updated
     }
 
@@ -225,6 +295,23 @@ class InstanceOptionsPresenter(
     @Composable
     private fun observeJavaInstallationsView(): State<ProgressiveOutcome<Nothing, List<JavaInstallation>>> =
         produceAndCollectAsProgressiveState { observeJavaInstallations() }
+
+    private data class UpdateCheckState(
+        val checking: Boolean,
+        val identifyUnknownFiles: Boolean,
+        val setIdentifyUnknownFiles: (Boolean) -> Unit,
+        val updates: InstanceUpdates?,
+    ) {
+        fun toView(isModpack: Boolean, installedModpackVersion: String?): UpdateCheckView = UpdateCheckView(
+            isModpack = isModpack,
+            installedModpackVersion = installedModpackVersion,
+            checking = checking,
+            identifyUnknownFiles = identifyUnknownFiles,
+            checked = updates != null,
+            modpackUpdateName = updates?.modpack?.latest?.displayName,
+            contentUpdateCount = updates?.content?.size ?: 0,
+        )
+    }
 
     @AssistedFactory
     fun interface Factory {

@@ -25,6 +25,8 @@ data class InstanceOptionsState(
     val globalNativeLibraryOptions: NativeLibraryOptions,
     val inheritedJavaInstallation: JavaInstallation?,
     val requiredJavaMajorVersion: Int?,
+    val globalCheckForUpdates: Boolean,
+    val updateCheck: UpdateCheckView,
     private val persistedInstance: InstanceView?,
 ) {
     val isNameEdited = persistedInstance?.let {
@@ -71,9 +73,13 @@ data class InstanceOptionsState(
                 (effectiveEditedNativeLibraryOptions.useSystemOpenAl != effectivePersistedNativeLibraryOptions.useSystemOpenAl ||
                         effectiveEditedNativeLibraryOptions.openAlPath != effectivePersistedNativeLibraryOptions.openAlPath)
     val isNativeLibraryOptionsEdited = isGlfwEdited || isOpenAlEdited
+    val checkForUpdatesOverride: Boolean? = editedInstance.checkForUpdatesEdit
+        .let { edit -> if (edit != null) edit.enabled else persistedInstance?.checkForUpdates }
+    val isCheckForUpdatesEdited = persistedInstance != null && editedInstance.checkForUpdatesEdit != null &&
+            editedInstance.checkForUpdatesEdit.enabled != persistedInstance.checkForUpdates
     val isInstanceEdited: Boolean =
         isNameEdited || isGameVersionEdited || isModLoaderEdited || isJavaOverrideEdited ||
-                isJvmMemoryOptionsEdited || isNativeLibraryOptionsEdited
+                isJvmMemoryOptionsEdited || isNativeLibraryOptionsEdited || isCheckForUpdatesEdited
 }
 
 @Immutable
@@ -85,6 +91,23 @@ data class InstanceEditState(
     val javaOverride: JavaOverrideEdit? = null,
     val jvmMemoryOptionsEdit: JvmMemoryOptions? = null,
     val nativeLibraryOptionsEdit: NativeLibraryOptions? = null,
+    val checkForUpdatesEdit: CheckForUpdatesEdit? = null,
+)
+
+// enabled = null means the instance inherits the global setting
+@Immutable
+@JvmInline
+value class CheckForUpdatesEdit(val enabled: Boolean?)
+
+@Immutable
+data class UpdateCheckView(
+    val isModpack: Boolean,
+    val installedModpackVersion: String?,
+    val checking: Boolean,
+    val identifyUnknownFiles: Boolean,
+    val checked: Boolean,
+    val modpackUpdateName: String?,
+    val contentUpdateCount: Int,
 )
 
 @Immutable

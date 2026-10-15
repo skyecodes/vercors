@@ -3,8 +3,8 @@ package app.vercors.feature.project.domain.repository
 import app.vercors.core.domain.Page
 import app.vercors.feature.game.domain.model.ModLoaderType
 import app.vercors.feature.project.domain.model.*
-import app.vercors.feature.project.domain.model.modpack.InstalledModpackFile
 import app.vercors.feature.project.domain.model.modpack.ModpackInstallError
+import app.vercors.feature.project.domain.model.modpack.ModpackInstallResult
 import app.vercors.feature.project.domain.model.modpack.ModpackManifest
 import app.vercors.feature.project.domain.model.modpack.ModpackResolutionError
 import arrow.core.raise.Raise
@@ -73,8 +73,18 @@ interface ProjectRepository {
         manifest: ModpackManifest,
         instanceId: String,
         localSourcePath: String? = null,
+        preserveUserState: Boolean = false,
         onProgress: (Progress) -> Unit = {}
-    ): List<InstalledModpackFile>
+    ): ModpackInstallResult
+
+    suspend fun installManualDownloadLocally(
+        fileName: String,
+        instanceId: String,
+        type: ProjectType,
+        size: Long?,
+        sha1: String?,
+        md5: String?
+    ): Boolean
 
     context(_: Raise<ManualDownloadError>)
     suspend fun awaitManualDownload(

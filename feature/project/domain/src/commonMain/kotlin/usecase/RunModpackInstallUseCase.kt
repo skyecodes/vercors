@@ -11,11 +11,13 @@ import app.vercors.feature.instance.domain.usecase.UpdateInstanceUseCase
 import app.vercors.feature.project.domain.model.ManualDownloadCandidate
 import app.vercors.feature.project.domain.model.ManualDownloadError
 import app.vercors.feature.project.domain.model.ProjectId
-import app.vercors.feature.project.domain.model.modpack.InstalledModpackFile
 import app.vercors.feature.project.domain.model.modpack.ModpackInstallError
+import app.vercors.feature.project.domain.model.modpack.ModpackInstallResult
 import app.vercors.feature.project.domain.model.modpack.ModpackManifest
 import app.vercors.feature.project.domain.model.modpack.ModpackResolutionError
+import app.vercors.feature.project.domain.model.pack.toInstalledPack
 import app.vercors.feature.project.domain.model.toProjectType
+import app.vercors.feature.project.domain.repository.InstalledPackRepository
 import arrow.core.raise.context.either
 import arrow.core.raise.recover
 import dev.zacsweers.metro.Inject
@@ -32,6 +34,7 @@ class RunModpackInstallUseCase(
     private val runManualDownloads: RunManualDownloadsUseCase,
     private val trackPendingManualDownloads: TrackPendingManualDownloadsUseCase,
     private val recordModpackFileOrigins: RecordModpackFileOriginsUseCase,
+    private val installedPackRepository: InstalledPackRepository,
     private val updateInstance: UpdateInstanceUseCase,
     private val updateInstanceStatus: UpdateInstanceStatusUseCase
 ) {
@@ -48,8 +51,12 @@ class RunModpackInstallUseCase(
         val manifest = initialManifest ?: fetchManifestOrNull(instanceId, modpackInfo) ?: return false
         val resolvedManifest = resolveManifestFilesOrNull(manifest, instanceId) ?: return false
         persistInstallStage(instanceId, InstanceInstallStage.DownloadingFiles)
-        val installedFiles = installFilesOrNull(resolvedManifest, instanceId) ?: return false
-        recordModpackFileOrigins(instanceId, resolvedManifest.platformId, installedFiles)
+        val installResult = installFilesOrNull(resolvedManifest, instanceId) ?: return false
+        recordModpackFileOrigins(instanceId, resolvedManifest.platformId, installResult.files)
+        installedPackRepository.save(
+            instanceId,
+            resolvedManifest.toInstalledPack(resolvedManifest.name, modpackInfo, installResult.overridePaths)
+        )
         persistInstallStage(instanceId, null)
         return awaitManualDownloads(resolvedManifest, instanceId, onManualDownloadError)
     }
@@ -86,7 +93,7 @@ class RunModpackInstallUseCase(
     private suspend fun installFilesOrNull(
         resolvedManifest: ModpackManifest,
         instanceId: InstanceId
-    ): List<InstalledModpackFile>? =
+    ): ModpackInstallResult? =
         recover({
             installModpackFiles(resolvedManifest, instanceId) { progress ->
                 updateInstanceStatus(

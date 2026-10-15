@@ -37,10 +37,7 @@ import app.vercors.core.ui.component.*
 import app.vercors.core.ui.layout.AppError
 import app.vercors.core.ui.layout.AppSection
 import app.vercors.core.ui.modifier.appCard
-import app.vercors.core.ui.theme.colors
-import app.vercors.core.ui.theme.onPrimary
-import app.vercors.core.ui.theme.primary
-import app.vercors.core.ui.theme.surface
+import app.vercors.core.ui.theme.*
 import app.vercors.feature.home.domain.model.HomeSectionType
 import app.vercors.feature.instance.ui.*
 import app.vercors.feature.project.domain.model.ProjectId
@@ -422,7 +419,7 @@ private fun HomeProjectDescriptionOverlay(
     ) {
         AppText(
             text = project.description,
-            fontSize = 12.sp,
+            style = Theme[textStyles][label],
             modifier = Modifier.padding(8.dp)
                 .projectSharedElement(project.id, "description", ProjectSharedElementOrigin.Home),
             minLines = 3,

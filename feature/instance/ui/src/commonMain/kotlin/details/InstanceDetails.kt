@@ -14,7 +14,6 @@ import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import app.vercors.core.ui.animation.AppAnimatedVisibility
 import app.vercors.core.ui.component.*
 import app.vercors.core.ui.layout.*
@@ -52,6 +51,7 @@ import nl.jacobras.humanreadable.HumanReadable
 import opensavvy.state.progressive.onFailure
 import opensavvy.state.progressive.onIncomplete
 import opensavvy.state.progressive.onSuccess
+import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 
 @CircuitInject(InstanceDetailsScreen::class, AppScope::class)
@@ -126,6 +126,44 @@ fun InstanceDetails(
             }
         }
 
+        state.modpackUpdate?.takeIf { state.promptModpackUpdate }?.let { update ->
+            OverlayEffect(update) {
+                val result = show(
+                    ConfirmDialog(
+                        messageResource = if (update.newGameVersion != null) {
+                            InstanceRes.string.promptModpackUpdateWithGameVersion
+                        } else {
+                            InstanceRes.string.promptModpackUpdate
+                        },
+                        messageArgs = listOfNotNull(update.currentVersion, update.latestVersion, update.newGameVersion),
+                        actionButton = ConfirmDialogButton(
+                            textResource = InstanceRes.string.updateModpack,
+                            icon = Lucide.Download,
+                            style = ConfirmDialogButtonStyle.Primary,
+                        ),
+                    )
+                )
+                eventSink(InstanceDetailsEvent.OnConfirmModpackUpdate(result))
+            }
+        }
+
+        state.localPackUpdatePrompt?.let { prompt ->
+            OverlayEffect(prompt) {
+                val result = show(
+                    ConfirmDialog(
+                        messageResource = prompt.kind.messageResource,
+                        messageArgs = listOf(prompt.currentLabel, prompt.newLabel, prompt.gameVersion),
+                        actionButton = ConfirmDialogButton(
+                            textResource = InstanceRes.string.updateModpack,
+                            icon = Lucide.Download,
+                            style = ConfirmDialogButtonStyle.Primary,
+                        ),
+                    )
+                )
+                eventSink(InstanceDetailsEvent.OnConfirmLocalPackUpdate(result))
+            }
+        }
+
         if (state.promptJavaInstallProgress) {
             OverlayEffect {
                 show(state.installJavaProgressDialog)
@@ -163,6 +201,7 @@ private fun InstanceDetails(
     ) {
         InstanceHeader(
             instance = instance,
+            modpackUpdate = state.modpackUpdate,
             isInstanceEdited = state.optionsContent.state.isInstanceEdited,
             onCancelEdit = { state.optionsContent.eventSink(InstanceOptionsEvent.OnCancelEditClick) },
             onSaveInstance = { state.optionsContent.eventSink(InstanceOptionsEvent.OnSaveClick) },
@@ -194,7 +233,7 @@ private fun AppTabScope.InstanceDetailsTabTitle(tab: InstanceDetailsTab, state: 
     }
     val isEdited = when (tab) {
         InstanceDetailsTab.Options -> state.optionsContent.state.let {
-            it.isNameEdited || it.isGameVersionEdited || it.isModLoaderEdited
+            it.isNameEdited || it.isGameVersionEdited || it.isModLoaderEdited || it.isCheckForUpdatesEdited
         }
 
         InstanceDetailsTab.Java -> state.optionsContent.state.let {
@@ -204,12 +243,18 @@ private fun AppTabScope.InstanceDetailsTabTitle(tab: InstanceDetailsTab, state: 
         InstanceDetailsTab.Advanced -> state.optionsContent.state.isNativeLibraryOptionsEdited
         else -> false
     }
+    val hasUpdates = when (tab) {
+        InstanceDetailsTab.Mods -> state.modsContent.state.hasUpdates
+        InstanceDetailsTab.ResourcePacks -> state.resourcePacksContent.state.hasUpdates
+        InstanceDetailsTab.ShaderPacks -> state.shaderPacksContent.state.hasUpdates
+        else -> false
+    }
     val title = buildString {
         append(tab.title)
         if (isEdited) append("*")
         if (badgeCount != null) append(" ($badgeCount)")
     }
-    AppSidebarTabItem(title = title, icon = tab.icon)
+    AppSidebarTabItem(title = title, icon = tab.icon, badgeColor = Theme[colors][primary].takeIf { hasUpdates })
 }
 
 @Composable
@@ -273,6 +318,7 @@ private fun InstanceDetailsTabContent(tab: InstanceDetailsTab, instance: Instanc
 context(eventSink: EventSink<InstanceDetailsEvent>)
 private fun InstanceHeader(
     instance: InstanceView,
+    modpackUpdate: ModpackUpdateView?,
     isInstanceEdited: Boolean,
     onCancelEdit: () -> Unit,
     onSaveInstance: () -> Unit,
@@ -291,6 +337,7 @@ private fun InstanceHeader(
         InstanceHeaderInfo(instance)
         InstanceHeaderStatus(instance)
         InstanceHeaderEditActions(isInstanceEdited, onCancelEdit, onSaveInstance)
+        InstanceHeaderUpdateButton(instance, modpackUpdate, isInstanceEdited)
         InstanceHeaderActionButton(instance, isInstanceEdited)
         InstanceHeaderMenu(instance)
     }
@@ -344,7 +391,7 @@ private fun RowScope.InstanceHeaderInfo(instance: InstanceView) {
                 )
                 AppText(
                     text = instance.type,
-                    fontSize = 12.sp,
+                    style = Theme[textStyles][label],
                     modifier = Modifier.instanceSharedElement(instance.id, "type")
                 )
             }
@@ -359,12 +406,12 @@ private fun RowScope.InstanceHeaderInfo(instance: InstanceView) {
                 }
                 AppText(
                     text = instance.loader,
-                    fontSize = 12.sp,
+                    style = Theme[textStyles][label],
                     modifier = Modifier.instanceSharedElement(instance.id, "loader")
                 )
                 AppText(
                     text = instance.gameVersion,
-                    fontSize = 12.sp,
+                    style = Theme[textStyles][label],
                     modifier = Modifier.instanceSharedElement(instance.id, "version")
                 )
             }
@@ -377,7 +424,7 @@ private fun RowScope.InstanceHeaderInfo(instance: InstanceView) {
                 )
                 AppText(
                     text = stringResource(InstanceRes.string.playedFor, HumanReadable.duration(instance.playTime)),
-                    fontSize = 12.sp
+                    style = Theme[textStyles][label],
                 )
             }
 
@@ -394,7 +441,7 @@ private fun RowScope.InstanceHeaderInfo(instance: InstanceView) {
                             HumanReadable.timeAgo(it)
                         )
                     } ?: stringResource(InstanceRes.string.neverPlayed),
-                    fontSize = 12.sp
+                    style = Theme[textStyles][label],
                 )
             }
         }
@@ -468,6 +515,25 @@ private fun InstanceHeaderEditActions(
 
 @Composable
 context(eventSink: EventSink<InstanceDetailsEvent>)
+private fun InstanceHeaderUpdateButton(
+    instance: InstanceView,
+    modpackUpdate: ModpackUpdateView?,
+    isInstanceEdited: Boolean
+) {
+    val canUpdate = instance.status is InstanceStatus.Idle || instance.status is InstanceStatus.Failed
+    AppAnimatedVisibility(modpackUpdate != null && canUpdate && !isInstanceEdited) {
+        AppIconTextButton(
+            onClick = { eventSink(InstanceDetailsEvent.OnUpdateModpackClick) },
+            text = stringResource(InstanceRes.string.updateModpack),
+            backgroundColor = Theme[colors][primary],
+            contentColor = Theme[colors][onPrimary],
+            imageVector = Lucide.Download,
+        )
+    }
+}
+
+@Composable
+context(eventSink: EventSink<InstanceDetailsEvent>)
 private fun InstanceHeaderActionButton(instance: InstanceView, isInstanceEdited: Boolean) {
     AppAnimatedVisibility(!isInstanceEdited) {
         when (instance.status) {
@@ -517,6 +583,9 @@ private fun InstanceHeaderActionButton(instance: InstanceView, isInstanceEdited:
 @Composable
 context(eventSink: EventSink<InstanceDetailsEvent>)
 private fun InstanceHeaderMenu(instance: InstanceView) {
+    val packPickerLauncher = rememberFilePickerLauncher(type = FileKitType.File("zip", "mrpack", "vcpack")) { file ->
+        file?.let { eventSink(InstanceDetailsEvent.OnUpdateFromFileSelected(it.path)) }
+    }
     AppMenuButton {
         if (instance.status is InstanceStatus.Installing) {
             AppMenuItem(
@@ -569,6 +638,11 @@ private fun InstanceHeaderMenu(instance: InstanceView) {
                 text = stringResource(InstanceRes.string.exportInstance),
                 imageVector = Lucide.Share
             )
+            AppMenuItem(
+                onClick = packPickerLauncher::launch,
+                text = stringResource(InstanceRes.string.updateFromFile),
+                imageVector = Lucide.FileUp
+            )
         }
         AppMenuItem(
             onClick = { eventSink(InstanceDetailsEvent.OnDeleteClick) },
@@ -603,4 +677,11 @@ private val InstanceDetailsTab.title: String
         InstanceDetailsTab.ShaderPacks -> stringResource(SharedRes.string.shaderPacks)
         InstanceDetailsTab.Worlds -> stringResource(InstanceRes.string.worlds)
         InstanceDetailsTab.Servers -> stringResource(InstanceRes.string.servers)
+    }
+
+private val LocalPackUpdateKind.messageResource: StringResource
+    get() = when (this) {
+        LocalPackUpdateKind.SamePack -> InstanceRes.string.promptLocalPackUpdate
+        LocalPackUpdateKind.NoRecord -> InstanceRes.string.promptLocalPackUpdateNoRecord
+        LocalPackUpdateKind.OtherPack -> InstanceRes.string.promptLocalPackUpdateOtherPack
     }

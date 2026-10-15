@@ -21,13 +21,14 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import app.vercors.core.ui.component.*
 import app.vercors.core.ui.layout.AppError
 import app.vercors.core.ui.layout.AppLoading
 import app.vercors.core.ui.modifier.appCard
 import app.vercors.core.ui.theme.colors
+import app.vercors.core.ui.theme.label
 import app.vercors.core.ui.theme.surface2
+import app.vercors.core.ui.theme.textStyles
 import app.vercors.feature.game.ui.*
 import app.vercors.feature.project.domain.model.ProjectId
 import app.vercors.feature.project.domain.model.ProjectType
@@ -133,7 +134,7 @@ private fun ProjectDetailsHeader(projectId: ProjectId, project: ProjectDetailsVi
             )
             AppText(
                 text = project.description,
-                fontSize = 12.sp,
+                style = Theme[textStyles][label],
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.projectSharedElement(projectId, "description")
@@ -300,7 +301,12 @@ private fun ProjectAuthorRow(author: ProjectAuthorView) {
             modifier = Modifier.size(24.dp).clip(CircleShape),
             contentScale = ContentScale.Crop
         )
-        AppText(text = author.name, fontSize = 12.sp, singleLine = true, overflow = TextOverflow.Ellipsis)
+        AppText(
+            text = author.name,
+            style = Theme[textStyles][label],
+            singleLine = true,
+            overflow = TextOverflow.Ellipsis
+        )
     }
 }
 
@@ -336,6 +342,9 @@ private fun ProjectInfoChip(
 
             painter != null -> AppIcon(painter = painter, contentDescription = null, modifier = Modifier.size(14.dp))
         }
-        AppText(text = text, fontSize = 12.sp)
+        AppText(
+            text = text,
+            style = Theme[textStyles][label]
+        )
     }
 }
