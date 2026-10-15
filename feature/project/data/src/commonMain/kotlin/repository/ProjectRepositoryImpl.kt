@@ -11,9 +11,7 @@ import app.vercors.feature.project.api.PlatformFiles
 import app.vercors.feature.project.api.Platforms
 import app.vercors.feature.project.api.ProjectFiles
 import app.vercors.feature.project.api.Projects
-import app.vercors.feature.project.api.dto.PlatformNotFoundData
 import app.vercors.feature.project.api.dto.ProjectLoaderData
-import app.vercors.feature.project.api.dto.ProjectNotFoundData
 import app.vercors.feature.project.data.modpack.ModpackManifestParser
 import app.vercors.feature.project.data.projectFileDownloadRequest
 import app.vercors.feature.project.data.toData
@@ -77,13 +75,11 @@ class ProjectRepositoryImpl(
 ) : ProjectRepository {
     context(_: Raise<PlatformError>)
     override suspend fun getPlatformList(): List<ProjectPlatform> =
-        withError(RemoteError::toPlatformError) {
-            metaApiConnectivity.request {
-                httpClient.request(
-                    endpoint = ApiV1 / Platforms / Platforms.list,
-                    configure = { expectSuccess = false }
-                )
-            }
+        metaRequest {
+            httpClient.request(
+                endpoint = ApiV1 / Platforms / Platforms.list,
+                configure = { expectSuccess = false }
+            )
         }.handle(
             handle1 = { raise(it.toDomain()) },
             transform = { list -> list.map { it.toDomain() } }
@@ -93,13 +89,11 @@ class ProjectRepositoryImpl(
     override suspend fun getFeaturedProjectList(
         platformId: PlatformId
     ): FeaturedProjectList =
-        withError<PlatformError, RemoteError, _>(RemoteError::toPlatformError) {
-            metaApiConnectivity.request {
-                httpClient.request(
-                    endpoint = ApiV1 / Platforms / Platforms.PlatformId(platformId) / Platforms.PlatformId.featuredProjects,
-                    configure = { expectSuccess = false }
-                )
-            }
+        metaRequest {
+            httpClient.request(
+                endpoint = ApiV1 / Platforms / Platforms.PlatformId(platformId) / Platforms.PlatformId.featuredProjects,
+                configure = { expectSuccess = false }
+            )
         }.handle(
             handle1 = { raise(it.toDomain()) },
             handle2 = { raise(it.toDomain()) },
@@ -121,26 +115,24 @@ class ProjectRepositoryImpl(
         sortBy: ProjectSortBy?,
         pageSize: Int?,
         offset: Int?
-    ): Page<BriefProject> = withError(RemoteError::toPlatformError) {
-        metaApiConnectivity.request {
-            httpClient.request(
-                endpoint = ApiV1 / Platforms / Platforms.PlatformId(platformId) / Projects / Projects.search,
-                parameters = {
-                    this.type = json.encodeToJsonElement(type.toData()).jsonPrimitive.content
-                    loaders?.let { loaders ->
-                        this.loaders =
-                            json.encodeToJsonElement(loaders.map { it.toMetaData() }).jsonArray.map { it.jsonPrimitive.content }
-                    }
-                    gameVersions?.let { this.gameVersions = it }
-                    categories?.let { this.categories = it }
-                    this.query = query
-                    this.sortBy = sortBy?.let { json.encodeToJsonElement(it.toData()).jsonPrimitive.content }
-                    this.pageSize = pageSize
-                    this.offset = offset
-                },
-                configure = { expectSuccess = false }
-            )
-        }
+    ): Page<BriefProject> = metaRequest {
+        httpClient.request(
+            endpoint = ApiV1 / Platforms / Platforms.PlatformId(platformId) / Projects / Projects.search,
+            parameters = {
+                this.type = json.encodeToJsonElement(type.toData()).jsonPrimitive.content
+                loaders?.let { loaders ->
+                    this.loaders =
+                        json.encodeToJsonElement(loaders.map { it.toMetaData() }).jsonArray.map { it.jsonPrimitive.content }
+                }
+                gameVersions?.let { this.gameVersions = it }
+                categories?.let { this.categories = it }
+                this.query = query
+                this.sortBy = sortBy?.let { json.encodeToJsonElement(it.toData()).jsonPrimitive.content }
+                this.pageSize = pageSize
+                this.offset = offset
+            },
+            configure = { expectSuccess = false }
+        )
     }.handle(
         handle1 = { raise(it.toDomain()) },
         handle2 = { raise(it.toDomain()) },
@@ -151,22 +143,13 @@ class ProjectRepositoryImpl(
     context(_: Raise<ProjectDetailsError>)
     override suspend fun getProject(
         projectId: ProjectId
-    ): Project = withError(RemoteError::toPlatformError) {
-        metaApiConnectivity.request {
-            httpClient.request(
-                endpoint = ApiV1 / Platforms / Platforms.PlatformId(projectId.platform) / Projects / Projects.ProjectId(
-                    projectId.id
-                ) / Projects.ProjectId.get,
-                configure = { expectSuccess = false }
-            )
-        }
+    ): Project = metaRequest {
+        httpClient.request(
+            endpoint = projectResource(projectId) / Projects.ProjectId.get,
+            configure = { expectSuccess = false }
+        )
     }.handle(
-        handle1 = {
-            when (it) {
-                is ProjectNotFoundData -> raise(it.toDomain())
-                is PlatformNotFoundData -> raise(it.toDomain())
-            }
-        },
+        handle1 = { raise(it.toDomain()) },
         handle2 = { raise(it.toDomain()) },
         transform = { it.toDomain() }
     )
@@ -176,26 +159,17 @@ class ProjectRepositoryImpl(
         projectId: ProjectId,
         gameVersion: String?,
         loader: ModLoaderType?
-    ): List<ProjectFile> = withError(RemoteError::toPlatformError) {
-        metaApiConnectivity.request {
-            httpClient.request(
-                endpoint = ApiV1 / Platforms / Platforms.PlatformId(projectId.platform) / Projects / Projects.ProjectId(
-                    projectId.id
-                ) / ProjectFiles / ProjectFiles.list,
-                parameters = {
-                    this.gameVersion = gameVersion
-                    this.loader = loader?.let { json.encodeToJsonElement(it.toMetaData()).jsonPrimitive.content }
-                },
-                configure = { expectSuccess = false }
-            )
-        }
+    ): List<ProjectFile> = metaRequest {
+        httpClient.request(
+            endpoint = projectResource(projectId) / ProjectFiles / ProjectFiles.list,
+            parameters = {
+                this.gameVersion = gameVersion
+                this.loader = loader?.let { json.encodeToJsonElement(it.toMetaData()).jsonPrimitive.content }
+            },
+            configure = { expectSuccess = false }
+        )
     }.handle(
-        handle1 = {
-            when (it) {
-                is ProjectNotFoundData -> raise(it.toDomain())
-                is PlatformNotFoundData -> raise(it.toDomain())
-            }
-        },
+        handle1 = { raise(it.toDomain()) },
         handle2 = { raise(it.toDomain()) },
         handle3 = { raise(it.toDomain()) },
         transform = { list -> list.map { it.toDomain(projectId.platform) } }
@@ -262,36 +236,25 @@ class ProjectRepositoryImpl(
 
     context(_: Raise<ProjectDetailsError>)
     override suspend fun getProjectFile(projectId: ProjectId, fileId: String): ProjectFile =
-        withError(RemoteError::toPlatformError) {
-            metaApiConnectivity.request {
-                httpClient.request(
-                    endpoint = ApiV1 / Platforms / Platforms.PlatformId(projectId.platform) / Projects / Projects.ProjectId(
-                        projectId.id
-                    ) / ProjectFiles / ProjectFiles.FileId(fileId) / ProjectFiles.FileId.get,
-                    configure = { expectSuccess = false }
-                )
-            }
+        metaRequest {
+            httpClient.request(
+                endpoint = projectResource(projectId) / ProjectFiles / ProjectFiles.FileId(fileId) / ProjectFiles.FileId.get,
+                configure = { expectSuccess = false }
+            )
         }.handle(
-        handle1 = {
-            when (it) {
-                is ProjectNotFoundData -> raise(it.toDomain())
-                is PlatformNotFoundData -> raise(it.toDomain())
-            }
-        },
+            handle1 = { raise(it.toDomain()) },
         handle2 = { raise(it.toDomain()) },
         transform = { it.toDomain(projectId.platform) }
     )
 
     context(_: Raise<ProjectDetailsError>)
     override suspend fun getProjectFilesByIds(platformId: PlatformId, fileIds: List<String>): List<ProjectFile> =
-        withError(RemoteError::toPlatformError) {
-            metaApiConnectivity.request {
-                httpClient.request(
-                    endpoint = ApiV1 / Platforms / Platforms.PlatformId(platformId) / PlatformFiles / PlatformFiles.list,
-                    parameters = { this.fileIds = fileIds },
-                    configure = { expectSuccess = false }
-                )
-            }
+        metaRequest {
+            httpClient.request(
+                endpoint = ApiV1 / Platforms / Platforms.PlatformId(platformId) / PlatformFiles / PlatformFiles.list,
+                parameters = { this.fileIds = fileIds },
+                configure = { expectSuccess = false }
+            )
         }.handle(
             handle1 = { raise(it.toDomain()) },
             handle2 = { raise(it.toDomain()) },
@@ -301,20 +264,25 @@ class ProjectRepositoryImpl(
     context(_: Raise<ProjectDetailsError>)
     override suspend fun findFilesByHashes(platformId: PlatformId, hashes: List<FileHashes>): List<ProjectFileMatch> =
         hashes.chunked(HASH_LOOKUP_CHUNK_SIZE).flatMap { chunk ->
-            withError(RemoteError::toPlatformError) {
-                metaApiConnectivity.request {
-                    httpClient.request(
-                        endpoint = ApiV1 / Platforms / Platforms.PlatformId(platformId) / PlatformFiles / PlatformFiles.lookup,
-                        input = chunk.map { it.toData() },
-                        configure = { expectSuccess = false }
-                    )
-                }
+            metaRequest {
+                httpClient.request(
+                    endpoint = ApiV1 / Platforms / Platforms.PlatformId(platformId) / PlatformFiles / PlatformFiles.lookup,
+                    input = chunk.map { it.toData() },
+                    configure = { expectSuccess = false }
+                )
             }.handle(
                 handle1 = { raise(it.toDomain()) },
                 handle2 = { raise(it.toDomain()) },
                 transform = { list -> list.map { it.toDomain(platformId) } }
             )
         }
+
+    context(_: Raise<PlatformError>)
+    private suspend fun <T> metaRequest(call: suspend () -> T): T =
+        withError(RemoteError::toPlatformError) { metaApiConnectivity.request(call) }
+
+    private fun projectResource(projectId: ProjectId) =
+        ApiV1 / Platforms / Platforms.PlatformId(projectId.platform) / Projects / Projects.ProjectId(projectId.id)
 
     private fun modpackZipPath(platformId: String, projectId: String, fileId: String): Path =
         Path(appPaths.downloadsTmp, "modpack-$platformId-$projectId-$fileId.zip")

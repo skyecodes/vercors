@@ -15,6 +15,9 @@ import app.vercors.feature.project.domain.usecase.ExportInstanceUseCase
 import app.vercors.shared.ui.*
 import arrow.core.raise.context.either
 import com.slack.circuit.overlay.OverlayNavigator
+import dev.zacsweers.metro.Assisted
+import dev.zacsweers.metro.AssistedFactory
+import dev.zacsweers.metro.AssistedInject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -22,9 +25,10 @@ import org.jetbrains.compose.resources.stringResource
 
 private const val DEFAULT_VERSION_ID = "1.0.0"
 
+@AssistedInject
 class ExportInstancePresenter(
-    private val target: ExportInstanceTarget,
-    private val navigator: OverlayNavigator<ExportInstanceResult>,
+    @Assisted private val target: ExportInstanceTarget,
+    @Assisted private val navigator: OverlayNavigator<ExportInstanceResult>,
     private val globalScope: CoroutineScope,
     private val listExportableEntries: ListExportableEntriesUseCase,
     private val exportInstance: ExportInstanceUseCase,
@@ -169,6 +173,14 @@ class ExportInstancePresenter(
                     navigator.finish(ExportInstanceResult.Exported)
                 }
         })
+    }
+
+    @AssistedFactory
+    fun interface Factory {
+        fun create(
+            target: ExportInstanceTarget,
+            navigator: OverlayNavigator<ExportInstanceResult>
+        ): ExportInstancePresenter
     }
 }
 

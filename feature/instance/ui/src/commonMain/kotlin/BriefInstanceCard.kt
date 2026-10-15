@@ -26,6 +26,7 @@ import app.vercors.core.ui.modifier.appCard
 import app.vercors.core.ui.theme.*
 import app.vercors.feature.instance.domain.model.InstanceId
 import app.vercors.feature.instance.domain.model.InstanceStatus
+import app.vercors.feature.instance.ui.actions.InstanceActionsEvent
 import app.vercors.shared.ui.SharedRes
 import app.vercors.shared.ui.delete
 import app.vercors.shared.ui.openDetails
@@ -39,15 +40,7 @@ import org.jetbrains.compose.resources.stringResource
 @Composable
 fun BriefInstanceCard(
     instance: BriefInstanceView?,
-    onInstanceClick: (InstanceId) -> Unit,
-    onInstanceLaunchClick: (InstanceId) -> Unit,
-    onInstanceStopClick: (InstanceId) -> Unit,
-    onInstanceKillClick: (InstanceId) -> Unit,
-    onOpenInstanceFolderClick: (InstanceId) -> Unit,
-    onOpenProjectClick: (InstanceId, String, String) -> Unit,
-    onCopyClick: (InstanceId, String) -> Unit,
-    onExportClick: (InstanceId, String) -> Unit,
-    onDeleteClick: (InstanceId) -> Unit,
+    onEvent: (InstanceActionsEvent) -> Unit,
     modifier: Modifier,
     origin: InstanceSharedElementOrigin
 ) = SharedElementTransitionScope {
@@ -58,17 +51,11 @@ fun BriefInstanceCard(
             modifier = modifier.hoverable(interactionSource = interactionSource)
                 .instanceSharedElement(instance.id, "card", origin),
             interactionSource = interactionSource,
-            onCardClick = { onInstanceClick(instance.id) },
+            onCardClick = { onEvent(InstanceActionsEvent.OnInstanceClick(instance.id)) },
             forceShowAction = instance.status !is InstanceStatus.Idle && instance.status !is InstanceStatus.Failed,
             contextMenuItems = instanceContextMenuItems(
                 instance = instance,
-                onInstanceLaunchClick = onInstanceLaunchClick,
-                onInstanceClick = onInstanceClick,
-                onOpenInstanceFolderClick = onOpenInstanceFolderClick,
-                onOpenProjectClick = onOpenProjectClick,
-                onCopyClick = onCopyClick,
-                onExportClick = onExportClick,
-                onDeleteClick = onDeleteClick,
+                onEvent = onEvent,
             ),
             icon = {
                 InstanceIcon(
@@ -138,15 +125,20 @@ fun BriefInstanceCard(
             actionArea = {
                 when (instance.status) {
                     is InstanceStatus.Idle, is InstanceStatus.Failed ->
-                        InstanceLaunchButton(onClick = { onInstanceLaunchClick(instance.id) })
+                        InstanceLaunchButton(
+                            onClick = { onEvent(InstanceActionsEvent.OnInstanceLaunchClick(instance.id)) }
+                        )
 
                     is InstanceStatus.Launching, is InstanceStatus.Installing -> AppProgressIndicator(
                         progress = instance.status.progress ?: 0f,
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp)
                     )
 
-                    is InstanceStatus.Running -> InstanceStopButton(onClick = { onInstanceStopClick(instance.id) })
-                    is InstanceStatus.Stopping -> InstanceKillButton(onClick = { onInstanceKillClick(instance.id) })
+                    is InstanceStatus.Running ->
+                        InstanceStopButton(onClick = { onEvent(InstanceActionsEvent.OnInstanceStopClick(instance.id)) })
+
+                    is InstanceStatus.Stopping ->
+                        InstanceKillButton(onClick = { onEvent(InstanceActionsEvent.OnInstanceKillClick(instance.id)) })
                 }
             }
         )
@@ -165,13 +157,7 @@ fun BriefInstanceCard(
 @Composable
 private fun instanceContextMenuItems(
     instance: BriefInstanceView,
-    onInstanceLaunchClick: (InstanceId) -> Unit,
-    onInstanceClick: (InstanceId) -> Unit,
-    onOpenInstanceFolderClick: (InstanceId) -> Unit,
-    onOpenProjectClick: (InstanceId, String, String) -> Unit,
-    onCopyClick: (InstanceId, String) -> Unit,
-    onExportClick: (InstanceId, String) -> Unit,
-    onDeleteClick: (InstanceId) -> Unit,
+    onEvent: (InstanceActionsEvent) -> Unit,
 ): () -> List<AppContextMenuItem> {
     val launchLabel = stringResource(InstanceRes.string.launch)
     val openDetailsLabel = stringResource(SharedRes.string.openDetails)
@@ -192,45 +178,53 @@ private fun instanceContextMenuItems(
                     label = launchLabel,
                     imageVector = Lucide.Play,
                     contentColor = successColor,
-                    onClick = { onInstanceLaunchClick(instance.id) },
+                    onClick = { onEvent(InstanceActionsEvent.OnInstanceLaunchClick(instance.id)) },
                 )
             } else null,
             AppContextMenuItem(
                 label = openDetailsLabel,
                 imageVector = Lucide.Info,
-                onClick = { onInstanceClick(instance.id) },
+                onClick = { onEvent(InstanceActionsEvent.OnInstanceClick(instance.id)) },
             ),
             AppContextMenuItem(
                 label = openInstanceFolderLabel,
                 imageVector = Lucide.Folder,
-                onClick = { onOpenInstanceFolderClick(instance.id) },
+                onClick = { onEvent(InstanceActionsEvent.OnOpenInstanceFolderClick(instance.id)) },
             ),
             instance.modpackInfo?.let { info ->
                 AppContextMenuItem(
                     label = openProjectLabel!!,
                     imageVector = Lucide.ArrowRight,
-                    onClick = { onOpenProjectClick(instance.id, info.platformId, info.projectId) },
+                    onClick = {
+                        onEvent(
+                            InstanceActionsEvent.OnOpenProjectFromInstanceClick(
+                                instance.id,
+                                info.platformId,
+                                info.projectId
+                            )
+                        )
+                    },
                 )
             },
             if (instance.status is InstanceStatus.Idle || instance.status is InstanceStatus.Failed) {
                 AppContextMenuItem(
                     label = copyLabel,
                     imageVector = Lucide.Copy,
-                    onClick = { onCopyClick(instance.id, instance.name) },
+                    onClick = { onEvent(InstanceActionsEvent.OnCopyInstanceClick(instance.id, instance.name)) },
                 )
             } else null,
             if (instance.status is InstanceStatus.Idle || instance.status is InstanceStatus.Failed) {
                 AppContextMenuItem(
                     label = exportLabel,
                     imageVector = Lucide.Share,
-                    onClick = { onExportClick(instance.id, instance.name) },
+                    onClick = { onEvent(InstanceActionsEvent.OnExportInstanceClick(instance.id, instance.name)) },
                 )
             } else null,
             AppContextMenuItem(
                 label = deleteLabel,
                 imageVector = Lucide.Trash,
                 contentColor = errorColor,
-                onClick = { onDeleteClick(instance.id) },
+                onClick = { onEvent(InstanceActionsEvent.OnDeleteInstanceClick(instance.id)) },
             ),
         )
     }

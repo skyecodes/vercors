@@ -10,12 +10,16 @@ import app.vercors.shared.ui.Store
 import app.vercors.shared.ui.error
 import arrow.core.raise.context.either
 import com.slack.circuit.overlay.OverlayNavigator
+import dev.zacsweers.metro.Assisted
+import dev.zacsweers.metro.AssistedFactory
+import dev.zacsweers.metro.AssistedInject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
+@AssistedInject
 class CopyInstancePresenter(
-    private val target: CopyInstanceTarget,
-    private val navigator: OverlayNavigator<CopyInstanceResult>,
+    @Assisted private val target: CopyInstanceTarget,
+    @Assisted private val navigator: OverlayNavigator<CopyInstanceResult>,
     private val globalScope: CoroutineScope,
     private val copyInstance: CopyInstanceUseCase,
     private val snackbarService: SnackbarService,
@@ -61,5 +65,13 @@ class CopyInstancePresenter(
                 }
                 .onRight { copiedInstance -> navigator.finish(CopyInstanceResult.Copied(copiedInstance.id)) }
         }
+    }
+
+    @AssistedFactory
+    fun interface Factory {
+        fun create(
+            target: CopyInstanceTarget,
+            navigator: OverlayNavigator<CopyInstanceResult>
+        ): CopyInstancePresenter
     }
 }

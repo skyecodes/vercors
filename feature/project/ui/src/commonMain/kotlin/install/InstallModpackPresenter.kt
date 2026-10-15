@@ -22,6 +22,9 @@ import app.vercors.shared.ui.Store
 import app.vercors.shared.ui.error
 import arrow.core.raise.recover
 import com.slack.circuit.overlay.OverlayNavigator
+import dev.zacsweers.metro.Assisted
+import dev.zacsweers.metro.AssistedFactory
+import dev.zacsweers.metro.AssistedInject
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -34,10 +37,11 @@ import app.vercors.feature.instance.ui.message as manualDownloadMessage
 
 private val logger = KotlinLogging.logger {}
 
+@AssistedInject
 class InstallModpackPresenter(
-    private val navigator: OverlayNavigator<InstallModpackResult>,
-    private val projectId: ProjectId,
-    private val projectName: String,
+    @Assisted private val navigator: OverlayNavigator<InstallModpackResult>,
+    @Assisted private val projectId: ProjectId,
+    @Assisted private val projectName: String,
     private val globalScope: CoroutineScope,
     private val getProjectFiles: GetProjectFilesUseCase,
     private val getProject: GetProjectUseCase,
@@ -244,5 +248,14 @@ class InstallModpackPresenter(
 
     private suspend fun rollback(instanceId: InstanceId) {
         recover({ deleteInstance(instanceId) }) { _: InstanceError -> null }
+    }
+
+    @AssistedFactory
+    fun interface Factory {
+        fun create(
+            navigator: OverlayNavigator<InstallModpackResult>,
+            projectId: ProjectId,
+            projectName: String
+        ): InstallModpackPresenter
     }
 }

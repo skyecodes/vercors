@@ -22,7 +22,7 @@ actual class SystemServiceImpl : SystemService {
 
     actual override val osVersion: String by lazy { versionAndArch.first }
 
-    actual override val osArch: OsArch by lazy { if (versionAndArch.second.endsWith("64")) OsArch.X64 else OsArch.X86 }
+    actual override val osArch: OsArch by lazy { versionAndArch.second.toOsArch() }
 
     @OptIn(ExperimentalForeignApi::class)
     actual override val totalPhysicalMemoryBytes: Long? by lazy {

@@ -3,6 +3,7 @@ package app.vercors.feature.project.backend.modrinth.dto
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlin.time.Instant
 
 @Serializable
 data class ModrinthProjectResult(
@@ -12,9 +13,9 @@ data class ModrinthProjectResult(
     val clientSide: ModrinthProjectSideSupport,
     val color: Int? = null,
     @SerialName("date_created")
-    val dateCreated: ModrinthInstant,
+    val dateCreated: Instant,
     @SerialName("date_modified")
-    val dateModified: ModrinthInstant,
+    val dateModified: Instant,
     val description: String,
     @SerialName("display_categories")
     val displayCategories: List<String>? = null,

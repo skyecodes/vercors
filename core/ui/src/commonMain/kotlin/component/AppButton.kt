@@ -89,95 +89,6 @@ fun AppIconTextButton(
     onClick: () -> Unit,
     text: String? = null,
     imageVector: ImageVector? = null,
-    enabled: Boolean = true,
-    shape: Shape = RoundedCornerShape(4.dp),
-    backgroundColor: Color = Theme[colors][surface2],
-    contentColor: Color = LocalContentColor.current,
-    contentPadding: PaddingValues = NormalButtonContentPadding,
-    borderColor: Color = Color.Unspecified,
-    borderWidth: Dp = 0.dp,
-    modifier: Modifier = Modifier,
-    role: Role = Role.Button,
-    indication: Indication? = LocalIndication.current,
-    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
-    horizontalArrangement: Arrangement.Horizontal = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
-    verticalAlignment: Alignment.Vertical = Alignment.CenterVertically,
-    textStyle: TextStyle = Theme[textStyles][button],
-    iconSize: Dp = 16.dp
-) {
-    AppButton(
-        onClick = onClick,
-        enabled = enabled,
-        shape = shape,
-        backgroundColor = backgroundColor,
-        contentColor = contentColor,
-        contentPadding = contentPadding,
-        borderColor = borderColor,
-        borderWidth = borderWidth,
-        modifier = modifier,
-        role = role,
-        indication = indication,
-        interactionSource = interactionSource,
-        horizontalArrangement = horizontalArrangement,
-        verticalAlignment = verticalAlignment,
-        textStyle = textStyle
-    ) {
-        AppIconTextButtonContent(
-            text = text,
-            imageVector = imageVector,
-            iconSize = iconSize
-        )
-    }
-}
-
-@Composable
-fun AppIconTextButtonContent(
-    text: String?,
-    imageVector: ImageVector?,
-    iconSize: Dp = 16.dp
-) {
-    imageVector?.let {
-        AppIcon(
-            imageVector = it,
-            contentDescription = text,
-            modifier = Modifier.let { modifier ->
-                if (text == null) modifier.padding(vertical = 1.dp) else modifier
-            }.size(iconSize)
-        )
-    }
-    text?.let {
-        AppText(
-            text = it,
-            singleLine = true,
-            overflow = TextOverflow.Ellipsis
-        )
-    }
-}
-
-@Composable
-fun AppIconTextButtonContent(
-    text: String?,
-    painter: Painter?,
-    iconSize: Dp = 16.dp
-) {
-    painter?.let {
-        AppIcon(
-            painter = it,
-            contentDescription = text,
-            modifier = Modifier.size(iconSize)
-        )
-    }
-    text?.let {
-        AppText(
-            text = it
-        )
-    }
-}
-
-@Composable
-fun AppIconTextButton(
-    onClick: () -> Unit,
-    text: String? = null,
     painter: Painter? = null,
     enabled: Boolean = true,
     shape: Shape = RoundedCornerShape(4.dp),
@@ -214,8 +125,30 @@ fun AppIconTextButton(
     ) {
         AppIconTextButtonContent(
             text = text,
+            imageVector = imageVector,
             painter = painter,
             iconSize = iconSize
+        )
+    }
+}
+
+@Composable
+fun AppIconTextButtonContent(
+    text: String?,
+    imageVector: ImageVector? = null,
+    painter: Painter? = null,
+    iconSize: Dp = 16.dp
+) {
+    val iconModifier = Modifier.let { if (text == null) it.padding(vertical = 1.dp) else it }.size(iconSize)
+    when {
+        imageVector != null -> AppIcon(imageVector = imageVector, contentDescription = text, modifier = iconModifier)
+        painter != null -> AppIcon(painter = painter, contentDescription = text, modifier = iconModifier)
+    }
+    text?.let {
+        AppText(
+            text = it,
+            singleLine = true,
+            overflow = TextOverflow.Ellipsis
         )
     }
 }

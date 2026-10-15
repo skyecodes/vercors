@@ -3,12 +3,13 @@ package app.vercors.feature.project.backend.modrinth.dto
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlin.time.Instant
 
 @Serializable
 data class ModrinthProject(
     @SerialName("additional_categories")
     val additionalCategories: List<String> = emptyList(),
-    val approved: ModrinthInstant? = null,
+    val approved: Instant? = null,
     val body: String? = null,
     @SerialName("body_url")
     val bodyUrl: String? = null,
@@ -38,8 +39,8 @@ data class ModrinthProject(
     val monetizationStatus: ModrinthProjectMonetizationStatus? = null,
     @SerialName("project_type")
     val projectType: ModrinthProjectType,
-    val published: ModrinthInstant,
-    val queued: ModrinthInstant? = null,
+    val published: Instant,
+    val queued: Instant? = null,
     @SerialName("requested_status")
     val requestedStatus: ModrinthProjectStatus? = null,
     @SerialName("server_side")
@@ -52,7 +53,7 @@ data class ModrinthProject(
     @SerialName("thread_id")
     val threadId: String? = null,
     val title: String,
-    val updated: ModrinthInstant,
+    val updated: Instant,
     val versions: List<String> = emptyList(),
     @SerialName("wiki_url")
     val wikiUrl: String? = null

@@ -6,6 +6,7 @@ import app.vercors.core.filesystem.*
 import app.vercors.feature.game.domain.model.ModLoaderType
 import app.vercors.feature.instance.data.mods.extractIcon
 import app.vercors.feature.instance.domain.model.ImportError
+import app.vercors.feature.instance.domain.model.InstalledContentFile
 import app.vercors.feature.instance.domain.model.InstanceId
 import app.vercors.feature.instance.domain.model.ModProvider
 import arrow.core.raise.Raise
@@ -43,7 +44,8 @@ internal class ContentDirScannerEngine(
     private data class HashMemo(val size: Long, val sha1: String)
 
     private val statesLock = Mutex()
-    private val states = mutableMapOf<InstanceId, MutableProgressiveStateFlow<Nothing, Map<String, ContentEntry>>>()
+    private val states =
+        mutableMapOf<InstanceId, MutableProgressiveStateFlow<Nothing, Map<String, InstalledContentFile>>>()
     private val watchStartedFor = mutableSetOf<InstanceId>()
 
     // A reconcile resolving a snapshot of the directory must not overwrite a concurrent removal with that snapshot
@@ -55,7 +57,7 @@ internal class ContentDirScannerEngine(
     // Guards metadataCache read-modify-writes: resolveEntry and recordOrigin race right after a download
     private val metadataLock = Mutex()
 
-    fun observe(instanceId: InstanceId): ProgressiveFlow<Nothing, List<ContentEntry>> {
+    fun observe(instanceId: InstanceId): ProgressiveFlow<Nothing, List<InstalledContentFile>> {
         val state = stateFor(instanceId)
         return state.onStart { backgroundScope.launch { activate(instanceId, state) } }
             .map { outcome -> outcome.map { it.values.toList() } }
@@ -67,12 +69,12 @@ internal class ContentDirScannerEngine(
     private suspend fun <T> withMutationLock(instanceId: InstanceId, block: suspend () -> T): T =
         statesLock.withLock { mutationLocks.getOrPut(instanceId) { Mutex() } }.withLock { block() }
 
-    private fun stateFor(instanceId: InstanceId): MutableProgressiveStateFlow<Nothing, Map<String, ContentEntry>> =
+    private fun stateFor(instanceId: InstanceId): MutableProgressiveStateFlow<Nothing, Map<String, InstalledContentFile>> =
         states.getOrPut(instanceId) { MutableProgressiveStateFlow() }
 
     private suspend fun activate(
         instanceId: InstanceId,
-        state: MutableProgressiveStateFlow<Nothing, Map<String, ContentEntry>>
+        state: MutableProgressiveStateFlow<Nothing, Map<String, InstalledContentFile>>
     ) {
         reconcile(instanceId, state)
 
@@ -88,12 +90,12 @@ internal class ContentDirScannerEngine(
 
     private suspend fun reconcile(
         instanceId: InstanceId,
-        state: MutableProgressiveStateFlow<Nothing, Map<String, ContentEntry>>
+        state: MutableProgressiveStateFlow<Nothing, Map<String, InstalledContentFile>>
     ): Unit = withMutationLock(instanceId) {
         val dir = instanceDir(instanceId)
         if (!dir.exists()) {
             dir.createDirectories()
-            state.update { emptyMap<String, ContentEntry>().successfulWithProgress() }
+            state.update { emptyMap<String, InstalledContentFile>().successfulWithProgress() }
             return@withMutationLock
         }
         val resolved = dir.list()
@@ -105,7 +107,7 @@ internal class ContentDirScannerEngine(
 
     private suspend fun handleFileEvent(
         instanceId: InstanceId,
-        state: MutableProgressiveStateFlow<Nothing, Map<String, ContentEntry>>,
+        state: MutableProgressiveStateFlow<Nothing, Map<String, InstalledContentFile>>,
         event: FileEvent
     ): Unit = withMutationLock(instanceId) {
         if (!isContentFile(event.path.name, extension)) return@withMutationLock
@@ -130,18 +132,18 @@ internal class ContentDirScannerEngine(
     }
 
     private suspend fun updateEntry(
-        state: MutableProgressiveStateFlow<Nothing, Map<String, ContentEntry>>,
+        state: MutableProgressiveStateFlow<Nothing, Map<String, InstalledContentFile>>,
         filePath: Path
     ) {
         val entry = resolveEntry(filePath) ?: return
         state.update { it.map { map -> map + (entry.fileName to entry) } }
     }
 
-    private suspend fun resolveEntry(filePath: Path): ContentEntry? {
+    private suspend fun resolveEntry(filePath: Path): InstalledContentFile? {
         val size = filePath.metadataOrNull()?.size ?: return null
         val sha1 = hashOf(filePath, size)
         val metadata = metadataLock.withLock { metadataCache.get(sha1) ?: parseAndCache(filePath, sha1) }
-        return ContentEntry(
+        return InstalledContentFile(
             fileName = contentLogicalFileName(filePath.name),
             title = metadata.title,
             description = metadata.description,

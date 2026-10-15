@@ -27,6 +27,9 @@ import app.vercors.shared.ui.error
 import arrow.core.raise.context.either
 import arrow.core.raise.recover
 import com.slack.circuit.overlay.OverlayNavigator
+import dev.zacsweers.metro.Assisted
+import dev.zacsweers.metro.AssistedFactory
+import dev.zacsweers.metro.AssistedInject
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -35,8 +38,9 @@ import opensavvy.state.progressive.valueOrNull
 
 private val logger = KotlinLogging.logger {}
 
+@AssistedInject
 class CreateInstancePresenter(
-    private val navigator: OverlayNavigator<CreateInstanceResult>,
+    @Assisted private val navigator: OverlayNavigator<CreateInstanceResult>,
     private val globalScope: CoroutineScope,
     private val observeGameVersionList: ObserveGameVersionListUseCase,
     private val observeAvailableLoaders: ObserveAvailableLoadersUseCase,
@@ -292,4 +296,9 @@ class CreateInstancePresenter(
         val importing: Boolean,
         val setImporting: (Boolean) -> Unit,
     )
+
+    @AssistedFactory
+    fun interface Factory {
+        fun create(navigator: OverlayNavigator<CreateInstanceResult>): CreateInstancePresenter
+    }
 }

@@ -28,6 +28,9 @@ import app.vercors.shared.ui.Store
 import app.vercors.shared.ui.error
 import arrow.core.raise.recover
 import com.slack.circuit.overlay.OverlayNavigator
+import dev.zacsweers.metro.Assisted
+import dev.zacsweers.metro.AssistedFactory
+import dev.zacsweers.metro.AssistedInject
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.flowOf
@@ -42,12 +45,13 @@ import app.vercors.feature.instance.ui.message as manualDownloadMessage
 
 private val logger = KotlinLogging.logger {}
 
+@AssistedInject
 class InstallProjectPresenter(
-    private val navigator: OverlayNavigator<InstallProjectResult>,
-    private val projectId: ProjectId,
-    private val projectType: ProjectType,
-    private val compatibleLoaders: List<ModLoaderType>,
-    private val preferredInstanceId: InstanceId?,
+    @Assisted private val navigator: OverlayNavigator<InstallProjectResult>,
+    @Assisted private val projectId: ProjectId,
+    @Assisted private val projectType: ProjectType,
+    @Assisted private val compatibleLoaders: List<ModLoaderType>,
+    @Assisted private val preferredInstanceId: InstanceId?,
     private val globalScope: CoroutineScope,
     private val observeInstanceList: ObserveInstanceListUseCase,
     private val observeInstalledContent: ObserveInstalledContentUseCase,
@@ -711,6 +715,17 @@ class InstallProjectPresenter(
                 }
             }
         }
+
+    @AssistedFactory
+    fun interface Factory {
+        fun create(
+            navigator: OverlayNavigator<InstallProjectResult>,
+            projectId: ProjectId,
+            projectType: ProjectType,
+            compatibleLoaders: List<ModLoaderType>,
+            preferredInstanceId: InstanceId?
+        ): InstallProjectPresenter
+    }
 }
 
 private data class InstanceSelectionState(

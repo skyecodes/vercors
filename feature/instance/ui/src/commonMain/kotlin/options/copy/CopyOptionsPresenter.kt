@@ -17,14 +17,18 @@ import app.vercors.feature.instance.ui.optionsCopiedKeybindsSkipped
 import app.vercors.shared.ui.*
 import arrow.core.raise.context.either
 import com.slack.circuit.overlay.OverlayNavigator
+import dev.zacsweers.metro.Assisted
+import dev.zacsweers.metro.AssistedFactory
+import dev.zacsweers.metro.AssistedInject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import opensavvy.state.progressive.valueOrNull
 import org.jetbrains.compose.resources.stringResource
 
+@AssistedInject
 class CopyOptionsPresenter(
-    private val target: CopyOptionsTarget,
-    private val navigator: OverlayNavigator<CopyOptionsResult>,
+    @Assisted private val target: CopyOptionsTarget,
+    @Assisted private val navigator: OverlayNavigator<CopyOptionsResult>,
     private val globalScope: CoroutineScope,
     private val observeInstanceList: ObserveInstanceListUseCase,
     private val observeDefaultOptions: ObserveDefaultOptionsUseCase,
@@ -105,5 +109,13 @@ class CopyOptionsPresenter(
             .sortedByDescending { it.lastPlayedAt ?: it.createdAt }
             .map { CopyOptionsSourceView(OptionsSource.Instance(it.id), it.name, it.gameVersion) }
         return listOfNotNull(defaultSource) + instanceSources
+    }
+
+    @AssistedFactory
+    fun interface Factory {
+        fun create(
+            target: CopyOptionsTarget,
+            navigator: OverlayNavigator<CopyOptionsResult>
+        ): CopyOptionsPresenter
     }
 }
