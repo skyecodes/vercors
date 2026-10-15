@@ -2,6 +2,7 @@ package app.vercors.core.ui.component
 
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.VerticalScrollbar
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -16,6 +17,7 @@ import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import app.vercors.core.ui.theme.colors
+import app.vercors.core.ui.theme.primary
 import app.vercors.core.ui.theme.surface2
 import com.composeunstyled.DropdownMenuPanelScope
 import com.composeunstyled.LocalTextStyle
@@ -109,8 +111,11 @@ private fun <T> DropdownMenuPanelScope.DropdownOptionList(
                         indication = LocalIndication.current
                     ) {
                         Row(
-                            modifier = Modifier.pointerHoverIcon(PointerIcon.Hand).padding(8.dp).fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            modifier = Modifier.pointerHoverIcon(PointerIcon.Hand)
+                                .then(if (it == value) Modifier.background(Theme[colors][primary].copy(alpha = 0.2f)) else Modifier)
+                                .padding(8.dp)
+                                .fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
                             ProvideTextStyle(
                                 LocalTextStyle.current.copy(

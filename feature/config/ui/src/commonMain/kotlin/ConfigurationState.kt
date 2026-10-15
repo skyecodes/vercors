@@ -1,70 +1,33 @@
 package app.vercors.feature.config.ui
 
 import androidx.compose.runtime.Immutable
-import androidx.compose.ui.graphics.Color
-import app.vercors.feature.config.domain.model.HomeCategoryConfig
-import app.vercors.feature.config.domain.model.LauncherUpdateState
-import app.vercors.feature.config.domain.model.StartupScreen
-import app.vercors.feature.config.domain.model.UpdateChannel
-import app.vercors.feature.config.ui.datadirectory.ChangeDataDirectoryDialog
-import app.vercors.feature.project.domain.model.ProjectPlatform
-import app.vercors.shared.domain.model.JavaInstallation
-import app.vercors.shared.domain.model.JvmMemoryOptions
-import app.vercors.shared.domain.model.NativeLibraryOptions
+import app.vercors.feature.config.ui.about.AboutConfigurationEvent
+import app.vercors.feature.config.ui.about.AboutConfigurationState
+import app.vercors.feature.config.ui.advanced.AdvancedConfigurationEvent
+import app.vercors.feature.config.ui.advanced.AdvancedConfigurationState
+import app.vercors.feature.config.ui.appearance.AppearanceConfigurationEvent
+import app.vercors.feature.config.ui.appearance.AppearanceConfigurationState
+import app.vercors.feature.config.ui.general.GeneralConfigurationEvent
+import app.vercors.feature.config.ui.general.GeneralConfigurationState
+import app.vercors.feature.config.ui.java.JavaConfigurationEvent
+import app.vercors.feature.config.ui.java.JavaConfigurationState
+import app.vercors.feature.config.ui.nativelibraries.NativeLibraryConfigurationEvent
+import app.vercors.feature.config.ui.nativelibraries.NativeLibraryConfigurationState
+import app.vercors.feature.config.ui.storage.StorageConfigurationEvent
+import app.vercors.feature.config.ui.storage.StorageConfigurationState
+import app.vercors.shared.ui.Store
 
 @Immutable
 data class ConfigurationState(
     val selectedTab: ConfigurationTab,
-    val selectedTheme: ThemeView?,
-    val themeList: List<ThemeView>,
-    val selectedAccent: ThemeNamedColorView?,
-    val animations: Boolean?,
-    val uiScalePercent: Int?,
     val horizontalTabs: Boolean?,
-    val metaApiUrl: String?,
-    val networkTimeoutSeconds: Int?,
-    val parallelDownloads: Int?,
-    val parallelFilesystemOperations: Int?,
-    val preferredPlatform: String?,
-    val platformList: List<ProjectPlatform>,
-    val startupScreen: StartupScreen?,
-    val homeCategories: List<HomeCategoryConfig>,
-    val javaInstallations: List<JavaInstallation>,
-    val preferredJavaByMajorVersion: Map<Int, String>,
-    val javaAddError: String?,
-    val javaScanInProgress: Boolean,
-    val jvmMemoryOptions: JvmMemoryOptions,
-    val totalMemoryMb: Int,
-    val nativeLibraryOptions: NativeLibraryOptions,
-    val showNativeLibraryOptions: Boolean,
-    val detectedGlfwPath: String?,
-    val detectedOpenAlPath: String?,
-    val contentCacheSizeBytes: Long?,
-    val promptClearContentCache: Boolean,
-    val dataDirectory: String,
-    val canChangeDataDirectory: Boolean,
-    val promptChangeDataDirectory: Boolean,
-    val changeDataDirectoryDialog: ChangeDataDirectoryDialog,
-    val appName: String,
-    val appVersion: String,
-    val checkForUpdatesOnStart: Boolean?,
-    val checkForInstanceUpdates: Boolean?,
-    val updateChannel: UpdateChannel?,
-    val launcherUpdate: LauncherUpdateState,
-    val promptRestartForUpdate: Boolean,
-)
-
-@Immutable
-data class ThemeView(
-    val id: String,
-    val displayName: String,
-    val accents: List<ThemeNamedColorView>,
-    val defaultAccent: ThemeNamedColorView,
-)
-
-@Immutable
-data class ThemeNamedColorView(
-    val id: String,
-    val name: String,
-    val color: Color,
+    val showNativeLibrariesTab: Boolean,
+    val updateAvailable: Boolean,
+    val generalContent: Store<GeneralConfigurationState, GeneralConfigurationEvent>,
+    val advancedContent: Store<AdvancedConfigurationState, AdvancedConfigurationEvent>,
+    val appearanceContent: Store<AppearanceConfigurationState, AppearanceConfigurationEvent>,
+    val javaContent: Store<JavaConfigurationState, JavaConfigurationEvent>,
+    val nativeLibrariesContent: Store<NativeLibraryConfigurationState, NativeLibraryConfigurationEvent>,
+    val storageContent: Store<StorageConfigurationState, StorageConfigurationEvent>,
+    val aboutContent: Store<AboutConfigurationState, AboutConfigurationEvent>,
 )

@@ -18,7 +18,7 @@
     <string name="homeSectionsDesc">Which sections are shown on the Home screen, and in what order.</string>
     <string name="homeCategoryModpacks">Modpacks</string>
 
-    <string name="ui">UI</string>
+    <string name="appearance">Appearance</string>
     <string name="theme">Theme</string>
     <string name="themeDesc">The UI theme of the application.</string>
     <string name="accent">Accent</string>
