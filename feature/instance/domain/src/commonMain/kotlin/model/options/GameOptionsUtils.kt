@@ -3,8 +3,7 @@ package app.vercors.feature.instance.domain.model.options
 import kotlin.time.Instant
 
 private const val VERSION_KEY = "version"
-private const val KEYBIND_PREFIX = "key_"
-private const val MODERN_KEY_PREFIX = "key."
+internal const val KEYBIND_PREFIX = "key_"
 
 // 17w43a moved to LWJGL3: keybinds became named keys instead of LWJGL2 integer codes
 val MODERN_KEYBINDS_SINCE: Instant = Instant.parse("2017-10-25T00:00:00Z")
@@ -83,15 +82,6 @@ fun optionsCategoryOf(key: String): OptionsCategory? = when {
     key in LANGUAGE_KEYS -> OptionsCategory.Language
     key in RESOURCE_PACKS_KEYS -> OptionsCategory.ResourcePacks
     else -> OptionsCategory.Other
-}
-
-fun GameOptions.keybindFormat(): KeybindFormat? {
-    val keybinds = values.filterKeys { it.startsWith(KEYBIND_PREFIX) }.values
-    return when {
-        keybinds.any { it.startsWith(MODERN_KEY_PREFIX) } -> KeybindFormat.Modern
-        keybinds.any { it.trim().toIntOrNull() != null } -> KeybindFormat.Legacy
-        else -> null
-    }
 }
 
 fun GameOptions.filterCategories(categories: Set<OptionsCategory>): GameOptions =

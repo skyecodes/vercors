@@ -176,10 +176,10 @@
     <string name="copyOptionsSource">Copy from</string>
     <string name="defaultOptionsSource">Default options</string>
     <string name="optionsCategories">Options to copy</string>
-    <string name="optionsVersionMismatch">%1$s is on Minecraft %2$s and this instance on %3$s. Keybinds are skipped when only one of them predates 1.13.</string>
+    <string name="optionsVersionMismatch">%1$s is on Minecraft %2$s and this instance on %3$s. Keybinds are converted if only one of them predates 1.13, and settings this version doesn't have are ignored by the game.</string>
     <string name="optionsReplaceFilesNotice">The selected server list and saved hotbars replace this instance's own.</string>
     <string name="optionsCopied">Options copied</string>
-    <string name="optionsCopiedKeybindsSkipped">Options copied, keybinds skipped: their format doesn't match this game version</string>
+    <string name="optionsCopiedKeybindsSkipped">Options copied, keybinds skipped: couldn't tell which keybind format this game version uses</string>
     <string name="noOptionsSources">No other instance or default options to copy from</string>
     <string name="defaultOptionsDescription">Applied automatically to every new instance on its first launch, on top of the options a modpack ships.</string>
     <string name="defaultOptionsReplaceNotice">This replaces the current default options, saved from %1$s.</string>
