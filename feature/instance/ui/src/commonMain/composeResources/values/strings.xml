@@ -19,6 +19,7 @@
     <string name="errorImportUnsupportedFormat">This file isn't a recognized Vercors, PrismLauncher or Modrinth instance export</string>
     <string name="errorImportUnsupportedPackVersion">This Vercors pack was made by a newer version of Vercors</string>
     <string name="errorImportParseFailed">Failed to read the exported instance file</string>
+    <string name="errorLocalPackInstallFailed">Failed to install the pack's files</string>
     <string name="errorImportExtractionFailed">Failed to extract the imported instance's files</string>
     <string name="extractingFiles">Extracting files...</string>
 
@@ -146,6 +147,13 @@
     <string name="checkForModpackUpdatesDesc">Look for a newer version of this modpack.</string>
     <string name="checkForContentUpdatesDesc">Look for newer versions of the mods, resource packs and shader packs installed in this instance.</string>
     <string name="checkForUpdatesAutomatically">Check automatically when opening this instance</string>
+    <string name="updateFromFile">Update from file...</string>
+    <string name="promptLocalPackUpdate">Update this instance from %1$s to %2$s (Minecraft %3$s)? Files from the previous version are replaced, files you added yourself are kept. Your worlds and game settings are never overwritten.</string>
+    <string name="promptLocalPackUpdateNoRecord">Update this instance to %2$s (Minecraft %3$s)? Vercors has no record of the files this instance got from its previous pack, so files missing from the new version stay installed. Your worlds and game settings are never overwritten.</string>
+    <string name="promptLocalPackUpdateOtherPack">This file contains %2$s, but this instance was installed from %1$s. Update it anyway (Minecraft %3$s)? Files from the previous pack are replaced, files you added yourself are kept.</string>
+    <string name="importAsNewInstance">Create a new instance</string>
+    <string name="importUpdateInstance">Update %1$s</string>
+    <string name="importTarget">Import into</string>
     <string name="installedModpackVersion">Installed version: %1$s</string>
     <string name="checkForUpdatesNow">Check for updates</string>
     <string name="checkingForUpdates">Checking for updates...</string>

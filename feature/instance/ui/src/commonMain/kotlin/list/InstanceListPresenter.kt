@@ -97,9 +97,14 @@ class InstanceListPresenter(
             InstanceListEvent.OnCreateInstanceClick -> setPromptCreateInstance(true)
             is InstanceListEvent.OnCreateInstanceResult -> {
                 setPromptCreateInstance(false)
-                val result = event.result
-                if (result is CreateInstanceResult.Created) navigator.goTo(InstanceDetailsScreen(result.instanceId))
-                else if (result == CreateInstanceResult.SearchModpacks) navigator.goTo(ProjectListScreen(initialType = ProjectType.Modpack))
+                when (val result = event.result) {
+                    is CreateInstanceResult.Created -> navigator.goTo(InstanceDetailsScreen(result.instanceId))
+                    is CreateInstanceResult.Updated -> navigator.goTo(InstanceDetailsScreen(result.instanceId))
+                    CreateInstanceResult.SearchModpacks ->
+                        navigator.goTo(ProjectListScreen(initialType = ProjectType.Modpack))
+
+                    CreateInstanceResult.Cancelled -> Unit
+                }
             }
 
             is InstanceListEvent.OnInstanceClick -> navigator.goTo(InstanceDetailsScreen(event.instanceId))

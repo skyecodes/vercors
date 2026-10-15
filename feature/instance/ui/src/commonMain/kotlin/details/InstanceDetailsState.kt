@@ -18,6 +18,9 @@ import app.vercors.feature.instance.ui.details.worlds.InstalledWorldsEvent
 import app.vercors.feature.instance.ui.details.worlds.InstalledWorldsState
 import app.vercors.feature.instance.ui.export.ExportInstanceDialog
 import app.vercors.feature.instance.ui.install.FinishInstallationDialog
+import app.vercors.feature.project.domain.model.pack.InstalledPack
+import app.vercors.feature.project.domain.model.pack.LocalPack
+import app.vercors.feature.project.domain.model.pack.matches
 import app.vercors.feature.project.domain.model.update.ModpackUpdate
 import app.vercors.shared.domain.model.JvmMemoryOptions
 import app.vercors.shared.domain.model.NativeLibraryOptions
@@ -50,7 +53,43 @@ data class InstanceDetailsState(
     val installJavaProgressDialog: InstallJavaProgressDialog,
     val modpackUpdate: ModpackUpdateView?,
     val promptModpackUpdate: Boolean,
+    val localPackUpdatePrompt: LocalPackUpdatePrompt? = null,
 )
+
+@Immutable
+enum class LocalPackUpdateKind {
+    SamePack,
+    NoRecord,
+    OtherPack,
+}
+
+@Immutable
+data class LocalPackUpdatePrompt(
+    val pack: LocalPack,
+    val currentLabel: String,
+    val newLabel: String,
+    val gameVersion: String,
+    val kind: LocalPackUpdateKind,
+)
+
+fun LocalPack.toUpdatePrompt(installedPack: InstalledPack?): LocalPackUpdatePrompt = LocalPackUpdatePrompt(
+    pack = this,
+    currentLabel = installedPack?.let { packLabel(it.name, it.versionName) }.orEmpty(),
+    newLabel = packLabel(name, versionName),
+    gameVersion = gameVersion,
+    kind = when {
+        installedPack == null -> LocalPackUpdateKind.NoRecord
+        installedPack.matches(this) -> LocalPackUpdateKind.SamePack
+        else -> LocalPackUpdateKind.OtherPack
+    }
+)
+
+// A platform version name often already contains the pack name ("Fabulously Optimized 6.4.0")
+private fun packLabel(name: String, versionName: String?): String = when {
+    versionName == null -> name
+    versionName.contains(name, ignoreCase = true) -> versionName
+    else -> "$name $versionName"
+}
 
 @Immutable
 data class ModpackUpdateView(

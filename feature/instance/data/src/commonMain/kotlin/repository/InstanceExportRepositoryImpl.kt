@@ -30,7 +30,7 @@ import kotlinx.serialization.json.Json
 import opensavvy.progress.Progress
 import opensavvy.progress.loading
 
-private val ALWAYS_EXCLUDED_ENTRIES = setOf("natives")
+private val ALWAYS_EXCLUDED_ENTRIES = setOf("natives", ".vercors")
 private val EXCLUDED_BY_DEFAULT_ENTRIES =
     setOf("logs", "crash-reports", "screenshots", "downloads", ".cache", ".fabric", ".mixin.out")
 private val HASHED_CONTENT_DIRS = setOf("mods", "resourcepacks", "shaderpacks")

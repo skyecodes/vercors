@@ -27,6 +27,7 @@ import app.vercors.feature.instance.ui.details.worlds.InstalledWorldsPresenter
 import app.vercors.feature.instance.ui.export.ExportInstanceDialog
 import app.vercors.feature.instance.ui.export.ExportInstanceTarget
 import app.vercors.feature.instance.ui.install.FinishInstallationDialog
+import app.vercors.feature.instance.ui.install.LocalPackUpdateLauncher
 import app.vercors.feature.instance.ui.install.notifyModpackInstallResult
 import app.vercors.feature.instance.ui.list.InstanceListScreen
 import app.vercors.feature.java.domain.model.JavaRuntimeInstallStatus
@@ -113,6 +114,9 @@ class InstanceDetailsPresenter(
     private val checkInstanceUpdates: CheckInstanceUpdatesUseCase,
     private val shouldAutoCheckInstanceUpdates: ShouldAutoCheckInstanceUpdatesUseCase,
     private val updateModpack: UpdateModpackUseCase,
+    private val parseLocalPack: ParseLocalPackUseCase,
+    private val getInstalledPack: GetInstalledPackUseCase,
+    private val localPackUpdateLauncher: LocalPackUpdateLauncher,
 ) : Presenter<InstanceDetailsState, InstanceDetailsEvent> {
     @Composable
     override fun present(): Store<InstanceDetailsState, InstanceDetailsEvent> {
@@ -172,6 +176,9 @@ class InstanceDetailsPresenter(
             observeInstanceUpdates(screen.instanceId).map { it?.modpack }
         }.collectAsState(null)
         val (promptModpackUpdate, setPromptModpackUpdate) = remember { mutableStateOf(false) }
+        val (localPackUpdatePrompt, setLocalPackUpdatePrompt) = remember {
+            mutableStateOf<LocalPackUpdatePrompt?>(null)
+        }
         AutoCheckUpdatesEffect(currentInstance, configuration.valueOrNull?.checkForInstanceUpdates)
 
         LaunchedEffect(screen.instanceId, screen.autoLaunch) {
@@ -206,6 +213,7 @@ class InstanceDetailsPresenter(
             installJavaProgressDialog = installJavaProgressDialog,
             modpackUpdate = currentInstance?.let { modpackUpdate?.toView(it.gameVersion) },
             promptModpackUpdate = promptModpackUpdate,
+            localPackUpdatePrompt = localPackUpdatePrompt,
         ) + { event ->
             handleEvent(
                 event = event,
@@ -229,6 +237,8 @@ class InstanceDetailsPresenter(
                 setPendingQuickPlayTarget = setPendingQuickPlayTarget,
                 modpackUpdate = modpackUpdate,
                 setPromptModpackUpdate = setPromptModpackUpdate,
+                localPackUpdatePrompt = localPackUpdatePrompt,
+                setLocalPackUpdatePrompt = setLocalPackUpdatePrompt,
             )
         }
     }
@@ -272,6 +282,8 @@ class InstanceDetailsPresenter(
         setPendingQuickPlayTarget: (QuickPlayTarget?) -> Unit,
         modpackUpdate: ModpackUpdate?,
         setPromptModpackUpdate: (Boolean) -> Unit,
+        localPackUpdatePrompt: LocalPackUpdatePrompt?,
+        setLocalPackUpdatePrompt: (LocalPackUpdatePrompt?) -> Unit,
     ) {
         when (event) {
             InstanceDetailsEvent.OnLaunchClick -> handleLaunch(
@@ -377,7 +389,40 @@ class InstanceDetailsPresenter(
                 modpackUpdate = modpackUpdate,
                 setPromptModpackUpdate = setPromptModpackUpdate,
             )
+
+            is InstanceDetailsEvent.OnUpdateFromFileSelected ->
+                handleUpdateFromFileSelected(event, setLocalPackUpdatePrompt)
+
+            is InstanceDetailsEvent.OnConfirmLocalPackUpdate -> handleConfirmLocalPackUpdate(
+                event = event,
+                currentInstance = currentInstance,
+                localPackUpdatePrompt = localPackUpdatePrompt,
+                setLocalPackUpdatePrompt = setLocalPackUpdatePrompt,
+            )
         }
+    }
+
+    private fun handleUpdateFromFileSelected(
+        event: InstanceDetailsEvent.OnUpdateFromFileSelected,
+        setLocalPackUpdatePrompt: (LocalPackUpdatePrompt?) -> Unit,
+    ) {
+        globalScope.launch {
+            either { parseLocalPack(event.sourcePath) }
+                .onLeft { error -> snackbarService.error { error.message } }
+                .onRight { pack -> setLocalPackUpdatePrompt(pack.toUpdatePrompt(getInstalledPack(screen.instanceId))) }
+        }
+    }
+
+    private fun handleConfirmLocalPackUpdate(
+        event: InstanceDetailsEvent.OnConfirmLocalPackUpdate,
+        currentInstance: InstanceView?,
+        localPackUpdatePrompt: LocalPackUpdatePrompt?,
+        setLocalPackUpdatePrompt: (LocalPackUpdatePrompt?) -> Unit,
+    ) {
+        setLocalPackUpdatePrompt(null)
+        if (!event.result || currentInstance == null || localPackUpdatePrompt == null) return
+        if (hasActiveInstanceJob(screen.instanceId)) return
+        localPackUpdateLauncher.launch(screen.instanceId, currentInstance.name, localPackUpdatePrompt.pack)
     }
 
     private fun handleConfirmModpackUpdate(

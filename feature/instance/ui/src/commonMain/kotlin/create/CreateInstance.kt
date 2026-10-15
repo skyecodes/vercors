@@ -9,9 +9,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import app.vercors.core.ui.animation.AppAnimatedContent
 import app.vercors.core.ui.animation.appAnimateColorAsState
-import app.vercors.core.ui.component.AppIconTextButton
-import app.vercors.core.ui.component.AppText
-import app.vercors.core.ui.component.AppTextField
+import app.vercors.core.ui.component.*
 import app.vercors.core.ui.layout.AppDialog
 import app.vercors.core.ui.layout.AppForm
 import app.vercors.core.ui.layout.AppLoading
@@ -210,12 +208,30 @@ private fun ImportInstanceForm(state: CreateInstanceState) {
     if (state.importParsing) AppLoading()
 
     if (state.importPreview != null) {
-        AppTextField(
-            label = stringResource(SharedRes.string.instanceName),
-            initialValue = state.importInstanceName,
-            onValueChange = { eventSink(CreateInstanceEvent.OnImportInstanceNameChange(it)) },
-            modifier = Modifier.width(300.dp),
-        )
+        if (state.importTargets.isNotEmpty()) {
+            AppSelectField(
+                value = state.selectedImportTargetId,
+                items = listOf(null) + state.importTargets.map { it.id },
+                onValueChange = { eventSink(CreateInstanceEvent.OnImportTargetSelected(it)) },
+                label = stringResource(InstanceRes.string.importTarget),
+                itemRenderer = { id, _ ->
+                    val target = state.importTargets.find { it.id == id }
+                    AppSelectItem(
+                        if (target == null) stringResource(InstanceRes.string.importAsNewInstance)
+                        else stringResource(InstanceRes.string.importUpdateInstance, target.name)
+                    )
+                },
+                modifier = Modifier.width(300.dp),
+            )
+        }
+        if (!state.isImportUpdate) {
+            AppTextField(
+                label = stringResource(SharedRes.string.instanceName),
+                initialValue = state.importInstanceName,
+                onValueChange = { eventSink(CreateInstanceEvent.OnImportInstanceNameChange(it)) },
+                modifier = Modifier.width(300.dp),
+            )
+        }
     }
 
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -226,8 +242,10 @@ private fun ImportInstanceForm(state: CreateInstanceState) {
         )
         AppIconTextButton(
             onClick = { eventSink(CreateInstanceEvent.OnConfirmImportClick) },
-            text = stringResource(InstanceRes.string.import),
-            imageVector = Lucide.Import,
+            text = stringResource(
+                if (state.isImportUpdate) InstanceRes.string.updateModpack else InstanceRes.string.import
+            ),
+            imageVector = if (state.isImportUpdate) Lucide.RefreshCw else Lucide.Import,
             backgroundColor = Theme[colors][primary],
             contentColor = Theme[colors][onPrimary],
             enabled = state.canConfirmImport,

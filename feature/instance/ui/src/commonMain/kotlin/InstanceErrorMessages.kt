@@ -8,6 +8,7 @@ import app.vercors.feature.instance.domain.model.InstanceValidationError
 import app.vercors.feature.instance.domain.model.localimport.LocalImportError
 import app.vercors.feature.launcher.domain.model.InstanceLaunchError
 import app.vercors.feature.project.domain.model.ManualDownloadError
+import app.vercors.feature.project.domain.model.pack.LocalPackError
 import app.vercors.feature.project.domain.model.update.InstanceUpdateError
 import org.jetbrains.compose.resources.stringResource
 
@@ -63,4 +64,13 @@ val LocalImportError.message: String
         LocalImportError.NotPrismFormat -> stringResource(InstanceRes.string.errorImportUnsupportedFormat)
         LocalImportError.ParseFailed -> stringResource(InstanceRes.string.errorImportParseFailed)
         LocalImportError.ExtractionFailed -> stringResource(InstanceRes.string.errorImportExtractionFailed)
+    }
+
+val LocalPackError.message: String
+    @Composable get() = when (this) {
+        LocalPackError.UnsupportedFormat -> stringResource(InstanceRes.string.errorImportUnsupportedFormat)
+        LocalPackError.ParseFailed -> stringResource(InstanceRes.string.errorImportParseFailed)
+        LocalPackError.UnsupportedPackVersion -> stringResource(InstanceRes.string.errorImportUnsupportedPackVersion)
+        LocalPackError.InstallFailed -> stringResource(InstanceRes.string.errorLocalPackInstallFailed)
+        LocalPackError.InstanceNotFound -> stringResource(InstanceRes.string.errorUpdateInstanceNotFound)
     }

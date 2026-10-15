@@ -86,6 +86,8 @@ class AppPaths(val root: Path) {
 
     fun instanceIconFile(instanceId: String, extension: String): Path = Path(gameDir(instanceId), "icon.$extension")
 
+    fun installedPackFile(instanceId: String): Path = Path(gameDir(instanceId), ".vercors", "pack.json")
+
     fun javaRuntimeDir(component: String): Path = Path(data, "java", "runtimes", component)
 
     private fun String.pathSegments(): Array<String> = split('/').filter { it.isNotBlank() }.toTypedArray()

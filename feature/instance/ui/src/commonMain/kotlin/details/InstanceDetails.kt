@@ -52,6 +52,7 @@ import nl.jacobras.humanreadable.HumanReadable
 import opensavvy.state.progressive.onFailure
 import opensavvy.state.progressive.onIncomplete
 import opensavvy.state.progressive.onSuccess
+import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 
 @CircuitInject(InstanceDetailsScreen::class, AppScope::class)
@@ -144,6 +145,23 @@ fun InstanceDetails(
                     )
                 )
                 eventSink(InstanceDetailsEvent.OnConfirmModpackUpdate(result))
+            }
+        }
+
+        state.localPackUpdatePrompt?.let { prompt ->
+            OverlayEffect(prompt) {
+                val result = show(
+                    ConfirmDialog(
+                        messageResource = prompt.kind.messageResource,
+                        messageArgs = listOf(prompt.currentLabel, prompt.newLabel, prompt.gameVersion),
+                        actionButton = ConfirmDialogButton(
+                            textResource = InstanceRes.string.updateModpack,
+                            icon = Lucide.Download,
+                            style = ConfirmDialogButtonStyle.Primary,
+                        ),
+                    )
+                )
+                eventSink(InstanceDetailsEvent.OnConfirmLocalPackUpdate(result))
             }
         }
 
@@ -560,6 +578,9 @@ private fun InstanceHeaderActionButton(instance: InstanceView, isInstanceEdited:
 @Composable
 context(eventSink: EventSink<InstanceDetailsEvent>)
 private fun InstanceHeaderMenu(instance: InstanceView) {
+    val packPickerLauncher = rememberFilePickerLauncher(type = FileKitType.File("zip", "mrpack", "vcpack")) { file ->
+        file?.let { eventSink(InstanceDetailsEvent.OnUpdateFromFileSelected(it.path)) }
+    }
     AppMenuButton {
         if (instance.status is InstanceStatus.Installing) {
             AppMenuItem(
@@ -612,6 +633,11 @@ private fun InstanceHeaderMenu(instance: InstanceView) {
                 text = stringResource(InstanceRes.string.exportInstance),
                 imageVector = Lucide.Share
             )
+            AppMenuItem(
+                onClick = packPickerLauncher::launch,
+                text = stringResource(InstanceRes.string.updateFromFile),
+                imageVector = Lucide.FileUp
+            )
         }
         AppMenuItem(
             onClick = { eventSink(InstanceDetailsEvent.OnDeleteClick) },
@@ -646,4 +672,11 @@ private val InstanceDetailsTab.title: String
         InstanceDetailsTab.ShaderPacks -> stringResource(SharedRes.string.shaderPacks)
         InstanceDetailsTab.Worlds -> stringResource(InstanceRes.string.worlds)
         InstanceDetailsTab.Servers -> stringResource(InstanceRes.string.servers)
+    }
+
+private val LocalPackUpdateKind.messageResource: StringResource
+    get() = when (this) {
+        LocalPackUpdateKind.SamePack -> InstanceRes.string.promptLocalPackUpdate
+        LocalPackUpdateKind.NoRecord -> InstanceRes.string.promptLocalPackUpdateNoRecord
+        LocalPackUpdateKind.OtherPack -> InstanceRes.string.promptLocalPackUpdateOtherPack
     }

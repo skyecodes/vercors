@@ -9,9 +9,12 @@ import app.vercors.feature.project.domain.model.ManualDownloadError
 import app.vercors.feature.project.domain.model.modpack.ModpackManifest
 import app.vercors.feature.project.domain.model.modpack.ModpackManifestFile
 import app.vercors.feature.project.domain.model.modpack.ModpackResolutionError
+import app.vercors.feature.project.domain.model.pack.InstalledPack
+import app.vercors.feature.project.domain.model.pack.planPackFileReplacement
 import app.vercors.feature.project.domain.model.toContentKindOrNull
 import app.vercors.feature.project.domain.model.update.InstanceUpdateError
 import app.vercors.feature.project.domain.model.update.ModpackUpdate
+import app.vercors.feature.project.domain.repository.InstalledPackRepository
 import app.vercors.feature.project.domain.repository.InstanceUpdateRepository
 import arrow.core.raise.Raise
 import arrow.core.raise.context.either
@@ -35,6 +38,8 @@ class UpdateModpackUseCase(
     private val updateInstanceStatus: UpdateInstanceStatusUseCase,
     private val instanceContentRepository: InstanceContentRepository,
     private val instanceUpdateRepository: InstanceUpdateRepository,
+    private val installedPackRepository: InstalledPackRepository,
+    private val removeInstalledPackFiles: RemoveInstalledPackFilesUseCase,
 ) {
     context(_: Raise<InstanceUpdateError>)
     suspend operator fun invoke(
@@ -57,6 +62,7 @@ class UpdateModpackUseCase(
                 logger.warn { "Couldn't fetch the previous manifest of ${instance.id}, keeping its old files: $error" }
                 null
             }
+        val oldPack = installedPackRepository.get(instance.id)
         val disabled = oldManifest?.let { removeReplacedFiles(instance, it, newManifest) }.orEmpty()
         val newModpackInfo = InstanceModpackInfo(
             newManifest.platformId,
@@ -69,7 +75,15 @@ class UpdateModpackUseCase(
 
         val ok = runModpackInstall(instance.id, newModpackInfo, newManifest, onManualDownloadError)
         restoreDisabledFiles(instance, newManifest, disabled)
+        removeStaleOverrides(instance.id, oldPack)
         return ok
+    }
+
+    // The manifest diff can't see files the old pack shipped through its overrides
+    private suspend fun removeStaleOverrides(instanceId: InstanceId, oldPack: InstalledPack?) {
+        val newPack = installedPackRepository.get(instanceId) ?: return
+        if (oldPack == null || oldPack == newPack) return
+        removeInstalledPackFiles(instanceId, planPackFileReplacement(oldPack, newPack, emptySet()).removed)
     }
 
     private suspend fun removeReplacedFiles(

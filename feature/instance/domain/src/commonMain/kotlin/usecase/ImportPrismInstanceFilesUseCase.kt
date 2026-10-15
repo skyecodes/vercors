@@ -2,6 +2,7 @@ package app.vercors.feature.instance.domain.usecase
 
 import app.vercors.feature.instance.domain.model.InstanceId
 import app.vercors.feature.instance.domain.model.localimport.LocalImportError
+import app.vercors.feature.instance.domain.model.localimport.PrismImportResult
 import app.vercors.feature.instance.domain.model.localimport.PrismInstanceInfo
 import app.vercors.feature.instance.domain.repository.PrismInstanceImportRepository
 import arrow.core.raise.Raise
@@ -17,6 +18,8 @@ class ImportPrismInstanceFilesUseCase(
         sourcePath: String,
         instanceId: InstanceId,
         info: PrismInstanceInfo,
+        preserveUserState: Boolean = false,
         onProgress: (Progress) -> Unit = {}
-    ): String? = prismInstanceImportRepository.importGameFiles(sourcePath, instanceId, info, onProgress)
+    ): PrismImportResult =
+        prismInstanceImportRepository.importGameFiles(sourcePath, instanceId, info, preserveUserState, onProgress)
 }

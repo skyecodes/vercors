@@ -1,7 +1,7 @@
 package app.vercors.feature.project.domain.usecase
 
-import app.vercors.feature.project.domain.model.modpack.InstalledModpackFile
 import app.vercors.feature.project.domain.model.modpack.ModpackInstallError
+import app.vercors.feature.project.domain.model.modpack.ModpackInstallResult
 import app.vercors.feature.project.domain.model.modpack.ModpackManifest
 import app.vercors.feature.project.domain.repository.ProjectRepository
 import arrow.core.raise.Raise
@@ -17,7 +17,8 @@ class InstallModpackFilesUseCase(
         manifest: ModpackManifest,
         instanceId: String,
         localSourcePath: String? = null,
+        preserveUserState: Boolean = false,
         onProgress: (Progress) -> Unit = {}
-    ): List<InstalledModpackFile> =
-        projectRepository.installModpackFiles(manifest, instanceId, localSourcePath, onProgress)
+    ): ModpackInstallResult =
+        projectRepository.installModpackFiles(manifest, instanceId, localSourcePath, preserveUserState, onProgress)
 }

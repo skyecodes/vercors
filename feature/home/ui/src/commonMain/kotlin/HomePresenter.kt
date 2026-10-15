@@ -91,13 +91,7 @@ class HomePresenter(
     ) {
         when (event) {
             HomeEvent.OnCreateInstanceClick -> setPromptCreateInstance(true)
-            is HomeEvent.OnCreateInstanceResult -> {
-                setPromptCreateInstance(false)
-                val result = event.result
-                if (result is CreateInstanceResult.Created) navigator.goTo(InstanceDetailsScreen(event.result.instanceId))
-                else if (result == CreateInstanceResult.SearchModpacks) navigator.goTo(ProjectListScreen(initialType = ProjectType.Modpack))
-            }
-
+            is HomeEvent.OnCreateInstanceResult -> handleCreateInstance(setPromptCreateInstance, event)
             is HomeEvent.OnProjectClick -> navigator.goTo(ProjectDetailsScreen(event.projectId))
             is HomeEvent.OnInstanceClick -> navigator.goTo(InstanceDetailsScreen(event.instanceId))
             is HomeEvent.OnInstanceLaunchClick -> instanceActions.launch(event.instanceId, navigator)
@@ -159,6 +153,21 @@ class HomePresenter(
                 )
 
             is HomeEvent.OnExportInstanceResult -> setExportInstanceDialog(null)
+        }
+    }
+
+    private fun handleCreateInstance(
+        setPromptCreateInstance: (Boolean) -> Unit,
+        event: HomeEvent.OnCreateInstanceResult
+    ) {
+        setPromptCreateInstance(false)
+        when (val result = event.result) {
+            is CreateInstanceResult.Created -> navigator.goTo(InstanceDetailsScreen(result.instanceId))
+            is CreateInstanceResult.Updated -> navigator.goTo(InstanceDetailsScreen(result.instanceId))
+            CreateInstanceResult.SearchModpacks ->
+                navigator.goTo(ProjectListScreen(initialType = ProjectType.Modpack))
+
+            CreateInstanceResult.Cancelled -> Unit
         }
     }
 
