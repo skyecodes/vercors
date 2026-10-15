@@ -20,7 +20,14 @@ actual class SystemServiceImpl : SystemService {
         }
     }
 
-    actual override val osArch: OsArch = OsArch.X64
+    @OptIn(ExperimentalForeignApi::class)
+    actual override val osArch: OsArch by lazy {
+        memScoped {
+            val res = alloc<utsname>()
+            uname(res.ptr)
+            res.machine.toKString().toOsArch()
+        }
+    }
 
     @OptIn(ExperimentalForeignApi::class)
     actual override val totalPhysicalMemoryBytes: Long? by lazy {

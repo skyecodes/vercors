@@ -106,6 +106,11 @@ internal fun PlatformNotFoundData.toDomain(): PlatformNotFound = PlatformNotFoun
 
 internal fun ProjectNotFoundData.toDomain(): ProjectNotFound = ProjectNotFound(notFoundProjectId from platformId)
 
+internal fun PlatformOrProjectNotFoundData.toDomain(): ProjectDetailsError = when (this) {
+    is ProjectNotFoundData -> toDomain()
+    is PlatformNotFoundData -> toDomain()
+}
+
 internal fun ProjectFileData.toDomain(platform: PlatformId): ProjectFile = ProjectFile(
     id = id,
     displayName = displayName,

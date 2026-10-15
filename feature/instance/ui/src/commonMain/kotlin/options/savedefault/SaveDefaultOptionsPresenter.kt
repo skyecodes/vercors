@@ -11,13 +11,17 @@ import app.vercors.feature.instance.ui.options.DEFAULT_SELECTED_OPTIONS_CATEGORI
 import app.vercors.shared.ui.*
 import arrow.core.raise.context.either
 import com.slack.circuit.overlay.OverlayNavigator
+import dev.zacsweers.metro.Assisted
+import dev.zacsweers.metro.AssistedFactory
+import dev.zacsweers.metro.AssistedInject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 
+@AssistedInject
 class SaveDefaultOptionsPresenter(
-    private val target: SaveDefaultOptionsTarget,
-    private val navigator: OverlayNavigator<SaveDefaultOptionsResult>,
+    @Assisted private val target: SaveDefaultOptionsTarget,
+    @Assisted private val navigator: OverlayNavigator<SaveDefaultOptionsResult>,
     private val globalScope: CoroutineScope,
     private val observeDefaultOptions: ObserveDefaultOptionsUseCase,
     private val saveDefaultOptions: SaveDefaultOptionsUseCase,
@@ -71,5 +75,13 @@ class SaveDefaultOptionsPresenter(
                     navigator.finish(SaveDefaultOptionsResult.Saved)
                 }
         }
+    }
+
+    @AssistedFactory
+    fun interface Factory {
+        fun create(
+            target: SaveDefaultOptionsTarget,
+            navigator: OverlayNavigator<SaveDefaultOptionsResult>
+        ): SaveDefaultOptionsPresenter
     }
 }

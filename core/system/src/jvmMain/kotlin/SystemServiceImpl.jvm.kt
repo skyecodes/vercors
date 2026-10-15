@@ -42,8 +42,7 @@ actual class SystemServiceImpl(
             ?: version
     }
 
-    actual override val osArch: OsArch =
-        if (System.getProperty("os.arch").endsWith("64")) OsArch.X64 else OsArch.X86
+    actual override val osArch: OsArch = System.getProperty("os.arch").toOsArch()
 
     override val canCopyToClipboard: Boolean by lazy {
         runCatching { Toolkit.getDefaultToolkit().systemClipboard != null }.getOrElse { false }

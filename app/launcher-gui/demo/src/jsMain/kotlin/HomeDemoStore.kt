@@ -5,6 +5,7 @@ import androidx.compose.runtime.Composable
 import app.vercors.feature.home.domain.model.HomeSectionType
 import app.vercors.feature.home.ui.HomeEvent
 import app.vercors.feature.home.ui.HomeState
+import app.vercors.feature.instance.ui.actions.InstanceActionsState
 import app.vercors.feature.instance.ui.create.CreateInstanceResult
 import app.vercors.launcher.demo.data.FEATURED_MODPACKS
 import app.vercors.launcher.demo.data.FEATURED_MODS
@@ -41,12 +42,17 @@ fun homeDemoStore(): Store<HomeState, HomeEvent> = Store(
                 data = ProgressiveOutcome.Success(FEATURED_MODS.map { it.toView() }),
             ),
         ),
-        promptCreateInstance = false,
-        createInstanceDialog = UnusedCreateInstanceDialog,
+        instanceActions = Store(
+            state = InstanceActionsState(
+                promptCreateInstance = false,
+                createInstanceDialog = UnusedCreateInstanceDialog,
+                pendingDeleteInstanceId = null,
+                copyInstanceDialog = null,
+                exportInstanceDialog = null,
+            ),
+            eventSink = {},
+        ),
         installTarget = null,
-        pendingDeleteInstanceId = null,
-        copyInstanceDialog = null,
-        exportInstanceDialog = null,
     ),
     eventSink = {},
 )

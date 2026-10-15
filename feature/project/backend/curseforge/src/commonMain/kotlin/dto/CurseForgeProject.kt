@@ -1,6 +1,7 @@
 package app.vercors.feature.project.backend.curseforge.dto
 
 import kotlinx.serialization.Serializable
+import kotlin.time.Instant
 
 @Serializable
 data class CurseForgeProject(
@@ -8,9 +9,9 @@ data class CurseForgeProject(
     val authors: List<Author>,
     val categories: List<CurseForgeCategory>,
     val classId: Int? = null,
-    val dateCreated: CurseForgeInstant,
-    val dateModified: CurseForgeInstant,
-    val dateReleased: CurseForgeInstant,
+    val dateCreated: Instant,
+    val dateModified: Instant,
+    val dateReleased: Instant,
     val downloadCount: Long,
     val gameId: Int,
     val gamePopularityRank: Int,

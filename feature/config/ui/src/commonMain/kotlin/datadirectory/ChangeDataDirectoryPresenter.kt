@@ -3,6 +3,7 @@ package app.vercors.feature.config.ui.datadirectory
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import app.vercors.core.domain.AppConstants
 import app.vercors.core.domain.toFractionOrNull
 import app.vercors.core.filesystem.withAppFolderName
 import app.vercors.feature.config.domain.model.DataDirectoryError
@@ -15,15 +16,20 @@ import app.vercors.shared.ui.Presenter
 import app.vercors.shared.ui.Store
 import arrow.core.raise.context.either
 import com.slack.circuit.overlay.OverlayNavigator
+import dev.zacsweers.metro.Assisted
+import dev.zacsweers.metro.AssistedFactory
+import dev.zacsweers.metro.AssistedInject
+import dev.zacsweers.metro.Named
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.io.files.Path
 import org.jetbrains.compose.resources.stringResource
 
+@AssistedInject
 class ChangeDataDirectoryPresenter(
-    private val currentPath: String,
-    private val appId: String,
-    private val navigator: OverlayNavigator<Unit>,
+    @Assisted private val currentPath: String,
+    @Named(AppConstants.APP_ID_KEY) private val appId: String,
+    @Assisted private val navigator: OverlayNavigator<Unit>,
     private val globalScope: CoroutineScope,
     private val moveDataDirectory: MoveDataDirectoryUseCase,
     private val appRestartService: AppRestartService,
@@ -122,6 +128,11 @@ class ChangeDataDirectoryPresenter(
                 }
                 .onRight { appRestartService.restart() }
         }
+    }
+
+    @AssistedFactory
+    fun interface Factory {
+        fun create(currentPath: String, navigator: OverlayNavigator<Unit>): ChangeDataDirectoryPresenter
     }
 }
 

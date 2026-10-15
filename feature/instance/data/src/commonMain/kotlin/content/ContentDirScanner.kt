@@ -4,15 +4,12 @@ import app.vercors.feature.instance.domain.model.ImportError
 import app.vercors.feature.instance.domain.model.InstalledContentFile
 import app.vercors.feature.instance.domain.model.InstanceId
 import arrow.core.raise.Raise
-import kotlinx.coroutines.flow.map
 import kotlinx.io.files.Path
 import opensavvy.state.coroutines.ProgressiveFlow
-import opensavvy.state.progressive.map
 
 abstract class ContentDirScanner internal constructor(private val engine: ContentDirScannerEngine) {
     fun observe(instanceId: InstanceId): ProgressiveFlow<Nothing, List<InstalledContentFile>> =
         engine.observe(instanceId)
-            .map { outcome -> outcome.map { entries -> entries.map { it.toDomain() } } }
 
     suspend fun recordOrigin(
         instanceId: InstanceId,

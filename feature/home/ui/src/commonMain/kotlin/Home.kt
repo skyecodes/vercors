@@ -40,6 +40,8 @@ import app.vercors.core.ui.modifier.appCard
 import app.vercors.core.ui.theme.*
 import app.vercors.feature.home.domain.model.HomeSectionType
 import app.vercors.feature.instance.ui.*
+import app.vercors.feature.instance.ui.actions.InstanceActionsEvent
+import app.vercors.feature.instance.ui.actions.InstanceActionsOverlays
 import app.vercors.feature.project.domain.model.ProjectId
 import app.vercors.feature.project.domain.model.ProjectType
 import app.vercors.feature.project.ui.*
@@ -66,38 +68,15 @@ fun Home(
     modifier: Modifier = Modifier,
 ) {
     val (state, eventSink) = store
-    with(eventSink) {
-        if (state.promptCreateInstance) {
-            OverlayEffect {
-                val result = show(state.createInstanceDialog)
-                eventSink(HomeEvent.OnCreateInstanceResult(result))
-            }
-        }
+    InstanceActionsOverlays(state.instanceActions)
 
+    with(eventSink) {
         state.installTarget?.let { target ->
             OverlayEffect {
                 when (target) {
                     is ProjectInstallTarget.Project -> eventSink(HomeEvent.OnInstallResult(show(target.dialog)))
                     is ProjectInstallTarget.Modpack -> eventSink(HomeEvent.OnInstallModpackResult(show(target.dialog)))
                 }
-            }
-        }
-
-        state.copyInstanceDialog?.let { dialog ->
-            OverlayEffect(dialog) {
-                eventSink(HomeEvent.OnCopyInstanceResult(show(dialog)))
-            }
-        }
-
-        state.exportInstanceDialog?.let { dialog ->
-            OverlayEffect(dialog) {
-                eventSink(HomeEvent.OnExportInstanceResult(show(dialog)))
-            }
-        }
-
-        state.pendingDeleteInstanceId?.let {
-            OverlayEffect(it) {
-                eventSink(HomeEvent.OnConfirmDeleteInstance(show(deleteInstanceConfirmDialog())))
             }
         }
 
@@ -206,17 +185,7 @@ private fun <T> LazyListScope.homeCardItem(
         is BriefInstanceView -> item(element.id) {
             BriefInstanceCard(
                 instance = element,
-                onInstanceClick = { eventSink(HomeEvent.OnInstanceClick(it)) },
-                onInstanceLaunchClick = { eventSink(HomeEvent.OnInstanceLaunchClick(it)) },
-                onInstanceStopClick = { eventSink(HomeEvent.OnInstanceStopClick(it)) },
-                onInstanceKillClick = { eventSink(HomeEvent.OnInstanceKillClick(it)) },
-                onOpenInstanceFolderClick = { eventSink(HomeEvent.OnOpenInstanceFolderClick(it)) },
-                onOpenProjectClick = { instanceId, platformId, projectId ->
-                    eventSink(HomeEvent.OnOpenProjectFromInstanceClick(instanceId, platformId, projectId))
-                },
-                onCopyClick = { instanceId, name -> eventSink(HomeEvent.OnCopyInstanceClick(instanceId, name)) },
-                onExportClick = { instanceId, name -> eventSink(HomeEvent.OnExportInstanceClick(instanceId, name)) },
-                onDeleteClick = { eventSink(HomeEvent.OnDeleteInstanceClick(it)) },
+                onEvent = { eventSink(HomeEvent.OnInstanceAction(it)) },
                 modifier = modifier.size(width = 150.dp, height = 150.dp),
                 origin = InstanceSharedElementOrigin.Home
             )
@@ -247,15 +216,7 @@ private fun LazyListScope.fakeCardItem(
         when (sectionType) {
             HomeSectionType.RecentlyPlayed -> BriefInstanceCard(
                 instance = null,
-                onInstanceClick = {},
-                onInstanceLaunchClick = {},
-                onInstanceStopClick = {},
-                onInstanceKillClick = {},
-                onOpenInstanceFolderClick = {},
-                onOpenProjectClick = { _, _, _ -> },
-                onCopyClick = { _, _ -> },
-                onExportClick = { _, _ -> },
-                onDeleteClick = {},
+                onEvent = {},
                 modifier = modifier.size(width = 150.dp, height = 150.dp),
                 origin = InstanceSharedElementOrigin.Home
             )
@@ -303,7 +264,7 @@ private fun NoInstanceFoundDisplay() {
         )
 
         AppIconTextButton(
-            onClick = { eventSink(HomeEvent.OnCreateInstanceClick) },
+            onClick = { eventSink(HomeEvent.OnInstanceAction(InstanceActionsEvent.OnCreateInstanceClick)) },
             text = stringResource(SharedRes.string.create),
             imageVector = Lucide.Plus,
             backgroundColor = Theme[colors][primary],

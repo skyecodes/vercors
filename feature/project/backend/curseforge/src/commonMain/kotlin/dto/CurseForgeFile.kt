@@ -1,6 +1,7 @@
 package app.vercors.feature.project.backend.curseforge.dto
 
 import kotlinx.serialization.Serializable
+import kotlin.time.Instant
 
 @Serializable
 data class CurseForgeFile(
@@ -9,9 +10,9 @@ data class CurseForgeFile(
     val displayName: String,
     val downloadCount: Long,
     val downloadUrl: String? = null,
-    val earlyAccessEndDate: CurseForgeInstant? = null,
+    val earlyAccessEndDate: Instant? = null,
     val exposeAsAlternative: Boolean? = null,
-    val fileDate: CurseForgeInstant,
+    val fileDate: Instant,
     val fileFingerprint: Long,
     val fileLength: Long,
     val fileName: String,
@@ -54,7 +55,7 @@ data class CurseForgeFile(
         val gameVersion: String,
         val gameVersionName: String,
         val gameVersionPadded: String,
-        val gameVersionReleaseDate: CurseForgeInstant,
+        val gameVersionReleaseDate: Instant,
         val gameVersionTypeId: Int? = null
     )
 }

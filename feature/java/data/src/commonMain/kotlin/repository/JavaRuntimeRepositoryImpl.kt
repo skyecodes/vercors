@@ -134,9 +134,19 @@ class JavaRuntimeRepositoryImpl(
     private fun String.toRuntimeFilePath(runtimeDir: Path): Path = Path(runtimeDir, *split("/").toTypedArray())
 }
 
+// Mojang publishes no linux-arm64 runtime yet, so that key resolves to ComponentNotAvailable instead of an x64 JVM
 private fun SystemService.mojangJavaRuntimeKey(): String = when (osType) {
-    OsType.Windows -> if (osArch == OsArch.X86) "windows-x86" else "windows-x64"
-    OsType.Linux -> if (osArch == OsArch.X86) "linux-i386" else "linux"
-    // macOS is Apple Silicon-only in this project (shared.gradle.kts only declares macosArm64()).
-    OsType.MacOs -> "mac-os-arm64"
+    OsType.Windows -> when (osArch) {
+        OsArch.X86 -> "windows-x86"
+        OsArch.X64 -> "windows-x64"
+        OsArch.Arm64 -> "windows-arm64"
+    }
+
+    OsType.Linux -> when (osArch) {
+        OsArch.X86 -> "linux-i386"
+        OsArch.X64 -> "linux"
+        OsArch.Arm64 -> "linux-arm64"
+    }
+
+    OsType.MacOs -> if (osArch == OsArch.Arm64) "mac-os-arm64" else "mac-os"
 }

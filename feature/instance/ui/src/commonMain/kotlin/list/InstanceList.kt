@@ -17,6 +17,8 @@ import app.vercors.core.ui.theme.colors
 import app.vercors.core.ui.theme.onPrimary
 import app.vercors.core.ui.theme.primary
 import app.vercors.feature.instance.ui.*
+import app.vercors.feature.instance.ui.actions.InstanceActionsEvent
+import app.vercors.feature.instance.ui.actions.InstanceActionsOverlays
 import app.vercors.shared.ui.EventSink
 import app.vercors.shared.ui.SharedRes
 import app.vercors.shared.ui.Store
@@ -25,7 +27,6 @@ import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Plus
 import com.composeunstyled.theme.Theme
 import com.slack.circuit.codegen.annotations.CircuitInject
-import com.slack.circuit.overlay.OverlayEffect
 import dev.zacsweers.metro.AppScope
 import org.jetbrains.compose.resources.stringResource
 
@@ -37,32 +38,9 @@ fun InstanceList(
 ) {
     val (state, eventSink) = store
 
+    InstanceActionsOverlays(state.instanceActions)
+
     with(eventSink) {
-        if (state.promptCreateInstance) {
-            OverlayEffect {
-                val result = show(state.createInstanceDialog)
-                eventSink(InstanceListEvent.OnCreateInstanceResult(result))
-            }
-        }
-
-        state.pendingDeleteInstanceId?.let {
-            OverlayEffect(it) {
-                eventSink(InstanceListEvent.OnConfirmDeleteInstance(show(deleteInstanceConfirmDialog())))
-            }
-        }
-
-        state.copyInstanceDialog?.let { dialog ->
-            OverlayEffect(dialog) {
-                eventSink(InstanceListEvent.OnCopyInstanceResult(show(dialog)))
-            }
-        }
-
-        state.exportInstanceDialog?.let { dialog ->
-            OverlayEffect(dialog) {
-                eventSink(InstanceListEvent.OnExportInstanceResult(show(dialog)))
-            }
-        }
-
         Column(
             modifier = modifier.padding(8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -79,32 +57,7 @@ fun InstanceList(
                     item(instance.id) {
                         BriefInstanceCard(
                             instance = instance,
-                            onInstanceClick = { eventSink(InstanceListEvent.OnInstanceClick(it)) },
-                            onInstanceLaunchClick = { eventSink(InstanceListEvent.OnInstanceLaunchClick(it)) },
-                            onInstanceStopClick = { eventSink(InstanceListEvent.OnInstanceStopClick(it)) },
-                            onInstanceKillClick = { eventSink(InstanceListEvent.OnInstanceKillClick(it)) },
-                            onOpenInstanceFolderClick = { eventSink(InstanceListEvent.OnOpenInstanceFolderClick(it)) },
-                            onOpenProjectClick = { instanceId, platformId, projectId ->
-                                eventSink(
-                                    InstanceListEvent.OnOpenProjectFromInstanceClick(
-                                        instanceId,
-                                        platformId,
-                                        projectId
-                                    )
-                                )
-                            },
-                            onCopyClick = { instanceId, name ->
-                                eventSink(
-                                    InstanceListEvent.OnCopyInstanceClick(
-                                        instanceId,
-                                        name
-                                    )
-                                )
-                            },
-                            onExportClick = { instanceId, name ->
-                                eventSink(InstanceListEvent.OnExportInstanceClick(instanceId, name))
-                            },
-                            onDeleteClick = { eventSink(InstanceListEvent.OnDeleteInstanceClick(it)) },
+                            onEvent = state.instanceActions.eventSink,
                             modifier = Modifier.fillMaxWidth().height(150.dp).appAnimateItem(),
                             origin = InstanceSharedElementOrigin.InstanceList,
                         )
@@ -122,7 +75,7 @@ fun InstanceListFilterCard(state: InstanceListState) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         AppIconTextButton(
-            onClick = { eventSink(InstanceListEvent.OnCreateInstanceClick) },
+            onClick = { state.instanceActions.eventSink(InstanceActionsEvent.OnCreateInstanceClick) },
             text = stringResource(SharedRes.string.create),
             imageVector = Lucide.Plus,
             backgroundColor = Theme[colors][primary],

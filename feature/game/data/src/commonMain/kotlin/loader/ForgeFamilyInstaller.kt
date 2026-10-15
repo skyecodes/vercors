@@ -13,6 +13,7 @@ import app.vercors.feature.game.domain.model.GameVersionDetails
 import app.vercors.feature.game.domain.model.LoaderInstallProfile
 import app.vercors.feature.game.domain.model.ModLoaderInstallError
 import app.vercors.feature.game.domain.model.ModLoaderType
+import app.vercors.feature.game.domain.service.key
 import app.vercors.shared.data.AppPaths
 import app.vercors.shared.data.FileValidationRequest
 import app.vercors.shared.data.FileValidationService
@@ -54,13 +55,12 @@ class ForgeFamilyInstaller(
     context(_: Raise<ModLoaderInstallError>)
     suspend fun install(
         loaderType: ModLoaderType,
-        loaderKey: String,
         gameVersion: GameVersionDetails,
         loaderVersion: String
-    ): LoaderInstallProfile = installMutexFor("$loaderKey-${gameVersion.id}-$loaderVersion").withLock {
+    ): LoaderInstallProfile = installMutexFor("${loaderType.key}-${gameVersion.id}-$loaderVersion").withLock {
         installForgeFamily(
             loaderType = loaderType,
-            loaderKey = loaderKey,
+            loaderKey = loaderType.key,
             gameVersion = gameVersion,
             loaderVersion = loaderVersion,
             appPaths = appPaths,

@@ -22,5 +22,5 @@ enum class OsType(val id: String) {
 }
 
 enum class OsArch(val id: String) {
-    X86("x86"), X64("x64")
+    X86("x86"), X64("x64"), Arm64("arm64")
 }

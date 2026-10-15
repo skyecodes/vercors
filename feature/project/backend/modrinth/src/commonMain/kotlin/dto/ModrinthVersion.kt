@@ -2,6 +2,7 @@ package app.vercors.feature.project.backend.modrinth.dto
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlin.time.Instant
 
 @Serializable
 data class ModrinthVersion(
@@ -17,7 +18,7 @@ data class ModrinthVersion(
     val versionType: ModrinthVersionType,
     val loaders: List<String> = emptyList(),
     @SerialName("date_published")
-    val datePublished: ModrinthInstant,
+    val datePublished: Instant,
     val files: List<ModrinthVersionFile> = emptyList(),
     val dependencies: List<ModrinthVersionDependency> = emptyList()
 )

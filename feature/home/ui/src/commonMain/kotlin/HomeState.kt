@@ -3,25 +3,19 @@ package app.vercors.feature.home.ui
 import androidx.compose.runtime.Immutable
 import app.vercors.feature.home.domain.model.HomeSectionError
 import app.vercors.feature.home.domain.model.HomeSectionType
-import app.vercors.feature.instance.domain.model.InstanceId
 import app.vercors.feature.instance.ui.BriefInstanceView
-import app.vercors.feature.instance.ui.copy.CopyInstanceDialog
-import app.vercors.feature.instance.ui.create.CreateInstanceResult
-import app.vercors.feature.instance.ui.export.ExportInstanceDialog
+import app.vercors.feature.instance.ui.actions.InstanceActionsEvent
+import app.vercors.feature.instance.ui.actions.InstanceActionsState
 import app.vercors.feature.project.ui.BriefProjectView
 import app.vercors.feature.project.ui.install.ProjectInstallTarget
-import app.vercors.shared.ui.overlay.DialogOverlay
+import app.vercors.shared.ui.Store
 import opensavvy.state.progressive.ProgressiveOutcome
 
 @Immutable
 data class HomeState(
     val sections: List<Section<*>>,
-    val promptCreateInstance: Boolean,
-    val createInstanceDialog: DialogOverlay<CreateInstanceResult>,
+    val instanceActions: Store<InstanceActionsState, InstanceActionsEvent>,
     val installTarget: ProjectInstallTarget?,
-    val pendingDeleteInstanceId: InstanceId?,
-    val copyInstanceDialog: CopyInstanceDialog?,
-    val exportInstanceDialog: ExportInstanceDialog?,
 ) {
     @Immutable
     sealed class Section<T>(

@@ -11,10 +11,15 @@ interface ModLoaderInstaller {
     suspend fun resolve(gameVersion: GameVersionDetails, loaderVersion: String): LoaderInstallProfile
 }
 
+const val FABRIC_LOADER_KEY = "fabric"
+const val QUILT_LOADER_KEY = "quilt"
+const val FORGE_LOADER_KEY = "forge"
+const val NEOFORGE_LOADER_KEY = "neoforge"
+
 val ModLoaderType.key: String
     get() = when (this) {
-        ModLoaderType.Fabric -> "fabric"
-        ModLoaderType.Quilt -> "quilt"
-        ModLoaderType.Forge -> "forge"
-        ModLoaderType.NeoForge -> "neoforge"
+        ModLoaderType.Fabric -> FABRIC_LOADER_KEY
+        ModLoaderType.Quilt -> QUILT_LOADER_KEY
+        ModLoaderType.Forge -> FORGE_LOADER_KEY
+        ModLoaderType.NeoForge -> NEOFORGE_LOADER_KEY
     }
