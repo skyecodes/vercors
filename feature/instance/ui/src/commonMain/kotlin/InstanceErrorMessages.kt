@@ -6,6 +6,7 @@ import app.vercors.feature.instance.domain.model.InstanceLoadingError
 import app.vercors.feature.instance.domain.model.InstanceNotFound
 import app.vercors.feature.instance.domain.model.InstanceValidationError
 import app.vercors.feature.instance.domain.model.localimport.LocalImportError
+import app.vercors.feature.instance.domain.model.options.InstanceOptionsError
 import app.vercors.feature.launcher.domain.model.InstanceLaunchError
 import app.vercors.feature.project.domain.model.ManualDownloadError
 import app.vercors.feature.project.domain.model.pack.LocalPackError
@@ -73,4 +74,13 @@ val LocalPackError.message: String
         LocalPackError.UnsupportedPackVersion -> stringResource(InstanceRes.string.errorImportUnsupportedPackVersion)
         LocalPackError.InstallFailed -> stringResource(InstanceRes.string.errorLocalPackInstallFailed)
         LocalPackError.InstanceNotFound -> stringResource(InstanceRes.string.errorUpdateInstanceNotFound)
+    }
+
+val InstanceOptionsError.message: String
+    @Composable get() = when (this) {
+        is InstanceOptionsError.InstanceNotFound -> stringResource(InstanceRes.string.errorNotFound, id)
+        is InstanceOptionsError.InstanceRunning -> stringResource(InstanceRes.string.errorOptionsInstanceRunning)
+        InstanceOptionsError.NoDefaultOptions,
+        InstanceOptionsError.ReadFailed,
+        InstanceOptionsError.WriteFailed -> stringResource(InstanceRes.string.errorOptionsFailed)
     }

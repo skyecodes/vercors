@@ -16,6 +16,7 @@ import app.vercors.feature.instance.domain.model.InstanceId
 import app.vercors.feature.instance.domain.model.InstanceLogEvent
 import app.vercors.feature.instance.domain.model.InstanceStatus
 import app.vercors.feature.instance.domain.repository.InstanceRepository
+import app.vercors.feature.instance.domain.usecase.ApplyDefaultOptionsUseCase
 import app.vercors.feature.instance.domain.usecase.UpdateInstanceUseCase
 import app.vercors.feature.java.domain.usecase.ResolveJavaInstallationUseCase
 import app.vercors.feature.launcher.domain.model.InstanceLaunchError
@@ -60,6 +61,7 @@ class LaunchInstanceUseCase(
     private val resolveNativeLibraryOptions: ResolveNativeLibraryOptionsUseCase,
     private val launcherService: LauncherService,
     private val updateInstance: UpdateInstanceUseCase,
+    private val applyDefaultOptions: ApplyDefaultOptionsUseCase,
     private val coroutineScope: CoroutineScope,
 ) {
     @OptIn(DelicateRaiseApi::class)
@@ -276,6 +278,7 @@ class LaunchInstanceUseCase(
         } ?: "java"
         val jvmMemoryOptions = resolveJvmMemoryOptions(instance.jvmMemoryOptions)
         val nativeLibraryOptions = resolveNativeLibraryOptions(instance.nativeLibraryOptions)
+        seedDefaultOptions(instance)
 
         return InstancePreparationResult(
             instance,
@@ -286,6 +289,19 @@ class LaunchInstanceUseCase(
             jvmMemoryOptions,
             nativeLibraryOptions
         )
+    }
+
+    private suspend fun seedDefaultOptions(instance: Instance) {
+        either { applyDefaultOptions(instance) }
+            .onLeft { logger.warn { "Could not apply default options to ${instance.id}: $it" } }
+            .onRight { result ->
+                if (result?.skippedCategories?.isNotEmpty() == true) {
+                    instanceRepository.addInstanceLog(
+                        instance.id,
+                        InstanceLogEvent.Launcher("Default keybinds skipped: incompatible with this game version")
+                    )
+                }
+            }
     }
 
     private fun offlineFallback(instanceId: InstanceId, account: Account): Account {

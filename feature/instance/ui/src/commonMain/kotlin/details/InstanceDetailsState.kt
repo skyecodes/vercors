@@ -18,6 +18,8 @@ import app.vercors.feature.instance.ui.details.worlds.InstalledWorldsEvent
 import app.vercors.feature.instance.ui.details.worlds.InstalledWorldsState
 import app.vercors.feature.instance.ui.export.ExportInstanceDialog
 import app.vercors.feature.instance.ui.install.FinishInstallationDialog
+import app.vercors.feature.instance.ui.options.copy.CopyOptionsDialog
+import app.vercors.feature.instance.ui.options.savedefault.SaveDefaultOptionsDialog
 import app.vercors.feature.project.domain.model.pack.InstalledPack
 import app.vercors.feature.project.domain.model.pack.LocalPack
 import app.vercors.feature.project.domain.model.pack.matches
@@ -38,6 +40,8 @@ data class InstanceDetailsState(
     val promptDeleteConfirmation: Boolean,
     val copyInstanceDialog: CopyInstanceDialog?,
     val exportInstanceDialog: ExportInstanceDialog?,
+    val copyOptionsDialog: CopyOptionsDialog?,
+    val saveDefaultOptionsDialog: SaveDefaultOptionsDialog?,
     val optionsContent: Store<InstanceOptionsState, InstanceOptionsEvent>,
     val modsContent: Store<InstalledContentState, InstalledContentEvent>,
     val resourcePacksContent: Store<InstalledContentState, InstalledContentEvent>,
