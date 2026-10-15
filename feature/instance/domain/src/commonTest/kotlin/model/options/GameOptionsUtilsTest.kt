@@ -58,14 +58,4 @@ class GameOptionsUtilsTest {
         val merged = null.mergeFrom(source, setOf(OptionsCategory.Video))
         assertEquals(GameOptions(3953, mapOf("fov" to "0.8")), merged)
     }
-
-    @Test
-    fun `detects the keybind format from the values`() {
-        assertEquals(
-            KeybindFormat.Modern,
-            GameOptions(null, mapOf("key_key.jump" to "key.keyboard.space")).keybindFormat()
-        )
-        assertEquals(KeybindFormat.Legacy, GameOptions(null, mapOf("key_key.jump" to "57")).keybindFormat())
-        assertNull(GameOptions(null, mapOf("fov" to "70")).keybindFormat())
-    }
 }

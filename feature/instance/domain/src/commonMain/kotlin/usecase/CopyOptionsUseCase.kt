@@ -41,11 +41,15 @@ class CopyOptionsUseCase(
 
         val targetSource = OptionsSource.Instance(targetId)
         val skipped = mutableSetOf<OptionsCategory>()
-        instanceOptionsRepository.readOptions(source)?.let { sourceOptions ->
+        instanceOptionsRepository.readOptions(source)?.let { readOptions ->
             val targetOptions = instanceOptionsRepository.readOptions(targetSource)
-            if (OptionsCategory.Keybinds in categories && !keybindsCompatible(sourceOptions, targetOptions, target)) {
-                skipped += OptionsCategory.Keybinds
+            val convertedOptions = if (OptionsCategory.Keybinds in categories) {
+                readOptions.withKeybindsFor(targetOptions, target)
+            } else {
+                readOptions
             }
+            if (convertedOptions == null) skipped += OptionsCategory.Keybinds
+            val sourceOptions = convertedOptions ?: readOptions
             val optionCategories = categories - FILE_OPTIONS_CATEGORIES - skipped
             if (optionCategories.isNotEmpty()) {
                 instanceOptionsRepository.writeOptions(
@@ -67,10 +71,11 @@ class CopyOptionsUseCase(
         return OptionsCopyResult(skipped)
     }
 
-    private suspend fun keybindsCompatible(source: GameOptions, target: GameOptions?, instance: Instance): Boolean {
-        val sourceFormat = source.keybindFormat() ?: return true
-        val targetFormat = target?.keybindFormat() ?: gameVersionKeybindFormat(instance.gameVersion) ?: return false
-        return sourceFormat == targetFormat
+    // Null when the target's keybind format can't be determined (no keybinds in its file, version not in the manifest)
+    private suspend fun GameOptions.withKeybindsFor(target: GameOptions?, instance: Instance): GameOptions? {
+        val sourceFormat = keybindFormat() ?: return this
+        val targetFormat = target?.keybindFormat() ?: gameVersionKeybindFormat(instance.gameVersion) ?: return null
+        return if (sourceFormat == targetFormat) this else convertKeybinds(targetFormat)
     }
 
     private suspend fun gameVersionKeybindFormat(gameVersion: String): KeybindFormat? =
