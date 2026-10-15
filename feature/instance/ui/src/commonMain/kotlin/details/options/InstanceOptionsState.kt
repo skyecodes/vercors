@@ -102,6 +102,7 @@ value class CheckForUpdatesEdit(val enabled: Boolean?)
 @Immutable
 data class UpdateCheckView(
     val isModpack: Boolean,
+    val installedModpackVersion: String?,
     val checking: Boolean,
     val identifyUnknownFiles: Boolean,
     val checked: Boolean,

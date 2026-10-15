@@ -58,7 +58,12 @@ class UpdateModpackUseCase(
                 null
             }
         val disabled = oldManifest?.let { removeReplacedFiles(instance, it, newManifest) }.orEmpty()
-        val newModpackInfo = InstanceModpackInfo(newManifest.platformId, newManifest.projectId, newManifest.fileId)
+        val newModpackInfo = InstanceModpackInfo(
+            newManifest.platformId,
+            newManifest.projectId,
+            newManifest.fileId,
+            update.latest.displayName
+        )
         saveNewVersion(instance, newManifest, newModpackInfo)
         instanceUpdateRepository.clear(instance.id)
 

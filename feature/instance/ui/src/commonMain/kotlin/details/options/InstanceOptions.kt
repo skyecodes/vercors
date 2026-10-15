@@ -82,7 +82,7 @@ private fun InstanceOptionsScaffold(
             .scrollable(state = rememberScrollState(), orientation = Orientation.Horizontal),
     ) {
         LazyColumn(
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             items(sections) { section ->
                 Column(
@@ -180,6 +180,9 @@ private fun InstanceUpdatesOptionsSection(state: InstanceOptionsState) {
                 eventSink(InstanceOptionsEvent.OnCheckForUpdatesReset)
             }
         }
+    }
+    updateCheck.installedModpackVersion?.let {
+        AppText(text = stringResource(InstanceRes.string.installedModpackVersion, it))
     }
     Row(
         horizontalArrangement = Arrangement.spacedBy(16.dp),

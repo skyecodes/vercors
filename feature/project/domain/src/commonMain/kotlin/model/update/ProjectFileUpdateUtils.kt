@@ -1,5 +1,6 @@
 package app.vercors.feature.project.domain.model.update
 
+import app.vercors.feature.game.domain.model.ModLoaderType
 import app.vercors.feature.project.domain.model.ProjectFile
 import app.vercors.feature.project.domain.model.ProjectReleaseChannel
 
@@ -13,3 +14,7 @@ fun List<ProjectFile>.findUpdateFor(current: ProjectFile): ProjectFile? {
     return candidates.filter { it.releaseChannel == ProjectReleaseChannel.Release }.maxByOrNull { it.publishedAt }
         ?: candidates.maxByOrNull { it.publishedAt }
 }
+
+// Modrinth drops loaders we don't support (bukkit, paper...), so a plugin file comes back with none
+fun ProjectFile.runsOn(loader: ModLoaderType): Boolean =
+    loaders.any { it == loader || (loader == ModLoaderType.Quilt && it == ModLoaderType.Fabric) }

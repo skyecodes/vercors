@@ -153,7 +153,7 @@ class PrismInstanceImportRepositoryImplTest {
             zip.writeText("mmc-pack.json", forgeMmcPack)
         }
         val info = (either { repository.parse(path.toString()) } as Either.Right).value
-        assertEquals(InstanceModpackInfo("curseforge", "925200", "7121777"), info.modpackInfo)
+        assertEquals(InstanceModpackInfo("curseforge", "925200", "7121777", "4.14"), info.modpackInfo)
     }
 
     @Test

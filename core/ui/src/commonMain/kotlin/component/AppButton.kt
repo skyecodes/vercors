@@ -20,6 +20,7 @@ import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import app.vercors.core.ui.theme.button
@@ -146,7 +147,9 @@ fun AppIconTextButtonContent(
     }
     text?.let {
         AppText(
-            text = it
+            text = it,
+            singleLine = true,
+            overflow = TextOverflow.Ellipsis
         )
     }
 }

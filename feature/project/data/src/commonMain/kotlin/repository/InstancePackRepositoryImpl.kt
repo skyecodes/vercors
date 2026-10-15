@@ -94,7 +94,14 @@ class InstancePackRepositoryImpl(
             name = instance.name,
             gameVersion = instance.gameVersion,
             modLoader = instance.modLoader?.let { VercorsPackModLoader(it.type.name, it.version) },
-            modpackInfo = instance.modpackInfo?.let { VercorsPackModpackInfo(it.platformId, it.projectId, it.fileId) },
+            modpackInfo = instance.modpackInfo?.let {
+                VercorsPackModpackInfo(
+                    it.platformId,
+                    it.projectId,
+                    it.fileId,
+                    it.versionName
+                )
+            },
             jvmMemoryOptions = instance.jvmMemoryOptions.toData(),
             // Library paths only exist on the exporting machine
             nativeLibraryOptions = instance.nativeLibraryOptions.copy(glfwPath = null, openAlPath = null).toData(),
@@ -138,7 +145,14 @@ class InstancePackRepositoryImpl(
             name = manifest.name,
             gameVersion = manifest.gameVersion,
             modLoader = modLoader,
-            modpackInfo = manifest.modpackInfo?.let { InstanceModpackInfo(it.platformId, it.projectId, it.fileId) },
+            modpackInfo = manifest.modpackInfo?.let {
+                InstanceModpackInfo(
+                    it.platformId,
+                    it.projectId,
+                    it.fileId,
+                    it.versionName
+                )
+            },
             jvmMemoryOptions = manifest.jvmMemoryOptions.toDomain(),
             nativeLibraryOptions = manifest.nativeLibraryOptions.toDomain(),
             iconExtension = manifest.iconExtension,

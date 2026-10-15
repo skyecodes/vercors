@@ -309,11 +309,22 @@ private fun InstalledContentFileRow(
                     overflow = TextOverflow.Ellipsis
                 )
                 file.version?.let {
-                    AppText(text = it, fontSize = 12.sp, color = Theme[colors][onBackground].copy(alpha = 0.6f))
+                    AppText(
+                        text = it,
+                        fontSize = 12.sp,
+                        color = Theme[colors][onBackground].copy(alpha = 0.6f),
+                        singleLine = true,
+                        overflow = TextOverflow.Ellipsis
+                    )
                 }
             }
             file.description?.let {
-                AppText(text = it, fontSize = 12.sp, singleLine = true, overflow = TextOverflow.Ellipsis)
+                AppText(
+                    text = it,
+                    fontSize = 12.sp,
+                    singleLine = true,
+                    overflow = TextOverflow.Ellipsis
+                )
             }
         }
 
@@ -326,7 +337,7 @@ private fun InstalledContentFileRow(
                 ),
                 imageVector = Lucide.Download,
                 enabled = !update.inProgress,
-                modifier = Modifier.widthIn(max = 260.dp)
+                modifier = Modifier.widthIn(max = 400.dp)
             )
         }
 

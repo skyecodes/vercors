@@ -146,6 +146,7 @@
     <string name="checkForModpackUpdatesDesc">Look for a newer version of this modpack.</string>
     <string name="checkForContentUpdatesDesc">Look for newer versions of the mods, resource packs and shader packs installed in this instance.</string>
     <string name="checkForUpdatesAutomatically">Check automatically when opening this instance</string>
+    <string name="installedModpackVersion">Installed version: %1$s</string>
     <string name="checkForUpdatesNow">Check for updates</string>
     <string name="checkingForUpdates">Checking for updates...</string>
     <string name="identifyUnknownFiles">Also identify files with an unknown origin by their hash</string>

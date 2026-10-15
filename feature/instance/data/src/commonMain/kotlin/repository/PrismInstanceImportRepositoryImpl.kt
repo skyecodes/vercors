@@ -152,7 +152,8 @@ private fun detectManagedPackInfo(cfg: Map<String, String>): InstanceModpackInfo
     val platformId = cfg["ManagedPackType"]?.toManagedPackPlatformIdOrNull() ?: return null
     val projectId = cfg["ManagedPackID"]?.takeIf { it.isNotBlank() } ?: return null
     val fileId = cfg["ManagedPackVersionID"]?.takeIf { it.isNotBlank() } ?: return null
-    return InstanceModpackInfo(platformId, projectId, fileId)
+    val versionName = cfg["ManagedPackVersionName"]?.takeIf { it.isNotBlank() }
+    return InstanceModpackInfo(platformId, projectId, fileId, versionName)
 }
 
 private fun String.pathSegments(): Array<String> = split('/').filter { it.isNotBlank() }.toTypedArray()

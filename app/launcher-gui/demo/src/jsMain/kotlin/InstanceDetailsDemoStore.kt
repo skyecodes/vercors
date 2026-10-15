@@ -91,6 +91,7 @@ private fun monifactoryView(): InstanceView {
             projectId = MONIFACTORY_ID,
             fileId = MONIFACTORY_ID
         ),
+        modpackVersion = null,
         pendingManualDownloads = emptyList(),
         iconFilePath = "/icons/$MONIFACTORY_ID.webp",
         javaInstallationId = null,
@@ -120,6 +121,7 @@ private fun optionsState(instance: InstanceView): InstanceOptionsState = Instanc
     globalCheckForUpdates = true,
     updateCheck = UpdateCheckView(
         isModpack = true,
+        installedModpackVersion = null,
         checking = false,
         identifyUnknownFiles = false,
         checked = false,

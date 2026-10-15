@@ -144,6 +144,7 @@ private fun Instance.toPrismCfg(iconKey: String): Map<String, String> = buildMap
         put("ManagedPackType", packType)
         put("ManagedPackID", info.projectId)
         put("ManagedPackVersionID", info.fileId)
+        info.versionName?.let { put("ManagedPackVersionName", it) }
     }
 }
 

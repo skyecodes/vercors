@@ -1,18 +1,24 @@
 package app.vercors.feature.project.domain.model.update
 
+import app.vercors.feature.game.domain.model.ModLoaderType
 import app.vercors.feature.project.domain.model.ProjectFile
 import app.vercors.feature.project.domain.model.ProjectReleaseChannel
 import kotlin.test.*
 import kotlin.time.Instant
 
 class ProjectFileUpdateUtilsTest {
-    private fun file(id: String, publishedAt: Long, channel: ProjectReleaseChannel = ProjectReleaseChannel.Release) =
+    private fun file(
+        id: String,
+        publishedAt: Long,
+        channel: ProjectReleaseChannel = ProjectReleaseChannel.Release,
+        loaders: List<ModLoaderType> = emptyList(),
+    ) =
         ProjectFile(
             id = id,
             displayName = id,
             fileName = "$id.jar",
             gameVersions = emptyList(),
-            loaders = emptyList(),
+            loaders = loaders,
             releaseChannel = channel,
             size = 1,
             sha1 = null,
@@ -73,5 +79,16 @@ class ProjectFileUpdateUtilsTest {
             file("beta", 15, ProjectReleaseChannel.Beta)
         )
         assertEquals("alpha", files.findUpdateFor(current)?.id)
+    }
+
+    @Test
+    fun `a file without a supported loader runs on nothing`() {
+        assertFalse(file("bukkit", 10).runsOn(ModLoaderType.Fabric))
+    }
+
+    @Test
+    fun `quilt runs fabric files but not the reverse`() {
+        assertTrue(file("fabric", 10, loaders = listOf(ModLoaderType.Fabric)).runsOn(ModLoaderType.Quilt))
+        assertFalse(file("quilt", 10, loaders = listOf(ModLoaderType.Quilt)).runsOn(ModLoaderType.Fabric))
     }
 }

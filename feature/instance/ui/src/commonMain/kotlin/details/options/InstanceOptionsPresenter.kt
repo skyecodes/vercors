@@ -138,7 +138,10 @@ class InstanceOptionsPresenter(
             inheritedJavaInstallation = inheritedJavaInstallation,
             requiredJavaMajorVersion = requiredJavaMajorVersion,
             globalCheckForUpdates = globalCheckForUpdates,
-            updateCheck = updateCheck.toView(isModpack = currentInstance?.modpackInfo != null),
+            updateCheck = updateCheck.toView(
+                isModpack = currentInstance?.modpackInfo != null,
+                installedModpackVersion = currentInstance?.modpackVersion,
+            ),
             persistedInstance = currentInstance,
         ) + { event ->
             handleEvent(
@@ -300,8 +303,9 @@ class InstanceOptionsPresenter(
         val setIdentifyUnknownFiles: (Boolean) -> Unit,
         val updates: InstanceUpdates?,
     ) {
-        fun toView(isModpack: Boolean): UpdateCheckView = UpdateCheckView(
+        fun toView(isModpack: Boolean, installedModpackVersion: String?): UpdateCheckView = UpdateCheckView(
             isModpack = isModpack,
+            installedModpackVersion = installedModpackVersion,
             checking = checking,
             identifyUnknownFiles = identifyUnknownFiles,
             checked = updates != null,

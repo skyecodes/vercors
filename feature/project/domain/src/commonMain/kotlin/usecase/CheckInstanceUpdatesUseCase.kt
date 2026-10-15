@@ -1,9 +1,9 @@
 package app.vercors.feature.project.domain.usecase
 
-import app.vercors.feature.game.domain.model.ModLoaderType
 import app.vercors.feature.instance.domain.model.*
 import app.vercors.feature.instance.domain.repository.InstanceContentRepository
 import app.vercors.feature.instance.domain.repository.InstanceRepository
+import app.vercors.feature.instance.domain.usecase.UpdateInstanceUseCase
 import app.vercors.feature.project.domain.model.ProjectDetailsError
 import app.vercors.feature.project.domain.model.ProjectFile
 import app.vercors.feature.project.domain.model.from
@@ -11,6 +11,7 @@ import app.vercors.feature.project.domain.model.update.*
 import app.vercors.feature.project.domain.repository.InstanceUpdateRepository
 import app.vercors.feature.project.domain.repository.ProjectRepository
 import arrow.core.raise.Raise
+import arrow.core.raise.context.either
 import arrow.core.raise.context.withError
 import arrow.core.raise.recover
 import arrow.fx.coroutines.parMap
@@ -31,6 +32,7 @@ class CheckInstanceUpdatesUseCase(
     private val instanceContentRepository: InstanceContentRepository,
     private val instanceUpdateRepository: InstanceUpdateRepository,
     private val identifyInstalledContent: IdentifyInstalledContentUseCase,
+    private val updateInstance: UpdateInstanceUseCase,
 ) {
     context(_: Raise<InstanceUpdateError>)
     suspend operator fun invoke(instanceId: InstanceId, identifyUnknown: Boolean): InstanceUpdates {
@@ -39,7 +41,7 @@ class CheckInstanceUpdatesUseCase(
         }
         val modpackInfo = instance.modpackInfo
         val updates = if (modpackInfo != null) {
-            InstanceUpdates(Clock.System.now(), modpack = checkModpack(modpackInfo), content = emptyList())
+            InstanceUpdates(Clock.System.now(), modpack = checkModpack(instance.id, modpackInfo), content = emptyList())
         } else {
             if (identifyUnknown) identifyInstalledContent(instance.id)
             InstanceUpdates(Clock.System.now(), modpack = null, content = checkContent(instance))
@@ -49,14 +51,26 @@ class CheckInstanceUpdatesUseCase(
     }
 
     context(_: Raise<InstanceUpdateError>)
-    private suspend fun checkModpack(modpackInfo: InstanceModpackInfo): ModpackUpdate? =
+    private suspend fun checkModpack(instanceId: InstanceId, modpackInfo: InstanceModpackInfo): ModpackUpdate? =
         withError(InstanceUpdateError::ModpackLookupFailed) {
             val projectId = modpackInfo.projectId from modpackInfo.platformId
             val files = projectRepository.getProjectFiles(projectId, gameVersion = null, loader = null)
             val current = files.find { it.id == modpackInfo.fileId }
                 ?: projectRepository.getProjectFile(projectId, modpackInfo.fileId)
+            if (modpackInfo.versionName == null) saveVersionName(instanceId, modpackInfo, current.displayName)
             files.findUpdateFor(current)?.let { ModpackUpdate(projectId, current, it) }
         }
+
+    // Instances installed before the version name was stored
+    private suspend fun saveVersionName(instanceId: InstanceId, modpackInfo: InstanceModpackInfo, versionName: String) {
+        either {
+            updateInstance(instanceId) { instance ->
+                instance.takeIf { it.modpackInfo == modpackInfo }
+                    ?.copy(modpackInfo = modpackInfo.copy(versionName = versionName))
+                    ?: instance
+            }
+        }.onLeft { logger.warn { "Couldn't save the modpack version name of $instanceId: $it" } }
+    }
 
     private suspend fun checkContent(instance: Instance): List<ContentUpdate> {
         val tracked = ContentKind.entries.flatMap { kind ->
@@ -96,7 +110,7 @@ class CheckInstanceUpdatesUseCase(
         }
         val loader = instance.modLoader?.type
         val compatible = if (entry.kind == ContentKind.Mod && loader != null) {
-            files.filter { it.loaders.isEmpty() || it.loaders.any { fileLoader -> loader.runs(fileLoader) } }
+            files.filter { it.runsOn(loader) }
         } else {
             files
         }
@@ -112,6 +126,3 @@ class CheckInstanceUpdatesUseCase(
 // Modrinth first: its files never need a manual download
 private fun InstalledContentFile.preferredProvider(): ModProvider? =
     providers.find { it.platformId == MODRINTH_PLATFORM_ID } ?: providers.firstOrNull()
-
-private fun ModLoaderType.runs(fileLoader: ModLoaderType): Boolean =
-    this == fileLoader || (this == ModLoaderType.Quilt && fileLoader == ModLoaderType.Fabric)
