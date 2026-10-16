@@ -10,7 +10,6 @@ dependencies {
     commonMainImplementation(projects.feature.project.ui)
     commonMainImplementation(projects.feature.instance.domain)
     commonMainImplementation(projects.feature.instance.ui)
-    commonMainImplementation(projects.shared.data)
     commonMainImplementation(libs.filekit.dialogs.compose)
     commonMainImplementation(libs.human.readable)
 }

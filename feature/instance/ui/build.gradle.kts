@@ -11,6 +11,7 @@ dependencies {
     commonMainImplementation(projects.feature.java.domain)
     commonMainImplementation(projects.feature.project.domain)
     commonMainImplementation(projects.feature.project.ui.screen)
+    commonMainImplementation(projects.feature.account.domain)
     commonMainImplementation(projects.feature.account.ui)
     commonMainImplementation(projects.feature.config.domain)
     commonMainImplementation(libs.kotlinx.datetime)

@@ -3,8 +3,9 @@ plugins {
 }
 
 dependencies {
-    commonMainApi(projects.feature.java.domain)
-    commonMainApi(projects.feature.game.api)
+    commonMainImplementation(projects.feature.java.domain)
+    commonMainImplementation(projects.feature.game.api)
+    commonMainImplementation(projects.feature.config.domain)
     jvmMainImplementation(libs.jna)
     jvmMainImplementation(libs.jna.platform)
 }

@@ -15,8 +15,7 @@ import dev.zacsweers.metro.ContributesBinding
 import dev.zacsweers.metro.Named
 import dev.zacsweers.metro.SingleIn
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.*
 import kotlinx.io.bytestring.toHexString
 import kotlinx.io.files.Path
 import opensavvy.progress.Progress
@@ -32,19 +31,25 @@ class DataDirectoryRepositoryImpl(
     private val cryptographyService: CryptographyService,
     @Named(AppConstants.APP_ID_KEY) private val appId: String,
 ) : DataDirectoryRepository {
+    override val currentPath: String
+        get() = appPaths.root.toString()
+
+    override fun isCurrent(path: String): Boolean =
+        withAppFolderName(appId, Path(path)).toString() == appPaths.root.toString()
+
     context(_: Raise<DataDirectoryError>)
     override suspend fun move(newPath: String, onProgress: (Progress) -> Unit) {
         val oldRoot = appPaths.root
         val newRoot = withAppFolderName(appId, Path(newPath))
         // Copying a tree into itself would corrupt it
         if (newRoot.toString() == oldRoot.toString()) return
-        ensure(ensureRootReachable(newRoot)) { DataDirectoryError.Unreachable }
+        ensure(withContext(Dispatchers.IO) { ensureRootReachable(newRoot) }) { DataDirectoryError.Unreachable }
 
         val defaultRoot = defaultAppRoot(appId)
         val markerFile = defaultRoot.dataDirectoryMarkerFile()
         val onFileCopied = byteProgressReporter(oldRoot.sizeRecursively(), onProgress)
         copyDataDirectory(newRoot, markerFile, onFileCopied)
-        writeAppRoot(defaultRoot, newRoot)
+        withContext(Dispatchers.IO) { writeAppRoot(defaultRoot, newRoot) }
         onProgress(done())
         deleteOldDataDirectory(newRoot, markerFile)
     }

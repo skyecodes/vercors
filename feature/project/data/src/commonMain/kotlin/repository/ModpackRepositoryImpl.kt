@@ -20,8 +20,7 @@ import de.jonasbroeckmann.kzip.open
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
 import dev.zacsweers.metro.SingleIn
-import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.*
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
 import opensavvy.progress.Progress
@@ -119,7 +118,9 @@ class ModpackRepositoryImpl(
         val zipPath =
             localSourcePath?.let(::Path) ?: modpackZipPath(manifest.platformId, manifest.projectId, manifest.fileId)
         val overridePaths = try {
-            extractOverrides(zipPath, gameDir, manifest.overridesDirs, preserveUserState)
+            withContext(Dispatchers.IO) {
+                extractOverrides(zipPath, gameDir, manifest.overridesDirs, preserveUserState)
+            }
         } catch (_: Exception) {
             currentCoroutineContext().ensureActive()
             raise(ModpackInstallError.OverridesExtractionFailed)

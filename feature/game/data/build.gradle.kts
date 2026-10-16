@@ -3,7 +3,7 @@ plugins {
 }
 
 dependencies {
-    commonMainApi(projects.feature.game.domain)
-    commonMainApi(projects.feature.game.api)
+    commonMainImplementation(projects.feature.game.domain)
+    commonMainImplementation(projects.feature.game.api)
     commonMainImplementation(libs.kzip)
 }

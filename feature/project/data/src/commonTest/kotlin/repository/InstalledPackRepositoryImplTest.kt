@@ -2,13 +2,13 @@ package app.vercors.feature.project.data.repository
 
 import app.vercors.core.filesystem.deleteRecursively
 import app.vercors.core.filesystem.exists
+import app.vercors.core.filesystem.writeText
 import app.vercors.feature.instance.domain.model.InstanceModpackInfo
 import app.vercors.feature.project.domain.model.pack.InstalledPack
 import app.vercors.feature.project.domain.model.pack.InstalledPackFile
 import app.vercors.shared.data.AppPaths
 import kotlinx.coroutines.test.runTest
 import kotlinx.io.files.Path
-import kotlinx.io.files.SystemFileSystem
 import kotlinx.serialization.json.Json
 import kotlin.test.*
 
@@ -41,9 +41,8 @@ class InstalledPackRepositoryImplTest {
     @Test
     fun `deletes a game file but never outside the game dir`() = runTest {
         val gameDir = cleanGameDir("delete-file")
-        SystemFileSystem.createDirectories(Path(gameDir, "config"))
-        SystemFileSystem.sink(Path(gameDir, "config", "a.toml")).close()
-        SystemFileSystem.sink(Path(gameDir, "keep.txt")).close()
+        Path(gameDir, "config", "a.toml").writeText("")
+        Path(gameDir, "keep.txt").writeText("")
 
         repository.deleteGameFile("delete-file", "config/a.toml")
         repository.deleteGameFile("delete-file", "config/../keep.txt")

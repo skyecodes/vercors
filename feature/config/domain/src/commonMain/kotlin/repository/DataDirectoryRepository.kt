@@ -5,6 +5,10 @@ import arrow.core.raise.Raise
 import opensavvy.progress.Progress
 
 interface DataDirectoryRepository {
+    val currentPath: String
+
+    fun isCurrent(path: String): Boolean
+
     context(_: Raise<DataDirectoryError>)
     suspend fun move(newPath: String, onProgress: (Progress) -> Unit = {})
 }

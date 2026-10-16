@@ -1,14 +1,11 @@
 package app.vercors.feature.instance.data.dto
 
-import app.vercors.feature.game.data.dto.ModLoaderTypeData
-import app.vercors.feature.game.data.dto.toData
-import app.vercors.feature.game.data.dto.toDomain
 import app.vercors.feature.instance.domain.model.InstanceModLoader
 import kotlinx.serialization.Serializable
 
 @Serializable
 data class InstanceModLoaderData(
-    val type: ModLoaderTypeData,
+    val type: InstanceModLoaderTypeData,
     val version: String,
 )
 

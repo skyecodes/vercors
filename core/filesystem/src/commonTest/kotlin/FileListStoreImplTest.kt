@@ -16,7 +16,7 @@ class FileListStoreImplTest {
     @Test
     fun `store creates its directory before registering the file watcher on it`() = runTest {
         val dir = Path("build/file-list-store-test/watch-dir-race")
-        if (SystemFileSystem.exists(dir)) dir.deleteRecursively()
+        if (dir.exists()) dir.deleteRecursively()
 
         val directoryExistedWhenWatchStarted = CompletableDeferred<Boolean>()
         val fileWatcherService = object : FileWatcherService {
