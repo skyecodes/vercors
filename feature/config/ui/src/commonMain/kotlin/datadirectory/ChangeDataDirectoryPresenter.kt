@@ -3,10 +3,9 @@ package app.vercors.feature.config.ui.datadirectory
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import app.vercors.core.domain.AppConstants
 import app.vercors.core.domain.toFractionOrNull
-import app.vercors.core.filesystem.withAppFolderName
 import app.vercors.feature.config.domain.model.DataDirectoryError
+import app.vercors.feature.config.domain.usecase.IsCurrentDataDirectoryUseCase
 import app.vercors.feature.config.domain.usecase.MoveDataDirectoryUseCase
 import app.vercors.feature.config.ui.ConfigRes
 import app.vercors.feature.config.ui.changeDataDirectoryCopyFailed
@@ -19,19 +18,17 @@ import com.slack.circuit.overlay.OverlayNavigator
 import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedFactory
 import dev.zacsweers.metro.AssistedInject
-import dev.zacsweers.metro.Named
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import kotlinx.io.files.Path
 import org.jetbrains.compose.resources.stringResource
 
 @AssistedInject
 class ChangeDataDirectoryPresenter(
     @Assisted private val currentPath: String,
-    @Named(AppConstants.APP_ID_KEY) private val appId: String,
     @Assisted private val navigator: OverlayNavigator<Unit>,
     private val globalScope: CoroutineScope,
     private val moveDataDirectory: MoveDataDirectoryUseCase,
+    private val isCurrentDataDirectory: IsCurrentDataDirectoryUseCase,
     private val appRestartService: AppRestartService,
 ) : Presenter<ChangeDataDirectoryState, ChangeDataDirectoryEvent> {
     @Composable
@@ -105,8 +102,7 @@ class ChangeDataDirectoryPresenter(
         copyFailedMessage: String,
     ) {
         val typed = pathText.trim().trimEnd('/', '\\').ifEmpty { currentPath }
-        val chosen = withAppFolderName(appId, Path(typed))
-        if (chosen.toString() == withAppFolderName(appId, Path(currentPath)).toString()) {
+        if (isCurrentDataDirectory(typed)) {
             navigator.finish(Unit)
             return
         }
@@ -115,7 +111,7 @@ class ChangeDataDirectoryPresenter(
         setMoveProgress(0f)
         setErrorMessage(null)
         globalScope.launch {
-            either { moveDataDirectory(chosen.toString()) { progress -> setMoveProgress(progress.toFractionOrNull()) } }
+            either { moveDataDirectory(typed) { progress -> setMoveProgress(progress.toFractionOrNull()) } }
                 .onLeft { error ->
                     setIsMoving(false)
                     setMoveProgress(null)

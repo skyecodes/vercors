@@ -7,7 +7,7 @@ dependencies {
     commonMainApi(projects.feature.home.domain)
     commonMainApi(projects.feature.project.ui)
     commonMainApi(projects.feature.instance.ui)
-    commonMainImplementation(projects.feature.launcher.domain)
+    commonMainImplementation(projects.feature.project.domain)
 }
 
 compose.resources {

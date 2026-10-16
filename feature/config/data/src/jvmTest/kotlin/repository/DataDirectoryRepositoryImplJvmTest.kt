@@ -8,7 +8,6 @@ import arrow.core.raise.context.either
 import kotlinx.coroutines.test.runTest
 import kotlinx.io.bytestring.toHexString
 import kotlinx.io.files.Path
-import kotlinx.io.files.SystemFileSystem
 import java.nio.file.Files
 import kotlin.test.Test
 import kotlin.test.assertTrue
@@ -17,12 +16,8 @@ import kotlin.io.path.Path as JvmPath
 class DataDirectoryRepositoryImplJvmTest {
     private suspend fun freshDir(name: String): Path {
         val dir = Path("build/data-directory-repository-jvm-test/$name")
-        if (SystemFileSystem.exists(dir)) dir.deleteRecursively()
+        if (dir.exists()) dir.deleteRecursively()
         return dir
-    }
-
-    private fun Path.createParentDirectoriesForTest() {
-        parent?.let { SystemFileSystem.createDirectories(it) }
     }
 
     private fun isSameFile(a: Path, b: Path): Boolean = Files.isSameFile(JvmPath(a.toString()), JvmPath(b.toString()))
@@ -36,11 +31,11 @@ class DataDirectoryRepositoryImplJvmTest {
         val cryptographyService = CryptographyServiceImpl()
 
         val modFile = Path(appPaths.modsDir("instance1"), "example.jar")
-        modFile.createParentDirectoriesForTest()
+        modFile.createParentDirectories()
         modFile.writeText("pretend this is a jar")
         val sha1 = modFile.source { cryptographyService.sha1(it) }.toHexString()
         val cacheObject = appPaths.contentCacheObjectFile(ContentCacheKind.Mod, sha1)
-        cacheObject.createParentDirectoriesForTest()
+        cacheObject.createParentDirectories()
         assertTrue(modFile.linkOrCopyTo(cacheObject))
         assertTrue(isSameFile(modFile, cacheObject), "precondition: source mod and cache object are the same file")
 
@@ -64,7 +59,7 @@ class DataDirectoryRepositoryImplJvmTest {
             )
         } finally {
             // move() writes the redirect marker to the real OS-default location: clean it up
-            defaultAppRoot(appId).let { if (SystemFileSystem.exists(it)) it.deleteRecursively() }
+            defaultAppRoot(appId).let { if (it.exists()) it.deleteRecursively() }
         }
     }
 }

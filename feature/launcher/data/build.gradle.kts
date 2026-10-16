@@ -7,7 +7,10 @@ repositories {
 }
 
 dependencies {
-    commonMainApi(projects.feature.launcher.domain)
+    commonMainImplementation(projects.feature.launcher.domain)
+    commonMainImplementation(projects.feature.account.domain)
+    commonMainImplementation(projects.feature.game.domain)
+    commonMainImplementation(projects.feature.instance.domain)
     commonMainImplementation(libs.cryptography.core)
     commonMainImplementation(libs.ktor.client.core)
     commonMainImplementation(libs.kzip)

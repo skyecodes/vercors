@@ -3,10 +3,10 @@ plugins {
 }
 
 dependencies {
-    commonMainApi(projects.feature.instance.domain)
-    commonMainApi(projects.feature.game.data)
-    commonMainApi(projects.core.cryptography)
-    commonMainApi(projects.core.domain)
+    commonMainImplementation(projects.feature.instance.domain)
+    commonMainImplementation(projects.feature.game.domain)
+    commonMainImplementation(projects.core.cryptography)
+    commonMainImplementation(projects.core.domain)
     commonMainImplementation(projects.core.system)
     commonMainImplementation(projects.core.nbt)
     commonMainImplementation(libs.kzip)

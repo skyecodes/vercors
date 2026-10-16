@@ -2,6 +2,8 @@ package app.vercors.feature.instance.data.repository
 
 import app.vercors.core.filesystem.deleteRecursively
 import app.vercors.core.filesystem.exists
+import app.vercors.core.filesystem.readText
+import app.vercors.core.filesystem.writeText
 import app.vercors.feature.game.domain.model.ModLoaderType
 import app.vercors.feature.instance.domain.model.InstanceModpackInfo
 import app.vercors.feature.instance.domain.model.localimport.LocalImportError
@@ -12,10 +14,7 @@ import de.jonasbroeckmann.kzip.Zip
 import de.jonasbroeckmann.kzip.open
 import kotlinx.coroutines.test.runTest
 import kotlinx.io.Buffer
-import kotlinx.io.buffered
 import kotlinx.io.files.Path
-import kotlinx.io.files.SystemFileSystem
-import kotlinx.io.readString
 import kotlinx.io.writeString
 import kotlinx.serialization.json.Json
 import kotlin.test.Test
@@ -131,10 +130,8 @@ class PrismInstanceImportRepositoryImplTest {
         val instanceId = "user-state-instance-test"
         val gameDir = appPaths.gameDir(instanceId)
         if (gameDir.exists()) gameDir.deleteRecursively()
-        SystemFileSystem.createDirectories(Path(gameDir, "saves", "World"))
-        SystemFileSystem.sink(Path(gameDir, "options.txt")).buffered().use { it.writeString("my-options") }
-        SystemFileSystem.sink(Path(gameDir, "saves", "World", "level.dat")).buffered()
-            .use { it.writeString("my-world") }
+        Path(gameDir, "options.txt").writeText("my-options")
+        Path(gameDir, "saves", "World", "level.dat").writeText("my-world")
 
         val result = (either {
             repository.importGameFiles(path.toString(), instanceId, info, preserveUserState = true)
@@ -146,8 +143,6 @@ class PrismInstanceImportRepositoryImplTest {
         assertEquals("new-world", Path(gameDir, "saves", "Other", "level.dat").readText())
         assertEquals("new-jar", Path(gameDir, "mods", "foo.jar").readText())
     }
-
-    private fun Path.readText(): String = SystemFileSystem.source(this).buffered().use { it.readString() }
 
     @Test
     fun `importGameFiles extracts an undotted minecraft folder`() = runTest {

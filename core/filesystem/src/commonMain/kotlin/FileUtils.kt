@@ -91,35 +91,33 @@ suspend fun Path.copyRecursively(
     }
 }
 
-inline fun <T> Path.source(
-    block: (Source) -> T
-): T = SystemFileSystem.source(this).buffered().use(block)
+suspend inline fun <T> Path.source(
+    context: CoroutineContext = Dispatchers.IO,
+    crossinline block: suspend (Source) -> T,
+): T = withContext(context) {
+    SystemFileSystem.source(this@source).buffered().use { block(it) }
+}
 
-inline fun <T> Path.sink(
+suspend inline fun <T> Path.sink(
+    context: CoroutineContext = Dispatchers.IO,
     append: Boolean = false,
-    block: (Sink) -> T
-): T = SystemFileSystem.sink(this, append).buffered().use(block)
+    crossinline block: suspend (Sink) -> T,
+): T = withContext(context) {
+    SystemFileSystem.sink(this@sink, append).buffered().use { block(it) }
+}
 
 @OptIn(ExperimentalSerializationApi::class)
 suspend inline fun <reified T> Path.readJson(
     json: Json,
     context: CoroutineContext = Dispatchers.IO
-): T = source {
-    withContext(context) {
-        json.decodeFromSource<T>(it)
-    }
-}
+): T = source(context) { json.decodeFromSource<T>(it) }
 
 @OptIn(ExperimentalSerializationApi::class)
 suspend inline fun <T> Path.readJson(
     deserializer: DeserializationStrategy<T>,
     json: Json,
     context: CoroutineContext = Dispatchers.IO
-): T = source {
-    withContext(context) {
-        json.decodeFromSource(deserializer, it)
-    }
-}
+): T = source(context) { json.decodeFromSource(deserializer, it) }
 
 @OptIn(ExperimentalSerializationApi::class)
 suspend inline fun <reified T> Path.writeJson(
@@ -127,12 +125,8 @@ suspend inline fun <reified T> Path.writeJson(
     json: Json,
     context: CoroutineContext = Dispatchers.IO
 ) {
-    createParentDirectories()
-    sink {
-        withContext(context) {
-            json.encodeToSink<T>(value, it)
-        }
-    }
+    createParentDirectories(context)
+    sink(context) { json.encodeToSink<T>(value, it) }
 }
 
 @OptIn(ExperimentalSerializationApi::class)
@@ -143,47 +137,29 @@ suspend inline fun <T> Path.writeJson(
     context: CoroutineContext = Dispatchers.IO
 ) {
     createParentDirectories(context)
-    sink {
-        withContext(context) {
-            json.encodeToSink(serializer, value, it)
-        }
-    }
+    sink(context) { json.encodeToSink(serializer, value, it) }
 }
 
 suspend inline fun Path.readData(
     context: CoroutineContext = Dispatchers.IO
-): ByteString = source {
-    withContext(context) {
-        it.readByteString()
-    }
-}
+): ByteString = source(context) { it.readByteString() }
 
 suspend inline fun Path.writeData(
     data: ByteString,
     context: CoroutineContext = Dispatchers.IO
-) = sink {
-    withContext(context) {
-        it.write(data)
-    }
-}
+) = sink(context) { it.write(data) }
 
 suspend inline fun Path.copyTo(
     target: Path,
     context: CoroutineContext = Dispatchers.IO
-): Long = source { target.writeFromSource(it, context) }
+): Long = source(context) { target.writeFromSource(it, context) }
 
 suspend inline fun Path.writeFromSource(
     source: Source,
     context: CoroutineContext = Dispatchers.IO
 ): Long {
     createParentDirectories(context)
-    return sink { sink ->
-        source.use {
-            withContext(context) {
-                it.transferTo(sink)
-            }
-        }
-    }
+    return sink(context) { sink -> source.use { it.transferTo(sink) } }
 }
 
 suspend inline fun Path.writeFromSource(
@@ -192,20 +168,18 @@ suspend inline fun Path.writeFromSource(
     context: CoroutineContext = Dispatchers.IO
 ): Long {
     createParentDirectories(context)
-    return sink { sink ->
+    return sink(context) { sink ->
         source.use {
-            withContext(context) {
-                val buffer = Buffer()
-                var total = 0L
-                while (true) {
-                    val read = it.readAtMostTo(buffer, WRITE_CHUNK_SIZE)
-                    if (read == -1L) break
-                    sink.write(buffer, read)
-                    total += read
-                    onBytesWritten(read)
-                }
-                total
+            val buffer = Buffer()
+            var total = 0L
+            while (true) {
+                val read = it.readAtMostTo(buffer, WRITE_CHUNK_SIZE)
+                if (read == -1L) break
+                sink.write(buffer, read)
+                total += read
+                onBytesWritten(read)
             }
+            total
         }
     }
 }
@@ -218,12 +192,12 @@ suspend inline fun Path.writeText(
     context: CoroutineContext = Dispatchers.IO
 ) {
     createParentDirectories(context)
-    sink {
-        withContext(context) {
-            it.writeString(text)
-        }
-    }
+    sink(context) { it.writeString(text) }
 }
+
+suspend inline fun Path.readText(
+    context: CoroutineContext = Dispatchers.IO
+): String = source(context) { it.readString() }
 
 suspend fun Path.linkOrCopyTo(target: Path, context: CoroutineContext = Dispatchers.IO) =
     tryOrFalse { createLink(target, context) } ||

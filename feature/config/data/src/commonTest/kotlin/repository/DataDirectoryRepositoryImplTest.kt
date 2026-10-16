@@ -6,7 +6,6 @@ import app.vercors.shared.data.AppPaths
 import arrow.core.raise.context.either
 import kotlinx.coroutines.test.runTest
 import kotlinx.io.files.Path
-import kotlinx.io.files.SystemFileSystem
 import kotlinx.io.readString
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -16,7 +15,7 @@ import kotlin.test.assertTrue
 class DataDirectoryRepositoryImplTest {
     private suspend fun freshDir(name: String): Path {
         val dir = Path("build/data-directory-repository-test/$name")
-        if (SystemFileSystem.exists(dir)) dir.deleteRecursively()
+        if (dir.exists()) dir.deleteRecursively()
         return dir
     }
 
@@ -42,7 +41,7 @@ class DataDirectoryRepositoryImplTest {
             assertFalse(oldRoot.exists())
         } finally {
             // move() writes the redirect marker to the real OS-default location: clean it up
-            defaultAppRoot(appId).let { if (SystemFileSystem.exists(it)) it.deleteRecursively() }
+            defaultAppRoot(appId).let { if (it.exists()) it.deleteRecursively() }
         }
     }
 
@@ -50,7 +49,7 @@ class DataDirectoryRepositoryImplTest {
     fun `move preserves the redirect marker when the old root is the OS-default location`() = runTest {
         val appId = "vercors-test-marker-regression"
         val oldRoot = defaultAppRoot(appId)
-        if (SystemFileSystem.exists(oldRoot)) oldRoot.deleteRecursively()
+        if (oldRoot.exists()) oldRoot.deleteRecursively()
         val newRoot = Path(freshDir("marker-regression-new-parent"), appId)
 
         try {
@@ -68,7 +67,7 @@ class DataDirectoryRepositoryImplTest {
                 "the marker written during the move must survive the old root's own cleanup"
             )
         } finally {
-            if (SystemFileSystem.exists(oldRoot)) oldRoot.deleteRecursively()
+            if (oldRoot.exists()) oldRoot.deleteRecursively()
         }
     }
 }

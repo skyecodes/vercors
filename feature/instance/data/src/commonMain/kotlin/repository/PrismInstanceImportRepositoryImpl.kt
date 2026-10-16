@@ -13,6 +13,7 @@ import app.vercors.feature.instance.domain.model.localimport.isUserStatePath
 import app.vercors.feature.instance.domain.repository.PrismInstanceImportRepository
 import app.vercors.shared.data.AppPaths
 import app.vercors.shared.data.toZipEntryName
+import arrow.core.Either
 import arrow.core.raise.Raise
 import arrow.core.raise.context.bind
 import arrow.core.raise.context.raise
@@ -23,8 +24,7 @@ import de.jonasbroeckmann.kzip.open
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
 import dev.zacsweers.metro.SingleIn
-import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.*
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
 import kotlinx.serialization.json.Json
@@ -47,35 +47,38 @@ class PrismInstanceImportRepositoryImpl(
     override suspend fun parse(sourcePath: String): PrismInstanceInfo {
         val zipPath = Path(sourcePath)
         return try {
-            Zip.open(zipPath).use { zip ->
-                either<LocalImportError, PrismInstanceInfo> {
-                    val rootPrefix = detectRootPrefix(zip) ?: raise(LocalImportError.NotPrismFormat)
-                    val cfg = parseInstanceCfg(
-                        zip.entry(Path("${rootPrefix}instance.cfg")) { readToBytes() }.decodeToString()
-                    )
-                    val name = cfg["name"] ?: raise(LocalImportError.ParseFailed)
-                    val mmcPack = json.decodeFromString(
-                        MmcPack.serializer(),
-                        zip.entry(Path("${rootPrefix}mmc-pack.json")) { readToBytes() }.decodeToString()
-                    )
-                    val components = mmcPack.components.associateBy { it.uid }
-                    val gameVersion = components[PRISM_MINECRAFT_UID]?.version ?: raise(LocalImportError.ParseFailed)
-                    val (loaderType, loaderVersion) = components.entries.firstNotNullOfOrNull { (uid, component) ->
-                        uid.toPrismModLoaderTypeOrNull()
-                            ?.let { type -> component.version?.let { version -> type to version } }
-                    } ?: (null to null)
-                    val iconEntryPath = cfg["iconKey"]?.let { findIconEntryPath(zip, rootPrefix, it) }
-                    val modpackInfo = detectManagedPackInfo(cfg)
-                    PrismInstanceInfo(
-                        name, gameVersion, loaderType, loaderVersion, rootPrefix, iconEntryPath, modpackInfo
-                    )
-                }
+            withContext(Dispatchers.IO) {
+                Zip.open(zipPath).use { zip -> parseZip(zip) }
             }
         } catch (_: Exception) {
             currentCoroutineContext().ensureActive()
             raise(LocalImportError.ParseFailed)
         }.bind()
     }
+
+    private fun parseZip(zip: Zip): Either<LocalImportError, PrismInstanceInfo> =
+        either<LocalImportError, PrismInstanceInfo> {
+            val rootPrefix = detectRootPrefix(zip) ?: raise(LocalImportError.NotPrismFormat)
+            val cfg = parseInstanceCfg(
+                zip.entry(Path("${rootPrefix}instance.cfg")) { readToBytes() }.decodeToString()
+            )
+            val name = cfg["name"] ?: raise(LocalImportError.ParseFailed)
+            val mmcPack = json.decodeFromString(
+                MmcPack.serializer(),
+                zip.entry(Path("${rootPrefix}mmc-pack.json")) { readToBytes() }.decodeToString()
+            )
+            val components = mmcPack.components.associateBy { it.uid }
+            val gameVersion = components[PRISM_MINECRAFT_UID]?.version ?: raise(LocalImportError.ParseFailed)
+            val (loaderType, loaderVersion) = components.entries.firstNotNullOfOrNull { (uid, component) ->
+                uid.toPrismModLoaderTypeOrNull()
+                    ?.let { type -> component.version?.let { version -> type to version } }
+            } ?: (null to null)
+            val iconEntryPath = cfg["iconKey"]?.let { findIconEntryPath(zip, rootPrefix, it) }
+            val modpackInfo = detectManagedPackInfo(cfg)
+            PrismInstanceInfo(
+                name, gameVersion, loaderType, loaderVersion, rootPrefix, iconEntryPath, modpackInfo
+            )
+        }
 
     context(_: Raise<LocalImportError>)
     override suspend fun importGameFiles(
@@ -88,11 +91,13 @@ class PrismInstanceImportRepositoryImpl(
         val zipPath = Path(sourcePath)
         val gameDir = appPaths.gameDir(instanceId)
         return try {
-            Zip.open(zipPath).use { zip ->
-                val prefix = detectGameDirPrefix(zip, info.rootPrefix)
-                val extractedPaths = extractGameEntries(zip, prefix, gameDir, preserveUserState, onProgress)
-                val iconPath = info.iconEntryPath?.let { iconEntryPath -> extractIconOrNull(zip, iconEntryPath) }
-                PrismImportResult(iconPath, extractedPaths)
+            withContext(Dispatchers.IO) {
+                Zip.open(zipPath).use { zip ->
+                    val prefix = detectGameDirPrefix(zip, info.rootPrefix)
+                    val extractedPaths = extractGameEntries(zip, prefix, gameDir, preserveUserState, onProgress)
+                    val iconPath = info.iconEntryPath?.let { iconEntryPath -> extractIconOrNull(zip, iconEntryPath) }
+                    PrismImportResult(iconPath, extractedPaths)
+                }
             }
         } catch (_: Exception) {
             currentCoroutineContext().ensureActive()

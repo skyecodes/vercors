@@ -18,7 +18,7 @@ class NativesExtractor {
     suspend fun extract(natives: List<DependencyFile.Native>): Unit = coroutineScope {
         if (natives.isEmpty()) return@coroutineScope
         logger.info { "Extracting natives..." }
-        val extractDispatcher = Dispatchers.Default + SupervisorJob()
+        val extractDispatcher = Dispatchers.IO + SupervisorJob()
         natives.map { file ->
             launch(extractDispatcher) {
                 logger.trace { "Extracting ${file.path} to ${file.extractDest}..." }

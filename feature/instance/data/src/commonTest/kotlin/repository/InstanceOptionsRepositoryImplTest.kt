@@ -27,7 +27,7 @@ class InstanceOptionsRepositoryImplTest {
 
     private fun <T> Either<*, T>.value(): T = (this as Either.Right).value
 
-    private fun Path.text(): String = source { it.readString() }
+    private suspend fun Path.text(): String = source { it.readString() }
 
     @Test
     fun `reads and writes options txt through the game directory`() = runTest {

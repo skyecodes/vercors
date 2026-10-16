@@ -4,13 +4,13 @@ import androidx.compose.runtime.*
 import app.vercors.core.system.SystemService
 import app.vercors.feature.config.domain.usecase.ClearContentCacheUseCase
 import app.vercors.feature.config.domain.usecase.GetContentCacheSizeUseCase
+import app.vercors.feature.config.domain.usecase.GetDataDirectoryUseCase
 import app.vercors.feature.config.ui.ConfigRes
 import app.vercors.feature.config.ui.collectHasRunningInstance
 import app.vercors.feature.config.ui.contentCacheCleared
 import app.vercors.feature.config.ui.datadirectory.ChangeDataDirectoryDialog
 import app.vercors.feature.config.ui.errorOpenDataDirectoryFailed
 import app.vercors.feature.instance.domain.usecase.ObserveInstanceListUseCase
-import app.vercors.shared.data.AppPaths
 import app.vercors.shared.ui.*
 import dev.zacsweers.metro.Inject
 import kotlinx.coroutines.CoroutineScope
@@ -23,7 +23,7 @@ class StorageConfigurationPresenter(
     private val snackbarService: SnackbarService,
     private val getContentCacheSize: GetContentCacheSizeUseCase,
     private val clearContentCache: ClearContentCacheUseCase,
-    private val appPaths: AppPaths,
+    private val getDataDirectory: GetDataDirectoryUseCase,
     private val observeInstanceList: ObserveInstanceListUseCase,
     private val changeDataDirectoryDialogFactory: ChangeDataDirectoryDialog.Factory,
 ) : Presenter<StorageConfigurationState, StorageConfigurationEvent> {
@@ -33,7 +33,7 @@ class StorageConfigurationPresenter(
         val (contentCacheSizeBytes, setContentCacheSizeBytes) = remember { mutableStateOf<Long?>(null) }
         LaunchedEffect(Unit) { setContentCacheSizeBytes(getContentCacheSize()) }
         val (promptClearContentCache, setPromptClearContentCache) = remember { mutableStateOf(false) }
-        val dataDirectory = remember { appPaths.root.toString() }
+        val dataDirectory = remember { getDataDirectory() }
         val hasRunningInstance = observeInstanceList.collectHasRunningInstance()
         val (promptChangeDataDirectory, setPromptChangeDataDirectory) = remember { mutableStateOf(false) }
         val changeDataDirectoryDialog =
