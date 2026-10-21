@@ -91,6 +91,18 @@ fun InstanceDetails(
             }
         }
 
+        state.copyOptionsDialog?.let { dialog ->
+            OverlayEffect(dialog) {
+                eventSink(InstanceDetailsEvent.OnCopyOptionsResult(show(dialog)))
+            }
+        }
+
+        state.saveDefaultOptionsDialog?.let { dialog ->
+            OverlayEffect(dialog) {
+                eventSink(InstanceDetailsEvent.OnSaveDefaultOptionsResult(show(dialog)))
+            }
+        }
+
         InstalledContentRemoveConfirmEffect(state.modsContent)
         InstalledContentRemoveConfirmEffect(state.resourcePacksContent)
         InstalledContentRemoveConfirmEffect(state.shaderPacksContent)
@@ -642,6 +654,16 @@ private fun InstanceHeaderMenu(instance: InstanceView) {
                 onClick = packPickerLauncher::launch,
                 text = stringResource(InstanceRes.string.updateFromFile),
                 imageVector = Lucide.FileUp
+            )
+            AppMenuItem(
+                onClick = { eventSink(InstanceDetailsEvent.OnCopyOptionsClick) },
+                text = stringResource(InstanceRes.string.copyOptionsFrom),
+                imageVector = Lucide.Keyboard
+            )
+            AppMenuItem(
+                onClick = { eventSink(InstanceDetailsEvent.OnSaveDefaultOptionsClick) },
+                text = stringResource(InstanceRes.string.saveOptionsAsDefault),
+                imageVector = Lucide.BookmarkCheck
             )
         }
         AppMenuItem(

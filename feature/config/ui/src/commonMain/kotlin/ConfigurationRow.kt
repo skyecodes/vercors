@@ -21,6 +21,14 @@ internal fun ConfigurationRow(
     description: StringResource,
     requiresRestart: Boolean = false,
     content: @Composable RowScope.() -> Unit
+) = ConfigurationRow(stringResource(title), stringResource(description), requiresRestart, content)
+
+@Composable
+internal fun ConfigurationRow(
+    title: String,
+    description: String,
+    requiresRestart: Boolean = false,
+    content: @Composable RowScope.() -> Unit
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -31,8 +39,8 @@ internal fun ConfigurationRow(
             modifier = Modifier.weight(1f),
             verticalArrangement = Arrangement.spacedBy(2.dp)
         ) {
-            AppText(text = stringResource(title), fontWeight = FontWeight.SemiBold)
-            AppText(text = stringResource(description), style = Theme[textStyles][label])
+            AppText(text = title, fontWeight = FontWeight.SemiBold)
+            AppText(text = description, style = Theme[textStyles][label])
             if (requiresRestart) {
                 AppText(
                     text = stringResource(ConfigRes.string.restartRequired),

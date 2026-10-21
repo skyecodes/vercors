@@ -5,6 +5,7 @@ enum class ConfigurationTab {
     Advanced,
     Appearance,
     Java,
+    GameOptions,
     NativeLibraries,
     Storage,
     About
