@@ -10,7 +10,7 @@ cryptography = "0.6.0"
 human-readable = "2.0.0"
 buildconfig = "6.1.2"
 # Data
-serialization = "1.11.0"
+serialization = "1.12.0"
 io = "0.9.1"
 ktor = "3.6.0"
 spine = "0.12.2"
