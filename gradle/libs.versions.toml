@@ -3,7 +3,7 @@
 kotlin = "2.4.21"
 ksp = "2.3.12"
 coroutines = "1.11.0"
-arrow = "2.2.3"
+arrow = "2.3.0"
 pedestal = "3.2.2"
 datetime = "0.8.0"
 cryptography = "0.6.0"
