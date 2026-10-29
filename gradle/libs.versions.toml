@@ -44,7 +44,7 @@ filekit = "0.17.0"
 # CLI
 clikt = "5.1.0"
 mordant = "3.1.0"
-graalvm = "1.1.17"
+graalvm = "1.1.18"
 # DI
 metro = "1.5.0"
 # Logging
