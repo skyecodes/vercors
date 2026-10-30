@@ -1,0 +1,53 @@
+{
+  "id": "monokai",
+  "displayName": "Monokai",
+  "isDark": true,
+  "colors": {
+    "background": "#272822",
+    "backgroundAlt": "#1e1f1c",
+    "onBackground": "#f8f8f2",
+    "primary": "$accent",
+    "onPrimary": "#272822",
+    "error": "#f92672",
+    "onError": "#272822",
+    "success": "#a6e22e",
+    "onSuccess": "#272822",
+    "warn": "#fd971f",
+    "surface": "#3e3d32",
+    "surface2": "#49483e",
+    "surface3": "#75715e"
+  },
+  "accents": [
+    {
+      "id": "pink",
+      "name": "Pink",
+      "color": "#f92672"
+    },
+    {
+      "id": "orange",
+      "name": "Orange",
+      "color": "#fd971f"
+    },
+    {
+      "id": "yellow",
+      "name": "Yellow",
+      "color": "#e6db74"
+    },
+    {
+      "id": "green",
+      "name": "Green",
+      "color": "#a6e22e"
+    },
+    {
+      "id": "blue",
+      "name": "Blue",
+      "color": "#66d9ef"
+    },
+    {
+      "id": "purple",
+      "name": "Purple",
+      "color": "#ae81ff"
+    }
+  ],
+  "defaultAccent": "purple"
+}

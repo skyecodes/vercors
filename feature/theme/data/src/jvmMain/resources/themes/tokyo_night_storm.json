@@ -1,0 +1,68 @@
+{
+  "id": "tokyo_night_storm",
+  "displayName": "Tokyo Night Storm",
+  "isDark": true,
+  "colors": {
+    "background": "#24283b",
+    "backgroundAlt": "#1f2335",
+    "onBackground": "#c0caf5",
+    "primary": "$accent",
+    "onPrimary": "#1f2335",
+    "error": "#f7768e",
+    "onError": "#1f2335",
+    "success": "#9ece6a",
+    "onSuccess": "#1f2335",
+    "warn": "#e0af68",
+    "surface": "#292e42",
+    "surface2": "#3b4261",
+    "surface3": "#545c7e"
+  },
+  "accents": [
+    {
+      "id": "red",
+      "name": "Red",
+      "color": "#f7768e"
+    },
+    {
+      "id": "orange",
+      "name": "Orange",
+      "color": "#ff9e64"
+    },
+    {
+      "id": "yellow",
+      "name": "Yellow",
+      "color": "#e0af68"
+    },
+    {
+      "id": "green",
+      "name": "Green",
+      "color": "#9ece6a"
+    },
+    {
+      "id": "teal",
+      "name": "Teal",
+      "color": "#73daca"
+    },
+    {
+      "id": "cyan",
+      "name": "Cyan",
+      "color": "#7dcfff"
+    },
+    {
+      "id": "blue",
+      "name": "Blue",
+      "color": "#7aa2f7"
+    },
+    {
+      "id": "magenta",
+      "name": "Magenta",
+      "color": "#bb9af7"
+    },
+    {
+      "id": "purple",
+      "name": "Purple",
+      "color": "#9d7cd8"
+    }
+  ],
+  "defaultAccent": "purple"
+}

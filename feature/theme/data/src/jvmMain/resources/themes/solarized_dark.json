@@ -1,0 +1,63 @@
+{
+  "id": "solarized_dark",
+  "displayName": "Solarized Dark",
+  "isDark": true,
+  "colors": {
+    "background": "#002b36",
+    "backgroundAlt": "#00212b",
+    "onBackground": "#93a1a1",
+    "primary": "$accent",
+    "onPrimary": "#002b36",
+    "error": "#dc322f",
+    "onError": "#002b36",
+    "success": "#859900",
+    "onSuccess": "#002b36",
+    "warn": "#b58900",
+    "surface": "#073642",
+    "surface2": "#224953",
+    "surface3": "#3d5b64"
+  },
+  "accents": [
+    {
+      "id": "yellow",
+      "name": "Yellow",
+      "color": "#b58900"
+    },
+    {
+      "id": "orange",
+      "name": "Orange",
+      "color": "#cb4b16"
+    },
+    {
+      "id": "red",
+      "name": "Red",
+      "color": "#dc322f"
+    },
+    {
+      "id": "magenta",
+      "name": "Magenta",
+      "color": "#d33682"
+    },
+    {
+      "id": "violet",
+      "name": "Violet",
+      "color": "#6c71c4"
+    },
+    {
+      "id": "blue",
+      "name": "Blue",
+      "color": "#268bd2"
+    },
+    {
+      "id": "cyan",
+      "name": "Cyan",
+      "color": "#2aa198"
+    },
+    {
+      "id": "green",
+      "name": "Green",
+      "color": "#859900"
+    }
+  ],
+  "defaultAccent": "violet"
+}

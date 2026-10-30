@@ -1,0 +1,58 @@
+{
+  "id": "gruvbox_light",
+  "displayName": "Gruvbox Light",
+  "isDark": false,
+  "colors": {
+    "background": "#fbf1c7",
+    "backgroundAlt": "#f2e5bc",
+    "onBackground": "#3c3836",
+    "primary": "$accent",
+    "onPrimary": "#fbf1c7",
+    "error": "#9d0006",
+    "onError": "#fbf1c7",
+    "success": "#79740e",
+    "onSuccess": "#fbf1c7",
+    "warn": "#af3a03",
+    "surface": "#ebdbb2",
+    "surface2": "#d5c4a1",
+    "surface3": "#bdae93"
+  },
+  "accents": [
+    {
+      "id": "red",
+      "name": "Red",
+      "color": "#9d0006"
+    },
+    {
+      "id": "orange",
+      "name": "Orange",
+      "color": "#af3a03"
+    },
+    {
+      "id": "yellow",
+      "name": "Yellow",
+      "color": "#b57614"
+    },
+    {
+      "id": "green",
+      "name": "Green",
+      "color": "#79740e"
+    },
+    {
+      "id": "aqua",
+      "name": "Aqua",
+      "color": "#427b58"
+    },
+    {
+      "id": "blue",
+      "name": "Blue",
+      "color": "#076678"
+    },
+    {
+      "id": "purple",
+      "name": "Purple",
+      "color": "#8f3f71"
+    }
+  ],
+  "defaultAccent": "purple"
+}
