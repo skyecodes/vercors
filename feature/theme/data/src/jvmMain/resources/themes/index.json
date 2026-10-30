@@ -2,5 +2,17 @@
   "catppuccin_mocha.json",
   "catppuccin_macchiato.json",
   "catppuccin_frappe.json",
-  "catppuccin_latte.json"
+  "catppuccin_latte.json",
+  "solarized_dark.json",
+  "solarized_light.json",
+  "github.json",
+  "github_dark.json",
+  "darcula.json",
+  "monokai.json",
+  "gruvbox_dark.json",
+  "gruvbox_light.json",
+  "nord.json",
+  "tokyo_night.json",
+  "tokyo_night_storm.json",
+  "tokyo_night_day.json"
 ]

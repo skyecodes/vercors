@@ -1,0 +1,58 @@
+{
+  "id": "github_dark",
+  "displayName": "GitHub Dark",
+  "isDark": true,
+  "colors": {
+    "background": "#0d1117",
+    "backgroundAlt": "#010409",
+    "onBackground": "#f0f6fc",
+    "primary": "$accent",
+    "onPrimary": "#ffffff",
+    "error": "#f85149",
+    "onError": "#ffffff",
+    "success": "#238636",
+    "onSuccess": "#ffffff",
+    "warn": "#d29922",
+    "surface": "#161b22",
+    "surface2": "#21262d",
+    "surface3": "#30363d"
+  },
+  "accents": [
+    {
+      "id": "blue",
+      "name": "Blue",
+      "color": "#58a6ff"
+    },
+    {
+      "id": "green",
+      "name": "Green",
+      "color": "#238636"
+    },
+    {
+      "id": "yellow",
+      "name": "Yellow",
+      "color": "#d29922"
+    },
+    {
+      "id": "orange",
+      "name": "Orange",
+      "color": "#db6d28"
+    },
+    {
+      "id": "red",
+      "name": "Red",
+      "color": "#f85149"
+    },
+    {
+      "id": "purple",
+      "name": "Purple",
+      "color": "#a371f7"
+    },
+    {
+      "id": "pink",
+      "name": "Pink",
+      "color": "#db61a2"
+    }
+  ],
+  "defaultAccent": "purple"
+}

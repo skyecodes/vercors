@@ -1,0 +1,68 @@
+{
+  "id": "nord",
+  "displayName": "Nord",
+  "isDark": true,
+  "colors": {
+    "background": "#2e3440",
+    "backgroundAlt": "#242933",
+    "onBackground": "#d8dee9",
+    "primary": "$accent",
+    "onPrimary": "#2e3440",
+    "error": "#bf616a",
+    "onError": "#2e3440",
+    "success": "#a3be8c",
+    "onSuccess": "#2e3440",
+    "warn": "#d08770",
+    "surface": "#3b4252",
+    "surface2": "#434c5e",
+    "surface3": "#4c566a"
+  },
+  "accents": [
+    {
+      "id": "red",
+      "name": "Red",
+      "color": "#bf616a"
+    },
+    {
+      "id": "orange",
+      "name": "Orange",
+      "color": "#d08770"
+    },
+    {
+      "id": "yellow",
+      "name": "Yellow",
+      "color": "#ebcb8b"
+    },
+    {
+      "id": "green",
+      "name": "Green",
+      "color": "#a3be8c"
+    },
+    {
+      "id": "purple",
+      "name": "Purple",
+      "color": "#b48ead"
+    },
+    {
+      "id": "teal",
+      "name": "Teal",
+      "color": "#8fbcbb"
+    },
+    {
+      "id": "frost",
+      "name": "Frost",
+      "color": "#88c0d0"
+    },
+    {
+      "id": "blue",
+      "name": "Blue",
+      "color": "#81a1c1"
+    },
+    {
+      "id": "deep_blue",
+      "name": "Deep Blue",
+      "color": "#5e81ac"
+    }
+  ],
+  "defaultAccent": "purple"
+}

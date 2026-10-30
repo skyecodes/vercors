@@ -1,0 +1,68 @@
+{
+  "id": "tokyo_night_day",
+  "displayName": "Tokyo Night Day",
+  "isDark": false,
+  "colors": {
+    "background": "#e1e2e7",
+    "backgroundAlt": "#d0d5e3",
+    "onBackground": "#3760bf",
+    "primary": "$accent",
+    "onPrimary": "#e1e2e7",
+    "error": "#f52a65",
+    "onError": "#e1e2e7",
+    "success": "#587539",
+    "onSuccess": "#e1e2e7",
+    "warn": "#8c6c3e",
+    "surface": "#c4c8da",
+    "surface2": "#b6bbd3",
+    "surface3": "#a8aecb"
+  },
+  "accents": [
+    {
+      "id": "red",
+      "name": "Red",
+      "color": "#f52a65"
+    },
+    {
+      "id": "orange",
+      "name": "Orange",
+      "color": "#b15c00"
+    },
+    {
+      "id": "yellow",
+      "name": "Yellow",
+      "color": "#8c6c3e"
+    },
+    {
+      "id": "green",
+      "name": "Green",
+      "color": "#587539"
+    },
+    {
+      "id": "teal",
+      "name": "Teal",
+      "color": "#387068"
+    },
+    {
+      "id": "cyan",
+      "name": "Cyan",
+      "color": "#007197"
+    },
+    {
+      "id": "blue",
+      "name": "Blue",
+      "color": "#2e7de9"
+    },
+    {
+      "id": "magenta",
+      "name": "Magenta",
+      "color": "#9854f1"
+    },
+    {
+      "id": "purple",
+      "name": "Purple",
+      "color": "#7847bd"
+    }
+  ],
+  "defaultAccent": "purple"
+}
