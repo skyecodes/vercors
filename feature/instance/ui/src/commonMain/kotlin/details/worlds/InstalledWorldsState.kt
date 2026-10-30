@@ -20,6 +20,7 @@ data class InstalledWorldView(
     val folderName: String,
     val displayName: String,
     val iconFilePath: String?,
+    val iconLastModified: Instant?,
     val lastModified: Instant?,
 ) {
     val lastModifiedReadable = lastModified?.let { HumanReadable.timeAgo(it) }
@@ -29,5 +30,6 @@ fun InstalledWorld.toView(): InstalledWorldView = InstalledWorldView(
     folderName = folderName,
     displayName = folderName.stripMinecraftFormattingForDisplay(),
     iconFilePath = iconFilePath,
+    iconLastModified = iconLastModified,
     lastModified = lastModified
 )

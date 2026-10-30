@@ -13,19 +13,20 @@ import arrow.core.raise.context.raise
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.io.files.Path
 import opensavvy.state.coroutines.ProgressiveFlow
 import opensavvy.state.progressive.map
 import opensavvy.state.progressive.successfulWithProgress
+
+private const val LEVEL_DAT = "level.dat"
+private const val ICON_PNG = "icon.png"
 
 @SingleIn(AppScope::class)
 @Inject
@@ -37,6 +38,7 @@ class InstanceWorldScanner(
     private val statesLock = Mutex()
     private val states = mutableMapOf<InstanceId, MutableProgressiveStateFlow<Nothing, Map<String, InstalledWorld>>>()
     private val watchStartedFor = mutableSetOf<InstanceId>()
+    private val worldWatches = mutableMapOf<InstanceId, MutableMap<Path, Job>>()
 
     fun observe(instanceId: InstanceId): ProgressiveFlow<Nothing, List<InstalledWorld>> {
         val state = stateFor(instanceId)
@@ -62,6 +64,26 @@ class InstanceWorldScanner(
         backgroundScope.launch {
             fileWatcherService.watchDirectory(appPaths.savesDir(instanceId)).collect {
                 reconcile(instanceId, state)
+                syncWorldWatches(instanceId, state)
+            }
+        }
+        syncWorldWatches(instanceId, state)
+    }
+
+    private suspend fun syncWorldWatches(
+        instanceId: InstanceId,
+        state: MutableProgressiveStateFlow<Nothing, Map<String, InstalledWorld>>
+    ) {
+        val worldDirs = appPaths.savesDir(instanceId).list().filter { it.isDirectory() }.toSet()
+        statesLock.withLock {
+            val watches = worldWatches.getOrPut(instanceId) { mutableMapOf() }
+            (watches.keys - worldDirs).forEach { watches.remove(it)?.cancel() }
+            (worldDirs - watches.keys).forEach { worldDir ->
+                watches[worldDir] = backgroundScope.launch {
+                    fileWatcherService.watchDirectory(worldDir)
+                        .filter { it.path.name == LEVEL_DAT || it.path.name == ICON_PNG }
+                        .collect { reconcile(instanceId, state) }
+                }
             }
         }
     }
@@ -77,18 +99,19 @@ class InstanceWorldScanner(
             return
         }
         val resolved = dir.list()
-            .filter { it.isDirectory() && Path(it, "level.dat").exists() }
+            .filter { it.isDirectory() && Path(it, LEVEL_DAT).exists() }
             .map { toInstalledWorld(it) }
             .associateBy { it.folderName }
         state.update { resolved.successfulWithProgress() }
     }
 
     private suspend fun toInstalledWorld(worldDir: Path): InstalledWorld {
-        val iconPath = Path(worldDir, "icon.png")
+        val iconPath = Path(worldDir, ICON_PNG).takeIf { it.exists() }
         return InstalledWorld(
             folderName = worldDir.name,
-            iconFilePath = iconPath.takeIf { it.exists() }?.toString(),
-            lastModified = Path(worldDir, "level.dat").lastModifiedOrNull()
+            iconFilePath = iconPath?.toString(),
+            iconLastModified = iconPath?.lastModifiedOrNull(),
+            lastModified = Path(worldDir, LEVEL_DAT).lastModifiedOrNull()
         )
     }
 
