@@ -19,11 +19,11 @@ fun Logo(modifier: Modifier = Modifier) {
         attr("aria-label", "$SITE_NAME logo")
     }) {
         Polygon {
-            points(22 to 48, 64 to 14, 64 to 14.965, 22.596 to 48.4825)
+            points(22 to 48, 64 to 14, 64 to 16.895, 23.788 to 49.4475)
             fillOpacity(0.2)
         }
         Polygon {
-            points(106 to 48, 64 to 14, 64 to 14.965, 105.404 to 48.4825)
+            points(106 to 48, 64 to 14, 64 to 16.895, 104.212 to 49.4475)
             fillOpacity(0.2)
         }
         Polygon {

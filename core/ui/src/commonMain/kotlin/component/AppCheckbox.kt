@@ -85,12 +85,12 @@ fun AppCheckbox(
 @Composable
 private fun AppCheckboxLabel(label: String, icon: ImageVector?) {
     if (icon == null) {
-        AppText(label)
-        return
-    }
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-        AppIcon(imageVector = icon, contentDescription = null, modifier = Modifier.size(16.dp))
-        AppText(label)
+        AppText(text = label, singleLine = true)
+    } else {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            AppIcon(imageVector = icon, contentDescription = null, modifier = Modifier.size(16.dp))
+            AppText(text = label, singleLine = true)
+        }
     }
 }
 
