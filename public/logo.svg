@@ -8,12 +8,12 @@
 >
     <polygon
             id="top_left_edge"
-            points="22,48 64,14 64,14.965 22.596,48.4825"
+            points="22,48 64,14 64,16.895 23.788,49.4475"
             fill="#cba6f7"
             fill-opacity="0.2"/>
     <polygon
             id="top_right_edge"
-            points="106,48 64,14 64,14.965 105.404,48.4825"
+            points="106,48 64,14 64,16.895 104.212,49.4475"
             fill="#cba6f7"
             fill-opacity="0.2"/>
     <polygon

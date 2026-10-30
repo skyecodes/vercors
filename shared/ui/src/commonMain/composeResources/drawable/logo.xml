@@ -4,11 +4,11 @@
         android:width="128dp"
         android:height="128dp">
     <path
-            android:pathData="M22,48 L64,14 L64,14.965 L22.596,48.4825 Z"
+            android:pathData="M22,48 L64,14 L64,16.895 L23.788,49.4475 Z"
             android:fillColor="#FFFFFF"
             android:fillAlpha="0.2"/>
     <path
-            android:pathData="M106,48 L64,14 L64,14.965 L105.404,48.4825 Z"
+            android:pathData="M106,48 L64,14 L64,16.895 L104.212,49.4475 Z"
             android:fillColor="#FFFFFF"
             android:fillAlpha="0.2"/>
     <path
