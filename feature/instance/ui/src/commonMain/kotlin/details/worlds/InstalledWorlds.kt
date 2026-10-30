@@ -13,6 +13,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -31,7 +32,9 @@ import app.vercors.shared.ui.EventSink
 import app.vercors.shared.ui.SharedRes
 import app.vercors.shared.ui.Store
 import app.vercors.shared.ui.sortBy
+import coil3.compose.LocalPlatformContext
 import coil3.compose.rememberAsyncImagePainter
+import coil3.request.ImageRequest
 import com.composables.icons.lucide.*
 import com.composeunstyled.ProvideContentColor
 import com.composeunstyled.theme.Theme
@@ -40,6 +43,7 @@ import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
 import io.github.vinceglb.filekit.path
 import okio.Path.Companion.toPath
 import org.jetbrains.compose.resources.stringResource
+import kotlin.time.Instant
 
 @Composable
 fun InstalledWorlds(
@@ -169,6 +173,19 @@ private fun InstalledWorldList(
     }
 }
 
+// Minecraft rewrites icon.png in place, so the path alone would keep serving Coil's cached image
+@Composable
+private fun rememberInstalledWorldIconPainter(iconFilePath: String, iconLastModified: Instant?): Painter {
+    val cacheKey = "$iconFilePath-$iconLastModified"
+    return rememberAsyncImagePainter(
+        model = ImageRequest.Builder(LocalPlatformContext.current)
+            .data(iconFilePath.toPath())
+            .memoryCacheKey(cacheKey)
+            .diskCacheKey(cacheKey)
+            .build()
+    )
+}
+
 @Composable
 context(_: EventSink<InstalledWorldsEvent>)
 private fun InstalledWorldRow(world: InstalledWorldView, canQuickJoin: Boolean, onQuickJoinClick: (String) -> Unit) {
@@ -179,7 +196,7 @@ private fun InstalledWorldRow(world: InstalledWorldView, canQuickJoin: Boolean, 
     ) {
         if (world.iconFilePath != null) {
             Image(
-                painter = rememberAsyncImagePainter(model = world.iconFilePath.toPath()),
+                painter = rememberInstalledWorldIconPainter(world.iconFilePath, world.iconLastModified),
                 contentDescription = world.displayName,
                 modifier = Modifier.size(40.dp).clip(RoundedCornerShape(4.dp)),
                 contentScale = ContentScale.Crop
