@@ -43,7 +43,7 @@ composenativetray = "2.1.7"
 filekit = "0.17.0"
 # CLI
 clikt = "5.1.0"
-mordant = "3.1.0"
+mordant = "3.1.1"
 graalvm = "1.1.18"
 # DI
 metro = "1.5.2"
