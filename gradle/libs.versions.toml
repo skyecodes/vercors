@@ -55,7 +55,7 @@ mokkery = "3.6.0"
 turbine = "1.2.1"
 # Website
 compose-html = "1.12.2"
-compose-web = "1.12.1"
+compose-web = "1.13.0"
 kobweb = "0.25.1"
 
 [libraries]
