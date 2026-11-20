@@ -48,7 +48,7 @@ graalvm = "1.1.19"
 # DI
 metro = "1.6.0"
 # Logging
-logback = "1.6.7"
+logback = "1.6.8"
 kotlin-logging = "8.0.7"
 # Test
 mokkery = "3.6.0"
