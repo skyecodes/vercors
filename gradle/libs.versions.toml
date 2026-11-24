@@ -40,7 +40,7 @@ markdown-renderer = "0.46.0"
 webview = "2.0.3"
 nucleusframework = "3.0.0-dev-202611222143"
 composenativetray = "2.1.7"
-filekit = "0.17.0"
+filekit = "0.17.1"
 # CLI
 clikt = "5.2.1"
 mordant = "3.1.1"
